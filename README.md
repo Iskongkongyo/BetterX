@@ -63,10 +63,13 @@
 ## 📦 安装
 
 1. 先安装任意一个油猴类扩展：
+
    - [Tampermonkey](https://www.tampermonkey.net/)（推荐，Chrome / Edge / Firefox / Safari）
    - [Violentmonkey](https://violentmonkey.github.io/)
-2. 新建一个用户脚本，把 `更好的X.js` 的全部内容粘贴进去保存；或直接从 GreasyFork 安装。
-3. 打开 [x.com](https://x.com)，页面左/右下角会出现应用 徽标，点击或按 `Alt + X` 即可展开面板。
+
+   直接从 GreasyFork [更好的 X（BetterX）](https://greasyfork.org/zh-CN/scripts/588748-更好的-x-betterx)安装，或者新建一个用户脚本，把 `更好的X（BetterX）.js` 的全部内容粘贴进去保存。
+
+2. 打开 [x.com](https://x.com)，页面左/右下角会出现应用 徽标，点击或按 `Alt + X` 即可展开面板。
 
 > 支持域名：`x.com` 与 `twitter.com`。
 
