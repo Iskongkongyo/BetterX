@@ -1,14 +1,16 @@
 // ==UserScript==
 // @name         更好的 X（BetterX）
 // @namespace    https://github.com/Iskongkongyo
-// @version      2.1.0
+// @version      2.2.0
 // @description  自动隐藏黄推/引流机器人与广告、界面净化与宽屏、一键下载图片/视频/GIF(多媒体自动打包 zip)、取消年龄限制(自动展开敏感/成人内容遮罩)、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
-// @author       流萤可爱捏
+// @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://twitter.com/*
 // @grant        GM_addStyle
+// @grant        GM_getValue
 // @grant        GM_xmlhttpRequest
 // @grant        GM_info
+// @grant        GM_setValue
 // @grant        unsafeWindow
 // @connect      twimg.com
 // @connect      video.twimg.com
@@ -18,8 +20,6 @@
 // @icon      data:image/jpeg;base64,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
 // @noframes
 // @license      MIT
-// @downloadURL https://update.greasyfork.org/scripts/588748/%E6%9B%B4%E5%A5%BD%E7%9A%84%20X%EF%BC%88BetterX%EF%BC%89.user.js
-// @updateURL https://update.greasyfork.org/scripts/588748/%E6%9B%B4%E5%A5%BD%E7%9A%84%20X%EF%BC%88BetterX%EF%BC%89.meta.js
 // ==/UserScript==
 
 (function () {
@@ -48,7 +48,32 @@
   const MAX_IMPORT_POSTS = 20000;
   const MAX_REGEX_SOURCE_LENGTH = 180;
   const MAX_REGEX_HAYSTACK_LENGTH = 20000;
+  const IS_FIREFOX = /(?:^|\s)Firefox\//i.test(navigator.userAgent || '');
+  const FIREFOX_COMPAT_MODE_KEY = 'betterx_firefox_compatibility_mode';
   const DEBUG = false;
+
+  function readFirefoxCompatibilityMode() {
+    if (!IS_FIREFOX) return 'normal';
+    let value = '';
+    try {
+      if (typeof GM_getValue === 'function') value = GM_getValue(FIREFOX_COMPAT_MODE_KEY, '');
+    } catch (err) {}
+    if (!value) {
+      try { value = localStorage.getItem(FIREFOX_COMPAT_MODE_KEY) || ''; } catch (err) {}
+    }
+    return value === 'compat' || value === 'normal' ? value : 'unset';
+  }
+
+  let firefoxCompatibilityMode = readFirefoxCompatibilityMode();
+
+  function writeFirefoxCompatibilityMode(mode) {
+    const normalized = mode === 'compat' ? 'compat' : 'normal';
+    firefoxCompatibilityMode = normalized;
+    try {
+      if (typeof GM_setValue === 'function') GM_setValue(FIREFOX_COMPAT_MODE_KEY, normalized);
+    } catch (err) {}
+    try { localStorage.setItem(FIREFOX_COMPAT_MODE_KEY, normalized); } catch (err) {}
+  }
 
   const FILTERS = [
     { key: 'all', label: '全部' },
@@ -77,7 +102,7 @@
   ];
 
   const DEFAULT_SETTINGS = {
-    settingsRevision: 8,
+    settingsRevision: 9,
     keywords: [],
     excludeKeywords: [],
     keywordMode: 'plain',   // 'plain' | 'and' | 'regex'
@@ -113,6 +138,8 @@
     layoutHideShowMore: false,
     mediaDownload: true,    // 默认开启一键下载图片/视频/GIF
     bypassAgeRestriction: false, // 取消年龄限制：用原图/视频内联替换遮罩
+    firefoxCompatibility: false, // Firefox 兼容模式：停用页面 fetch/XHR Hook
+    firefoxCompatibilityPrompted: false, // 是否已完成 Firefox 首次兼容性询问
     useMobileBadgeOnDesktop: false, // PC 端可选使用移动端圆形图标徽标
     downloadTimeout: 360000, // 下载超时（毫秒），默认 360 秒
   };
@@ -175,10 +202,16 @@
     layoutCleanNavigationEl: null,
     layoutHideMessageGrokEl: null,
     layoutHideShowMoreEl: null,
+    firefoxCompatibilityEl: null,
     useMobileBadgeOnDesktopEl: null,
     layoutStyleEl: null,
     detectedTimelineWidth: 0,
     detectedLeftbarWidth: 0,
+    mobileComposeEl: null,
+    mobileComposeOpacityEl: null,
+    mobileComposeObserver: null,
+    mobileComposeResizeObserver: null,
+    mobileBadgeRaf: 0,
   };
 
   // 关键词匹配缓存（避免每次渲染都重算）
@@ -700,7 +733,7 @@
     if (state.badgeEl.classList.contains('mobile-mode')) {
       const iconHtml = APP_ICON_URL
         ? `<img class="xvault-mobile-icon" src="${escapeHtml(APP_ICON_URL)}" alt="" draggable="false" />`
-        : '<span class="xvault-mobile-icon-fallback">🛡️</span>';
+        : '<span class="xvault-mobile-icon-fallback">🧰</span>';
       state.badgeEl.innerHTML = `${iconHtml}<span class="xvault-mobile-dot" style="display:${unreadCount > 0 ? 'block' : 'none'}">${unreadCount}</span>`;
     } else {
       state.badgeEl.textContent = `总数 ${totalCount} · 未读${unreadCount}${flashCount ? ` · ⚡${flashCount}` : ''}`;
@@ -1005,6 +1038,9 @@
     updateAdultSpamCount();
     if (state.mediaDownloadEl) state.mediaDownloadEl.checked = !!state.settings.mediaDownload;
     if (state.bypassAgeEl) state.bypassAgeEl.checked = !!state.settings.bypassAgeRestriction;
+    if (state.firefoxCompatibilityEl) {
+      state.firefoxCompatibilityEl.checked = !!state.settings.firefoxCompatibility;
+    }
     if (state.useMobileBadgeOnDesktopEl) {
       state.useMobileBadgeOnDesktopEl.checked = !!state.settings.useMobileBadgeOnDesktop;
     }
@@ -1085,6 +1121,8 @@
       layoutHideShowMore: input.layoutHideShowMore === true,
       mediaDownload: typeof input.mediaDownload === 'boolean' ? input.mediaDownload : DEFAULT_SETTINGS.mediaDownload,
       bypassAgeRestriction: input.bypassAgeRestriction === true,
+      firefoxCompatibility: input.firefoxCompatibility === true,
+      firefoxCompatibilityPrompted: input.firefoxCompatibilityPrompted === true,
       useMobileBadgeOnDesktop: input.useMobileBadgeOnDesktop === true,
     };
   }
@@ -1102,7 +1140,7 @@
       if (revision < 4 && (input.adultSpamLevel == null || input.adultSpamLevel === 'conservative')) {
         input.adultSpamLevel = DEFAULT_SETTINGS.adultSpamLevel;
       }
-      // v2.1 收尾版默认开启广告过滤和媒体下载；旧版默认关闭值同步迁移。
+      // v1.7 收尾版默认开启广告过滤和媒体下载；旧版默认关闭值同步迁移。
       if (revision < 7) {
         if (input.hideAds == null || input.hideAds === false) input.hideAds = true;
         if (input.mediaDownload == null || input.mediaDownload === false) input.mediaDownload = true;
@@ -1145,6 +1183,10 @@
     if ('hideAds' in nextPartial) applyAdHiding();
     if ('mediaDownload' in nextPartial) applyMediaDownload();
     if ('bypassAgeRestriction' in nextPartial) applyAgeBypass();
+    if ('firefoxCompatibility' in nextPartial && IS_FIREFOX) {
+      state.settings.firefoxCompatibilityPrompted = true;
+      writeFirefoxCompatibilityMode(nextPartial.firefoxCompatibility ? 'compat' : 'normal');
+    }
     if ('useMobileBadgeOnDesktop' in nextPartial) repositionBadge();
     resetPaging();
     queueDbWrite(async () => { await persistSettings(); });
@@ -1277,7 +1319,12 @@
   // 说明：X 的 <video> 用 blob: 地址，无法直接下载，故拦截页面网络响应
   // (GraphQL/timeline) 收集真实媒体 URL（含视频 mp4 变体 + 图片），并以 DOM 兜底
   // 提取图片、由海报推导 GIF 的 mp4，再用 GM_xmlhttpRequest 抓取字节、JSZip 打包。
-  const pageWin = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
+  function getPageWindow() {
+    // Firefox 首次选择前或兼容模式开启时，不读取 unsafeWindow 的页面对象。
+    if (IS_FIREFOX && firefoxCompatibilityMode !== 'normal') return window;
+    return (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
+  }
+  let networkHookWarningShown = false;
   const mediaRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
   // 卡片媒体注册表（第三方引用卡片 / 内嵌播放器）
   const cardRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
@@ -1463,7 +1510,24 @@
     } catch (e) {}
   }
 
+  function warnNetworkHooksDisabled(reason) {
+    if (networkHookWarningShown) return;
+    networkHookWarningShown = true;
+    console.warn('[BetterX] 为避免阻断 X 页面启动，已停用网络媒体采集：', reason);
+  }
+
   function installNetworkHooks() {
+    // Firefox/Tampermonkey 可能把脚本放进 JavaScript 沙箱；跨 Xray 返回 Promise/Response，
+    // 或与其他下载/过滤脚本叠加包装 fetch/XHR 时，可能令 X 永远停在启动徽标。
+    // 首次选择前先安全暂缓；用户明确开启兼容模式后沿用 v1.6.4 的熔断策略。
+    if (IS_FIREFOX && firefoxCompatibilityMode !== 'normal') {
+      warnNetworkHooksDisabled(firefoxCompatibilityMode === 'compat'
+        ? 'Firefox 兼容模式不改写 fetch/XMLHttpRequest'
+        : 'Firefox 首次兼容性选择前暂缓改写 fetch/XMLHttpRequest');
+      return;
+    }
+
+    const pageWin = getPageWindow();
     try {
       const origFetch = pageWin.fetch;
       if (origFetch && !origFetch.__xvHooked) {
@@ -1975,6 +2039,116 @@
     xvToastTimer = null;
     const timeoutMs = duration === undefined ? 2600 : Math.max(0, Number(duration) || 0);
     if (timeoutMs > 0) xvToastTimer = setTimeout(() => t.classList.remove('show'), timeoutMs);
+  }
+
+  function closeBetterXDialog() {
+    const dialog = document.getElementById('xvault-choice-dialog');
+    if (dialog) dialog.remove();
+  }
+
+  function showBetterXDialog(options) {
+    if (!state.rootEl) return;
+    closeBetterXDialog();
+    const overlay = document.createElement('div');
+    overlay.id = 'xvault-choice-dialog';
+    overlay.className = 'xvault-dialog-overlay';
+    overlay.innerHTML = `
+      <div class="xvault-dialog" role="dialog" aria-modal="true" aria-labelledby="xvault-dialog-title">
+        <div class="xvault-dialog-title" id="xvault-dialog-title"></div>
+        <div class="xvault-dialog-body"></div>
+        <div class="xvault-dialog-actions">
+          <button type="button" class="xvault-btn" data-dialog-choice="secondary"></button>
+          <button type="button" class="xvault-btn primary" data-dialog-choice="primary"></button>
+        </div>
+      </div>
+    `;
+    overlay.querySelector('.xvault-dialog-title').textContent = options.title || 'BetterX 提示';
+    overlay.querySelector('.xvault-dialog-body').innerHTML = options.bodyHtml || '';
+    const primary = overlay.querySelector('[data-dialog-choice="primary"]');
+    const secondary = overlay.querySelector('[data-dialog-choice="secondary"]');
+    primary.textContent = options.primaryText || '确定';
+    secondary.textContent = options.secondaryText || '取消';
+    primary.addEventListener('click', () => {
+      closeBetterXDialog();
+      if (typeof options.onPrimary === 'function') options.onPrimary();
+    });
+    secondary.addEventListener('click', () => {
+      closeBetterXDialog();
+      if (typeof options.onSecondary === 'function') options.onSecondary();
+    });
+    state.rootEl.appendChild(overlay);
+    setTimeout(() => primary.focus(), 0);
+  }
+
+  function setFirefoxCompatibilityChoice(enabled) {
+    setSettingsPartial({
+      firefoxCompatibility: !!enabled,
+      firefoxCompatibilityPrompted: true,
+    });
+  }
+
+  function reloadAfterFirefoxCompatibilityChange(enabled) {
+    setFirefoxCompatibilityChoice(enabled);
+    showToast(enabled ? '正在开启 Firefox 兼容模式并刷新…' : '正在关闭 Firefox 兼容模式并刷新…', 0);
+    Promise.resolve(state.dbWriteQueue).then(() => location.reload()).catch(() => location.reload());
+  }
+
+  function showFirefoxCompatibilityToggleDialog(enable) {
+    if (!IS_FIREFOX) {
+      showToast('此选项仅用于 Firefox');
+      return;
+    }
+    if (enable) {
+      showBetterXDialog({
+        title: '开启“兼容 Firefox”？',
+        bodyHtml: `
+          <p>开启后 BetterX 不再改写页面的 <code>fetch</code> / <code>XMLHttpRequest</code>，可避免部分 Firefox 环境或多个 X 脚本冲突时一直卡在 X 图标。</p>
+          <p>以下能力可能降级：</p>
+          <ul>
+            <li>部分视频 / GIF 无法取得真实下载地址；</li>
+            <li>部分年龄限制视频无法内联显示；</li>
+            <li>无法从接口响应学习关注关系，主要依靠主页按钮和“正在关注”时间线。</li>
+          </ul>
+          <p>帖子记录、搜索、面板、内容净化、广告过滤、布局和图片 DOM 兜底不受影响。确认后页面会刷新。</p>
+        `,
+        primaryText: '开启并刷新',
+        secondaryText: '取消',
+        onPrimary: () => reloadAfterFirefoxCompatibilityChange(true),
+        onSecondary: () => refreshUI({ keepScroll: true }),
+      });
+      return;
+    }
+    showBetterXDialog({
+      title: '关闭“兼容 Firefox”？',
+      bodyHtml: '<p>关闭后将恢复网络媒体与关注关系采集。如果当前环境曾卡在只显示 X 图标的页面，建议继续保持开启。确认后页面会刷新。</p>',
+      primaryText: '关闭并刷新',
+      secondaryText: '取消',
+      onPrimary: () => reloadAfterFirefoxCompatibilityChange(false),
+      onSecondary: () => refreshUI({ keepScroll: true }),
+    });
+  }
+
+  function maybePromptFirefoxCompatibility() {
+    if (!IS_FIREFOX || firefoxCompatibilityMode !== 'unset' || state.settings.firefoxCompatibilityPrompted) return;
+    showBetterXDialog({
+      title: '检测到 Firefox',
+      bodyHtml: `
+        <p>请问你在使用 BetterX 时，能否正常进入 X？</p>
+        <p>目前已知部分 Firefox 用户会一直卡在<strong>只显示 X 图标</strong>的启动页面，常见于广告过滤、媒体下载等多个 X 脚本同时运行的环境。</p>
+        <p>如果遇到异常，请点击 <strong>有异常</strong>，BetterX 会开启<strong>“设置 → 其他功能 → 兼容 Firefox”</strong>。该模式会停用页面网络 Hook；部分视频 / GIF 下载、年龄限制视频和接口关注关系识别可能降级，其他主体功能不受影响。</p>
+      `,
+      primaryText: '有异常',
+      secondaryText: '目前正常',
+      onPrimary: () => {
+        setFirefoxCompatibilityChoice(true);
+        showToast('已开启 Firefox 兼容模式');
+      },
+      onSecondary: () => {
+        setFirefoxCompatibilityChoice(false);
+        installNetworkHookTimer();
+        showToast('已使用 Firefox 完整功能模式');
+      },
+    });
   }
 
   // ── 广告检测 / 屏蔽 ──────────────────────────────────────────────────
@@ -2801,6 +2975,11 @@
     });
     const saveLayoutButton = state.panelEl.querySelector('[data-action="save-layout"]');
     if (saveLayoutButton) saveLayoutButton.disabled = manualWidthDisabled;
+    if (state.firefoxCompatibilityEl) {
+      state.firefoxCompatibilityEl.disabled = !IS_FIREFOX;
+      const label = state.firefoxCompatibilityEl.closest('label');
+      if (label) label.classList.toggle('is-disabled', !IS_FIREFOX);
+    }
   }
 
   function setPanelView(view) {
@@ -2984,7 +3163,19 @@
       }
 
       if (importedSettings && window.confirm('是否同时恢复备份中的设置？')) {
+        const localFirefoxCompatibility = {
+          enabled: state.settings.firefoxCompatibility,
+          prompted: state.settings.firefoxCompatibilityPrompted,
+        };
         state.settings = sanitizeSettings(importedSettings);
+        // Firefox 兼容模式与当前浏览器环境绑定，不随备份迁移到其他浏览器。
+        if (IS_FIREFOX) {
+          state.settings.firefoxCompatibility = !!localFirefoxCompatibility.enabled;
+          state.settings.firefoxCompatibilityPrompted = !!localFirefoxCompatibility.prompted;
+          if (state.settings.firefoxCompatibilityPrompted) {
+            writeFirefoxCompatibilityMode(state.settings.firefoxCompatibility ? 'compat' : 'normal');
+          }
+        }
         (state.settings.knownFollowedHandles || []).forEach((handle) => followedHandles.add(handle));
         state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, 5000);
         applyTheme();
@@ -3037,6 +3228,100 @@
     state.rootEl.style.bottom = Math.max(4, Math.min(window.innerHeight - badgeHeight - 4, pos.bottom)) + 'px';
   }
 
+  function isMobileBadgeViewport() {
+    return window.innerWidth <= 640 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+  function stopMobileComposeTracking() {
+    if (state.mobileComposeObserver) state.mobileComposeObserver.disconnect();
+    if (state.mobileComposeResizeObserver) state.mobileComposeResizeObserver.disconnect();
+    state.mobileComposeObserver = null;
+    state.mobileComposeResizeObserver = null;
+    state.mobileComposeEl = null;
+    state.mobileComposeOpacityEl = null;
+    if (state.mobileBadgeRaf) cancelAnimationFrame(state.mobileBadgeRaf);
+    state.mobileBadgeRaf = 0;
+  }
+
+  function findMobileComposeButton() {
+    const isVisibleCandidate = (el) => {
+      if (!(el instanceof HTMLElement) || !el.isConnected) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    };
+    const primary = [...document.querySelectorAll('[data-testid="FloatingActionButtons_Tweet_Button"]')]
+      .find(isVisibleCandidate);
+    if (primary) return primary;
+    return [...document.querySelectorAll('a[href="/compose/post"][role="link"]')]
+      .find(isVisibleCandidate) || null;
+  }
+
+  function ensureMobileComposeTracking(composeEl, opacityEl) {
+    if (state.mobileComposeEl === composeEl && state.mobileComposeOpacityEl === opacityEl) return;
+    if (state.mobileComposeObserver) state.mobileComposeObserver.disconnect();
+    if (state.mobileComposeResizeObserver) state.mobileComposeResizeObserver.disconnect();
+    state.mobileComposeEl = composeEl;
+    state.mobileComposeOpacityEl = opacityEl;
+
+    state.mobileComposeObserver = new MutationObserver(() => scheduleMobileBadgeSync());
+    state.mobileComposeObserver.observe(opacityEl, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+
+    if (typeof ResizeObserver === 'function') {
+      state.mobileComposeResizeObserver = new ResizeObserver(() => scheduleMobileBadgeSync());
+      state.mobileComposeResizeObserver.observe(composeEl);
+      if (opacityEl !== composeEl) state.mobileComposeResizeObserver.observe(opacityEl);
+    }
+  }
+
+  function syncMobileBadgeToComposeButton() {
+    if (!state.rootEl || !state.badgeEl || !state.rootEl.classList.contains('xvault-mobile')) return;
+    const composeEl = findMobileComposeButton();
+    if (!composeEl) {
+      if (state.mobileComposeEl) stopMobileComposeTracking();
+      state.rootEl.style.left = 'auto';
+      state.rootEl.style.right = '16px';
+      state.rootEl.style.bottom = '84px';
+      state.rootEl.style.setProperty('--xv-mobile-badge-opacity', '1');
+      state.rootEl.classList.remove('xvault-mobile-badge-inactive');
+      return;
+    }
+
+    const opacityEl = composeEl.closest('[data-testid="FloatingActionButtonBase"]') || composeEl;
+    ensureMobileComposeTracking(composeEl, opacityEl);
+    const rect = composeEl.getBoundingClientRect();
+    const badgeWidth = Math.max(1, state.badgeEl.offsetWidth || 52);
+    const badgeHeight = Math.max(1, state.badgeEl.offsetHeight || 52);
+    const safeDistance = 8;
+    const gap = 10;
+    const desiredLeft = rect.left + (rect.width - badgeWidth) / 2;
+    const clampedLeft = Math.max(safeDistance, Math.min(window.innerWidth - badgeWidth - safeDistance, desiredLeft));
+    const desiredBottom = window.innerHeight - rect.top + gap;
+    const clampedBottom = Math.max(safeDistance, Math.min(window.innerHeight - badgeHeight - safeDistance, desiredBottom));
+
+    state.rootEl.style.left = 'auto';
+    state.rootEl.style.right = Math.max(safeDistance, window.innerWidth - clampedLeft - badgeWidth) + 'px';
+    state.rootEl.style.bottom = clampedBottom + 'px';
+
+    const inlineOpacity = parseFloat(opacityEl.style.opacity);
+    const computedOpacity = parseFloat(getComputedStyle(opacityEl).opacity);
+    const opacity = Math.max(0, Math.min(1,
+      Number.isFinite(inlineOpacity) ? inlineOpacity : (Number.isFinite(computedOpacity) ? computedOpacity : 1)
+    ));
+    state.rootEl.style.setProperty('--xv-mobile-badge-opacity', String(opacity));
+    state.rootEl.classList.toggle('xvault-mobile-badge-inactive', opacity <= 0.05);
+  }
+
+  function scheduleMobileBadgeSync() {
+    if (state.mobileBadgeRaf || !state.rootEl || !state.rootEl.classList.contains('xvault-mobile')) return;
+    state.mobileBadgeRaf = requestAnimationFrame(() => {
+      state.mobileBadgeRaf = 0;
+      syncMobileBadgeToComposeButton();
+    });
+  }
+
   function updatePanelPlacement() {
     if (!state.rootEl || !state.badgeEl || !state.panelEl) return;
     if (state.rootEl.classList.contains('xvault-mobile')) {
@@ -3065,16 +3350,21 @@
 
   function repositionBadge() {
     if (!state.badgeEl || !state.rootEl) return;
-    const isMobile = window.innerWidth <= 640 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isMobile = isMobileBadgeViewport();
     const useIconBadge = isMobile || !!state.settings.useMobileBadgeOnDesktop;
     state.badgeEl.classList.toggle('mobile-mode', useIconBadge);
     state.badgeEl.classList.toggle('desktop-icon-mode', !isMobile && useIconBadge);
     if (isMobile) {
-      state.rootEl.style.left = '';
-      state.rootEl.style.bottom = '';
       state.rootEl.classList.add('xvault-mobile');
+      syncMobileBadgeToComposeButton();
     } else {
+      stopMobileComposeTracking();
       state.rootEl.classList.remove('xvault-mobile');
+      state.rootEl.classList.remove('xvault-mobile-badge-inactive');
+      state.rootEl.style.removeProperty('--xv-mobile-badge-opacity');
+      state.rootEl.style.left = '';
+      state.rootEl.style.right = '';
+      state.rootEl.style.bottom = '';
       applyBadgePos();
     }
     updatePanelPlacement();
@@ -3308,14 +3598,16 @@
         <details class="xvault-advanced xvault-settings-card">
           <summary>其他功能</summary>
           <div class="xvault-adv-body">
+            <label class="xvault-field inline"><input type="checkbox" id="xvault-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
+            <div class="xvault-adv-label">遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。</div>
             <label class="xvault-field inline xvault-desktop-only-setting"><input type="checkbox" id="xvault-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label>
             <div class="xvault-adv-label xvault-desktop-only-setting">使用圆形脚本图标与未读角标，并继续支持桌面端拖拽。</div>
             <label class="xvault-field inline"><input type="checkbox" id="xvault-hideads" /> 关闭广告（隐藏含“广告”标记的推广帖）</label>
-            <div class="xvault-adv-label">开启后自动隐藏时间线里的推广帖，且不会被记录。</div>
+            <div class="xvault-adv-label">开启后自动隐藏时间线里的推广帖，且不会记入保险箱。</div>
             <label class="xvault-field inline"><input type="checkbox" id="xvault-mediadl" /> 一键下载图片 / 视频 / GIF</label>
             <div class="xvault-adv-label">开启后帖子操作栏会出现 ⬇ 按钮：单个媒体按「用户ID_帖子ID」命名；多个则打包为同名 zip，包内按 1、2、3… 命名。</div>
             <label class="xvault-field inline"><input type="checkbox" id="xvault-bypassage" /> 取消年龄限制（用原图 / 视频内联替换遮罩）</label>
-            <div class="xvault-adv-label">内容如果不显示，请耐心等待或者重新开关按钮；仅本地操作，不改动账号设置。</div>
+            <div class="xvault-adv-label">如果不显示，请耐心等待或者重新开关按钮；仅本地操作，不改动账号设置。</div>
           </div>
         </details>
       </div>
@@ -3372,6 +3664,7 @@
     state.layoutCleanNavigationEl = panel.querySelector('#xvault-layout-clean-nav');
     state.layoutHideMessageGrokEl = panel.querySelector('#xvault-layout-hide-message');
     state.layoutHideShowMoreEl = panel.querySelector('#xvault-layout-hide-showmore');
+    state.firefoxCompatibilityEl = panel.querySelector('#xvault-firefox-compat');
     state.mediaDownloadEl = panel.querySelector('#xvault-mediadl');
     state.bypassAgeEl = panel.querySelector('#xvault-bypassage');
     state.useMobileBadgeOnDesktopEl = panel.querySelector('#xvault-desktop-mobile-badge');
@@ -3411,6 +3704,10 @@
     state.layoutCleanNavigationEl.addEventListener('change', (e) => setSettingsPartial({ layoutCleanNavigation: !!e.target.checked }));
     state.layoutHideMessageGrokEl.addEventListener('change', (e) => setSettingsPartial({ layoutHideMessageGrok: !!e.target.checked }));
     state.layoutHideShowMoreEl.addEventListener('change', (e) => setSettingsPartial({ layoutHideShowMore: !!e.target.checked }));
+    state.firefoxCompatibilityEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      showFirefoxCompatibilityToggleDialog(!state.settings.firefoxCompatibility);
+    });
     state.mediaDownloadEl.addEventListener('change', (e) => setSettingsPartial({ mediaDownload: !!e.target.checked }));
     state.bypassAgeEl.addEventListener('change', (e) => setSettingsPartial({ bypassAgeRestriction: !!e.target.checked }));
     state.useMobileBadgeOnDesktopEl.addEventListener('change', (e) => {
@@ -3617,6 +3914,11 @@
         line-height: 18px; text-align: center; padding: 0 4px;
       }
       #xvault-root.xvault-mobile { left: auto; right: 16px; bottom: 84px; }
+      #xvault-root.xvault-mobile #xvault-badge {
+        opacity: var(--xv-mobile-badge-opacity, 1);
+        transition: opacity 170ms ease-out, filter .15s;
+      }
+      #xvault-root.xvault-mobile.xvault-mobile-badge-inactive #xvault-badge { pointer-events: none; }
 
       #xvault-panel {
         position: absolute; bottom: calc(100% + 10px); left: 0;
@@ -3667,6 +3969,29 @@
         opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: 80vw;
       }
       #xvault-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+      .xvault-dialog-overlay {
+        position: fixed; inset: 0; z-index: 2147483646;
+        display: flex; align-items: center; justify-content: center;
+        padding: 18px; background: rgba(0,0,0,.64); backdrop-filter: blur(4px);
+        color: var(--xv-text);
+      }
+      .xvault-dialog {
+        width: min(92vw, 460px); max-height: min(82vh, 640px); overflow: auto;
+        padding: 20px; border: 1px solid var(--xv-border); border-radius: 16px;
+        background: var(--xv-panel-bg); box-shadow: 0 18px 64px rgba(0,0,0,.55);
+      }
+      .xvault-dialog-title { font-size: 18px; line-height: 1.35; font-weight: 800; margin-bottom: 12px; }
+      .xvault-dialog-body { font-size: 14px; line-height: 1.65; color: var(--xv-text); }
+      .xvault-dialog-body p { margin: 0 0 10px; }
+      .xvault-dialog-body ul { margin: 0 0 12px; padding-left: 22px; }
+      .xvault-dialog-body li { margin: 4px 0; }
+      .xvault-dialog-body code {
+        padding: 1px 5px; border-radius: 5px; background: var(--xv-chip-bg);
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .92em;
+      }
+      .xvault-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+      .xvault-dialog-actions .xvault-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; }
 
       #xvault-panel * { box-sizing: border-box; }
       .xvault-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 14px 14px 8px; }
@@ -3801,7 +4126,7 @@
       .xvault-advanced summary::before { content: '▸'; font-size: 10px; color: var(--xv-muted); transition: transform .15s; }
       .xvault-advanced[open] summary::before { transform: rotate(90deg); }
 
-      /* ===== v2.1：双视图工作台 ===== */
+      /* ===== v1.7：双视图工作台 ===== */
       #xvault-panel {
         position: fixed;
         top: 12px;
@@ -4032,6 +4357,7 @@
         if (state.settings.hideAdultSpam) throttledAdultSpamCount();
       }
       if (pendingRoots.size) flushAddedRoots();
+      if (state.rootEl && state.rootEl.classList.contains('xvault-mobile')) scheduleMobileBadgeSync();
     });
     // X 是 SPA，主时间线容器会被整体替换；保留 body 作为稳定根节点，但把重活批量延后并按 article 去重。
     state.observer.observe(document.body, { childList: true, subtree: true });
@@ -4081,6 +4407,19 @@
       state.settings = sanitizeSettings(migratedSettings);
       if (Number(savedSettings.settingsRevision || 0) < DEFAULT_SETTINGS.settingsRevision) {
         await dbPutSetting('settings', state.settings);
+      }
+    }
+    if (IS_FIREFOX) {
+      if (firefoxCompatibilityMode === 'compat' || firefoxCompatibilityMode === 'normal') {
+        const compatibilityEnabled = firefoxCompatibilityMode === 'compat';
+        const needsSync = state.settings.firefoxCompatibility !== compatibilityEnabled
+          || !state.settings.firefoxCompatibilityPrompted;
+        state.settings.firefoxCompatibility = compatibilityEnabled;
+        state.settings.firefoxCompatibilityPrompted = true;
+        if (needsSync) await dbPutSetting('settings', sanitizeSettings(state.settings));
+      } else if (state.settings.firefoxCompatibilityPrompted) {
+        // 从仅有 IndexedDB 设置的旧安装补写 document-start 可读取的启动标记。
+        writeFirefoxCompatibilityMode(state.settings.firefoxCompatibility ? 'compat' : 'normal');
       }
     }
     const persistedFollowedHandles = state.settings.knownFollowedHandles || [];
@@ -4222,11 +4561,19 @@
     document.addEventListener('visibilitychange', handleVisibilityChange);
     installNavigationListener();
     await runAutoClean();
+    setTimeout(maybePromptFirefoxCompatibility, 250);
 
     const throttledReposition = throttle(repositionBadge, 500);
     const throttledLayoutResize = throttle(applyLayoutEnhancements, 250);
+    const handleMobileBadgeViewportChange = () => scheduleMobileBadgeSync();
     window.addEventListener('resize', throttledReposition);
     window.addEventListener('resize', throttledLayoutResize);
+    window.addEventListener('scroll', handleMobileBadgeViewportChange, { passive: true });
+    document.addEventListener('scroll', handleMobileBadgeViewportChange, { passive: true, capture: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleMobileBadgeViewportChange, { passive: true });
+      window.visualViewport.addEventListener('scroll', handleMobileBadgeViewportChange, { passive: true });
+    }
     document.addEventListener('click', handleDocumentClick, true);
     document.addEventListener('keydown', handleKeydown, true);
     if (window.matchMedia) {
@@ -4236,7 +4583,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v2.1.0 started');
+    debugLog('v2.2.0 started');
   }
 
   function waitForPageReady() {
