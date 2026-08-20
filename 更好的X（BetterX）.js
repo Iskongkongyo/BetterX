@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         更好的 X（BetterX）
 // @namespace    https://github.com/Iskongkongyo
-// @version      2.2.0
-// @description  自动隐藏黄推/引流机器人与广告、界面净化与宽屏、一键下载图片/视频/GIF(多媒体自动打包 zip)、取消年龄限制(自动展开敏感/成人内容遮罩)、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
+// @version      2.5.0
+// @description  自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体自动打包 zip)、取消年龄限制(自动去除敏感/成人内容遮罩)、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
 // @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://twitter.com/*
 // @grant        GM_addStyle
 // @grant        GM_getValue
+// @grant        GM_registerMenuCommand
 // @grant        GM_xmlhttpRequest
 // @grant        GM_info
 // @grant        GM_setValue
@@ -20,6 +21,8 @@
 // @icon      data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAUEBAQEAwUEBAQGBQUGCA0ICAcHCBALDAkNExAUExIQEhIUFx0ZFBYcFhISGiMaHB4fISEhFBkkJyQgJh0gISD/2wBDAQUGBggHCA8ICA8gFRIVICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICD/wAARCABAAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7LoorC17XpdLsoorO08/Vr2UwWdrI20OwyS7EZ2xqo3MfTjqQCAX9S1fStHgWfVdQt7KNjtUzSBdx9BnqfYVgD4ieGJYXmspL6+jXPz29hMyHHX59oXj61mG3t9BZtSvdQhudZmQm41e+IRYYx12gnEUYJwsYIyTyScmuF1j41/CzTrlllvbjxBeodrz2dkGDEHjLHarYPTrUOXYtRuenQ+PtDktheT2mrWVn/FdXemzRRJ/vMVwB/tH5feuohmgubeO4t5UmhlUOkkbBldTyCCOCK+etO/aJ8Fi+QTz61DbuwV2vbVWMWf4g8bHgdwR06Hse/m0268PsfEXgm8ijspF+0XGlM2bK6Ujd5kWAfJYg53J8pzkqeTQpdwcGj0qivO/EHiGDVvAyPoWoXenanqF7Fbp5ZxPayo4eVWHI+VEcnqrDHUMM9R4T1efXPCtnqF2ipd/PDcKn3fNjdo3I9iykj2IpxlfR7kdbGrdZFuX81YlT5mZm2gADnJ7Vw2m202veIZPFl67m0aFLbTLZgV/cg7mnYesjbSF7KiE8nA2fGMsMlpYaTczCK0v5yLticD7PHG0sgJ9GCBT7Map+GNWOtaPDrRJ23rCeND0jjIBQD/gJBPuTWbilJy7lI8Pux4h+I/xk8UW9tZXF54f0snT4pNwSCGSMEM29gRu37idoZsccA1s6P+zF4YhzP4k8SXt47fN5FoRCi+24hnb65FdVqcgfwDD4S01o7KbVY5IHmB2+UjfNcS9ufn27s8tIK6bw1rA1PQ7MSlY7xLdfNizyCv7tjj0Dqw/D3pJq5r7OUVzrr+hxx+Afwmkglgj0y886FtjMuoTbuRkHk46H0rq/B+ixeFNOfwnbXVxc2NgFksmumDyJC+f3ZIAyFYMBx0IHauV8TeObLwf43W51DWre30ya2aO4tpZFVjIkgO6PP3nCyAlP4l6cgZ67TNX0/WdRs9X0q/ttQsrmxcJcWzhkcB0I+h5PB5FHNccoSSTezOTks00L4x20ETNCup6e6Wbuu6GNhKisSOnmBdsa56rsHatrwrpEenfEVrXT7+9u47G0uDePcTmQI80quiYB2qxIkcjAIyM8EV57+0fYrd+BEvjIyHTpobpXB+4C/lP+B3oceqCvTfgto1/oXwd0Oy1XTn06/ZHmmgcgsC7swJH8OQQdpyV6HkVcaf8Ay8v8jCW5e+Imj32qaLbGwtJLtxKbaaKPG7yJ1MMrDJH3Q+76Ke9ct4T1qytrW30aS6jjKy/Y7cn5BK8a4ULns8aLIv8AeBOOldt4u1VILMaUk/kvdITNLnHkw5wx/wB5s7VHXJJHSvJZ9PtfFvju7i1GB9P0vSjBaqSdm5kHmnevbG9QAeVAP3SxwTLp2vZmB4q+EzeLPHt5fa9rM80NtcAWliGWOGKzcBwcn1k81Sf7yr6iuq8H/Ca70jSVl0XWpLG6tLyU27SsZYjFJ5ZYdc4wuCo+VioyMjdVbxBqNx4e1221GTXHutL0kG4VbqXbuQ5Ur54UyFTgfKdwbjPQVb0L9oDwxrqywx6NqtjcWitNLHNPbxgRqDucl3GVUDJGMjg4pRlePJb/ADOyVRtXT/y+4i8U/CS11PWdU1HX7s3rXkKn7T5bokeAoJVF3BSFjUEk85B4AxWP8NdL8JeF/Ez2Xhm68ybV7WELBDKJFjSJN09yeflWWQBVHfG4DBrauPjM17r1z4Ss9DFjfwIv73U7hbkPuXdgCElWbac7S447cGsvRtJ1CDXrrV5L0W9rfGO2nvLe3WKcJ3VXHyxqX2/dXIAGCDkknJuKj0QlUUVru/PfsZPxi8QR+INH8S+E9NjW4uIYo4mIcEMIy1xcAAdCixqPdmAr1X4D60dd+CehXEupS6hcW6vazSSjlWRiNoPdQNuD3GK5n+xLDQvFurfY9Lt7MX9nby294i8wNCQux8/8sw4jYn1kO7Ocj2LRbtL/AEW3vIkESSrkRBdvlHoUPuCCK0g/dscc2m9DhviWLzSbjTPEGnT26XUk8dnGbgZWJzvxLg8NtRpDj1C++eDj13R4IfsNpqNv5aFjJLLcKXlcklmJJ5JYks3ck177eWNjqNv9n1Czgu4chvLnjDrkdDg8VAuiaKqhV0iyVVGABbpgD06UNJ7ka9D5V8Y3UvjO7sPCfh64glm1F0haRmBjESnkv2wzkAA+nqQDXh8K6H4e8U/bPEl1Yz6qs8Xk6MGWNLaJG/fToHbc23aRlsAh2+UYBH0vq3w98K6zqAvrnTzFKYfs8gtpDCs0W7dscLjIzk+tXF8FeD1WJV8MaWBEwdf9FTO4DGSccnHrUSppxaQ1Od9dvI+fvEtl4R1jVTpehPb6TqccUmoQ3Ej+VmdOPMKDGSudhGNxD4A+bNaNp410m50WGKLUEtLaVY/Ps7q4jys2cSDr0BOPwr3G88G+FL8H7R4esN5xiWOFY5Fx0w64Yfga0rfS9NtLSG0trGCOCBBHGgQYVQMAflUUqMacVHe39dROUm9WfPN1qkuopeWcet2t1bxSv9jfzVEkS/ZvMaMuD+8iJUxuDyBKgyeK9w8EK58EaZdSAK17H9tKBshPNJkC574DAZ74rTutF0a9CC80myudgIXzYEfbnrjI4q8qqiBEUKqjAAGABWyVg1P/2Q==
 // @noframes
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/588748/%E6%9B%B4%E5%A5%BD%E7%9A%84%20X%EF%BC%88BetterX%EF%BC%89.user.js
+// @updateURL https://update.greasyfork.org/scripts/588748/%E6%9B%B4%E5%A5%BD%E7%9A%84%20X%EF%BC%88BetterX%EF%BC%89.meta.js
 // ==/UserScript==
 
 (function () {
@@ -44,12 +47,28 @@
   const CLEANUP_INTERVAL_MS = 1500;
   const NETWORK_HOOK_CHECK_INTERVAL_MS = 5000;
   const MAX_NETWORK_RESPONSE_BYTES = 8000000;
+  const MAX_NETWORK_HARVEST_QUEUE_CHARS = 16000000;
+  const MAX_NETWORK_HARVEST_JOBS = 6;
+  const MAX_NETWORK_HARVEST_NODES_PER_JOB = 250000;
+  const NETWORK_HARVEST_SLICE_NODES = 1200;
+  const MAX_NETWORK_REHOOKS_PER_API = 4;
+  const MAX_MEDIA_REGISTRY_ENTRIES = 2000;
+  const MAX_SESSION_STAT_IDS = 20000;
+  const MAX_FOLLOWED_HANDLES = 5000;
+  const DOWNLOAD_MIN_CONCURRENCY = 1;
+  const DOWNLOAD_MAX_CONCURRENCY = 6;
+  const DOWNLOAD_MAX_RETRIES = 1;
+  const DOWNLOAD_ZIP_MEMORY_LIMIT_DESKTOP = 384 * 1024 * 1024;
+  const DOWNLOAD_ZIP_MEMORY_LIMIT_MOBILE = 128 * 1024 * 1024;
+  const CLASSIC_ZIP_MAX_VALUE = 0xFFFFFFFF;
+  const CLASSIC_ZIP_MAX_FILES = 0xFFFF;
   const MAX_IMPORT_FILE_BYTES = 25 * 1024 * 1024;
   const MAX_IMPORT_POSTS = 20000;
   const MAX_REGEX_SOURCE_LENGTH = 180;
   const MAX_REGEX_HAYSTACK_LENGTH = 20000;
   const IS_FIREFOX = /(?:^|\s)Firefox\//i.test(navigator.userAgent || '');
   const FIREFOX_COMPAT_MODE_KEY = 'betterx_firefox_compatibility_mode';
+  const SETTINGS_MIRROR_KEY = 'betterx_settings_mirror_v1';
   const DEBUG = false;
 
   function readFirefoxCompatibilityMode() {
@@ -58,13 +77,38 @@
     try {
       if (typeof GM_getValue === 'function') value = GM_getValue(FIREFOX_COMPAT_MODE_KEY, '');
     } catch (err) {}
-    if (!value) {
-      try { value = localStorage.getItem(FIREFOX_COMPAT_MODE_KEY) || ''; } catch (err) {}
-    }
     return value === 'compat' || value === 'normal' ? value : 'unset';
   }
 
   let firefoxCompatibilityMode = readFirefoxCompatibilityMode();
+
+  function readSettingsMirror() {
+    try {
+      if (typeof GM_getValue !== 'function') return null;
+      const raw = GM_getValue(SETTINGS_MIRROR_KEY, null);
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+      const settings = raw.settings && typeof raw.settings === 'object' && !Array.isArray(raw.settings)
+        ? raw.settings
+        : raw;
+      return settings && typeof settings === 'object' && !Array.isArray(settings) ? settings : null;
+    } catch (err) {
+      debugLog('read settings mirror failed:', err);
+      return null;
+    }
+  }
+
+  function writeSettingsMirror(settings) {
+    try {
+      if (typeof GM_setValue !== 'function') return;
+      GM_setValue(SETTINGS_MIRROR_KEY, {
+        version: 1,
+        savedAt: Date.now(),
+        settings,
+      });
+    } catch (err) {
+      debugLog('write settings mirror failed:', err);
+    }
+  }
 
   function writeFirefoxCompatibilityMode(mode) {
     const normalized = mode === 'compat' ? 'compat' : 'normal';
@@ -72,7 +116,6 @@
     try {
       if (typeof GM_setValue === 'function') GM_setValue(FIREFOX_COMPAT_MODE_KEY, normalized);
     } catch (err) {}
-    try { localStorage.setItem(FIREFOX_COMPAT_MODE_KEY, normalized); } catch (err) {}
   }
 
   const FILTERS = [
@@ -102,7 +145,7 @@
   ];
 
   const DEFAULT_SETTINGS = {
-    settingsRevision: 9,
+    settingsRevision: 14,
     keywords: [],
     excludeKeywords: [],
     keywordMode: 'plain',   // 'plain' | 'and' | 'regex'
@@ -120,13 +163,14 @@
     badgePos: null,         // 桌面端可拖动徽标位置 { left, bottom }
     hideAds: true,          // 默认关闭广告（隐藏含“广告”标记的推广帖）
     hideAdultSpam: false,   // 隐藏疑似黄推 / 成人引流机器人
+    adultSpamCustomRulesEnabled: true, // 自定义屏蔽词与账号白名单独立于智能黄推识别
     adultSpamLevel: 'balanced', // 'conservative' | 'balanced'
     adultSpamSkipFollowing: true, // 默认不审查已经关注的账号
     adultSpamSkipFollowingReposts: false, // 可选：不审查已关注账号转发的第三方内容
     knownFollowedHandles: [], // 从 X 接口、主页按钮和“正在关注”时间线学习的本地关注关系
     adultSpamKeywords: [],  // 用户自定义字面关键词（命中即隐藏）
     adultSpamWhitelist: [], // 用户名白名单（不带 @）
-    layoutEnabled: false,   // 界面净化与宽屏总开关
+    layoutEnabled: false,   // 界面简化与宽屏总开关
     layoutAutoWidth: true,  // 默认读取 X 当前实际宽度，不主动改写原生宽度
     timelineWidth: 600,
     leftbarWidth: 275,
@@ -138,10 +182,13 @@
     layoutHideShowMore: false,
     mediaDownload: true,    // 默认开启一键下载图片/视频/GIF
     bypassAgeRestriction: false, // 取消年龄限制：用原图/视频内联替换遮罩
+    restoreMediaGrid: false, // 将 X 的多媒体正文轮播恢复为网格视图
     firefoxCompatibility: false, // Firefox 兼容模式：停用页面 fetch/XHR Hook
     firefoxCompatibilityPrompted: false, // 是否已完成 Firefox 首次兼容性询问
     useMobileBadgeOnDesktop: false, // PC 端可选使用移动端圆形图标徽标
+    hideAppBadgeOnDesktop: false, // PC 端隐藏 BetterX 应用徽标；仍可用 Alt+X / 油猴菜单打开
     downloadTimeout: 360000, // 下载超时（毫秒），默认 360 秒
+    downloadConcurrency: 2, // 同时传输的媒体数量，允许 1～6
   };
 
   const state = {
@@ -167,6 +214,8 @@
     rootEl: null,
     panelEl: null,
     badgeEl: null,
+    downloadPillEl: null,
+    downloadPopoverEl: null,
     listEl: null,
     summaryEl: null,
     filterBarEl: null,
@@ -181,16 +230,20 @@
     maxPostsInputEl: null,
     flashMsInputEl: null,
     dlTimeoutInputEl: null,
+    dlConcurrencyInputEl: null,
     markReadEl: null,
     themeSelectEl: null,
     skipSourcesEl: null,
     importInputEl: null,
     hideAdultSpamEl: null,
+    adultSpamCustomRulesEl: null,
     adultSpamLevelEl: null,
     adultSpamSkipFollowingEl: null,
     adultSpamSkipFollowingRepostsEl: null,
     adultSpamKeywordsEl: null,
+    adultSpamKeywordTagsEl: null,
     adultSpamWhitelistEl: null,
+    adultSpamWhitelistTagsEl: null,
     adultSpamCountEl: null,
     layoutEnabledEl: null,
     layoutAutoWidthEl: null,
@@ -203,7 +256,9 @@
     layoutHideMessageGrokEl: null,
     layoutHideShowMoreEl: null,
     firefoxCompatibilityEl: null,
+    restoreMediaGridEl: null,
     useMobileBadgeOnDesktopEl: null,
+    hideAppBadgeOnDesktopEl: null,
     layoutStyleEl: null,
     detectedTimelineWidth: 0,
     detectedLeftbarWidth: 0,
@@ -224,6 +279,8 @@
   const followedHandles = new Set();
   const adultSpamScannedIds = new Set();
   const adultSpamSessionHiddenIds = new Set();
+  let adultSpamScannedIdsCapped = false;
+  let adultSpamSessionHiddenIdsCapped = false;
   let adultSpamScrollToken = 0;
   const scheduleFollowingFilterRefresh = debounce(() => {
     adultSpamRulesVersion++;
@@ -236,15 +293,26 @@
   }, 250);
   const scheduleFollowedHandlesPersist = debounce(() => {
     if (!state.settingsLoaded) return;
-    state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, 5000);
+    state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, MAX_FOLLOWED_HANDLES);
     queueDbWrite(async () => { await persistSettings(); });
   }, 750);
+
+  function trimFollowedHandlesToMax() {
+    while (followedHandles.size > MAX_FOLLOWED_HANDLES) {
+      followedHandles.delete(followedHandles.values().next().value);
+    }
+  }
 
   function rememberFollowingRelation(handle, following) {
     const normalized = String(handle || '').replace(/^@+/, '').toLowerCase();
     if (!/^[a-z0-9_]{1,15}$/.test(normalized) || typeof following !== 'boolean') return false;
     const hadHandle = followedHandles.has(normalized);
-    if (following) followedHandles.add(normalized);
+    if (following) {
+      if (!hadHandle && followedHandles.size >= MAX_FOLLOWED_HANDLES) {
+        followedHandles.delete(followedHandles.values().next().value);
+      }
+      followedHandles.add(normalized);
+    }
     else followedHandles.delete(normalized);
     if (hadHandle === following) return false;
     scheduleFollowingFilterRefresh();
@@ -252,6 +320,12 @@
     return true;
   }
 
+  function addBoundedSessionStat(target, value, capFlag) {
+    if (!value || target.has(value)) return capFlag;
+    if (target.size >= MAX_SESSION_STAT_IDS) return true;
+    target.add(value);
+    return capFlag;
+  }
   // ── 基础工具 ──────────────────────────────────────────────────────
   function now() { return Date.now(); }
 
@@ -337,6 +411,7 @@
 
   // 后台扫描时用防抖刷新；正在编辑备注时不重绘列表，避免打断输入
   const debouncedRefreshUI = debounce(() => {
+    if (!state.panelOpen) { refreshBadge(); return; }
     if (state.editingNoteId) { refreshBadge(); return; }
     refreshUI({ keepScroll: true });
   }, 120);
@@ -379,7 +454,7 @@
     // 排除 BetterX 自己的“帖子 / 设置”页签，避免把面板页签误认成 X 的时间线页签。
     const selectedTab = [...document.querySelectorAll(
       '[role="tab"][aria-selected="true"], [data-testid="ScrollSnap-List"] [aria-selected="true"]'
-    )].find((tab) => !tab.closest('#xvault-root'));
+    )].find((tab) => !tab.closest('#BetterX-root'));
     return (selectedTab?.innerText || selectedTab?.textContent || '').trim();
   }
 
@@ -417,6 +492,60 @@
     return normalizeUrl(new URL(href, location.origin).toString());
   }
 
+  function sanitizeDisplayName(raw, username) {
+    let text = String(raw || '').trim();
+    if (!text) return '';
+    if (text.includes('\n')) {
+      text = text.split('\n')[0].trim();
+    }
+    if (username) {
+      const handleClean = username.replace(/^@+/, '');
+      const re = new RegExp('\\s*@?' + handleClean + '($|\\s.*)', 'i');
+      text = text.replace(re, '').trim();
+    }
+    text = text.replace(/\s*[·•\u00B7\u2022]\s*.*$/, '').trim();
+    return text;
+  }
+
+  function cleanAuthorInfo(rawDisplayName, rawUsername, rawTimeLabel) {
+    let displayName = String(rawDisplayName || '').trim();
+    let username = String(rawUsername || '').trim();
+    let timeLabel = String(rawTimeLabel || '').trim();
+
+    if (displayName.includes('\n')) {
+      const lines = displayName.split('\n').map((s) => s.trim()).filter(Boolean);
+      displayName = lines[0] || '';
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.startsWith('@') && !username) {
+          username = line;
+        } else if (line === '·' || line === '•' || line === '\u00B7') {
+          if (i + 1 < lines.length && !timeLabel) {
+            timeLabel = lines[i + 1];
+          }
+        } else if (!timeLabel && (/\d+[年月日smhdw]/i.test(line) || /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(line))) {
+          timeLabel = line;
+        }
+      }
+    }
+
+    displayName = sanitizeDisplayName(displayName, username);
+
+    if (username && !username.startsWith('@')) {
+      username = `@${username}`;
+    }
+
+    if (timeLabel) {
+      timeLabel = timeLabel.replace(/^[·•\u00B7\u2022\s]+|[·•\u00B7\u2022\s]+$/g, '').trim();
+    }
+
+    return {
+      displayName: displayName || username,
+      username,
+      timeLabel,
+    };
+  }
+
   function extractAuthor(article) {
     const text = (article.innerText || '').trim();
     const lines = text.split('\n').map((s) => s.trim()).filter(Boolean);
@@ -429,8 +558,30 @@
     const userNameNode =
       article.querySelector('[data-testid="User-Name"]') ||
       article.querySelector('div[dir="ltr"] span');
-    const displayName = (userNameNode?.innerText || '').trim() || lines[0] || '';
-    return { displayName, username };
+
+    const nameLink = userNameNode?.querySelector('a[role="link"], a[href^="/"]');
+    let rawDisplayName = '';
+    if (nameLink) {
+      const dirLtr = nameLink.querySelector('div[dir="ltr"]') || nameLink.querySelector('span');
+      rawDisplayName = (dirLtr?.innerText || dirLtr?.textContent || nameLink.innerText || nameLink.textContent || '').trim();
+    }
+    if (!rawDisplayName && userNameNode) {
+      const leafTexts = [...userNameNode.querySelectorAll('span')]
+        .filter((node) => !node.querySelector('span'))
+        .map((node) => (node.innerText || node.textContent || '').trim())
+        .filter(Boolean);
+      rawDisplayName = leafTexts.find((value) => (
+        value !== username && value !== username.replace(/^@/, '') && value !== '·' && value !== '•'
+      )) || (userNameNode.innerText || '').split('\n')[0].trim() || lines[0] || '';
+    }
+    if (!rawDisplayName) {
+      rawDisplayName = lines[0] || '';
+    }
+
+    const timeNode = userNameNode?.querySelector('time') || article.querySelector('time');
+    const rawTimeLabel = (timeNode?.innerText || timeNode?.textContent || '').trim();
+
+    return cleanAuthorInfo(rawDisplayName, username, rawTimeLabel);
   }
 
   // 精确提取正文，避免把作者名 / 时间 / 互动数一起塞进来
@@ -444,24 +595,107 @@
     return (merged || '').slice(0, 2000);
   }
 
-  function detectMedia(article) {
+  const VIDEO_CONTAINER_SELECTORS = [
+    '[data-testid="videoPlayer"]',
+    '[data-testid="videoComponent"]',
+    '[data-testid="playButton"]',
+    '[data-testid="app-player-container"]',
+    '[data-testid="preview-image"]',
+    '[data-testid="card.layoutLarge.media"]',
+    '[data-testid="card.layoutSmall.media"]',
+    '[data-testid="placementTracking"]',
+    'div[aria-label*="播放"]',
+    'div[aria-label*="Play"]',
+    'div[aria-label*="视频"]',
+    'div[aria-label*="Video"]',
+    'div[aria-label*="GIF"]',
+    'div[aria-label*="动图"]',
+    'div[role="progressbar"]',
+    'button[aria-label*="播放"]',
+    'button[aria-label*="Play"]',
+  ].join(', ');
+
+  function isVideoPreviewImage(img, article) {
+    if (!img) return false;
+    const src = img.getAttribute('src') || '';
+    if (/(?:ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)/i.test(src)) return true;
+    if (img.closest && img.closest(VIDEO_CONTAINER_SELECTORS)) return true;
+
+    let container = img.parentElement;
+    for (let depth = 0; container && depth < 6 && container !== article && container.tagName !== 'ARTICLE'; depth++, container = container.parentElement) {
+      if (container.querySelector && container.querySelector(`video, ${VIDEO_CONTAINER_SELECTORS}`)) return true;
+    }
+    return false;
+  }
+
+  function detectMedia(article, statusId) {
     const thumbs = [];
-    let hasImage = false;
-    let hasVideo = false;
-    for (const img of article.querySelectorAll('img[src]')) {
-      const src = img.getAttribute('src') || '';
-      if (/pbs\.twimg\.com\/media/.test(src) || /\/media\//.test(src)) {
-        hasImage = true;
-        if (thumbs.length < 4) thumbs.push(src);
+    const idKey = statusId ? String(statusId) : '';
+
+    // 1. 优先采用 GraphQL 拦截到的确切媒体元数据（Ground Truth）
+    if (idKey) {
+      const reg = getRegistryEntry(mediaRegistry, idKey);
+      if (reg && (reg.photos.length > 0 || reg.videos.length > 0 || reg.gifs.length > 0)) {
+        const hasImage = reg.photos.length > 0;
+        const hasVideo = reg.videos.length > 0 || reg.gifs.length > 0;
+        reg.photos.forEach((u) => { if (thumbs.length < 4) thumbs.push(u); });
+        if (!hasImage && hasVideo) {
+          for (const video of article.querySelectorAll('video')) {
+            const poster = video.getAttribute('poster') || '';
+            if (poster && thumbs.length < 4) thumbs.push(poster);
+          }
+          for (const img of article.querySelectorAll('img[src]')) {
+            const src = img.getAttribute('src') || '';
+            if (/pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src)) {
+              if (thumbs.length < 4) thumbs.push(src);
+            }
+          }
+        }
+        return { hasImage, hasVideo, thumbs: uniqueStrings(thumbs).slice(0, 4) };
+      }
+
+      const cardReg = getRegistryEntry(cardRegistry, idKey);
+      if (cardReg && (cardReg.photos.length > 0 || cardReg.videos.length > 0 || cardReg.gifs.length > 0)) {
+        const hasImage = cardReg.photos.length > 0;
+        const hasVideo = cardReg.videos.length > 0 || cardReg.gifs.length > 0;
+        cardReg.photos.forEach((u) => { if (thumbs.length < 4) thumbs.push(u); });
+        if (!hasImage && hasVideo) {
+          for (const img of article.querySelectorAll('img[src]')) {
+            const src = img.getAttribute('src') || '';
+            if (/pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src)) {
+              if (thumbs.length < 4) thumbs.push(src);
+            }
+          }
+        }
+        return { hasImage, hasVideo, thumbs: uniqueStrings(thumbs).slice(0, 4) };
       }
     }
-    const video = article.querySelector('video');
-    if (video) {
-      hasVideo = true;
+
+    // 2. DOM 深度扫描判定
+    const videos = [...article.querySelectorAll('video')];
+    let hasVideo = videos.length > 0 || !!article.querySelector(VIDEO_CONTAINER_SELECTORS);
+    let photoCount = 0;
+
+    for (const video of videos) {
       const poster = video.getAttribute('poster') || '';
       if (poster && thumbs.length < 4) thumbs.push(poster);
     }
-    if (!hasImage && article.querySelector('img[src*="media"]')) hasImage = true;
+
+    for (const img of article.querySelectorAll('img[src]')) {
+      const src = img.getAttribute('src') || '';
+      if (/profile_images|emoji|hashflags/i.test(src)) continue;
+      const isMediaAsset = /pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src) || /\/media\//.test(src);
+      if (!isMediaAsset) continue;
+
+      if (isVideoPreviewImage(img, article)) {
+        hasVideo = true;
+      } else {
+        photoCount++;
+      }
+      if (thumbs.length < 4) thumbs.push(src);
+    }
+
+    const hasImage = photoCount > 0;
     return { hasImage, hasVideo, thumbs: uniqueStrings(thumbs).slice(0, 4) };
   }
 
@@ -597,7 +831,7 @@
     while ((m = combined.exec(text)) !== null) {
       if (m[0].length === 0) { combined.lastIndex++; continue; }
       out += escapeHtml(text.slice(lastIndex, m.index));
-      out += `<mark class="xvault-hl">${escapeHtml(m[0])}</mark>`;
+      out += `<mark class="BetterX-hl">${escapeHtml(m[0])}</mark>`;
       lastIndex = m.index + m[0].length;
     }
     out += escapeHtml(text.slice(lastIndex));
@@ -655,6 +889,19 @@
     });
   }
 
+  async function dbPutPosts(posts) {
+    if (!posts || !posts.length) return;
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(POSTS_STORE, 'readwrite');
+      const store = tx.objectStore(POSTS_STORE);
+      for (const post of posts) store.put(post);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+
   async function dbDeletePost(id) {
     const db = await openDb();
     return new Promise((resolve, reject) => {
@@ -705,19 +952,37 @@
   function getPostById(id) { return state.posts.find((p) => p.id === id); }
   function protectedPost(p) { return !!(p.favorite || p.pinned); }
 
-  // 超出上限时修剪，但永不删除收藏 / 置顶的帖子
-  async function enforceMaxPosts() {
+  function prunePostRuntimeCaches(ids) {
+    for (const rawId of ids || []) {
+      const id = String(rawId);
+      matchCache.delete(id);
+      state.visibleMap.delete(id);
+      state.expandedPosts.delete(id);
+      mediaRegistry.delete(id);
+      cardRegistry.delete(id);
+    }
+  }
+
+  // 超出上限时修剪，但永不删除收藏 / 置顶的帖子。
+  function trimPostsToMax() {
     const max = state.settings.maxPosts || 500;
     const kept = state.posts.filter(protectedPost);
     const others = state.posts
       .filter((p) => !protectedPost(p))
       .sort((a, b) => (b.lastCapturedAt || 0) - (a.lastCapturedAt || 0));
     const allowOthers = Math.max(0, max - kept.length);
-    if (others.length <= allowOthers) return;
+    if (others.length <= allowOthers) return [];
     const toDelete = others.slice(allowOthers);
     const keepOthers = others.slice(0, allowOthers);
     state.posts = [...kept, ...keepOthers];
     const ids = toDelete.map((p) => p.id);
+    prunePostRuntimeCaches(ids);
+    return ids;
+  }
+
+  async function enforceMaxPosts() {
+    const ids = trimPostsToMax();
+    if (!ids.length) return;
     await dbDeleteMany(ids);
   }
 
@@ -732,9 +997,9 @@
     }
     if (state.badgeEl.classList.contains('mobile-mode')) {
       const iconHtml = APP_ICON_URL
-        ? `<img class="xvault-mobile-icon" src="${escapeHtml(APP_ICON_URL)}" alt="" draggable="false" />`
-        : '<span class="xvault-mobile-icon-fallback">🧰</span>';
-      state.badgeEl.innerHTML = `${iconHtml}<span class="xvault-mobile-dot" style="display:${unreadCount > 0 ? 'block' : 'none'}">${unreadCount}</span>`;
+        ? `<img class="BetterX-mobile-icon" src="${escapeHtml(APP_ICON_URL)}" alt="" draggable="false" />`
+        : '<span class="BetterX-mobile-icon-fallback">🧰</span>';
+      state.badgeEl.innerHTML = `${iconHtml}<span class="BetterX-mobile-dot" style="display:${unreadCount > 0 ? 'block' : 'none'}">${unreadCount}</span>`;
     } else {
       state.badgeEl.textContent = `总数 ${totalCount} · 未读${unreadCount}${flashCount ? ` · ⚡${flashCount}` : ''}`;
     }
@@ -751,26 +1016,37 @@
       if (computeMatchedKeywords(p).length > 0) keywordHits++;
     }
     return `
-      <div class="xvault-stat">总数 <b>${total}</b></div>
-      <div class="xvault-stat">未打开 <b>${unread}</b></div>
-      <div class="xvault-stat">已打开 <b>${opened}</b></div>
-      <div class="xvault-stat">已收藏 <b>${favorite}</b></div>
-      <div class="xvault-stat">已置顶 <b>${pinned}</b></div>
-      <div class="xvault-stat">快速消失 <b>${flash}</b></div>
-      <div class="xvault-stat">命中关键词 <b>${keywordHits}</b></div>
+      <div class="BetterX-stat">总数 <b>${total}</b></div>
+      <div class="BetterX-stat">未打开 <b>${unread}</b></div>
+      <div class="BetterX-stat">已打开 <b>${opened}</b></div>
+      <div class="BetterX-stat">已收藏 <b>${favorite}</b></div>
+      <div class="BetterX-stat">已置顶 <b>${pinned}</b></div>
+      <div class="BetterX-stat">快速消失 <b>${flash}</b></div>
+      <div class="BetterX-stat">命中关键词 <b>${keywordHits}</b></div>
     `;
   }
 
   function buildFilterHtml() {
     return FILTERS.map((f) => {
       const active = state.settings.filter === f.key ? 'active' : '';
-      return `<button class="xvault-chip ${active}" data-action="set-filter" data-filter="${escapeHtml(f.key)}">${escapeHtml(f.label)}</button>`;
+      return `<button class="BetterX-chip ${active}" data-action="set-filter" data-filter="${escapeHtml(f.key)}">${escapeHtml(f.label)}</button>`;
     }).join('');
   }
 
   function getAvailableSources() {
     return uniqueStrings(state.posts.map((p) => p.sourceLabel).filter(Boolean))
-      .sort((a, b) => localizeSourceLabel(a).localeCompare(localizeSourceLabel(b), 'zh-CN'));
+      .sort((a, b) => {
+        const rank = (source) => {
+          const pinnedOrder = ['Search', 'Bookmarks', 'Home', 'For You'];
+          const index = pinnedOrder.indexOf(source);
+          if (index >= 0) return index;
+          // 个人主页来源统一置后，避免大量账号名称挤占常用来源的位置。
+          if (/^Profile\s+@/i.test(source)) return 100;
+          return 10;
+        };
+        const rankDiff = rank(a) - rank(b);
+        return rankDiff || localizeSourceLabel(a).localeCompare(localizeSourceLabel(b), 'zh-CN');
+      });
   }
 
   function localizeSourceLabel(source) {
@@ -813,7 +1089,7 @@
     const skip = state.settings.skipSources || [];
     return SKIP_SOURCE_OPTIONS.map((o) => {
       const active = skip.includes(o.key) ? 'active' : '';
-      return `<button class="xvault-chip ${active}" data-action="toggle-skip" data-skip="${escapeHtml(o.key)}">${escapeHtml(o.label)}</button>`;
+      return `<button class="BetterX-chip ${active}" data-action="toggle-skip" data-skip="${escapeHtml(o.key)}">${escapeHtml(o.label)}</button>`;
     }).join('');
   }
 
@@ -873,32 +1149,51 @@
   // ── 渲染 ─────────────────────────────────────────────────────────
   function renderKeywordTags(matchedKeywords) {
     if (!matchedKeywords.length) return '';
-    return matchedKeywords.map((kw) => `<span class="xvault-tag keyword">${escapeHtml(kw)}</span>`).join('');
+    return matchedKeywords.map((kw) => `<span class="BetterX-tag keyword">${escapeHtml(kw)}</span>`).join('');
   }
 
   function renderMetaTags(post) {
     const tags = [];
-    if (post.pinned) tags.push(`<span class="xvault-tag pin">📌 置顶</span>`);
-    if (post.favorite) tags.push(`<span class="xvault-tag fav">★ 已收藏</span>`);
-    if (post.flashLost && !post.clicked) tags.push(`<span class="xvault-tag flash">⚡ 快速消失</span>`);
-    if (post.clicked) tags.push(`<span class="xvault-tag opened">👁 已打开</span>`);
-    if (post.hasImage) tags.push(`<span class="xvault-tag">🖼 图片</span>`);
-    if (post.hasVideo) tags.push(`<span class="xvault-tag">🎬 视频</span>`);
-    if (post.sourceLabel) tags.push(`<span class="xvault-tag source">来源: ${escapeHtml(localizeSourceLabel(post.sourceLabel))}</span>`);
+    if (post.pinned) tags.push(`<span class="BetterX-tag pin">📌 置顶</span>`);
+    if (post.favorite) tags.push(`<span class="BetterX-tag fav">★ 已收藏</span>`);
+    if (post.flashLost && !post.clicked) tags.push(`<span class="BetterX-tag flash">⚡ 快速消失</span>`);
+    if (post.clicked) tags.push(`<span class="BetterX-tag opened">👁 已打开</span>`);
+    if (post.hasImage) tags.push(`<span class="BetterX-tag">🖼 图片</span>`);
+    if (post.hasVideo) tags.push(`<span class="BetterX-tag">🎬 视频</span>`);
+    if (post.sourceLabel) tags.push(`<span class="BetterX-tag source">来源: ${escapeHtml(localizeSourceLabel(post.sourceLabel))}</span>`);
     return tags.join('');
   }
 
   function renderThumbs(post) {
     const thumbs = uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4);
     if (!thumbs.length) return '';
-    return `<div class="xvault-thumbs">${thumbs.map((src) =>
-      `<img class="xvault-thumb" src="${escapeHtml(src)}" loading="lazy" referrerpolicy="no-referrer" alt="" />`
+    return `<div class="BetterX-thumbs">${thumbs.map((src) =>
+      `<img class="BetterX-thumb" src="${escapeHtml(src)}" loading="lazy" referrerpolicy="no-referrer" alt="" />`
     ).join('')}</div>`;
   }
 
   function renderPostItem(post) {
     const matchedKeywords = computeMatchedKeywords(post);
-    const authorHtml = highlightText([post.displayName || '', post.username || ''].filter(Boolean).join(' '), matchedKeywords);
+    const authorInfo = cleanAuthorInfo(post.displayName, post.username, post.timeLabel);
+    const displayName = authorInfo.displayName;
+    const username = authorInfo.username;
+    const timeLabel = authorInfo.timeLabel || post.timeLabel || '';
+    const handle = username.replace(/^@/, '');
+    const profileUrl = /^[A-Za-z0-9_]{1,15}$/.test(handle) ? `https://x.com/${handle}` : '';
+
+    const displayNameHtml = highlightText(displayName, matchedKeywords);
+    const showHandle = username &&
+      username.toLowerCase() !== displayName.toLowerCase() &&
+      handle.toLowerCase() !== displayName.toLowerCase();
+    const handleHtml = showHandle
+      ? `<span class="BetterX-author-handle">${highlightText(username, matchedKeywords)}</span>`
+      : '';
+
+    const authorLabelHtml = `${displayNameHtml}${handleHtml ? ' ' + handleHtml : ''}`;
+    const authorHtml = profileUrl
+      ? `<a class="BetterX-author-profile" href="${escapeHtml(profileUrl)}" title="打开 @${escapeHtml(handle)} 的个人主页">${authorLabelHtml}</a>`
+      : authorLabelHtml;
+    const timeHtml = timeLabel ? `<span class="BetterX-author-time"> · ${escapeHtml(timeLabel)}</span>` : '';
     const textHtml = highlightText(post.text || '(无正文)', matchedKeywords);
     const isExpanded = state.expandedPosts.has(post.id);
     const isEditingNote = state.editingNoteId === post.id;
@@ -908,54 +1203,54 @@
       : '';
     const avatarUrl = safeImportedAssetUrl(post.avatarUrl);
     const avatarHtml = avatarUrl
-      ? `<img class="xvault-avatar" src="${escapeHtml(avatarUrl)}" referrerpolicy="no-referrer" alt="" />`
+      ? `<img class="BetterX-avatar" src="${escapeHtml(avatarUrl)}" referrerpolicy="no-referrer" alt="" />`
       : '';
     const noteHtml = isEditingNote
-      ? `<div class="xvault-note-edit">
-           <textarea class="xvault-note-input" data-id="${escapeHtml(post.id)}" placeholder="在这里写备注…">${escapeHtml(post.note || '')}</textarea>
-           <div class="xvault-note-actions">
-             <button class="xvault-btn primary" data-action="save-note" data-id="${escapeHtml(post.id)}">保存备注</button>
-             <button class="xvault-btn" data-action="cancel-note">取消</button>
+      ? `<div class="BetterX-note-edit">
+           <textarea class="BetterX-note-input" data-id="${escapeHtml(post.id)}" placeholder="在这里写备注…">${escapeHtml(post.note || '')}</textarea>
+           <div class="BetterX-note-actions">
+             <button class="BetterX-btn primary" data-action="save-note" data-id="${escapeHtml(post.id)}">保存备注</button>
+             <button class="BetterX-btn" data-action="cancel-note">取消</button>
            </div>
          </div>`
-      : `<button class="xvault-btn xvault-note-btn" data-action="edit-note" data-id="${escapeHtml(post.id)}">${post.note ? '✏️ 备注' : '+ 备注'}</button>
-         ${post.note ? `<div class="xvault-note-text">💬 ${escapeHtml(post.note)}</div>` : ''}`;
+      : `<button class="BetterX-btn BetterX-note-btn" data-action="edit-note" data-id="${escapeHtml(post.id)}">${post.note ? '✏️ 备注' : '+ 备注'}</button>
+         ${post.note ? `<div class="BetterX-note-text">💬 ${escapeHtml(post.note)}</div>` : ''}`;
 
     return `
-      <div class="xvault-item ${post.flashLost ? 'is-flash-lost' : ''} ${post.pinned ? 'is-pinned' : ''} ${!post.clicked ? 'is-unread' : ''}" data-id="${escapeHtml(post.id)}">
-        <div class="xvault-item-top">
-          <div class="xvault-author">
-            <div class="xvault-author-head">
+      <div class="BetterX-item ${post.flashLost ? 'is-flash-lost' : ''} ${post.pinned ? 'is-pinned' : ''} ${!post.clicked ? 'is-unread' : ''}" data-id="${escapeHtml(post.id)}">
+        <div class="BetterX-item-top">
+          <div class="BetterX-author">
+            <div class="BetterX-author-head">
               ${avatarHtml}
-              <div class="xvault-author-line">${authorHtml}</div>
+              <div class="BetterX-author-line">${authorHtml}${timeHtml}</div>
             </div>
-            <div class="xvault-submeta">
+            <div class="BetterX-submeta">
               <span>抓取: ${escapeHtml(formatTime(post.lastCapturedAt))}</span>
               <span>出现: ${escapeHtml(String(post.capturedCount || 1))} 次</span>
             </div>
           </div>
-          <div class="xvault-actions">
-            <button class="xvault-btn primary" data-action="open" data-id="${escapeHtml(post.id)}">打开</button>
-            <button class="xvault-btn" data-action="copy" data-id="${escapeHtml(post.id)}">复制链接</button>
-            <button class="xvault-btn" data-action="pin" data-id="${escapeHtml(post.id)}">${post.pinned ? '取消置顶' : '置顶'}</button>
-            <button class="xvault-btn" data-action="fav" data-id="${escapeHtml(post.id)}">${post.favorite ? '取消收藏' : '收藏'}</button>
-            <button class="xvault-btn danger" data-action="delete" data-id="${escapeHtml(post.id)}">删</button>
+          <div class="BetterX-actions">
+            <button class="BetterX-btn primary" data-action="open" data-id="${escapeHtml(post.id)}">打开</button>
+            <button class="BetterX-btn" data-action="copy" data-id="${escapeHtml(post.id)}">复制链接</button>
+            <button class="BetterX-btn" data-action="pin" data-id="${escapeHtml(post.id)}">${post.pinned ? '取消置顶' : '置顶'}</button>
+            <button class="BetterX-btn" data-action="fav" data-id="${escapeHtml(post.id)}">${post.favorite ? '取消收藏' : '收藏'}</button>
+            <button class="BetterX-btn danger" data-action="delete" data-id="${escapeHtml(post.id)}">删</button>
           </div>
         </div>
 
-        <div class="xvault-text ${textIsLong && !isExpanded ? 'collapsed' : ''}">${textHtml}</div>
-        ${textIsLong ? `<button class="xvault-expand-btn" data-action="toggle-expand" data-id="${escapeHtml(post.id)}">${isExpanded ? '▲ 收起' : '▼ 展开全文'}</button>` : ''}
+        <div class="BetterX-text ${textIsLong && !isExpanded ? 'collapsed' : ''}">${textHtml}</div>
+        ${textIsLong ? `<button class="BetterX-expand-btn" data-action="toggle-expand" data-id="${escapeHtml(post.id)}">${isExpanded ? '▲ 收起' : '▼ 展开全文'}</button>` : ''}
 
         ${renderThumbs(post)}
 
-        <div class="xvault-tags">
+        <div class="BetterX-tags">
           ${renderMetaTags(post)}
           ${renderKeywordTags(matchedKeywords)}
         </div>
 
-        <div class="xvault-note-area">${noteHtml}</div>
+        <div class="BetterX-note-area">${noteHtml}</div>
 
-        <div class="xvault-bottom-meta">
+        <div class="BetterX-bottom-meta">
           <span>当前来源: ${escapeHtml(localizeSourceLabel(post.sourceLabel) || '-')}</span>
           <span>${escapeHtml(historyText)}</span>
         </div>
@@ -966,8 +1261,10 @@
   function refreshUI(opts) {
     opts = opts || {};
     if (!state.panelEl) return;
-    const keepListScroll = !!opts.keepScroll || state.panelView === 'settings';
     refreshBadge();
+    // 面板关闭时只维护轻量徽标；筛选、排序和富 HTML 渲染延后到真正打开面板时。
+    if (!state.panelOpen && opts.force !== true) return;
+    const keepListScroll = !!opts.keepScroll || state.panelView === 'settings';
 
     if (state.summaryEl) state.summaryEl.innerHTML = buildSummaryHtml();
     if (state.filterBarEl) state.filterBarEl.innerHTML = buildFilterHtml();
@@ -998,21 +1295,24 @@
     if (state.dlTimeoutInputEl && document.activeElement !== state.dlTimeoutInputEl) {
       state.dlTimeoutInputEl.value = String(Math.round((state.settings.downloadTimeout || DEFAULT_SETTINGS.downloadTimeout) / 1000));
     }
+    if (state.dlConcurrencyInputEl && document.activeElement !== state.dlConcurrencyInputEl) {
+      state.dlConcurrencyInputEl.value = String(state.settings.downloadConcurrency || DEFAULT_SETTINGS.downloadConcurrency);
+    }
     if (state.markReadEl) state.markReadEl.checked = state.settings.markReadOnClick !== false;
     if (state.themeSelectEl) state.themeSelectEl.value = state.settings.theme || 'auto';
     if (state.hideAdsEl) state.hideAdsEl.checked = !!state.settings.hideAds;
+    if (state.restoreMediaGridEl) state.restoreMediaGridEl.checked = !!state.settings.restoreMediaGrid;
     if (state.hideAdultSpamEl) state.hideAdultSpamEl.checked = !!state.settings.hideAdultSpam;
+    if (state.adultSpamCustomRulesEl) {
+      state.adultSpamCustomRulesEl.checked = state.settings.adultSpamCustomRulesEnabled !== false;
+    }
     if (state.adultSpamLevelEl) state.adultSpamLevelEl.value = state.settings.adultSpamLevel || DEFAULT_SETTINGS.adultSpamLevel;
     if (state.adultSpamSkipFollowingEl) state.adultSpamSkipFollowingEl.checked = state.settings.adultSpamSkipFollowing !== false;
     if (state.adultSpamSkipFollowingRepostsEl) {
       state.adultSpamSkipFollowingRepostsEl.checked = !!state.settings.adultSpamSkipFollowingReposts;
     }
-    if (state.adultSpamKeywordsEl && document.activeElement !== state.adultSpamKeywordsEl) {
-      state.adultSpamKeywordsEl.value = (state.settings.adultSpamKeywords || []).join(', ');
-    }
-    if (state.adultSpamWhitelistEl && document.activeElement !== state.adultSpamWhitelistEl) {
-      state.adultSpamWhitelistEl.value = (state.settings.adultSpamWhitelist || []).map((name) => '@' + name).join(', ');
-    }
+    renderAdultSpamKeywordTags();
+    renderAdultSpamWhitelistTags();
     if (state.layoutEnabledEl) state.layoutEnabledEl.checked = !!state.settings.layoutEnabled;
     if (state.layoutAutoWidthEl) state.layoutAutoWidthEl.checked = state.settings.layoutAutoWidth !== false;
     if (state.timelineWidthEl && document.activeElement !== state.timelineWidthEl) {
@@ -1044,6 +1344,9 @@
     if (state.useMobileBadgeOnDesktopEl) {
       state.useMobileBadgeOnDesktopEl.checked = !!state.settings.useMobileBadgeOnDesktop;
     }
+    if (state.hideAppBadgeOnDesktopEl) {
+      state.hideAppBadgeOnDesktopEl.checked = !!state.settings.hideAppBadgeOnDesktop;
+    }
     updateSettingsDependencyUI();
 
     if (!state.listEl) return;
@@ -1053,7 +1356,7 @@
     state.lastFilteredCount = filtered.length;
 
     if (!filtered.length) {
-      state.listEl.innerHTML = `<div class="xvault-empty">当前筛选条件下没有帖子。可以刷新页面、切换 X 标签页，或把筛选改回“全部”。</div>`;
+      state.listEl.innerHTML = `<div class="BetterX-empty">当前筛选条件下没有帖子。可以刷新页面、切换 X 标签页，或把筛选改回“全部”。</div>`;
       return;
     }
 
@@ -1061,7 +1364,7 @@
     const shown = filtered.slice(0, limit);
     let html = shown.map(renderPostItem).join('');
     if (filtered.length > shown.length) {
-      html += `<button class="xvault-loadmore" data-action="load-more">加载更多（还有 ${filtered.length - shown.length} 条）</button>`;
+      html += `<button class="BetterX-loadmore" data-action="load-more">加载更多（还有 ${filtered.length - shown.length} 条）</button>`;
     }
     state.listEl.innerHTML = html;
     if (keepListScroll) state.listEl.scrollTop = scrollTop;
@@ -1089,6 +1392,7 @@
       maxPosts: clampInt(input.maxPosts, 50, 5000, DEFAULT_SETTINGS.maxPosts),
       flashMs: clampInt(input.flashMs, 1000, 60000, DEFAULT_SETTINGS.flashMs),
       downloadTimeout: clampInt(input.downloadTimeout, 5000, 600000, DEFAULT_SETTINGS.downloadTimeout),
+      downloadConcurrency: clampInt(input.downloadConcurrency, DOWNLOAD_MIN_CONCURRENCY, DOWNLOAD_MAX_CONCURRENCY, DEFAULT_SETTINGS.downloadConcurrency),
       markReadOnClick: typeof input.markReadOnClick === 'boolean' ? input.markReadOnClick : DEFAULT_SETTINGS.markReadOnClick,
       skipSources: stringList(input.skipSources, SKIP_SOURCE_OPTIONS.length, 30)
         .filter((key) => SKIP_SOURCE_OPTIONS.some((item) => item.key === key)),
@@ -1097,6 +1401,9 @@
       badgePos,
       hideAds: typeof input.hideAds === 'boolean' ? input.hideAds : DEFAULT_SETTINGS.hideAds,
       hideAdultSpam: input.hideAdultSpam === true,
+      adultSpamCustomRulesEnabled: typeof input.adultSpamCustomRulesEnabled === 'boolean'
+        ? input.adultSpamCustomRulesEnabled
+        : DEFAULT_SETTINGS.adultSpamCustomRulesEnabled,
       adultSpamLevel: enumValue(input.adultSpamLevel, ['conservative', 'balanced'], DEFAULT_SETTINGS.adultSpamLevel),
       adultSpamSkipFollowing: typeof input.adultSpamSkipFollowing === 'boolean'
         ? input.adultSpamSkipFollowing
@@ -1111,8 +1418,8 @@
         .filter((item) => /^[a-z0-9_]{1,15}$/.test(item))),
       layoutEnabled: input.layoutEnabled === true,
       layoutAutoWidth: input.layoutAutoWidth !== false,
-      timelineWidth: clampInt(input.timelineWidth, 600, 3000, DEFAULT_SETTINGS.timelineWidth),
-      leftbarWidth: clampInt(input.leftbarWidth, 160, 500, DEFAULT_SETTINGS.leftbarWidth),
+      timelineWidth: clampInt(input.timelineWidth, 100, 3000, DEFAULT_SETTINGS.timelineWidth),
+      leftbarWidth: clampInt(input.leftbarWidth, 50, 500, DEFAULT_SETTINGS.leftbarWidth),
       layoutHideLeftbar: input.layoutHideLeftbar === true,
       layoutHideSidebar: input.layoutHideSidebar === true,
       layoutFillCenter: input.layoutFillCenter === true,
@@ -1121,9 +1428,11 @@
       layoutHideShowMore: input.layoutHideShowMore === true,
       mediaDownload: typeof input.mediaDownload === 'boolean' ? input.mediaDownload : DEFAULT_SETTINGS.mediaDownload,
       bypassAgeRestriction: input.bypassAgeRestriction === true,
+      restoreMediaGrid: input.restoreMediaGrid === true,
       firefoxCompatibility: input.firefoxCompatibility === true,
       firefoxCompatibilityPrompted: input.firefoxCompatibilityPrompted === true,
       useMobileBadgeOnDesktop: input.useMobileBadgeOnDesktop === true,
+      hideAppBadgeOnDesktop: input.hideAppBadgeOnDesktop === true,
     };
   }
 
@@ -1136,6 +1445,7 @@
       if (input.downloadTimeout == null || Number(input.downloadTimeout) === 60000) {
         input.downloadTimeout = DEFAULT_SETTINGS.downloadTimeout;
       }
+      if (input.downloadConcurrency == null) input.downloadConcurrency = DEFAULT_SETTINGS.downloadConcurrency;
       // v1.6.2 起内容净化默认使用“均衡”；把旧版默认档位迁移到新默认。
       if (revision < 4 && (input.adultSpamLevel == null || input.adultSpamLevel === 'conservative')) {
         input.adultSpamLevel = DEFAULT_SETTINGS.adultSpamLevel;
@@ -1157,14 +1467,18 @@
   }
 
   async function persistSettings() {
-    await dbPutSetting('settings', sanitizeSettings(state.settings));
+    const sanitized = sanitizeSettings(state.settings);
+    // 设置同时镜像到油猴存储：即使浏览器/清理扩展清掉 x.com 的 IndexedDB，仍可自动恢复。
+    writeSettingsMirror(sanitized);
+    await dbPutSetting('settings', sanitized);
   }
 
   function resetPaging() { state.renderLimit = state.settings.pageSize || 60; }
 
   function setSettingsPartial(nextPartial) {
     const touchesKeywords = ('keywords' in nextPartial) || ('excludeKeywords' in nextPartial) || ('keywordMode' in nextPartial);
-    const touchesAdultSpam = ('hideAdultSpam' in nextPartial) || ('adultSpamLevel' in nextPartial)
+    const touchesAdultSpam = ('hideAdultSpam' in nextPartial) || ('adultSpamCustomRulesEnabled' in nextPartial)
+      || ('adultSpamLevel' in nextPartial)
       || ('adultSpamSkipFollowing' in nextPartial) || ('adultSpamSkipFollowingReposts' in nextPartial)
       || ('adultSpamKeywords' in nextPartial)
       || ('adultSpamWhitelist' in nextPartial);
@@ -1183,11 +1497,12 @@
     if ('hideAds' in nextPartial) applyAdHiding();
     if ('mediaDownload' in nextPartial) applyMediaDownload();
     if ('bypassAgeRestriction' in nextPartial) applyAgeBypass();
+    if ('restoreMediaGrid' in nextPartial) applyMediaGridLayout();
     if ('firefoxCompatibility' in nextPartial && IS_FIREFOX) {
       state.settings.firefoxCompatibilityPrompted = true;
       writeFirefoxCompatibilityMode(nextPartial.firefoxCompatibility ? 'compat' : 'normal');
     }
-    if ('useMobileBadgeOnDesktop' in nextPartial) repositionBadge();
+    if ('useMobileBadgeOnDesktop' in nextPartial || 'hideAppBadgeOnDesktop' in nextPartial) repositionBadge();
     resetPaging();
     queueDbWrite(async () => { await persistSettings(); });
     refreshUI();
@@ -1249,7 +1564,7 @@
 
   function deletePost(id) {
     state.posts = state.posts.filter((p) => p.id !== id);
-    matchCache.delete(id);
+    prunePostRuntimeCaches([id]);
     queueDbWrite(async () => { await dbDeletePost(id); });
     refreshUI({ keepScroll: true });
   }
@@ -1260,6 +1575,7 @@
     if (!window.confirm(`确定要清空 ${targets.length} 条未收藏/未置顶的帖子吗？此操作不可撤销。`)) return;
     const ids = targets.map((p) => p.id);
     state.posts = state.posts.filter(protectedPost);
+    prunePostRuntimeCaches(ids);
     queueDbWrite(async () => { await dbDeleteMany(ids); });
     refreshUI();
   }
@@ -1314,7 +1630,6 @@
     queueDbWrite(async () => { await dbPutPost(updated); });
     refreshUI({ keepScroll: true });
   }
-
   // ── 媒体下载（图片 / 视频 / GIF）─────────────────────────────────────
   // 说明：X 的 <video> 用 blob: 地址，无法直接下载，故拦截页面网络响应
   // (GraphQL/timeline) 收集真实媒体 URL（含视频 mp4 变体 + 图片），并以 DOM 兜底
@@ -1325,14 +1640,33 @@
     return (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
   }
   let networkHookWarningShown = false;
+  let networkRehookWarningShown = false;
+  const networkHookInstallCounts = { fetch: 0, xhrOpen: 0, xhrSend: 0 };
   const mediaRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
   // 卡片媒体注册表（第三方引用卡片 / 内嵌播放器）
   const cardRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
 
+  function setBoundedRegistryEntry(registry, key, value) {
+    if (registry.has(key)) registry.delete(key);
+    registry.set(key, value);
+    while (registry.size > MAX_MEDIA_REGISTRY_ENTRIES) {
+      registry.delete(registry.keys().next().value);
+    }
+  }
+
+  function getRegistryEntry(registry, key) {
+    if (!registry.has(key)) return null;
+    const value = registry.get(key);
+    // Map 的插入顺序用作轻量 LRU；实际下载过或再次采集到的帖子延后淘汰。
+    registry.delete(key);
+    registry.set(key, value);
+    return value;
+  }
+
   function registerMedia(id, mediaArr) {
     if (!id || !Array.isArray(mediaArr) || !mediaArr.length) return;
     const key = String(id);
-    const entry = mediaRegistry.get(key) || { photos: [], gifs: [], videos: [] };
+    const entry = getRegistryEntry(mediaRegistry, key) || { photos: [], gifs: [], videos: [] };
     for (const m of mediaArr) {
       if (!m || typeof m !== 'object') continue;
       if (m.type === 'photo' && m.media_url_https) {
@@ -1349,21 +1683,42 @@
     entry.photos = uniqueStrings(entry.photos);
     entry.gifs = uniqueStrings(entry.gifs);
     entry.videos = uniqueStrings(entry.videos);
-    mediaRegistry.set(key, entry);
+    setBoundedRegistryEntry(mediaRegistry, key, entry);
+    syncMediaFlagsToPost(key);
   }
 
   function pushCardEntry(id, acc) {
     if (!id) return;
     if (!acc || (!acc.photos.length && !acc.gifs.length && !acc.videos.length)) return;
     const key = String(id);
-    const entry = cardRegistry.get(key) || { photos: [], gifs: [], videos: [] };
+    const entry = getRegistryEntry(cardRegistry, key) || { photos: [], gifs: [], videos: [] };
     acc.photos.forEach((u) => { if (u) entry.photos.push(u); });
     acc.gifs.forEach((u) => { if (u) entry.gifs.push(u); });
     acc.videos.forEach((u) => { if (u) entry.videos.push(u); });
     entry.photos = uniqueStrings(entry.photos);
     entry.gifs = uniqueStrings(entry.gifs);
     entry.videos = uniqueStrings(entry.videos);
-    cardRegistry.set(key, entry);
+    setBoundedRegistryEntry(cardRegistry, key, entry);
+    syncMediaFlagsToPost(key);
+  }
+
+  function syncMediaFlagsToPost(idStr) {
+    if (!idStr) return;
+    const post = getPostById(idStr);
+    if (!post) return;
+    const reg = getRegistryEntry(mediaRegistry, idStr) || getRegistryEntry(cardRegistry, idStr);
+    if (!reg) return;
+    const hasPhoto = (reg.photos || []).length > 0;
+    const hasVid = (reg.videos || []).length > 0 || (reg.gifs || []).length > 0;
+    if (hasPhoto || hasVid) {
+      if (post.hasImage !== hasPhoto || post.hasVideo !== hasVid) {
+        upsertPost({
+          ...post,
+          hasImage: hasPhoto,
+          hasVideo: hasVid,
+        }, { countCapture: false });
+      }
+    }
   }
 
   // 从一个 media_entity（含 type/media_url_https/video_info）取最佳 URL
@@ -1467,41 +1822,121 @@
     return changed;
   }
 
-  function harvestMedia(obj, depth) {
-    if (!obj || typeof obj !== 'object' || depth > 40) return;
-    if (Array.isArray(obj)) { for (const it of obj) harvestMedia(it, depth + 1); return; }
-    harvestFollowingRelationship(obj);
-    const idStr = obj.id_str;
-    const ext = obj.extended_entities;
-    if (idStr && ext && Array.isArray(ext.media)) registerMedia(idStr, ext.media);
-    // 卡片媒体：card 与 legacy 同级，id 取 rest_id / id_str / legacy.id_str
-    if (obj.card && typeof obj.card === 'object') {
-      const cid = obj.rest_id || idStr || (obj.legacy && obj.legacy.id_str);
-      if (cid) { try { harvestCard(String(cid), obj.card); } catch (e) {} }
-    }
-    for (const k in obj) {
-      const v = obj[k];
-      if (v && typeof v === 'object') { try { harvestMedia(v, depth + 1); } catch (e) {} }
+  const networkHarvestQueue = [];
+  let networkHarvestQueuedChars = 0;
+  let networkHarvestScheduled = false;
+  let networkHarvestDroppedJobs = 0;
+
+  function textMayContainHarvestData(txt) {
+    return txt.indexOf('extended_entities') !== -1 || txt.indexOf('binding_values') !== -1
+      || txt.indexOf('"following"') !== -1 || txt.indexOf('relationship_perspectives') !== -1;
+  }
+
+  function scheduleNetworkHarvestDrain() {
+    if (networkHarvestScheduled || !networkHarvestQueue.length) return;
+    networkHarvestScheduled = true;
+    const run = (deadline) => {
+      networkHarvestScheduled = false;
+      drainNetworkHarvestQueue(deadline);
+      if (networkHarvestQueue.length) scheduleNetworkHarvestDrain();
+    };
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(run, { timeout: 750 });
+    } else {
+      setTimeout(() => run({ didTimeout: false, timeRemaining: () => 8 }), 16);
     }
   }
 
+  function enqueueNetworkHarvestObject(root) {
+    if (!root || typeof root !== 'object') return;
+    if (networkHarvestQueue.length >= MAX_NETWORK_HARVEST_JOBS) {
+      networkHarvestDroppedJobs++;
+      return;
+    }
+    networkHarvestQueue.push({ type: 'object', stack: [{ value: root, depth: 0 }], processedNodes: 0 });
+    scheduleNetworkHarvestDrain();
+  }
+
   function tryHarvest(txt) {
-    if (!txt || txt.length > MAX_NETWORK_RESPONSE_BYTES) return;
-    if (txt.indexOf('extended_entities') === -1 && txt.indexOf('binding_values') === -1
-      && txt.indexOf('"following"') === -1 && txt.indexOf('relationship_perspectives') === -1) return;
-    let json;
-    try { json = JSON.parse(txt); } catch (e) { return; }
-    try { harvestMedia(json, 0); } catch (e) {}
+    if (!txt || txt.length > MAX_NETWORK_RESPONSE_BYTES || !textMayContainHarvestData(txt)) return;
+    if (networkHarvestQueue.length >= MAX_NETWORK_HARVEST_JOBS
+        || networkHarvestQueuedChars + txt.length > MAX_NETWORK_HARVEST_QUEUE_CHARS) {
+      networkHarvestDroppedJobs++;
+      return;
+    }
+    networkHarvestQueuedChars += txt.length;
+    networkHarvestQueue.push({ type: 'text', text: txt, charLength: txt.length });
+    scheduleNetworkHarvestDrain();
+  }
+
+  function processHarvestObjectNode(value, depth, stack) {
+    if (!value || typeof value !== 'object' || depth > 40) return;
+    if (!Array.isArray(value)) {
+      harvestFollowingRelationship(value);
+      const idStr = value.id_str;
+      const ext = value.extended_entities;
+      if (idStr && ext && Array.isArray(ext.media)) registerMedia(idStr, ext.media);
+      // 卡片媒体：card 与 legacy 同级，id 取 rest_id / id_str / legacy.id_str
+      if (value.card && typeof value.card === 'object') {
+        const cid = value.rest_id || idStr || (value.legacy && value.legacy.id_str);
+        if (cid) { try { harvestCard(String(cid), value.card); } catch (err) {} }
+      }
+    }
+    const children = Array.isArray(value) ? value : Object.values(value);
+    for (let i = children.length - 1; i >= 0; i--) {
+      const child = children[i];
+      if (child && typeof child === 'object') stack.push({ value: child, depth: depth + 1 });
+      if (stack.length >= MAX_NETWORK_HARVEST_NODES_PER_JOB) break;
+    }
+  }
+
+  function drainNetworkHarvestQueue(deadline) {
+    let nodeBudget = NETWORK_HARVEST_SLICE_NODES;
+    while (networkHarvestQueue.length && nodeBudget > 0) {
+      if (typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() <= 2 && nodeBudget < NETWORK_HARVEST_SLICE_NODES) break;
+      let job = networkHarvestQueue[0];
+      if (job.type === 'text') {
+        networkHarvestQueuedChars = Math.max(0, networkHarvestQueuedChars - (job.charLength || 0));
+        let parsed;
+        try { parsed = JSON.parse(job.text); } catch (err) { networkHarvestQueue.shift(); continue; }
+        job = { type: 'object', stack: [{ value: parsed, depth: 0 }], processedNodes: 0 };
+        networkHarvestQueue[0] = job;
+        nodeBudget = Math.max(1, nodeBudget - 50);
+      }
+      while (job.stack.length && nodeBudget > 0 && job.processedNodes < MAX_NETWORK_HARVEST_NODES_PER_JOB) {
+        const node = job.stack.pop();
+        job.processedNodes++;
+        nodeBudget--;
+        try { processHarvestObjectNode(node.value, node.depth, job.stack); } catch (err) {}
+        if (typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() <= 2) break;
+      }
+      if (!job.stack.length || job.processedNodes >= MAX_NETWORK_HARVEST_NODES_PER_JOB) {
+        if (job.processedNodes >= MAX_NETWORK_HARVEST_NODES_PER_JOB) networkHarvestDroppedJobs++;
+        networkHarvestQueue.shift();
+      } else {
+        break;
+      }
+    }
+  }
+
+  function declaredResponseTooLarge(getHeader) {
+    try {
+      const raw = getHeader('content-length');
+      const size = Number(raw);
+      return Number.isFinite(size) && size > MAX_NETWORK_RESPONSE_BYTES;
+    } catch (err) { return false; }
   }
 
   function harvestXhrResponse(xhr) {
     const url = xhr && xhr.__xvUrl ? String(xhr.__xvUrl) : '';
     if (!/(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) return;
     try {
+      if (typeof xhr.getResponseHeader === 'function'
+          && declaredResponseTooLarge((name) => xhr.getResponseHeader(name))) return;
       if (xhr.responseType === '' || xhr.responseType === 'text') {
         tryHarvest(xhr.responseText);
       } else if (xhr.responseType === 'json' && xhr.response && typeof xhr.response === 'object') {
-        harvestMedia(xhr.response, 0);
+        enqueueNetworkHarvestObject(xhr.response);
       } else if (xhr.responseType === 'arraybuffer' && xhr.response && typeof xhr.response.byteLength === 'number' && xhr.response.byteLength <= MAX_NETWORK_RESPONSE_BYTES) {
         tryHarvest(new TextDecoder('utf-8').decode(new Uint8Array(xhr.response)));
       } else if (xhr.responseType === 'blob' && xhr.response && typeof xhr.response.size === 'number' && typeof xhr.response.text === 'function' && xhr.response.size <= MAX_NETWORK_RESPONSE_BYTES) {
@@ -1514,6 +1949,12 @@
     if (networkHookWarningShown) return;
     networkHookWarningShown = true;
     console.warn('[BetterX] 为避免阻断 X 页面启动，已停用网络媒体采集：', reason);
+  }
+
+  function warnNetworkRehookLimit(apiName) {
+    if (networkRehookWarningShown) return;
+    networkRehookWarningShown = true;
+    console.warn(`[BetterX] ${apiName} 被其他脚本反复替换，已停止继续套娃 Hook；可导出 Firefox 兼容诊断。`);
   }
 
   function installNetworkHooks() {
@@ -1531,45 +1972,63 @@
     try {
       const origFetch = pageWin.fetch;
       if (origFetch && !origFetch.__xvHooked) {
-        const hooked = function (...args) {
-          const p = origFetch.apply(this, args);
-          try {
-            p.then((res) => {
-              try {
-                const url = (res && res.url) || '';
-                if (res && res.clone && /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) {
-                  res.clone().text().then(tryHarvest).catch(() => {});
-                }
-              } catch (e) {}
-            }).catch(() => {});
-          } catch (e) {}
-          return p;
-        };
-        hooked.__xvHooked = true;
-        pageWin.fetch = hooked;
+        if (networkHookInstallCounts.fetch >= MAX_NETWORK_REHOOKS_PER_API) {
+          warnNetworkRehookLimit('fetch');
+        } else {
+          const hooked = function (...args) {
+            const p = origFetch.apply(this, args);
+            try {
+              p.then((res) => {
+                try {
+                  const url = (res && res.url) || '';
+                  if (res && res.clone && /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) {
+                    if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
+                    const contentType = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
+                    if (contentType && !/(?:json|javascript|text)/i.test(contentType)) return;
+                    res.clone().text().then(tryHarvest).catch(() => {});
+                  }
+                } catch (e) {}
+              }).catch(() => {});
+            } catch (e) {}
+            return p;
+          };
+          hooked.__xvHooked = true;
+          pageWin.fetch = hooked;
+          if (pageWin.fetch === hooked) networkHookInstallCounts.fetch++;
+        }
       }
     } catch (e) {}
     try {
       const XHR = pageWin.XMLHttpRequest;
       if (XHR && XHR.prototype && XHR.prototype.open && !XHR.prototype.open.__xvHooked) {
-        const origOpen = XHR.prototype.open;
-        const hookedOpen = function (method, url) {
-          this.__xvUrl = url;
-          return origOpen.apply(this, arguments);
-        };
-        hookedOpen.__xvHooked = true;
-        XHR.prototype.open = hookedOpen;
+        if (networkHookInstallCounts.xhrOpen >= MAX_NETWORK_REHOOKS_PER_API) {
+          warnNetworkRehookLimit('XMLHttpRequest.open');
+        } else {
+          const origOpen = XHR.prototype.open;
+          const hookedOpen = function (method, url) {
+            this.__xvUrl = url;
+            return origOpen.apply(this, arguments);
+          };
+          hookedOpen.__xvHooked = true;
+          XHR.prototype.open = hookedOpen;
+          if (XHR.prototype.open === hookedOpen) networkHookInstallCounts.xhrOpen++;
+        }
       }
       if (XHR && XHR.prototype && XHR.prototype.send && !XHR.prototype.send.__xvHooked) {
-        const origSend = XHR.prototype.send;
-        const hookedSend = function () {
-          try {
-            this.addEventListener('load', () => harvestXhrResponse(this), { once: true });
-          } catch (e) {}
-          return origSend.apply(this, arguments);
-        };
-        hookedSend.__xvHooked = true;
-        XHR.prototype.send = hookedSend;
+        if (networkHookInstallCounts.xhrSend >= MAX_NETWORK_REHOOKS_PER_API) {
+          warnNetworkRehookLimit('XMLHttpRequest.send');
+        } else {
+          const origSend = XHR.prototype.send;
+          const hookedSend = function () {
+            try {
+              this.addEventListener('load', () => harvestXhrResponse(this), { once: true });
+            } catch (e) {}
+            return origSend.apply(this, arguments);
+          };
+          hookedSend.__xvHooked = true;
+          XHR.prototype.send = hookedSend;
+          if (XHR.prototype.send === hookedSend) networkHookInstallCounts.xhrSend++;
+        }
       }
     } catch (e) {}
   }
@@ -1602,7 +2061,7 @@
     const addPhoto = (u) => { if (!u) return; const k = photoKey(u); if (seenPhoto.has(k)) return; seenPhoto.add(k); out.photos.push(upgradePhoto(u)); };
     const addGif = (u) => { if (!u || seenGif.has(u)) return; seenGif.add(u); out.gifs.push(u); };
     const addVideo = (u) => { if (!u || seenVideo.has(u)) return; seenVideo.add(u); out.videos.push(u); };
-    const reg = statusId ? mediaRegistry.get(String(statusId)) : null;
+    const reg = statusId ? getRegistryEntry(mediaRegistry, String(statusId)) : null;
     if (reg) {
       reg.photos.forEach(addPhoto);
       reg.gifs.forEach(addGif);
@@ -1630,49 +2089,120 @@
     return error;
   }
 
-  function fetchBlob(url) {
-    return new Promise((resolve, reject) => {
-      const timeoutMs = state.settings.downloadTimeout || DEFAULT_SETTINGS.downloadTimeout;
-      if (typeof GM_xmlhttpRequest !== 'undefined') {
-        GM_xmlhttpRequest({
-          method: 'GET', url, responseType: 'arraybuffer', timeout: timeoutMs,
-          onload: (r) => {
-            if (r.status >= 200 && r.status < 300 && r.response) {
-              const ct = ((r.responseHeaders || '').match(/content-type:\s*([^\r\n;]+)/i) || [])[1];
-              resolve(new Blob([r.response], ct ? { type: ct.trim() } : undefined));
-            } else { reject(new Error('HTTP ' + r.status)); }
-          },
-          onerror: () => reject(new Error('网络错误')),
-          ontimeout: () => reject(makeDownloadTimeoutError()),
-        });
-      } else {
-        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        let didTimeout = false;
-        const timer = controller ? setTimeout(() => { didTimeout = true; controller.abort(); }, timeoutMs) : null;
-        fetch(url, controller ? { signal: controller.signal } : undefined)
-          .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('HTTP ' + r.status))))
-          .then(resolve)
-          .catch((error) => {
-            if (didTimeout || (error && error.name === 'AbortError')) reject(makeDownloadTimeoutError());
-            else if (error && /^HTTP /.test(error.message || '')) reject(error);
-            else reject(new Error('跨域下载失败：请使用支持 GM_xmlhttpRequest 的脚本管理器'));
-          })
-          .finally(() => { if (timer) clearTimeout(timer); });
-      }
-    });
+  function makeDownloadCancelledError() {
+    const error = new Error('下载已取消');
+    error.code = 'DOWNLOAD_CANCELLED';
+    return error;
   }
 
-  async function fetchBlobWithTimeoutRetry(url) {
-    while (true) {
+  function fetchBlob(url, options) {
+    const opts = options || {};
+    const timeoutMs = state.settings.downloadTimeout || DEFAULT_SETTINGS.downloadTimeout;
+    if (opts.signal && opts.signal.aborted) return Promise.reject(makeDownloadCancelledError());
+
+    if (typeof GM_xmlhttpRequest !== 'undefined') {
+      return new Promise((resolve, reject) => {
+        let settled = false;
+        let request = null;
+        const finish = (callback, value) => {
+          if (settled) return;
+          settled = true;
+          if (opts.signal) opts.signal.removeEventListener('abort', abortRequest);
+          if (typeof opts.onRequestHandle === 'function') opts.onRequestHandle(request, false);
+          callback(value);
+        };
+        const abortRequest = () => {
+          try { if (request && typeof request.abort === 'function') request.abort(); } catch (err) {}
+          finish(reject, makeDownloadCancelledError());
+        };
+        try {
+          request = GM_xmlhttpRequest({
+            method: 'GET', url, responseType: 'arraybuffer', timeout: timeoutMs,
+            onprogress: (event) => {
+              if (settled || (opts.signal && opts.signal.aborted)) return;
+              if (typeof opts.onProgress === 'function') {
+                opts.onProgress(Number(event.loaded) || 0, Number(event.total) || 0, event.lengthComputable === true);
+              }
+            },
+            onload: (response) => {
+              if (opts.signal && opts.signal.aborted) {
+                finish(reject, makeDownloadCancelledError());
+                return;
+              }
+              if (response.status >= 200 && response.status < 300 && response.response) {
+                const ct = ((response.responseHeaders || '').match(/content-type:\s*([^\r\n;]+)/i) || [])[1];
+                finish(resolve, new Blob([response.response], ct ? { type: ct.trim() } : undefined));
+              } else {
+                finish(reject, new Error('HTTP ' + response.status));
+              }
+            },
+            onerror: () => finish(reject, new Error('网络错误')),
+            ontimeout: () => finish(reject, makeDownloadTimeoutError()),
+            onabort: () => finish(reject, makeDownloadCancelledError()),
+          });
+          if (typeof opts.onRequestHandle === 'function') opts.onRequestHandle(request, true);
+          if (opts.signal) {
+            opts.signal.addEventListener('abort', abortRequest, { once: true });
+            if (opts.signal.aborted) abortRequest();
+          }
+        } catch (error) {
+          finish(reject, error);
+        }
+      });
+    }
+
+    return (async () => {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      let didTimeout = false;
+      const relayAbort = () => { if (controller) controller.abort(); };
+      if (opts.signal && controller) opts.signal.addEventListener('abort', relayAbort, { once: true });
+      const timer = controller ? setTimeout(() => { didTimeout = true; controller.abort(); }, timeoutMs) : null;
       try {
-        return await fetchBlob(url);
+        const response = await fetch(url, controller ? { signal: controller.signal } : undefined);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const total = Number(response.headers && response.headers.get('content-length')) || 0;
+        const contentType = (response.headers && response.headers.get('content-type')) || '';
+        if (response.body && typeof response.body.getReader === 'function') {
+          const reader = response.body.getReader();
+          const chunks = [];
+          let loaded = 0;
+          while (true) {
+            const part = await reader.read();
+            if (part.done) break;
+            chunks.push(part.value);
+            loaded += part.value.byteLength;
+            if (typeof opts.onProgress === 'function') opts.onProgress(loaded, total, total > 0);
+          }
+          return new Blob(chunks, contentType ? { type: contentType } : undefined);
+        }
+        const blob = await response.blob();
+        if (typeof opts.onProgress === 'function') opts.onProgress(blob.size, blob.size, true);
+        return blob;
       } catch (error) {
-        if (!error || error.code !== 'DOWNLOAD_TIMEOUT') throw error;
-        const shouldRetry = confirm('下载超时，是否重新下载？');
-        if (!shouldRetry) throw error;
-        showToast('正在重新下载…', 0);
+        if (opts.signal && opts.signal.aborted) throw makeDownloadCancelledError();
+        if (didTimeout || (error && error.name === 'AbortError')) throw makeDownloadTimeoutError();
+        if (error && /^HTTP /.test(error.message || '')) throw error;
+        throw new Error('跨域下载失败：请使用支持 GM_xmlhttpRequest 的脚本管理器');
+      } finally {
+        if (timer) clearTimeout(timer);
+        if (opts.signal && controller) opts.signal.removeEventListener('abort', relayAbort);
+      }
+    })();
+  }
+
+  async function fetchBlobWithRetry(url, options) {
+    let lastError = null;
+    for (let attempt = 0; attempt <= DOWNLOAD_MAX_RETRIES; attempt++) {
+      try {
+        return await fetchBlob(url, options);
+      } catch (error) {
+        lastError = error;
+        if (error && error.code === 'DOWNLOAD_CANCELLED') throw error;
+        if (attempt >= DOWNLOAD_MAX_RETRIES || /^HTTP 4\d\d/.test((error && error.message) || '')) throw error;
+        if (options && typeof options.onRetry === 'function') options.onRetry(attempt + 1, error);
       }
     }
+    throw lastError || new Error('下载失败');
   }
 
   // 将 Blob 读为 ArrayBuffer（优先用原生方法，否则回退 FileReader）
@@ -1691,7 +2221,7 @@
     const a = document.createElement('a');
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 8000);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
   }
 
   // 内置无压缩(STORE) ZIP 打包器：纯同步、无外部依赖、不依赖 Promise/调度器
@@ -1711,24 +2241,71 @@
     for (let i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ bytes[i]) & 0xFF];
     return (crc ^ 0xFFFFFFFF) >>> 0;
   }
-  // files: [{ name: string, data: Uint8Array }] -> Blob(application/zip)
-  function buildStoreZip(files) {
+
+  function toDosDateTime(value) {
+    const input = value instanceof Date ? new Date(value.getTime()) : new Date(value || Date.now());
+    const date = Number.isFinite(input.getTime()) ? input : new Date();
+    const year = Math.max(1980, Math.min(2107, date.getFullYear()));
+    const month = year === 1980 && date.getFullYear() < 1980 ? 1 : date.getMonth() + 1;
+    const day = year === 1980 && date.getFullYear() < 1980 ? 1 : date.getDate();
+    const dosTime = ((date.getHours() & 0x1F) << 11)
+      | ((date.getMinutes() & 0x3F) << 5)
+      | (Math.floor(date.getSeconds() / 2) & 0x1F);
+    const dosDate = ((year - 1980) << 9) | ((month & 0x0F) << 5) | (day & 0x1F);
+    return { dosTime, dosDate };
+  }
+
+  function makeClassicZipLimitError() {
+    const error = new Error('媒体总量超出经典 ZIP 范围，请改为逐个下载');
+    error.code = 'ZIP_CLASSIC_LIMIT';
+    return error;
+  }
+
+  function prepareClassicZipEntries(files, modifiedAt) {
+    if (!Array.isArray(files) || files.length > CLASSIC_ZIP_MAX_FILES) throw makeClassicZipLimitError();
     const enc = new TextEncoder();
+    const fallbackTime = modifiedAt || new Date();
+    let offset = 0;
+    let centralSize = 0;
+    const prepared = files.map((file) => {
+      const nameBytes = enc.encode(file.name);
+      const size = Number(file.data && file.data.length);
+      if (!Number.isSafeInteger(size) || size < 0 || size > CLASSIC_ZIP_MAX_VALUE
+          || nameBytes.length > CLASSIC_ZIP_MAX_FILES) throw makeClassicZipLimitError();
+      const localSize = 30 + nameBytes.length + size;
+      const centralEntrySize = 46 + nameBytes.length;
+      if (offset + localSize > CLASSIC_ZIP_MAX_VALUE
+          || centralSize + centralEntrySize > CLASSIC_ZIP_MAX_VALUE) throw makeClassicZipLimitError();
+      const entry = {
+        nameBytes,
+        data: file.data,
+        size,
+        offset,
+        ...toDosDateTime(file.modifiedAt || fallbackTime),
+      };
+      offset += localSize;
+      centralSize += centralEntrySize;
+      return entry;
+    });
+    if (offset + centralSize + 22 > CLASSIC_ZIP_MAX_VALUE) throw makeClassicZipLimitError();
+    return { prepared, centralStart: offset, centralSize };
+  }
+
+  // files: [{ name: string, data: Uint8Array }] -> Blob(application/zip)
+  function buildStoreZip(files, modifiedAt) {
+    const layout = prepareClassicZipEntries(files, modifiedAt);
     const chunks = [];
     const central = [];
-    let offset = 0;
-    for (const f of files) {
-      const nameBytes = enc.encode(f.name);
-      const data = f.data;
+    for (const entry of layout.prepared) {
+      const { nameBytes, data, size, offset, dosTime, dosDate } = entry;
       const crc = crc32(data);
-      const size = data.length >>> 0;
       const lh = new DataView(new ArrayBuffer(30));
       lh.setUint32(0, 0x04034b50, true);
       lh.setUint16(4, 20, true);
       lh.setUint16(6, 0x0800, true);
       lh.setUint16(8, 0, true);
-      lh.setUint16(10, 0, true);
-      lh.setUint16(12, 0x21, true);
+      lh.setUint16(10, dosTime, true);
+      lh.setUint16(12, dosDate, true);
       lh.setUint32(14, crc, true);
       lh.setUint32(18, size, true);
       lh.setUint32(22, size, true);
@@ -1741,8 +2318,8 @@
       ch.setUint16(6, 20, true);
       ch.setUint16(8, 0x0800, true);
       ch.setUint16(10, 0, true);
-      ch.setUint16(12, 0, true);
-      ch.setUint16(14, 0x21, true);
+      ch.setUint16(12, dosTime, true);
+      ch.setUint16(14, dosDate, true);
       ch.setUint32(16, crc, true);
       ch.setUint32(20, size, true);
       ch.setUint32(24, size, true);
@@ -1754,25 +2331,27 @@
       ch.setUint32(38, 0, true);
       ch.setUint32(42, offset, true);
       central.push({ header: new Uint8Array(ch.buffer), name: nameBytes });
-      offset += 30 + nameBytes.length + size;
     }
-    const centralStart = offset;
-    let centralSize = 0;
-    for (const c of central) { chunks.push(c.header, c.name); centralSize += c.header.length + c.name.length; }
+    for (const c of central) chunks.push(c.header, c.name);
     const eo = new DataView(new ArrayBuffer(22));
     eo.setUint32(0, 0x06054b50, true);
     eo.setUint16(4, 0, true);
     eo.setUint16(6, 0, true);
     eo.setUint16(8, files.length, true);
     eo.setUint16(10, files.length, true);
-    eo.setUint32(12, centralSize, true);
-    eo.setUint32(16, centralStart, true);
+    eo.setUint32(12, layout.centralSize, true);
+    eo.setUint32(16, layout.centralStart, true);
     eo.setUint16(20, 0, true);
     chunks.push(new Uint8Array(eo.buffer));
     return new Blob(chunks, { type: 'application/zip' });
   }
 
-  async function downloadTweetMedia(article, author, statusId) {
+  const downloadJobs = new Map();
+  const downloadTransferQueue = [];
+  let activeDownloadTransfers = 0;
+  let downloadUiRaf = 0;
+
+  function collectDownloadItems(article, statusId) {
     const media = collectMedia(article, statusId);
     const items = [];
     media.photos.forEach((u) => items.push({ url: u, ext: extOfUrl(u, 'jpg') }));
@@ -1780,80 +2359,462 @@
     media.videos.forEach((u) => items.push({ url: u, ext: 'mp4' }));
     if (!items.length) {
       // 第三方引用卡片（内嵌视频 / 缩略图）：标准媒体为空时回退到卡片注册表
-      const card = statusId ? cardRegistry.get(String(statusId)) : null;
+      const card = statusId ? getRegistryEntry(cardRegistry, String(statusId)) : null;
       if (card) {
         card.photos.forEach((u) => items.push({ url: u, ext: extOfUrl(u, 'jpg') }));
         card.gifs.forEach((u) => items.push({ url: u, ext: 'mp4' }));
         card.videos.forEach((u) => items.push({ url: u, ext: 'mp4' }));
       }
     }
-    if (!items.length) { showToast('未找到可下载的媒体，若为视频请先点开或播放一下再试'); return; }
-    const uname = String((author && author.username) || 'x').replace(/^@/, '') || 'x';
-    const baseName = (uname + '_' + statusId).replace(/[\\/:*?"<>|]+/g, '_');
-    debugLog('准备下载', items.length, '个媒体');
+    return items;
+  }
 
-    // 单个：直接下载
-    if (items.length === 1) {
-      showToast('开始下载…', 0);
-      try {
-        const blob = await fetchBlobWithTimeoutRetry(items[0].url);
-        saveBlob(blob, baseName + '.' + items[0].ext);
-        showToast('✅ 下载完成');
-      } catch (e) {
-        console.error('[BetterX] 下载失败:', e);
-        showToast('❌ 下载失败：' + ((e && e.message) || '未知错误'), 5000);
+  function formatDownloadBytes(value) {
+    const bytes = Math.max(0, Number(value) || 0);
+    if (bytes < 1024) return `${bytes.toFixed(0)} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(bytes < 10485760 ? 1 : 0)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  }
+
+  function isActiveDownloadJob(job) {
+    return !!job && ['queued', 'downloading', 'packing', 'saving', 'cancelling'].includes(job.status);
+  }
+
+  function getDownloadJobProgress(job) {
+    if (!job) return { loaded: 0, total: 0, percent: 0, allKnown: false };
+    let loaded = 0;
+    let total = 0;
+    let allKnown = job.itemProgress.length > 0;
+    for (const progress of job.itemProgress) {
+      loaded += progress.loaded || 0;
+      total += progress.total || 0;
+      if (!progress.totalKnown) allKnown = false;
+    }
+    const percent = allKnown && total > 0 ? Math.max(0, Math.min(100, Math.round((loaded / total) * 100))) : 0;
+    return { loaded, total, percent, allKnown };
+  }
+
+  function describeDownloadJob(job, compact) {
+    const progress = getDownloadJobProgress(job);
+    if (job.status === 'queued') return compact ? '排队' : '排队中';
+    if (job.status === 'packing') return compact ? '打包' : `正在打包 ${job.packCompleted || 0}/${job.packTotal || job.items.length}`;
+    if (job.status === 'saving') return compact ? '保存' : '正在保存';
+    if (job.status === 'cancelling') return compact ? '取消中' : '正在取消下载';
+    if (job.status === 'done') return job.failedCount ? `完成，跳过 ${job.failedCount}` : '下载完成';
+    if (job.status === 'cancelled') return job.savedCount ? `已取消，已保存 ${job.savedCount}` : '已取消';
+    if (job.status === 'error') return `失败：${job.errorMessage || '未知错误'}`;
+    if (progress.allKnown) return `${progress.percent}%`;
+    if (progress.loaded > 0) return formatDownloadBytes(progress.loaded);
+    return compact ? '下载' : `下载中 ${job.completedCount || 0}/${job.items.length}`;
+  }
+
+  function scheduleDownloadUiRefresh() {
+    if (downloadUiRaf) return;
+    const run = () => { downloadUiRaf = 0; refreshDownloadUi(); };
+    downloadUiRaf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(run) : setTimeout(run, 16);
+  }
+
+  function renderDownloadTaskPopover() {
+    if (!state.downloadPopoverEl || state.downloadPopoverEl.hidden) return;
+    const jobs = [...downloadJobs.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    if (!jobs.length) {
+      if (state.downloadPopoverEl.dataset.renderSignature !== 'empty') {
+        state.downloadPopoverEl.innerHTML = '<div class="BetterX-download-empty">暂无下载任务</div>';
+        state.downloadPopoverEl.dataset.renderSignature = 'empty';
       }
       return;
     }
-
-    // 多个：逐个抓取（带进度提示，单个失败不影响其余）
-    const blobs = [];
-    for (let i = 0; i < items.length; i++) {
-      showToast('抓取中 ' + (i + 1) + ' / ' + items.length + ' …', 0);
-      try {
-        const b = await fetchBlobWithTimeoutRetry(items[i].url);
-        blobs.push({ blob: b, ext: items[i].ext, idx: i + 1 });
-        debugLog('已抓取 ' + (i + 1) + '/' + items.length, (b.size / 1024).toFixed(0) + 'KB');
-      } catch (e) {
-        console.error('[BetterX] 第 ' + (i + 1) + ' 个抓取失败:', e);
-        showToast('⚠️ 第 ' + (i + 1) + ' 个抓取失败，已跳过', 4000);
-      }
+    const models = jobs.map((job) => ({
+      job,
+      canCancel: isActiveDownloadJob(job) && job.status !== 'cancelling',
+      canRetry: job.status === 'error' || job.status === 'cancelled',
+    }));
+    // 进度事件很频繁。只在任务结构/操作按钮变化时重建，避免 PC 鼠标按下与松开之间按钮被替换。
+    const renderSignature = models.map(({ job, canCancel, canRetry }) => `${job.id}:${canCancel ? 1 : 0}:${canRetry ? 1 : 0}`).join('|');
+    if (state.downloadPopoverEl.dataset.renderSignature !== renderSignature) {
+      state.downloadPopoverEl.innerHTML = `
+        <div class="BetterX-download-popover-title">下载任务</div>
+        ${models.map(({ job, canCancel, canRetry }) => `<div class="BetterX-download-task" data-job-id="${escapeHtml(job.id)}">
+            <div class="BetterX-download-task-main">
+              <strong>${escapeHtml(job.baseName)}</strong>
+              <span></span>
+            </div>
+            <div class="BetterX-download-task-actions">
+              ${canCancel ? `<button type="button" data-action="download-cancel" data-job-id="${escapeHtml(job.id)}">取消</button>` : ''}
+              ${canRetry ? `<button type="button" data-action="download-retry" data-job-id="${escapeHtml(job.id)}">重试</button>` : ''}
+            </div>
+          </div>`).join('')}
+      `;
+      state.downloadPopoverEl.dataset.renderSignature = renderSignature;
     }
-    if (!blobs.length) { showToast('❌ 全部抓取失败，未下载', 5000); return; }
+    const taskElements = new Map(
+      [...state.downloadPopoverEl.querySelectorAll('.BetterX-download-task[data-job-id]')]
+        .map((element) => [element.dataset.jobId || '', element])
+    );
+    models.forEach(({ job }) => {
+      const task = taskElements.get(String(job.id));
+      if (!task) return;
+      const progress = getDownloadJobProgress(job);
+      task.style.setProperty('--xv-task-progress', progress.allKnown ? `${progress.percent}%` : '0%');
+      const status = task.querySelector('.BetterX-download-task-main span');
+      if (status) status.textContent = describeDownloadJob(job, false);
+    });
+  }
 
-    // 打包（内置同步 ZIP 生成器：纯本地、无外部库、不依赖异步引擎）
-    showToast('正在打包 ' + blobs.length + ' 个文件…', 0);
-    try {
-      const files = [];
-      for (const it of blobs) {
-        const buf = await blobToArrayBuffer(it.blob);
-        files.push({ name: it.idx + '.' + it.ext, data: new Uint8Array(buf) });
-      }
-      debugLog('开始生成 zip（内置同步打包）…');
-      const content = buildStoreZip(files);
-      saveBlob(content, baseName + '.zip');
-      showToast('✅ 打包完成：' + baseName + '.zip（' + blobs.length + ' 个文件）', 5000);
-      debugLog('打包完成', (content.size / 1024).toFixed(0) + 'KB');
-    } catch (e) {
-      console.error('[BetterX] 打包失败，改为逐个下载:', e);
-      showToast('⚠️ 打包失败：' + ((e && e.message) || '未知错误') + '，改为逐个下载…', 6000);
-      for (let i = 0; i < blobs.length; i++) {
-        saveBlob(blobs[i].blob, baseName + '_' + blobs[i].idx + '.' + blobs[i].ext);
-        await new Promise((r) => setTimeout(r, 900));
-      }
-      showToast('✅ 已逐个下载 ' + blobs.length + ' 个文件');
+  function refreshDownloadUi() {
+    const controls = document.querySelectorAll('.BetterX-download-controls[data-status-id]');
+    controls.forEach((control) => {
+      const job = downloadJobs.get(control.dataset.statusId || '');
+      const button = control.querySelector('.BetterX-dl-btn');
+      const cancel = control.querySelector('.BetterX-dl-cancel');
+      if (!button) return;
+      const active = isActiveDownloadJob(job);
+      const progress = getDownloadJobProgress(job);
+      control.dataset.downloadState = job ? job.status : 'idle';
+      button.classList.toggle('is-progress', active);
+      button.style.setProperty('--xv-download-progress', `${progress.percent * 3.6}deg`);
+      button.textContent = job ? describeDownloadJob(job, true) : '⬇';
+      button.title = job ? describeDownloadJob(job, false) : '下载图片/视频/GIF';
+      if (cancel) cancel.hidden = !active;
+    });
+
+    if (!state.downloadPillEl) return;
+    const jobs = [...downloadJobs.values()];
+    const activeJobs = jobs.filter(isActiveDownloadJob);
+    state.downloadPillEl.hidden = jobs.length === 0;
+    if (!jobs.length) {
+      if (state.downloadPopoverEl) state.downloadPopoverEl.hidden = true;
+      return;
+    }
+    const loaded = activeJobs.reduce((sum, job) => sum + getDownloadJobProgress(job).loaded, 0);
+    const total = activeJobs.reduce((sum, job) => sum + getDownloadJobProgress(job).total, 0);
+    const allKnown = activeJobs.length > 0 && activeJobs.every((job) => getDownloadJobProgress(job).allKnown);
+    const percent = allKnown && total > 0 ? Math.round((loaded / total) * 100) : 0;
+    const isMobile = state.rootEl && state.rootEl.classList.contains('BetterX-mobile');
+    const recentJob = jobs.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0];
+    const label = activeJobs.length
+      ? `${activeJobs.length} 个任务 · ${allKnown ? percent + '%' : formatDownloadBytes(loaded)}`
+      : describeDownloadJob(recentJob, false);
+    const labelEl = state.downloadPillEl.querySelector('.BetterX-download-pill-label');
+    const countEl = state.downloadPillEl.querySelector('.BetterX-download-pill-count');
+    if (labelEl) labelEl.textContent = label;
+    if (countEl) {
+      countEl.hidden = !isMobile || activeJobs.length === 0;
+      countEl.textContent = activeJobs.length > 99 ? '99+' : String(activeJobs.length);
+    }
+    state.downloadPillEl.setAttribute('aria-label', activeJobs.length ? `查看下载任务：${label}` : `查看下载任务：${describeDownloadJob(recentJob, false)}`);
+    state.downloadPillEl.style.setProperty('--xv-download-progress', `${percent * 3.6}deg`);
+    state.downloadPillEl.classList.toggle('is-progress', activeJobs.length > 0);
+    renderDownloadTaskPopover();
+  }
+
+  function toggleDownloadPopover(force) {
+    if (!state.downloadPopoverEl || !downloadJobs.size) return;
+    const next = typeof force === 'boolean' ? force : state.downloadPopoverEl.hidden;
+    state.downloadPopoverEl.hidden = !next;
+    if (next) renderDownloadTaskPopover();
+  }
+
+  function getDownloadConcurrencyLimit() {
+    return clampInt(
+      state.settings.downloadConcurrency,
+      DOWNLOAD_MIN_CONCURRENCY,
+      DOWNLOAD_MAX_CONCURRENCY,
+      DEFAULT_SETTINGS.downloadConcurrency
+    );
+  }
+
+  function pumpDownloadTransferQueue() {
+    const concurrencyLimit = getDownloadConcurrencyLimit();
+    while (activeDownloadTransfers < concurrencyLimit && downloadTransferQueue.length) {
+      const entry = downloadTransferQueue.shift();
+      if (entry.job.cancelRequested) { entry.reject(makeDownloadCancelledError()); continue; }
+      activeDownloadTransfers++;
+      Promise.resolve().then(entry.task).then(entry.resolve, entry.reject).finally(() => {
+        activeDownloadTransfers--;
+        pumpDownloadTransferQueue();
+      });
     }
   }
 
-  function handleDownloadClick(btn, article, author, statusId) {
-    if (btn.dataset.busy === '1') return;
-    btn.dataset.busy = '1';
-    const old = btn.innerHTML;
-    btn.innerHTML = '⏳';
-    Promise.resolve(downloadTweetMedia(article, author, statusId)).catch(() => {}).then(() => {
-      btn.innerHTML = old;
-      btn.dataset.busy = '0';
+  function runWithDownloadSlot(job, task) {
+    return new Promise((resolve, reject) => {
+      downloadTransferQueue.push({ job, task, resolve, reject });
+      pumpDownloadTransferQueue();
     });
+  }
+
+  function cancelDownloadJob(jobId) {
+    const job = downloadJobs.get(String(jobId || ''));
+    if (!isActiveDownloadJob(job) || job.cancelRequested || job.status === 'cancelling') return;
+    job.cancelRequested = true;
+    job.status = 'cancelling';
+    job.cancelHandles = new Set([...(job.cancelHandles || []), ...(job.requests || [])]);
+    job.controllers.forEach((controller) => { try { controller.abort(); } catch (err) {} });
+    (job.requests || []).forEach((request) => { try { if (request && typeof request.abort === 'function') request.abort(); } catch (err) {} });
+    const repeatAbort = () => {
+      (job.cancelHandles || []).forEach((request) => {
+        try { if (request && typeof request.abort === 'function') request.abort(); } catch (err) {}
+      });
+    };
+    (job.cancelAbortTimers || []).forEach((timer) => clearTimeout(timer));
+    job.cancelAbortTimers = [80, 250, 700, 1500].map((delay) => setTimeout(repeatAbort, delay));
+    job.cancelAbortTimers.push(setTimeout(() => {
+      if (job.cancelHandles) job.cancelHandles.clear();
+      job.cancelAbortTimers = [];
+    }, 2500));
+    for (let index = downloadTransferQueue.length - 1; index >= 0; index--) {
+      const queued = downloadTransferQueue[index];
+      if (queued.job !== job) continue;
+      downloadTransferQueue.splice(index, 1);
+      queued.reject(makeDownloadCancelledError());
+    }
+    job.updatedAt = now();
+    scheduleDownloadUiRefresh();
+  }
+
+  function scheduleDownloadJobCleanup(job, delay) {
+    if (job.cleanupTimer) clearTimeout(job.cleanupTimer);
+    job.cleanupTimer = setTimeout(() => {
+      if (downloadJobs.get(job.id) === job && !isActiveDownloadJob(job)) downloadJobs.delete(job.id);
+      scheduleDownloadUiRefresh();
+    }, delay);
+  }
+
+  function saveIndividualDownload(job, result) {
+    if (!result || !result.blob) return;
+    job.updatedAt = now();
+    saveBlob(result.blob, `${job.baseName}_${result.index + 1}.${result.ext}`);
+    result.blob = null;
+    result.saved = true;
+    job.savedCount++;
+    scheduleDownloadUiRefresh();
+  }
+
+  async function runDownloadJob(job) {
+    job.status = 'downloading';
+    job.updatedAt = now();
+    scheduleDownloadUiRefresh();
+    const zipMemoryLimit = isMobileBadgeViewport()
+      ? DOWNLOAD_ZIP_MEMORY_LIMIT_MOBILE
+      : DOWNLOAD_ZIP_MEMORY_LIMIT_DESKTOP;
+    const retainedResults = [];
+    let retainedBytes = 0;
+    let individualMode = false;
+
+    const acceptResult = (result) => {
+      if (job.items.length === 1) {
+        job.status = 'saving';
+        saveBlob(result.blob, `${job.baseName}.${result.ext}`);
+        result.blob = null;
+        result.saved = true;
+        job.savedCount++;
+        return;
+      }
+      if (!individualMode && retainedBytes + result.blob.size > zipMemoryLimit) {
+        individualMode = true;
+        job.fallbackIndividual = true;
+        retainedResults.splice(0).forEach((saved) => saveIndividualDownload(job, saved));
+        retainedBytes = 0;
+      }
+      if (individualMode) saveIndividualDownload(job, result);
+      else {
+        retainedResults.push(result);
+        retainedBytes += result.blob.size;
+      }
+    };
+
+    const outcomes = await Promise.all(job.items.map((item, index) => runWithDownloadSlot(job, async () => {
+      if (job.cancelRequested) throw makeDownloadCancelledError();
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      if (controller) job.controllers.add(controller);
+      job.itemProgress[index].status = 'downloading';
+      try {
+        const blob = await fetchBlobWithRetry(item.url, {
+          signal: controller ? controller.signal : null,
+          onRequestHandle: (request, active) => {
+            if (!request || !job.requests) return;
+            if (active) {
+              job.requests.add(request);
+              if (job.cancelRequested && typeof request.abort === 'function') {
+                job.cancelHandles.add(request);
+                try { request.abort(); } catch (err) {}
+              }
+            } else job.requests.delete(request);
+          },
+          onProgress: (loaded, total, totalKnown) => {
+            if (job.cancelRequested) return;
+            const progress = job.itemProgress[index];
+            progress.loaded = loaded;
+            progress.total = totalKnown ? total : 0;
+            progress.totalKnown = totalKnown && total > 0;
+            job.updatedAt = now();
+            scheduleDownloadUiRefresh();
+          },
+          onRetry: () => {
+            const progress = job.itemProgress[index];
+            progress.loaded = 0;
+            progress.total = 0;
+            progress.totalKnown = false;
+            job.retryCount++;
+            scheduleDownloadUiRefresh();
+          },
+        });
+        const progress = job.itemProgress[index];
+        progress.loaded = blob.size;
+        progress.total = blob.size;
+        progress.totalKnown = true;
+        progress.status = 'done';
+        job.completedCount++;
+        const result = { blob, ext: item.ext, index };
+        acceptResult(result);
+        return { ok: true, result };
+      } catch (error) {
+        job.itemProgress[index].status = error && error.code === 'DOWNLOAD_CANCELLED' ? 'cancelled' : 'error';
+        return { ok: false, error, index };
+      } finally {
+        if (controller) job.controllers.delete(controller);
+        job.updatedAt = now();
+        scheduleDownloadUiRefresh();
+      }
+    }).catch((error) => {
+      job.itemProgress[index].status = error && error.code === 'DOWNLOAD_CANCELLED' ? 'cancelled' : 'error';
+      return { ok: false, error, index };
+    })));
+
+    if (job.cancelRequested) {
+      retainedResults.forEach((result) => { result.blob = null; });
+      job.status = 'cancelled';
+      job.updatedAt = now();
+      scheduleDownloadJobCleanup(job, 5000);
+      scheduleDownloadUiRefresh();
+      return;
+    }
+
+    const failures = outcomes.filter((outcome) => !outcome.ok && (!outcome.error || outcome.error.code !== 'DOWNLOAD_CANCELLED'));
+    job.failedCount = failures.length;
+    if (!job.savedCount && !retainedResults.length) {
+      job.status = 'error';
+      job.errorMessage = failures[0] && failures[0].error ? failures[0].error.message : '全部媒体下载失败';
+      job.updatedAt = now();
+      scheduleDownloadJobCleanup(job, 30000);
+      scheduleDownloadUiRefresh();
+      return;
+    }
+
+    if (!individualMode && retainedResults.length === 1) {
+      saveIndividualDownload(job, retainedResults[0]);
+      retainedResults.length = 0;
+    } else if (!individualMode && retainedResults.length > 1) {
+      job.status = 'packing';
+      job.packCompleted = 0;
+      job.packTotal = retainedResults.length;
+      scheduleDownloadUiRefresh();
+      const files = [];
+      try {
+        for (const result of retainedResults) {
+          if (job.cancelRequested) throw makeDownloadCancelledError();
+          const buffer = await blobToArrayBuffer(result.blob);
+          if (job.cancelRequested) throw makeDownloadCancelledError();
+          result.blob = null;
+          files.push({ resultIndex: result.index, name: `${result.index + 1}.${result.ext}`, data: new Uint8Array(buffer), modifiedAt: new Date() });
+          job.packCompleted++;
+          scheduleDownloadUiRefresh();
+        }
+        if (job.cancelRequested) throw makeDownloadCancelledError();
+        const content = buildStoreZip(files, new Date());
+        if (job.cancelRequested) throw makeDownloadCancelledError();
+        job.status = 'saving';
+        saveBlob(content, `${job.baseName}.zip`);
+        job.savedCount = files.length;
+        files.length = 0;
+      } catch (error) {
+        if (error && error.code === 'DOWNLOAD_CANCELLED') {
+          retainedResults.forEach((result) => { result.blob = null; });
+          files.length = 0;
+          throw error;
+        }
+        job.fallbackIndividual = true;
+        job.status = 'saving';
+        let fallbackSaved = 0;
+        for (let index = 0; index < retainedResults.length; index++) {
+          const result = retainedResults[index];
+          const prepared = files.find((file) => file.resultIndex === result.index);
+          const fallbackBlob = result.blob || (prepared ? new Blob([prepared.data]) : null);
+          if (fallbackBlob) {
+            saveBlob(fallbackBlob, `${job.baseName}_${result.index + 1}.${result.ext}`);
+            fallbackSaved++;
+          }
+          result.blob = null;
+        }
+        job.savedCount += fallbackSaved;
+        files.length = 0;
+        if (error && error.code !== 'ZIP_CLASSIC_LIMIT') console.error('[BetterX] ZIP 打包失败，已改为逐个保存:', error);
+      }
+      retainedResults.length = 0;
+    }
+
+    job.status = 'done';
+    job.updatedAt = now();
+    job.errorMessage = '';
+    scheduleDownloadJobCleanup(job, 8000);
+    scheduleDownloadUiRefresh();
+    showToast(job.fallbackIndividual
+      ? `✅ 下载完成：已逐个保存 ${job.savedCount} 个文件`
+      : `✅ 下载完成${job.failedCount ? `，跳过 ${job.failedCount} 个失败项` : ''}`,
+    5000);
+  }
+
+  function startDownloadJob(items, author, statusId) {
+    const id = String(statusId || '');
+    const previous = downloadJobs.get(id);
+    if (isActiveDownloadJob(previous)) { toggleDownloadPopover(true); return previous; }
+    if (previous && previous.cleanupTimer) clearTimeout(previous.cleanupTimer);
+    const uname = String((author && author.username) || 'x').replace(/^@/, '') || 'x';
+    const baseName = (uname + '_' + statusId).replace(/[\\/:*?"<>|]+/g, '_');
+    const job = {
+      id, statusId: id, baseName, username: uname, items: items.map((item) => ({ ...item })),
+      itemProgress: items.map(() => ({ loaded: 0, total: 0, totalKnown: false, status: 'queued' })),
+      status: 'queued', createdAt: now(), updatedAt: now(), completedCount: 0, failedCount: 0,
+      savedCount: 0, retryCount: 0, packCompleted: 0, packTotal: 0, fallbackIndividual: false,
+      cancelRequested: false, controllers: new Set(), requests: new Set(), cancelHandles: new Set(),
+      cancelAbortTimers: [], cleanupTimer: null, errorMessage: '',
+    };
+    downloadJobs.set(id, job);
+    scheduleDownloadUiRefresh();
+    Promise.resolve(runDownloadJob(job)).catch((error) => {
+      job.status = error && error.code === 'DOWNLOAD_CANCELLED' ? 'cancelled' : 'error';
+      job.errorMessage = (error && error.message) || '未知错误';
+      job.updatedAt = now();
+      scheduleDownloadJobCleanup(job, job.status === 'cancelled' ? 5000 : 30000);
+      scheduleDownloadUiRefresh();
+    });
+    return job;
+  }
+
+  function retryDownloadJob(jobId) {
+    const previous = downloadJobs.get(String(jobId || ''));
+    if (!previous || isActiveDownloadJob(previous)) return;
+    return startDownloadJob(previous.items, { username: previous.username }, previous.statusId);
+  }
+
+  function handleDownloadClick(article, author, statusId) {
+    const existing = downloadJobs.get(String(statusId || ''));
+    if (isActiveDownloadJob(existing)) { toggleDownloadPopover(true); return; }
+    const items = collectDownloadItems(article, statusId);
+    if (!items.length) {
+      showToast('未找到可下载的媒体，若为视频请先点开或播放一下再试');
+      return;
+    }
+    startDownloadJob(items, author, statusId);
+  }
+
+  function isDownloadExcludedArticle(article) {
+    if (!article) return false;
+    // 通知卡片会复用 tweetText / pbs.twimg.com/media，但它不是可下载的帖子操作区。
+    if (article.matches && article.matches('[data-testid="notification"]')) return true;
+    return !!(article.closest && article.closest('[data-testid="notification"]'));
   }
 
   function injectDownloadButtons(scope) {
@@ -1861,32 +2822,96 @@
     const root = (scope && scope.querySelectorAll) ? scope : document;
     const articles = (root.matches && root.matches('article')) ? [root] : root.querySelectorAll('article');
     articles.forEach((article) => {
-      if (article.closest('#xvault-root')) return;
-      if (article.querySelector('.xvault-dl-btn')) return;
-      const hasDomMedia = article.querySelector('[data-testid="tweetPhoto"], [data-testid="videoComponent"], [data-testid="videoPlayer"], img[src*="pbs.twimg.com/media/"], video[poster]');
+      if (article.closest('#BetterX-root')) return;
+      if (isDownloadExcludedArticle(article)) {
+        article.querySelectorAll('.BetterX-download-controls').forEach((control) => control.remove());
+        return;
+      }
+      if (article.querySelector('.BetterX-download-controls')) return;
       const statusId = extractStatusIdFromUrl(getStatusLink(article));
-      const hasReg = statusId && mediaRegistry.has(String(statusId));
+      // 没有帖子 ID 的通知/推荐卡片无法稳定命名和隔离任务，不注入下载控件。
+      if (!statusId) return;
+      const hasDomMedia = article.querySelector('[data-testid="tweetPhoto"], [data-testid="videoComponent"], [data-testid="videoPlayer"], img[src*="pbs.twimg.com/media/"], video[poster]');
+      const hasReg = statusId && (mediaRegistry.has(String(statusId)) || cardRegistry.has(String(statusId)));
       if (!hasDomMedia && !hasReg) return;
       const author = extractAuthor(article);
       const group = article.querySelector('[role="group"]');
+      const controls = document.createElement('span');
+      controls.className = 'BetterX-download-controls';
+      controls.dataset.statusId = String(statusId || '');
       const btn = document.createElement('button');
-      btn.className = 'xvault-dl-btn';
+      btn.className = 'BetterX-dl-btn';
       btn.type = 'button';
       btn.title = '下载图片/视频/GIF';
       btn.textContent = '⬇';
-      btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); handleDownloadClick(btn, article, author, statusId); }, true);
-      if (group) { btn.classList.add('in-group'); group.appendChild(btn); }
-      else { btn.classList.add('floating'); if (!article.style.position) article.style.position = 'relative'; article.appendChild(btn); }
+      btn.addEventListener('click', (event) => {
+        event.preventDefault(); event.stopPropagation(); handleDownloadClick(article, author, statusId);
+      }, true);
+      const cancel = document.createElement('button');
+      cancel.className = 'BetterX-dl-cancel';
+      cancel.type = 'button';
+      cancel.title = '取消下载';
+      cancel.textContent = '×';
+      cancel.hidden = true;
+      cancel.addEventListener('click', (event) => {
+        event.preventDefault(); event.stopPropagation(); cancelDownloadJob(statusId);
+      }, true);
+      controls.append(btn, cancel);
+      if (group) { controls.classList.add('in-group'); group.appendChild(controls); }
+      else {
+        controls.classList.add('floating');
+        if (!article.style.position) article.style.position = 'relative';
+        article.appendChild(controls);
+      }
     });
+    scheduleDownloadUiRefresh();
   }
 
   function removeDownloadButtons() {
-    document.querySelectorAll('.xvault-dl-btn').forEach((el) => el.remove());
+    document.querySelectorAll('.BetterX-download-controls, .BetterX-dl-btn').forEach((el) => el.remove());
   }
 
   function applyMediaDownload() {
     if (state.settings.mediaDownload) injectDownloadButtons(document);
     else removeDownloadButtons();
+  }
+
+  // ── 恢复多媒体网格视图 ────────────────────────────────────────────
+  // X 现将多媒体放进 ScrollSnap 轮播；只给含两项以上媒体的列表加类，
+  // 保留原有链接、视频控件和 React 事件处理，关闭设置时也能无损还原。
+  function getArticlesFromScope(scope) {
+    const root = (scope && scope.querySelectorAll) ? scope : document;
+    return root.matches && root.matches('article') ? [root] : [...root.querySelectorAll('article')];
+  }
+
+  function removeMediaGridLayout(scope) {
+    const root = (scope && scope.querySelectorAll) ? scope : document;
+    root.querySelectorAll('.BetterX-media-grid').forEach((el) => {
+      el.classList.remove('BetterX-media-grid', 'BetterX-media-grid-count-2', 'BetterX-media-grid-count-3', 'BetterX-media-grid-count-4');
+    });
+    root.querySelectorAll('.BetterX-media-grid-box').forEach((el) => el.classList.remove('BetterX-media-grid-box'));
+  }
+
+  function restoreMediaGridInArticle(article) {
+    if (!article || article.closest('#BetterX-root')) return;
+    article.querySelectorAll('[data-testid="ScrollSnap-List"]').forEach((list) => {
+      const items = [...list.children].filter((child) => child.getAttribute('role') === 'presentation');
+      const nav = list.closest('nav[role="navigation"]');
+      if (!nav) return;
+      nav.classList.remove('BetterX-media-grid', 'BetterX-media-grid-count-2', 'BetterX-media-grid-count-3', 'BetterX-media-grid-count-4');
+      if (nav.parentElement) nav.parentElement.classList.remove('BetterX-media-grid-box');
+      if (items.length < 2) return;
+      nav.classList.add('BetterX-media-grid', `BetterX-media-grid-count-${Math.min(items.length, 4)}`);
+      if (nav.parentElement) nav.parentElement.classList.add('BetterX-media-grid-box');
+    });
+  }
+
+  function applyMediaGridLayout(scope) {
+    if (!state.settings.restoreMediaGrid) {
+      removeMediaGridLayout(scope);
+      return;
+    }
+    getArticlesFromScope(scope).forEach(restoreMediaGridInArticle);
   }
 
   // ── 取消年龄限制（用下载能力内联替换遮罩）─────────────
@@ -1916,9 +2941,9 @@
     return best;
   }
 
-  function buildUnlockedMediaEl(media) {
+  function buildUnlockedMediaEl(media, statusUrl) {
     const box = document.createElement('div');
-    box.className = 'xvault-unlocked';
+    box.className = 'BetterX-unlocked BetterX-native-media-grid';
     const total = media.photos.length + media.gifs.length + media.videos.length;
     if (total === 1) {
       box.classList.add('xv-n1');
@@ -1929,22 +2954,37 @@
       else if (total === 4) box.classList.add('xv-n4');
       else box.classList.add('xv-nm');
     }
-    media.photos.forEach((u) => {
+    const nativeStatusUrl = normalizeUrl(statusUrl || '').replace(/\/photo\/\d+$/i, '');
+    media.photos.forEach((u, index) => {
       const a = document.createElement('a');
-      a.href = u; a.target = '_blank'; a.rel = 'noopener';
+      // 使用 X 自己的 /photo/n 路由，点击后仍进入原生图片查看器，而不是裸图新标签页。
+      a.href = nativeStatusUrl ? `${nativeStatusUrl}/photo/${index + 1}` : u;
+      a.className = 'BetterX-unlocked-tile BetterX-unlocked-photo';
+      a.setAttribute('role', 'link');
+      if (!nativeStatusUrl) { a.target = '_blank'; a.rel = 'noopener'; }
+      const mediaEl = document.createElement('div');
+      mediaEl.className = 'BetterX-unlocked-media';
+      mediaEl.setAttribute('data-testid', 'tweetPhoto');
+      mediaEl.setAttribute('aria-label', '图像');
       const img = document.createElement('img');
       img.src = u; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.alt = '';
-      a.appendChild(img); box.appendChild(a);
+      mediaEl.appendChild(img); a.appendChild(mediaEl); box.appendChild(a);
     });
     media.gifs.forEach((u) => {
+      const tile = document.createElement('div');
+      tile.className = 'BetterX-unlocked-tile BetterX-unlocked-video';
+      tile.setAttribute('data-testid', 'videoComponent');
       const v = document.createElement('video');
-      v.src = u; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true; v.controls = true;
-      box.appendChild(v);
+      v.src = u; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+      tile.appendChild(v); box.appendChild(tile);
     });
     media.videos.forEach((u) => {
+      const tile = document.createElement('div');
+      tile.className = 'BetterX-unlocked-tile BetterX-unlocked-video';
+      tile.setAttribute('data-testid', 'videoComponent');
       const v = document.createElement('video');
       v.src = u; v.controls = true; v.playsInline = true; v.preload = 'metadata';
-      box.appendChild(v);
+      tile.appendChild(v); box.appendChild(tile);
     });
     return box;
   }
@@ -1965,7 +3005,7 @@
 
   function revealCardUnderMask(warnEl, article) {
     if (!warnEl || !article) return;
-    if (warnEl.closest('.xvault-mask-hidden')) return; // 已揭掉，避免重复处理
+    if (warnEl.closest('.BetterX-mask-hidden')) return; // 已揭掉，避免重复处理
     // 仅当帖子确实存在可露出的真实卡片 / 播放器时才动手，否则保持原状（避免误伤纯图片遮罩）
     if (!article.querySelector(CARD_CONTENT_SEL)) return;
     // 从警告文案向上找“遮罩覆盖层”：包含文案与按钮、但本身不含真实卡片内容的最上层祖先
@@ -1977,13 +3017,13 @@
     }
     if (!overlay || overlay === article) return;
     if (overlay.querySelector(CARD_CONTENT_SEL)) return; // 安全兑底：绝不隐藏含真实内容的层
-    overlay.classList.add('xvault-mask-hidden');
+    overlay.classList.add('BetterX-mask-hidden');
   }
 
   function unlockAgeRestricted(article) {
     if (!article || !article.querySelector) return;
-    if (article.closest('#xvault-root')) return;
-    if (article.querySelector('.xvault-unlocked')) return; // 已处理，避免重复注入
+    if (article.closest('#BetterX-root')) return;
+    if (article.querySelector('.BetterX-unlocked')) return; // 已处理，避免重复注入
     const warnEl = findAgeWarnEl(article);
     if (!warnEl) return;
     const statusId = extractStatusIdFromUrl(getStatusLink(article));
@@ -1994,8 +3034,8 @@
       if (card && (card.photos.length || card.gifs.length || card.videos.length)) {
         const cblock = getAgeMaskBlock(warnEl, article);
         if (!cblock || !cblock.parentElement) return;
-        cblock.classList.add('xvault-mask-hidden');
-        cblock.insertAdjacentElement('afterend', buildUnlockedMediaEl(card));
+        cblock.classList.add('BetterX-mask-hidden');
+        cblock.insertAdjacentElement('afterend', buildUnlockedMediaEl(card, getStatusLink(article)));
         return;
       }
       // 仍取不到：回退到“揭掉遮罩层”（适用于真实卡片仍在 DOM 的情况）
@@ -2004,8 +3044,8 @@
     }
     const block = getAgeMaskBlock(warnEl, article);
     if (!block || !block.parentElement) return;
-    block.classList.add('xvault-mask-hidden');
-    block.insertAdjacentElement('afterend', buildUnlockedMediaEl(media));
+    block.classList.add('BetterX-mask-hidden');
+    block.insertAdjacentElement('afterend', buildUnlockedMediaEl(media, getStatusLink(article)));
   }
 
   function revealAgeRestricted(scope) {
@@ -2016,8 +3056,8 @@
   }
 
   function removeUnlockedMedia() {
-    document.querySelectorAll('.xvault-unlocked').forEach((el) => el.remove());
-    document.querySelectorAll('.xvault-mask-hidden').forEach((el) => el.classList.remove('xvault-mask-hidden'));
+    document.querySelectorAll('.BetterX-unlocked').forEach((el) => el.remove());
+    document.querySelectorAll('.BetterX-mask-hidden').forEach((el) => el.classList.remove('BetterX-mask-hidden'));
   }
 
   function applyAgeBypass() {
@@ -2027,10 +3067,10 @@
 
   let xvToastTimer = null;
   function showToast(msg, duration) {
-    let t = document.getElementById('xvault-toast');
+    let t = document.getElementById('BetterX-toast');
     if (!t) {
       t = document.createElement('div');
-      t.id = 'xvault-toast';
+      t.id = 'BetterX-toast';
       (state.rootEl || document.body).appendChild(t);
     }
     t.textContent = msg;
@@ -2042,7 +3082,7 @@
   }
 
   function closeBetterXDialog() {
-    const dialog = document.getElementById('xvault-choice-dialog');
+    const dialog = document.getElementById('BetterX-choice-dialog');
     if (dialog) dialog.remove();
   }
 
@@ -2050,20 +3090,20 @@
     if (!state.rootEl) return;
     closeBetterXDialog();
     const overlay = document.createElement('div');
-    overlay.id = 'xvault-choice-dialog';
-    overlay.className = 'xvault-dialog-overlay';
+    overlay.id = 'BetterX-choice-dialog';
+    overlay.className = 'BetterX-dialog-overlay';
     overlay.innerHTML = `
-      <div class="xvault-dialog" role="dialog" aria-modal="true" aria-labelledby="xvault-dialog-title">
-        <div class="xvault-dialog-title" id="xvault-dialog-title"></div>
-        <div class="xvault-dialog-body"></div>
-        <div class="xvault-dialog-actions">
-          <button type="button" class="xvault-btn" data-dialog-choice="secondary"></button>
-          <button type="button" class="xvault-btn primary" data-dialog-choice="primary"></button>
+      <div class="BetterX-dialog" role="dialog" aria-modal="true" aria-labelledby="BetterX-dialog-title">
+        <div class="BetterX-dialog-title" id="BetterX-dialog-title"></div>
+        <div class="BetterX-dialog-body"></div>
+        <div class="BetterX-dialog-actions">
+          <button type="button" class="BetterX-btn" data-dialog-choice="secondary"></button>
+          <button type="button" class="BetterX-btn primary" data-dialog-choice="primary"></button>
         </div>
       </div>
     `;
-    overlay.querySelector('.xvault-dialog-title').textContent = options.title || 'BetterX 提示';
-    overlay.querySelector('.xvault-dialog-body').innerHTML = options.bodyHtml || '';
+    overlay.querySelector('.BetterX-dialog-title').textContent = options.title || 'BetterX 提示';
+    overlay.querySelector('.BetterX-dialog-body').innerHTML = options.bodyHtml || '';
     const primary = overlay.querySelector('[data-dialog-choice="primary"]');
     const secondary = overlay.querySelector('[data-dialog-choice="secondary"]');
     primary.textContent = options.primaryText || '确定';
@@ -2120,7 +3160,7 @@
     }
     showBetterXDialog({
       title: '关闭“兼容 Firefox”？',
-      bodyHtml: '<p>关闭后将恢复网络媒体与关注关系采集。如果当前环境曾卡在只显示 X 图标的页面，建议继续保持开启。确认后页面会刷新。</p>',
+      bodyHtml: '<p>关闭后将恢复 v1.7 的网络媒体与关注关系采集。如果当前环境曾卡在只显示 X 图标的页面，建议继续保持开启。确认后页面会刷新。</p>',
       primaryText: '关闭并刷新',
       secondaryText: '取消',
       onPrimary: () => reloadAfterFirefoxCompatibilityChange(false),
@@ -2151,10 +3191,102 @@
     });
   }
 
+  function switchFirefoxCompatibilityFromMenu(enabled) {
+    if (!IS_FIREFOX) return;
+    writeFirefoxCompatibilityMode(enabled ? 'compat' : 'normal');
+    const reload = () => {
+      try { location.reload(); } catch (err) { console.error('[BetterX] reload failed:', err); }
+    };
+    if (!state.settingsLoaded) { reload(); return; }
+    state.settings.firefoxCompatibility = !!enabled;
+    state.settings.firefoxCompatibilityPrompted = true;
+    queueDbWrite(async () => { await persistSettings(); });
+    Promise.resolve(state.dbWriteQueue).then(reload).catch(reload);
+  }
+
+  function buildFirefoxCompatibilityDiagnostic() {
+    const diagnostic = {
+      generatedAt: new Date().toISOString(),
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.5.0',
+      userAgent: navigator.userAgent || '',
+      page: `${location.origin || ''}${location.pathname || ''}`,
+      readyState: document.readyState || '',
+      visibilityState: document.visibilityState || '',
+      firefoxCompatibilityMode,
+      settingsLoaded: !!state.settingsLoaded,
+      settingsCompatibilityEnabled: !!state.settings.firefoxCompatibility,
+      postsInMemory: state.posts.length,
+      mediaRegistrySize: mediaRegistry.size,
+      cardRegistrySize: cardRegistry.size,
+      followedHandlesSize: followedHandles.size,
+      networkHookInstallCounts: { ...networkHookInstallCounts },
+      networkHarvestQueueSize: networkHarvestQueue.length,
+      networkHarvestQueuedChars,
+      networkHarvestDroppedJobs,
+      networkHookStatus: { fetch: 'not-inspected', xhrOpen: 'not-inspected', xhrSend: 'not-inspected' },
+    };
+    // 兼容模式下诊断也不读取 unsafeWindow，避免自救工具反过来触发 Xray 问题。
+    if (firefoxCompatibilityMode === 'normal') {
+      try {
+        const pageWin = getPageWindow();
+        diagnostic.networkHookStatus.fetch = !!(pageWin.fetch && pageWin.fetch.__xvHooked);
+        const proto = pageWin.XMLHttpRequest && pageWin.XMLHttpRequest.prototype;
+        diagnostic.networkHookStatus.xhrOpen = !!(proto && proto.open && proto.open.__xvHooked);
+        diagnostic.networkHookStatus.xhrSend = !!(proto && proto.send && proto.send.__xvHooked);
+      } catch (error) {
+        diagnostic.networkHookStatus.error = String((error && error.message) || error || 'unknown');
+      }
+    }
+    return diagnostic;
+  }
+
+  function downloadFirefoxCompatibilityDiagnostic() {
+    const diagnostic = buildFirefoxCompatibilityDiagnostic();
+    const json = JSON.stringify(diagnostic, null, 2);
+    console.info('[BetterX] Firefox compatibility diagnostic:', diagnostic);
+    if (!document.body) {
+      window.alert('页面尚未就绪，诊断信息已输出到控制台。');
+      return;
+    }
+    download(`betterx-firefox-diagnostic-${new Date().toISOString().replace(/[:.]/g, '-')}.json`, json);
+    if (state.rootEl) showToast('已导出 Firefox 兼容诊断');
+  }
+
+  function toggleDesktopBadgeFromMenu() {
+    if (isMobileBadgeViewport()) {
+      if (state.rootEl) showToast('“隐藏应用徽标”仅对 PC 生效');
+      else window.alert('BetterX：“隐藏应用徽标”仅对 PC 生效。');
+      return;
+    }
+    const hidden = !state.settings.hideAppBadgeOnDesktop;
+    setSettingsPartial({ hideAppBadgeOnDesktop: hidden });
+    if (state.rootEl) showToast(hidden ? '已隐藏应用徽标 · Alt+X 可打开面板' : '已显示应用徽标');
+  }
+
+  function registerMenuCommands() {
+    if (typeof GM_registerMenuCommand !== 'function') return;
+    try {
+      GM_registerMenuCommand('BetterX：显示 / 隐藏应用徽标（仅 PC）', toggleDesktopBadgeFromMenu);
+      if (IS_FIREFOX) {
+        GM_registerMenuCommand('BetterX：强制开启 Firefox 兼容模式并刷新', () => {
+          switchFirefoxCompatibilityFromMenu(true);
+        });
+        GM_registerMenuCommand('BetterX：恢复 Firefox 完整模式并刷新', () => {
+          switchFirefoxCompatibilityFromMenu(false);
+        });
+        GM_registerMenuCommand('BetterX：导出 Firefox 兼容诊断', downloadFirefoxCompatibilityDiagnostic);
+      }
+    } catch (err) {
+      console.error('[BetterX] register menu commands failed:', err);
+    }
+  }
+
   // ── 广告检测 / 屏蔽 ──────────────────────────────────────────────────
   // X 的推广帖特征：article 外层含 [data-testid="placementTracking"] 追踪像素，
   // 且头部有独立的“广告 / Ad / Promoted”标签（不在正文 tweetText 内）。
   const AD_LABELS = ['广告', '推广', 'Ad', 'Promoted', 'Publicidad', 'Anúncio', '広告', '광고'];
+  // X 新增的独立程序化广告位（Google SafeFrame），不属于 article，需隐藏整个卡片以免留下空白。
+  const STANDALONE_AD_SELECTOR = '[data-testid="whoToFollowSspAd"], [data-testid$="SspAd"]';
   function isAdArticle(article) {
     if (!article || !article.querySelector) return false;
     const cell = article.closest('[data-testid="cellInnerDiv"]') || article;
@@ -2173,27 +3305,47 @@
 
   function hideAdElement(article) {
     const cell = article.closest('[data-testid="cellInnerDiv"]') || article;
-    if (cell && cell.classList) cell.classList.add('xvault-ad-hidden');
+    if (cell && cell.classList) cell.classList.add('BetterX-ad-hidden');
     else if (cell) cell.style.display = 'none';
   }
 
-  function sweepAds() {
+  function hideStandaloneAdElement(element) {
+    if (!element) return;
+    const container = element.matches && element.matches(STANDALONE_AD_SELECTOR)
+      ? element
+      : (element.closest ? element.closest(STANDALONE_AD_SELECTOR) : null);
+    if (!container) return;
+    if (container.classList) container.classList.add('BetterX-ad-hidden');
+    else if (container.style) container.style.display = 'none';
+  }
+
+  function sweepStandaloneAds(root) {
     if (!state.settings.hideAds) return;
-    document.querySelectorAll('article').forEach((a) => {
+    const scope = root && root.querySelectorAll ? root : document;
+    if (scope.matches && scope.matches(STANDALONE_AD_SELECTOR)) hideStandaloneAdElement(scope);
+    if (scope.closest) hideStandaloneAdElement(scope.closest(STANDALONE_AD_SELECTOR));
+    scope.querySelectorAll(STANDALONE_AD_SELECTOR).forEach(hideStandaloneAdElement);
+  }
+
+  function sweepAds(root) {
+    if (!state.settings.hideAds) return;
+    const scope = root && root.querySelectorAll ? root : document;
+    const articles = scope.matches && scope.matches('article') ? [scope] : scope.querySelectorAll('article');
+    articles.forEach((a) => {
       if (isAdArticle(a)) hideAdElement(a);
     });
+    sweepStandaloneAds(scope);
   }
 
   function unhideAds() {
-    document.querySelectorAll('.xvault-ad-hidden').forEach((el) => el.classList.remove('xvault-ad-hidden'));
+    document.querySelectorAll('.BetterX-ad-hidden').forEach((el) => el.classList.remove('BetterX-ad-hidden'));
   }
 
   function applyAdHiding() {
     if (state.settings.hideAds) sweepAds();
     else unhideAds();
   }
-
-  // ── 界面净化与宽屏 ─────────────────────────────────────────────────
+  // ── 界面简化与宽屏 ─────────────────────────────────────────────────
   // 参考 X/Twitter Clean-up & Wide Layout Display；改用可逆 CSS 和现有批处理观察器，
   // 不复制其无防抖的全页 MutationObserver，也不写入不可恢复的内联宽度。
   const LAYOUT_EXCLUDED_PATHS = ['/messages', '/settings'];
@@ -2215,8 +3367,8 @@
   function ensureLayoutStyle() {
     let style = state.layoutStyleEl;
     if (!style || !style.isConnected) {
-      style = document.getElementById('xvault-layout-style') || document.createElement('style');
-      style.id = 'xvault-layout-style';
+      style = document.getElementById('BetterX-layout-style') || document.createElement('style');
+      style.id = 'BetterX-layout-style';
       if (!style.isConnected) (document.head || document.documentElement).appendChild(style);
       state.layoutStyleEl = style;
     }
@@ -2225,9 +3377,9 @@
 
   function clearLayoutDomClasses() {
     const classes = [
-      'xvault-layout-clean-hidden', 'xvault-layout-showmore-hidden',
-      'xvault-layout-primary', 'xvault-layout-row', 'xvault-layout-main',
-      'xvault-layout-shell', 'xvault-layout-left-width-target',
+      'BetterX-layout-clean-hidden', 'BetterX-layout-showmore-hidden',
+      'BetterX-layout-primary', 'BetterX-layout-row', 'BetterX-layout-main',
+      'BetterX-layout-shell', 'BetterX-layout-left-width-target',
     ];
     for (const className of classes) {
       document.querySelectorAll(`.${className}`).forEach((el) => el.classList.remove(className));
@@ -2236,8 +3388,8 @@
 
   function clearLayoutStructureClasses() {
     const classes = [
-      'xvault-layout-primary', 'xvault-layout-row', 'xvault-layout-main',
-      'xvault-layout-shell', 'xvault-layout-left-width-target',
+      'BetterX-layout-primary', 'BetterX-layout-row', 'BetterX-layout-main',
+      'BetterX-layout-shell', 'BetterX-layout-left-width-target',
     ];
     for (const className of classes) {
       document.querySelectorAll(`.${className}`).forEach((el) => el.classList.remove(className));
@@ -2275,11 +3427,11 @@
   function detectNativeLayoutWidths(elements) {
     const { primary, leftWidthTarget } = elements;
     // 结构类已经生效时保留首次读到的原生值，避免把“填满后”的宽度误认为原生宽度。
-    if (primary && !primary.classList.contains('xvault-layout-primary')) {
+    if (primary && !primary.classList.contains('BetterX-layout-primary')) {
       const width = Math.round(primary.getBoundingClientRect().width);
       if (width >= 300 && width <= 3000) state.detectedTimelineWidth = width;
     }
-    if (leftWidthTarget && !leftWidthTarget.classList.contains('xvault-layout-left-width-target')) {
+    if (leftWidthTarget && !leftWidthTarget.classList.contains('BetterX-layout-left-width-target')) {
       const width = Math.round(leftWidthTarget.getBoundingClientRect().width);
       if (width >= 120 && width <= 600) state.detectedLeftbarWidth = width;
     }
@@ -2290,15 +3442,15 @@
     clearLayoutStructureClasses();
     if (!needsStructure) return;
     const { primary, main, row, leftWidthTarget } = elements;
-    if (primary) primary.classList.add('xvault-layout-primary');
-    if (row) row.classList.add('xvault-layout-row');
-    if (main) main.classList.add('xvault-layout-main');
-    if (manualWidth && leftWidthTarget) leftWidthTarget.classList.add('xvault-layout-left-width-target');
+    if (primary) primary.classList.add('BetterX-layout-primary');
+    if (row) row.classList.add('BetterX-layout-row');
+    if (main) main.classList.add('BetterX-layout-main');
+    if (manualWidth && leftWidthTarget) leftWidthTarget.classList.add('BetterX-layout-left-width-target');
     if (expandCenter && main) {
       // 隐藏任意侧栏后，从主列同级行一直贯通到 #react-root，释放剩余空间的宽度限制。
       let ancestor = row ? row.parentElement : main.parentElement;
       while (ancestor && ancestor !== document.body) {
-        if (ancestor !== main) ancestor.classList.add('xvault-layout-shell');
+        if (ancestor !== main) ancestor.classList.add('BetterX-layout-shell');
         if (ancestor.id === 'react-root') break;
         ancestor = ancestor.parentElement;
       }
@@ -2311,47 +3463,85 @@
       hideLeftbar, hideSidebar, expandCenter,
     } = options;
     const rules = [
-      '.xvault-layout-clean-hidden, .xvault-layout-showmore-hidden { display: none !important; }',
+      '.BetterX-layout-clean-hidden, .BetterX-layout-showmore-hidden { display: none !important; }',
     ];
 
     if (hideLeftbar) rules.push('header[role="banner"] { display: none !important; }');
     if (hideSidebar) rules.push('[data-testid="sidebarColumn"] { display: none !important; }');
 
+    // X 新版布局中只改 header 内层 div 不一定会释放左栏占位；手动模式同时约束外层 header。
+    if (!autoWidth && !hideLeftbar) {
+      rules.push(`
+        header[role="banner"] {
+          box-sizing: border-box !important;
+          width: ${leftbarWidth}px !important;
+          min-width: ${leftbarWidth}px !important;
+          max-width: ${leftbarWidth}px !important;
+          flex: 0 0 ${leftbarWidth}px !important;
+        }
+        header[role="banner"] > div,
+        header[role="banner"] > div > div,
+        .BetterX-layout-left-width-target {
+          box-sizing: border-box !important;
+          width: ${leftbarWidth}px !important;
+          min-width: 0 !important;
+          max-width: ${leftbarWidth}px !important;
+        }
+      `);
+      if (leftbarWidth <= 120) {
+        rules.push(`
+          /* 窄左栏进入仅图标模式，避免 X 的文字标签撑回原宽度。 */
+          header[role="banner"] nav[role="navigation"] a[role="link"] div[dir="ltr"],
+          header[role="banner"] nav[role="navigation"] [data-testid="AppTabBar_More_Menu"] div[dir="ltr"],
+          header[role="banner"] [data-testid="SideNav_AccountSwitcher_Button"] div[dir="ltr"],
+          header[role="banner"] [data-testid="SideNav_NewTweet_Button"] span {
+            display: none !important;
+          }
+          header[role="banner"] nav[role="navigation"] a[role="link"],
+          header[role="banner"] nav[role="navigation"] [data-testid="AppTabBar_More_Menu"],
+          header[role="banner"] [data-testid="SideNav_AccountSwitcher_Button"],
+          header[role="banner"] [data-testid="SideNav_NewTweet_Button"] {
+            box-sizing: border-box !important;
+            max-width: ${Math.max(44, leftbarWidth)}px !important;
+          }
+        `);
+      }
+    }
+
     if (expandCenter) {
       rules.push(`
-        .xvault-layout-shell {
+        .BetterX-layout-shell {
           width: 100% !important; max-width: none !important; min-width: 0 !important;
           margin-inline: 0 !important;
         }
-        .xvault-layout-main {
+        .BetterX-layout-main {
           width: 100% !important; max-width: none !important; min-width: 0 !important;
           flex: 1 1 0% !important; margin-inline: auto !important;
         }
-        .xvault-layout-row {
+        .BetterX-layout-row {
           width: 100% !important; max-width: none !important; min-width: 0 !important;
           margin-inline: auto !important;
         }
-        .xvault-layout-primary {
+        .BetterX-layout-primary {
           width: auto !important; max-width: none !important; min-width: 0 !important;
           flex: 1 1 0% !important; margin-inline: 0 !important;
         }
-        .xvault-layout-primary > div,
-        .xvault-layout-primary > div > div,
-        .xvault-layout-primary .r-1ye8kvj,
-        .xvault-layout-primary [data-testid="cellInnerDiv"],
-        .xvault-layout-primary [data-testid="cellInnerDiv"] > div,
-        .xvault-layout-primary [data-testid="cellInnerDiv"] article,
-        .xvault-layout-primary [data-testid="cellInnerDiv"] article > div {
+        .BetterX-layout-primary > div,
+        .BetterX-layout-primary > div > div,
+        .BetterX-layout-primary .r-1ye8kvj,
+        .BetterX-layout-primary [data-testid="cellInnerDiv"],
+        .BetterX-layout-primary [data-testid="cellInnerDiv"] > div,
+        .BetterX-layout-primary [data-testid="cellInnerDiv"] article,
+        .BetterX-layout-primary [data-testid="cellInnerDiv"] article > div {
           box-sizing: border-box !important;
           width: 100% !important; max-width: none !important; min-width: 0 !important;
           margin-inline: 0 !important;
         }
-        ${!autoWidth && !hideLeftbar ? `.xvault-layout-left-width-target { width: ${leftbarWidth}px !important; }` : ''}
       `);
       if (hideSidebar && !hideLeftbar) {
         rules.push(`
           /* 右栏消失后让“左栏 + 主列”从视口左边开始，避免外层居中布局留下大块空白。 */
-          .xvault-layout-shell {
+          .BetterX-layout-shell {
             justify-content: flex-start !important;
             align-items: flex-start !important;
           }
@@ -2366,13 +3556,13 @@
       }
     } else if (!autoWidth) {
       rules.push(`
-        .xvault-layout-main { max-width: none !important; min-width: 0 !important; flex: 1 1 auto !important; }
-        .xvault-layout-row { width: max-content !important; max-width: none !important; margin-inline: auto !important; }
-        .xvault-layout-primary {
+        .BetterX-layout-main { max-width: none !important; min-width: 0 !important; flex: 1 1 auto !important; }
+        .BetterX-layout-row { width: max-content !important; max-width: none !important; margin-inline: auto !important; }
+        .BetterX-layout-primary {
           width: ${timelineWidth}px !important; max-width: none !important;
           flex: 0 0 ${timelineWidth}px !important; margin-inline: auto !important;
         }
-        .xvault-layout-left-width-target { width: ${leftbarWidth}px !important; }
+        .BetterX-layout-left-width-target { width: ${leftbarWidth}px !important; }
       `);
     }
 
@@ -2388,27 +3578,27 @@
   }
 
   function applyLayoutDomCleanup() {
-    document.querySelectorAll('.xvault-layout-clean-hidden').forEach((el) => el.classList.remove('xvault-layout-clean-hidden'));
+    document.querySelectorAll('.BetterX-layout-clean-hidden').forEach((el) => el.classList.remove('BetterX-layout-clean-hidden'));
     if (state.settings.layoutCleanNavigation !== false) {
       document.querySelectorAll('nav[role="navigation"] div[dir="ltr"]').forEach((item) => {
         const label = (item.textContent || '').trim();
         if (!LAYOUT_NAV_LABELS.has(label)) return;
         const target = item.closest('a, div[role="link"]');
-        if (target) target.classList.add('xvault-layout-clean-hidden');
+        if (target) target.classList.add('BetterX-layout-clean-hidden');
       });
       for (const label of LAYOUT_SUBSCRIBE_LABELS) {
-        document.querySelectorAll(`[aria-label="${label}"]`).forEach((el) => el.classList.add('xvault-layout-clean-hidden'));
+        document.querySelectorAll(`[aria-label="${label}"]`).forEach((el) => el.classList.add('BetterX-layout-clean-hidden'));
       }
-      document.querySelectorAll('[data-testid="super-upsell-UpsellCardRenderProperties"]').forEach((el) => el.classList.add('xvault-layout-clean-hidden'));
+      document.querySelectorAll('[data-testid="super-upsell-UpsellCardRenderProperties"]').forEach((el) => el.classList.add('BetterX-layout-clean-hidden'));
       document.querySelectorAll('nav[role="navigation"][aria-label]').forEach((nav) => {
-        if (LAYOUT_FOOTER_LABELS.has((nav.getAttribute('aria-label') || '').trim())) nav.classList.add('xvault-layout-clean-hidden');
+        if (LAYOUT_FOOTER_LABELS.has((nav.getAttribute('aria-label') || '').trim())) nav.classList.add('BetterX-layout-clean-hidden');
       });
     }
 
-    document.querySelectorAll('.xvault-layout-showmore-hidden').forEach((el) => el.classList.remove('xvault-layout-showmore-hidden'));
+    document.querySelectorAll('.BetterX-layout-showmore-hidden').forEach((el) => el.classList.remove('BetterX-layout-showmore-hidden'));
     if (state.settings.layoutHideShowMore) {
       document.querySelectorAll('article a[role="link"]').forEach((link) => {
-        if (LAYOUT_SHOW_MORE_LABELS.has((link.textContent || '').trim())) link.classList.add('xvault-layout-showmore-hidden');
+        if (LAYOUT_SHOW_MORE_LABELS.has((link.textContent || '').trim())) link.classList.add('BetterX-layout-showmore-hidden');
       });
     }
   }
@@ -2424,8 +3614,8 @@
     }
 
     const autoWidth = state.settings.layoutAutoWidth !== false;
-    const timelineWidth = clampInt(state.settings.timelineWidth, 600, 3000, DEFAULT_SETTINGS.timelineWidth);
-    const leftbarWidth = clampInt(state.settings.leftbarWidth, 160, 500, DEFAULT_SETTINGS.leftbarWidth);
+    const timelineWidth = clampInt(state.settings.timelineWidth, 100, 3000, DEFAULT_SETTINGS.timelineWidth);
+    const leftbarWidth = clampInt(state.settings.leftbarWidth, 50, 500, DEFAULT_SETTINGS.leftbarWidth);
     const fillCenter = !!state.settings.layoutFillCenter;
     const hideLeftbar = fillCenter || !!state.settings.layoutHideLeftbar;
     const hideSidebar = fillCenter || !!state.settings.layoutHideSidebar;
@@ -2433,7 +3623,7 @@
     const needsStructure = expandCenter || !autoWidth;
     let elements = getLayoutElements();
     // 从手动宽度切回纯自动模式时，先同步撤销旧结构规则，再读取真正的原生尺寸。
-    if (autoWidth && !needsStructure && elements.primary && elements.primary.classList.contains('xvault-layout-primary')) {
+    if (autoWidth && !needsStructure && elements.primary && elements.primary.classList.contains('BetterX-layout-primary')) {
       style.textContent = '';
       clearLayoutStructureClasses();
       elements = getLayoutElements();
@@ -2594,10 +3784,23 @@
     const normalized = normalizeAdultSpamText(`${input.displayName}\n${input.repostContext || ''}\n${input.text}`);
     const compact = compactAdultSpamText(normalized);
     const usernameText = normalizeAdultSpamText(input.username);
-    const whitelist = state.settings.adultSpamWhitelist || [];
+    const customRulesEnabled = state.settings.adultSpamCustomRulesEnabled !== false;
+    const whitelist = customRulesEnabled ? (state.settings.adultSpamWhitelist || []) : [];
     if (input.username && whitelist.includes(input.username)) {
       return { hidden: false, score: 0, reasons: ['账号白名单'] };
     }
+    if (customRulesEnabled) {
+      for (const customTerm of state.settings.adultSpamKeywords || []) {
+        const normalizedTerm = normalizeAdultSpamText(customTerm);
+        const compactTerm = compactAdultSpamText(customTerm);
+        if ((normalizedTerm && normalized.includes(normalizedTerm)) || (compactTerm && compact.includes(compactTerm))) {
+          return { hidden: true, score: 99, reasons: [`自定义词：${customTerm}`] };
+        }
+      }
+    }
+
+    if (!state.settings.hideAdultSpam) return { hidden: false, score: 0, reasons: [] };
+
     const contentAuthorFollowed = !!(input.username && followedHandles.has(input.username));
     const reposterFollowed = !!(input.reposterUsername && followedHandles.has(input.reposterUsername));
     const originalPostInFollowingTimeline = input.isFollowingTimeline && !input.isRepost;
@@ -2613,14 +3816,6 @@
           ? '已关注账号的转发内容'
           : (contentAuthorFollowed ? '正文原作者已关注' : '正在关注时间线的原创帖')],
       };
-    }
-
-    for (const customTerm of state.settings.adultSpamKeywords || []) {
-      const normalizedTerm = normalizeAdultSpamText(customTerm);
-      const compactTerm = compactAdultSpamText(customTerm);
-      if ((normalizedTerm && normalized.includes(normalizedTerm)) || (compactTerm && compact.includes(compactTerm))) {
-        return { hidden: true, score: 99, reasons: [`自定义词：${customTerm}`] };
-      }
     }
 
     const reasons = [];
@@ -2706,7 +3901,7 @@
         extractStatusIdFromUrl(getStatusLink(item)) === String(candidate.statusId)
       )) || null;
     }
-    if (!article || !article.isConnected || article.classList.contains('xvault-adult-spam-hidden')) return null;
+    if (!article || !article.isConnected || article.classList.contains('BetterX-adult-spam-hidden')) return null;
     const rect = article.getBoundingClientRect();
     return rect.height > 0 ? { article, top: rect.top } : null;
   }
@@ -2745,22 +3940,24 @@
     const target = article;
     if (!target || !target.classList) return false;
     if (decision.hidden) {
-      target.classList.add('xvault-adult-spam-hidden');
-      target.dataset.xvaultAdultSpamReason = `${decision.score} 分：${decision.reasons.join('、')}`;
+      target.classList.add('BetterX-adult-spam-hidden');
+      target.dataset.BetterXAdultSpamReason = `${decision.score} 分：${decision.reasons.join('、')}`;
     } else {
-      target.classList.remove('xvault-adult-spam-hidden');
-      delete target.dataset.xvaultAdultSpamReason;
+      target.classList.remove('BetterX-adult-spam-hidden');
+      delete target.dataset.BetterXAdultSpamReason;
     }
     return decision.hidden;
   }
 
   function evaluateAndApplyAdultSpam(article) {
-    if (!state.settings.hideAdultSpam || !article || !article.querySelector) return false;
+    if (!adultSpamFilteringEnabled() || !article || !article.querySelector) return false;
     const input = getAdultSpamInput(article);
     const statusId = extractStatusIdFromUrl(getStatusLink(article)) || '';
     const fingerprint = `${statusId}\n${input.username}\n${input.rawUsername}\n${input.displayName}\n${input.repostContext}\n${input.isRepost}\n${input.reposterUsername}\n${input.text}\n${input.externalLinkCount}\n${input.mentionCount}\n${input.hasMedia}\n${input.isFollowingTimeline}`;
     const statsKey = statusId || fingerprint;
-    adultSpamScannedIds.add(statsKey);
+    adultSpamScannedIdsCapped = addBoundedSessionStat(
+      adultSpamScannedIds, statsKey, adultSpamScannedIdsCapped
+    );
     const cached = adultSpamCache.get(article);
     if (cached && cached.version === adultSpamRulesVersion && cached.fingerprint === fingerprint) {
       return setAdultSpamHidden(article, cached.decision);
@@ -2768,27 +3965,33 @@
     const decision = scoreAdultSpam(input);
     adultSpamCache.set(article, { version: adultSpamRulesVersion, fingerprint, decision });
     const hidden = setAdultSpamHidden(article, decision);
-    if (hidden) adultSpamSessionHiddenIds.add(statsKey);
+    if (hidden) {
+      adultSpamSessionHiddenIdsCapped = addBoundedSessionStat(
+        adultSpamSessionHiddenIds, statsKey, adultSpamSessionHiddenIdsCapped
+      );
+    }
     if (hidden) debugLog('内容净化已隐藏帖子', statusId || '(无 ID)', decision.score, decision.reasons);
     return hidden;
   }
 
   function updateAdultSpamCount() {
     if (!state.adultSpamCountEl) return;
-    const currentCount = document.querySelectorAll('.xvault-adult-spam-hidden').length;
-    state.adultSpamCountEl.textContent = `当前隐藏 ${currentCount} · 本次累计 ${adultSpamSessionHiddenIds.size} · 已扫描 ${adultSpamScannedIds.size} · 已识别关注 ${followedHandles.size}`;
+    const currentCount = document.querySelectorAll('.BetterX-adult-spam-hidden').length;
+    const hiddenCount = `${adultSpamSessionHiddenIds.size}${adultSpamSessionHiddenIdsCapped ? '+' : ''}`;
+    const scannedCount = `${adultSpamScannedIds.size}${adultSpamScannedIdsCapped ? '+' : ''}`;
+    state.adultSpamCountEl.textContent = `当前隐藏 ${currentCount} · 本次累计 ${hiddenCount} · 已扫描 ${scannedCount} · 已识别关注 ${followedHandles.size}`;
   }
 
   function unhideAdultSpam() {
-    document.querySelectorAll('.xvault-adult-spam-hidden').forEach((el) => {
-      el.classList.remove('xvault-adult-spam-hidden');
-      delete el.dataset.xvaultAdultSpamReason;
+    document.querySelectorAll('.BetterX-adult-spam-hidden').forEach((el) => {
+      el.classList.remove('BetterX-adult-spam-hidden');
+      delete el.dataset.BetterXAdultSpamReason;
     });
     updateAdultSpamCount();
   }
 
   function sweepAdultSpam() {
-    if (!state.settings.hideAdultSpam) return;
+    if (!adultSpamFilteringEnabled()) return;
     harvestFollowingControlsFromRoot(document);
     document.querySelectorAll('article').forEach(evaluateAndApplyAdultSpam);
     updateAdultSpamCount();
@@ -2796,13 +3999,19 @@
 
   function applyAdultSpamFiltering() {
     const anchors = captureAdultSpamScrollAnchors();
-    if (state.settings.hideAdultSpam) {
+    if (adultSpamFilteringEnabled()) {
       // 直接按新判定更新差异，不再“全部显示 → 全部隐藏”，避免规则刷新时整页闪烁。
       sweepAdultSpam();
     } else {
       unhideAdultSpam();
     }
     stabilizeAdultSpamScroll(anchors);
+  }
+
+  function adultSpamFilteringEnabled() {
+    const hasCustomKeywords = state.settings.adultSpamCustomRulesEnabled !== false
+      && (state.settings.adultSpamKeywords || []).length > 0;
+    return !!(state.settings.hideAdultSpam || hasCustomKeywords);
   }
 
   function parseAdultSpamWhitelist(raw) {
@@ -2815,7 +4024,7 @@
   // ── 抓取 / 扫描 / 闪现检测 ────────────────────────────────────────────
   function captureArticle(article) {
     if (state.settings.hideAds && isAdArticle(article)) { hideAdElement(article); return; }
-    if (state.settings.hideAdultSpam && evaluateAndApplyAdultSpam(article)) return;
+    if (adultSpamFilteringEnabled() && evaluateAndApplyAdultSpam(article)) return;
     if (!isProbablyPostArticle(article)) return;
     const url = getStatusLink(article);
     const id = extractStatusIdFromUrl(url);
@@ -2827,7 +4036,7 @@
     const isFirstVisibleCapture = !state.visibleMap.has(id);
     const author = extractAuthor(article);
     const text = extractText(article);
-    const media = detectMedia(article);
+    const media = detectMedia(article, id);
     const avatarUrl = extractAvatar(article);
 
     if (isFirstVisibleCapture) {
@@ -2835,6 +4044,7 @@
         id, url,
         displayName: author.displayName,
         username: author.username,
+        timeLabel: author.timeLabel,
         text,
         hasImage: media.hasImage,
         hasVideo: media.hasVideo,
@@ -2854,21 +4064,25 @@
       if (existing) {
         const needsPatch =
           (!existing.text && text) ||
-          (!existing.displayName && author.displayName) ||
-          (!existing.username && author.username) ||
+          (author.displayName && existing.displayName !== author.displayName) ||
+          (author.username && existing.username !== author.username) ||
+          (author.timeLabel && existing.timeLabel !== author.timeLabel) ||
           (!(existing.mediaThumbs || []).length && media.thumbs.length) ||
           (!existing.avatarUrl && avatarUrl) ||
+          existing.hasImage !== media.hasImage ||
+          existing.hasVideo !== media.hasVideo ||
           existing.sourceLabel !== sourceInfo.label ||
           existing.url !== url;
         if (needsPatch) {
           upsertPost({
             ...existing,
             url,
-            displayName: existing.displayName || author.displayName,
-            username: existing.username || author.username,
+            displayName: author.displayName || existing.displayName,
+            username: author.username || existing.username,
+            timeLabel: author.timeLabel || existing.timeLabel || '',
             text: existing.text || text,
-            hasImage: existing.hasImage || media.hasImage,
-            hasVideo: existing.hasVideo || media.hasVideo,
+            hasImage: media.hasImage,
+            hasVideo: media.hasVideo,
             mediaThumbs: (existing.mediaThumbs || []).length ? existing.mediaThumbs : media.thumbs,
             avatarUrl: existing.avatarUrl || avatarUrl,
             sourceType: sourceInfo.type,
@@ -2883,10 +4097,12 @@
 
   function scanArticles(root) {
     const scope = root && root.querySelectorAll ? root : document;
+    if (state.settings.hideAds) sweepStandaloneAds(scope);
     scope.querySelectorAll('article').forEach(captureArticle);
     if (state.settings.mediaDownload) injectDownloadButtons(scope);
+    if (state.settings.restoreMediaGrid) applyMediaGridLayout(scope);
     if (state.settings.bypassAgeRestriction) revealAgeRestricted(scope);
-    if (state.settings.hideAdultSpam) updateAdultSpamCount();
+    if (adultSpamFilteringEnabled()) updateAdultSpamCount();
   }
 
   function checkDisappearedPosts() {
@@ -2909,13 +4125,17 @@
       state.visibleMap.delete(id);
     }
   }
-
   // ── 交互 ─────────────────────────────────────────────────────────
   function handleDocumentClick(e) {
     const target = e.target;
     if (!target || !target.closest) return;
 
-    if (state.panelOpen && !target.closest('#xvault-root')) {
+    if (state.downloadPopoverEl && !state.downloadPopoverEl.hidden
+      && !target.closest('#BetterX-download-popover') && !target.closest('#BetterX-download-pill')) {
+      toggleDownloadPopover(false);
+    }
+
+    if (state.panelOpen && !target.closest('#BetterX-root')) {
       togglePanel(false);
     }
 
@@ -2957,13 +4177,15 @@
 
     const adultSpamDisabled = !state.settings.hideAdultSpam;
     const layoutDisabled = !state.settings.layoutEnabled;
-    setGroupDisabled('#xvault-adultspam-options', adultSpamDisabled);
-    setGroupDisabled('#xvault-layout-options', layoutDisabled);
+    const adultSpamCustomDisabled = state.settings.adultSpamCustomRulesEnabled === false;
+    setGroupDisabled('#BetterX-adultspam-auto-options', adultSpamDisabled);
+    setGroupDisabled('#BetterX-adultspam-custom-options', adultSpamCustomDisabled);
+    setGroupDisabled('#BetterX-layout-options', layoutDisabled);
     if (state.adultSpamLevelEl) state.adultSpamLevelEl.disabled = adultSpamDisabled;
     if (state.adultSpamSkipFollowingRepostsEl) {
       const repostOptionDisabled = adultSpamDisabled || state.settings.adultSpamSkipFollowing === false;
       state.adultSpamSkipFollowingRepostsEl.disabled = repostOptionDisabled;
-      const repostLabel = state.adultSpamSkipFollowingRepostsEl.closest('.xvault-field');
+      const repostLabel = state.adultSpamSkipFollowingRepostsEl.closest('.BetterX-field');
       if (repostLabel) {
         repostLabel.classList.toggle('is-disabled', !adultSpamDisabled && state.settings.adultSpamSkipFollowing === false);
       }
@@ -2988,7 +4210,7 @@
     const enteringSettings = nextView === 'settings' && state.panelView !== 'settings';
     state.panelView = nextView;
     if (enteringSettings) {
-      state.panelEl.querySelectorAll('.xvault-settings-card[open]').forEach((detailsEl) => {
+      state.panelEl.querySelectorAll('.BetterX-settings-card[open]').forEach((detailsEl) => {
         detailsEl.removeAttribute('open');
       });
     }
@@ -3046,18 +4268,22 @@
   function exportPosts() {
     const data = filterPosts(state.posts);
     if (!data.length) { window.alert('当前筛选结果为空，没有可导出的内容。'); return; }
-    download(`xvault-filtered-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
+    download(`BetterX-filtered-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
   }
 
   function backupAll() {
+    const portableSettings = { ...state.settings };
+    // Firefox 启动模式属于当前浏览器的故障恢复状态，不随备份迁移。
+    delete portableSettings.firefoxCompatibility;
+    delete portableSettings.firefoxCompatibilityPrompted;
     const payload = {
       type: 'x-post-vault-backup',
-      version: '1.1.0',
+      version: '1.2.0',
       exportedAt: new Date().toISOString(),
-      settings: state.settings,
+      settings: portableSettings,
       posts: state.posts,
     };
-    download(`xvault-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(payload, null, 2));
+    download(`BetterX-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(payload, null, 2));
   }
 
   function sanitizeImportedPost(raw) {
@@ -3079,13 +4305,25 @@
     ).slice(0, 4);
     const firstCapturedAt = finiteInt(raw.firstCapturedAt, 0, Number.MAX_SAFE_INTEGER, timestamp);
     const lastCapturedAt = finiteInt(raw.lastCapturedAt, 0, Number.MAX_SAFE_INTEGER, firstCapturedAt);
+    const authorInfo = cleanAuthorInfo(raw.displayName, raw.username, raw.timeLabel);
     return {
       id,
       url: safeImportedStatusUrl(raw.url, id) || fallbackUrl,
-      displayName: safeString(raw.displayName, 200),
-      username,
+      displayName: safeString(authorInfo.displayName || raw.displayName, 200),
+      username: safeString(authorInfo.username || username, 100),
+      timeLabel: safeString(authorInfo.timeLabel || raw.timeLabel, 80),
       text: safeString(raw.text, 100000),
-      hasImage: raw.hasImage === true || mediaThumbs.length > 0,
+      hasImage: (() => {
+        const hasVideo = raw.hasVideo === true;
+        if (raw.hasImage === undefined || raw.hasImage === null) {
+          return !hasVideo && mediaThumbs.length > 0;
+        }
+        if (hasVideo && raw.hasImage === true) {
+          const onlyVideoThumbs = mediaThumbs.length > 0 && mediaThumbs.every((u) => /(?:ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)/i.test(u));
+          if (onlyVideoThumbs) return false;
+        }
+        return raw.hasImage === true;
+      })(),
       hasVideo: raw.hasVideo === true,
       mediaThumbs,
       avatarUrl: safeImportedAssetUrl(raw.avatarUrl),
@@ -3131,10 +4369,13 @@
       }
 
       let added = 0, merged = 0, skipped = 0;
+      const postIndexById = new Map(state.posts.map((post, index) => [post.id, index]));
+      const postsToPersist = new Map();
       for (const raw of posts) {
         const imported = sanitizeImportedPost(raw);
         if (!imported) { skipped++; continue; }
-        const existing = getPostById(imported.id);
+        const existingIndex = postIndexById.get(imported.id);
+        const existing = existingIndex == null ? null : state.posts[existingIndex];
         if (existing) {
           const combined = {
             ...existing,
@@ -3152,12 +4393,13 @@
             firstCapturedAt: Math.min(existing.firstCapturedAt || now(), imported.firstCapturedAt),
             lastCapturedAt: Math.max(existing.lastCapturedAt || 0, imported.lastCapturedAt),
           };
-          state.posts[getPostIndexById(imported.id)] = combined;
-          queueDbWrite(async () => { await dbPutPost(combined); });
+          state.posts[existingIndex] = combined;
+          postsToPersist.set(combined.id, combined);
           merged++;
         } else {
           state.posts.push(imported);
-          queueDbWrite(async () => { await dbPutPost(imported); });
+          postIndexById.set(imported.id, state.posts.length - 1);
+          postsToPersist.set(imported.id, imported);
           added++;
         }
       }
@@ -3177,20 +4419,29 @@
           }
         }
         (state.settings.knownFollowedHandles || []).forEach((handle) => followedHandles.add(handle));
-        state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, 5000);
+        trimFollowedHandlesToMax();
+        state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, MAX_FOLLOWED_HANDLES);
         applyTheme();
         applyAdHiding();
         applyMediaDownload();
+        applyMediaGridLayout();
         applyAgeBypass();
         repositionBadge();
         queueDbWrite(async () => { await persistSettings(); });
       }
-      queueDbWrite(async () => { await enforceMaxPosts(); });
+      const trimmedIds = trimPostsToMax();
+      const liveIds = new Set(state.posts.map((post) => post.id));
+      const survivingPosts = [...postsToPersist.values()].filter((post) => liveIds.has(post.id));
+      queueDbWrite(async () => {
+        await dbPutPosts(survivingPosts);
+        await dbDeleteMany(trimmedIds);
+      });
       await state.dbWriteQueue;
       bumpKeywordCache();
       resetPaging();
       refreshUI();
-      window.alert(`导入完成：新增 ${added} 条，合并 ${merged} 条，跳过 ${skipped} 条无效记录。`);
+      const trimmedMessage = trimmedIds.length ? `，按最大条数清理 ${trimmedIds.length} 条` : '';
+      window.alert(`导入完成：新增 ${added} 条，合并 ${merged} 条，跳过 ${skipped} 条无效记录${trimmedMessage}。`);
     } catch (err) {
       console.error('[BetterX] import failed:', err);
       window.alert('导入失败：文件解析出错。');
@@ -3204,6 +4455,7 @@
     const toDelete = state.posts.filter((p) => !protectedPost(p) && (p.lastCapturedAt || 0) < cutoff);
     if (!toDelete.length) return;
     state.posts = state.posts.filter((p) => protectedPost(p) || (p.lastCapturedAt || 0) >= cutoff);
+    prunePostRuntimeCaches(toDelete.map((p) => p.id));
     await dbDeleteMany(toDelete.map((p) => p.id));
     debugLog(`自动清理 ${toDelete.length} 条超过 ${days} 天的帖子`);
     refreshUI();
@@ -3216,7 +4468,7 @@
     if (theme === 'auto') {
       theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
     }
-    state.rootEl.classList.toggle('xvault-light', theme === 'light');
+    state.rootEl.classList.toggle('BetterX-light', theme === 'light');
   }
 
   function applyBadgePos() {
@@ -3277,7 +4529,7 @@
   }
 
   function syncMobileBadgeToComposeButton() {
-    if (!state.rootEl || !state.badgeEl || !state.rootEl.classList.contains('xvault-mobile')) return;
+    if (!state.rootEl || !state.badgeEl || !state.rootEl.classList.contains('BetterX-mobile')) return;
     const composeEl = findMobileComposeButton();
     if (!composeEl) {
       if (state.mobileComposeEl) stopMobileComposeTracking();
@@ -3285,7 +4537,7 @@
       state.rootEl.style.right = '16px';
       state.rootEl.style.bottom = '84px';
       state.rootEl.style.setProperty('--xv-mobile-badge-opacity', '1');
-      state.rootEl.classList.remove('xvault-mobile-badge-inactive');
+      state.rootEl.classList.remove('BetterX-mobile-badge-inactive');
       return;
     }
 
@@ -3311,11 +4563,11 @@
       Number.isFinite(inlineOpacity) ? inlineOpacity : (Number.isFinite(computedOpacity) ? computedOpacity : 1)
     ));
     state.rootEl.style.setProperty('--xv-mobile-badge-opacity', String(opacity));
-    state.rootEl.classList.toggle('xvault-mobile-badge-inactive', opacity <= 0.05);
+    state.rootEl.classList.toggle('BetterX-mobile-badge-inactive', opacity <= 0.05);
   }
 
   function scheduleMobileBadgeSync() {
-    if (state.mobileBadgeRaf || !state.rootEl || !state.rootEl.classList.contains('xvault-mobile')) return;
+    if (state.mobileBadgeRaf || !state.rootEl || !state.rootEl.classList.contains('BetterX-mobile')) return;
     state.mobileBadgeRaf = requestAnimationFrame(() => {
       state.mobileBadgeRaf = 0;
       syncMobileBadgeToComposeButton();
@@ -3324,8 +4576,8 @@
 
   function updatePanelPlacement() {
     if (!state.rootEl || !state.badgeEl || !state.panelEl) return;
-    if (state.rootEl.classList.contains('xvault-mobile')) {
-      state.rootEl.classList.remove('xvault-panel-right');
+    if (state.rootEl.classList.contains('BetterX-mobile')) {
+      state.rootEl.classList.remove('BetterX-panel-right');
       state.panelEl.style.left = '';
       state.panelEl.style.right = '';
       state.panelEl.style.top = '';
@@ -3341,7 +4593,7 @@
       : rect.left;
     const panelLeft = Math.max(safeDistance, Math.min(maxLeft, preferredLeft));
     const alignRight = preferredLeft < rect.left;
-    state.rootEl.classList.toggle('xvault-panel-right', alignRight);
+    state.rootEl.classList.toggle('BetterX-panel-right', alignRight);
     state.panelEl.style.left = panelLeft + 'px';
     state.panelEl.style.right = 'auto';
     state.panelEl.style.top = safeDistance + 'px';
@@ -3351,16 +4603,18 @@
   function repositionBadge() {
     if (!state.badgeEl || !state.rootEl) return;
     const isMobile = isMobileBadgeViewport();
+    const hideDesktopBadge = !isMobile && !!state.settings.hideAppBadgeOnDesktop;
+    state.rootEl.classList.toggle('BetterX-desktop-badge-hidden', hideDesktopBadge);
     const useIconBadge = isMobile || !!state.settings.useMobileBadgeOnDesktop;
     state.badgeEl.classList.toggle('mobile-mode', useIconBadge);
     state.badgeEl.classList.toggle('desktop-icon-mode', !isMobile && useIconBadge);
     if (isMobile) {
-      state.rootEl.classList.add('xvault-mobile');
+      state.rootEl.classList.add('BetterX-mobile');
       syncMobileBadgeToComposeButton();
     } else {
       stopMobileComposeTracking();
-      state.rootEl.classList.remove('xvault-mobile');
-      state.rootEl.classList.remove('xvault-mobile-badge-inactive');
+      state.rootEl.classList.remove('BetterX-mobile');
+      state.rootEl.classList.remove('BetterX-mobile-badge-inactive');
       state.rootEl.style.removeProperty('--xv-mobile-badge-opacity');
       state.rootEl.style.left = '';
       state.rootEl.style.right = '';
@@ -3369,6 +4623,7 @@
     }
     updatePanelPlacement();
     refreshBadge();
+    scheduleDownloadUiRefresh();
   }
 
   function makeBadgeDraggable() {
@@ -3379,7 +4634,7 @@
     badge.addEventListener('dragstart', (e) => e.preventDefault());
 
     badge.addEventListener('pointerdown', (e) => {
-      if (state.rootEl && state.rootEl.classList.contains('xvault-mobile')) return;
+      if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) return;
       dragging = true; moved = false;
       badge.classList.add('is-dragging');
       startX = e.clientX; startY = e.clientY;
@@ -3418,63 +4673,156 @@
   }
 
   // ── 创建 UI ─────────────────────────────────────────────────────
+  function handleDownloadPopoverAction(event, downloadPopover) {
+    if (!event || !downloadPopover) return false;
+    if (event.type === 'pointerdown' && Number.isFinite(event.button) && event.button !== 0) return false;
+    const actionEl = event.target && event.target.closest ? event.target.closest('[data-action]') : null;
+    if (!actionEl || !downloadPopover.contains(actionEl)) return false;
+    const action = actionEl.getAttribute('data-action');
+    if (action !== 'download-cancel' && action !== 'download-retry') return false;
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    const jobId = actionEl.getAttribute('data-job-id');
+    if (action === 'download-cancel') cancelDownloadJob(jobId);
+    else retryDownloadJob(jobId);
+    return true;
+  }
+
+  function renderAdultSpamKeywordTags() {
+    if (!state.adultSpamKeywordTagsEl) return;
+    state.adultSpamKeywordTagsEl.textContent = '';
+    for (const keyword of state.settings.adultSpamKeywords || []) {
+      const tag = document.createElement('span');
+      tag.className = 'BetterX-keyword-tag';
+      const label = document.createElement('span');
+      label.className = 'BetterX-keyword-tag-label';
+      label.textContent = keyword;
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'BetterX-keyword-tag-remove';
+      removeButton.setAttribute('data-action', 'remove-adultspam-keyword');
+      removeButton.setAttribute('data-keyword', keyword);
+      removeButton.setAttribute('aria-label', `删除屏蔽词 ${keyword}`);
+      removeButton.title = `删除“${keyword}”`;
+      removeButton.textContent = '×';
+      tag.appendChild(label);
+      tag.appendChild(removeButton);
+      state.adultSpamKeywordTagsEl.appendChild(tag);
+    }
+  }
+
+  function commitAdultSpamKeywordInput() {
+    if (!state.adultSpamKeywordsEl) return false;
+    const pending = parseKeywords(state.adultSpamKeywordsEl.value)
+      .map((item) => item.slice(0, 80));
+    if (!pending.length) {
+      state.adultSpamKeywordsEl.value = '';
+      return false;
+    }
+    const current = state.settings.adultSpamKeywords || [];
+    const combined = uniqueStrings([...current, ...pending]);
+    const next = combined.slice(0, 50);
+    state.adultSpamKeywordsEl.value = '';
+    if (next.length === current.length && next.every((item, index) => item === current[index])) return false;
+    setSettingsPartial({ adultSpamKeywords: next });
+    if (combined.length > next.length) showToast('最多保存 50 个自定义屏蔽词');
+    return true;
+  }
+
+  function renderAdultSpamWhitelistTags() {
+    if (!state.adultSpamWhitelistTagsEl) return;
+    state.adultSpamWhitelistTagsEl.textContent = '';
+    for (const username of state.settings.adultSpamWhitelist || []) {
+      const tag = document.createElement('span');
+      tag.className = 'BetterX-keyword-tag';
+      const label = document.createElement('span');
+      label.className = 'BetterX-keyword-tag-label';
+      label.textContent = '@' + username;
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'BetterX-keyword-tag-remove';
+      removeButton.setAttribute('data-action', 'remove-adultspam-whitelist');
+      removeButton.setAttribute('data-username', username);
+      removeButton.setAttribute('aria-label', `删除白名单账号 @${username}`);
+      removeButton.title = `删除“@${username}”`;
+      removeButton.textContent = '×';
+      tag.appendChild(label);
+      tag.appendChild(removeButton);
+      state.adultSpamWhitelistTagsEl.appendChild(tag);
+    }
+  }
+
+  function commitAdultSpamWhitelistInput() {
+    if (!state.adultSpamWhitelistEl) return false;
+    const pending = parseAdultSpamWhitelist(state.adultSpamWhitelistEl.value).slice(0, 100);
+    state.adultSpamWhitelistEl.value = '';
+    if (!pending.length) return false;
+    const adultSpamWhitelist = uniqueStrings([
+      ...(state.settings.adultSpamWhitelist || []),
+      ...pending,
+    ]).slice(0, 100);
+    setSettingsPartial({ adultSpamWhitelist });
+    return true;
+  }
+
   function createUI() {
     const root = document.createElement('div');
-    root.id = 'xvault-root';
+    root.id = 'BetterX-root';
 
     const badge = document.createElement('button');
-    badge.id = 'xvault-badge';
+    badge.id = 'BetterX-badge';
     badge.type = 'button';
     badge.textContent = '更好的 X（BetterX）';
 
     const panel = document.createElement('div');
-    panel.id = 'xvault-panel';
+    panel.id = 'BetterX-panel';
     panel.style.display = 'none';
     panel.innerHTML = `
-      <div class="xvault-header">
-        <div class="xvault-title">
-          <div class="xvault-title-main">
-            ${APP_ICON_URL ? `<img class="xvault-title-icon" src="${escapeHtml(APP_ICON_URL)}" alt="" draggable="false" />` : ''}
+      <div class="BetterX-header">
+        <div class="BetterX-title">
+          <div class="BetterX-title-main">
+            ${APP_ICON_URL ? `<img class="BetterX-title-icon" src="${escapeHtml(APP_ICON_URL)}" alt="" draggable="false" />` : ''}
             <span>更好的 X</span>
           </div>
-          <div class="xvault-title-sub">BetterX · Alt+X 开关</div>
+          <div class="BetterX-title-sub">BetterX · Alt+X 开关</div>
         </div>
-        <div class="xvault-header-actions">
-          <button class="xvault-btn xvault-vault-action" data-action="refresh" title="重新扫描当前页面">刷新</button>
-          <button class="xvault-btn xvault-vault-action" data-action="mark-all-read" title="把当前列表全部标为已读">全部已读</button>
-          <div class="xvault-menu-wrap">
-            <button class="xvault-btn xvault-icon-btn" data-action="menu-toggle" aria-label="更多" title="更多">⋯</button>
-            <div class="xvault-menu" id="xvault-menu" hidden>
-              <button class="xvault-menu-item" data-action="export">📤 导出筛选</button>
-              <button class="xvault-menu-item" data-action="backup">💾 备份全部</button>
-              <button class="xvault-menu-item" data-action="import">📥 导入</button>
-              <button class="xvault-menu-item danger" data-action="clear-non-fav">🗑️ 清空</button>
+        <div class="BetterX-header-actions">
+          <button class="BetterX-btn BetterX-vault-action" data-action="refresh" title="重新扫描当前页面">刷新</button>
+          <button class="BetterX-btn BetterX-vault-action" data-action="mark-all-read" title="把当前列表全部标为已读">全部已读</button>
+          <div class="BetterX-menu-wrap">
+            <button class="BetterX-btn BetterX-icon-btn" data-action="menu-toggle" aria-label="更多" title="更多">⋯</button>
+            <div class="BetterX-menu" id="BetterX-menu" hidden>
+              <button class="BetterX-menu-item" data-action="export">📤 导出筛选</button>
+              <button class="BetterX-menu-item" data-action="backup">💾 备份全部</button>
+              <button class="BetterX-menu-item" data-action="import">📥 导入</button>
+              <button class="BetterX-menu-item danger" data-action="clear-non-fav">🗑️ 清空</button>
             </div>
           </div>
-          <button class="xvault-btn xvault-icon-btn" data-action="close" aria-label="关闭" title="关闭">✕</button>
+          <button class="BetterX-btn BetterX-icon-btn" data-action="close" aria-label="关闭" title="关闭">✕</button>
         </div>
       </div>
 
-      <div class="xvault-tabs" role="tablist" aria-label="BetterX 面板">
-        <button class="xvault-tab active" type="button" role="tab" aria-selected="true" data-action="set-panel-view" data-view="vault">帖子</button>
-        <button class="xvault-tab" type="button" role="tab" aria-selected="false" data-action="set-panel-view" data-view="settings">设置</button>
+      <div class="BetterX-tabs" role="tablist" aria-label="BetterX 面板">
+        <button class="BetterX-tab active" type="button" role="tab" aria-selected="true" data-action="set-panel-view" data-view="vault">帖子</button>
+        <button class="BetterX-tab" type="button" role="tab" aria-selected="false" data-action="set-panel-view" data-view="settings">设置</button>
       </div>
 
-      <section class="xvault-view xvault-vault-view" data-view-panel="vault">
-      <div class="xvault-vault-toolbar">
+      <section class="BetterX-view BetterX-vault-view" data-view-panel="vault">
+      <div class="BetterX-vault-toolbar">
 
-      <div class="xvault-tip">提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限修剪或自动清理。</div>
+      <div class="BetterX-tip">提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。</div>
 
-      <div class="xvault-summary" id="xvault-summary"></div>
-      <div class="xvault-section-label">快速筛选</div>
-      <div class="xvault-filter-bar" id="xvault-filter-bar"></div>
+      <div class="BetterX-summary" id="BetterX-summary"></div>
+      <div class="BetterX-section-label">快速筛选</div>
+      <div class="BetterX-filter-bar" id="BetterX-filter-bar"></div>
 
-      <div class="xvault-search-tools">
-        <input type="text" class="xvault-input" id="xvault-search" placeholder="搜索作者、正文或备注…" aria-label="搜索帖子" />
-        <div class="xvault-toolbar-row">
-          <select class="xvault-select" id="xvault-source" aria-label="来源筛选"></select>
-          <select class="xvault-select" id="xvault-media" aria-label="媒体筛选"></select>
-          <select class="xvault-select" id="xvault-sort" aria-label="排序方式">
+      <div class="BetterX-search-tools">
+        <input type="text" class="BetterX-input" id="BetterX-search" placeholder="搜索作者、正文或备注…" aria-label="搜索帖子" />
+        <div class="BetterX-toolbar-row">
+          <select class="BetterX-select" id="BetterX-source" aria-label="来源筛选"></select>
+          <select class="BetterX-select" id="BetterX-media" aria-label="媒体筛选"></select>
+          <select class="BetterX-select" id="BetterX-sort" aria-label="排序方式">
             <option value="default">默认排序</option>
             <option value="time_asc">最早先看</option>
             <option value="captures">出现次数</option>
@@ -3484,130 +4832,150 @@
         </div>
       </div>
       </div>
-      <div class="xvault-list" id="xvault-list"></div>
+      <div class="BetterX-list" id="BetterX-list"></div>
       </section>
 
-      <section class="xvault-view xvault-settings-view" data-view-panel="settings" hidden>
-      <div class="xvault-settings-scroll">
-        <div class="xvault-settings-intro">
+      <section class="BetterX-view BetterX-settings-view" data-view-panel="settings" hidden>
+      <div class="BetterX-settings-scroll">
+        <div class="BetterX-settings-intro">
           <strong>设置</strong>
           <span>修改会立即生效；需要手动保存的项目仍保留应用按钮。</span>
         </div>
-      <div class="xvault-controls">
-        <details class="xvault-advanced xvault-settings-card">
+      <div class="BetterX-controls">
+        <details class="BetterX-advanced BetterX-settings-card">
           <summary>关键词与排除词</summary>
-          <div class="xvault-adv-body">
-            <div class="xvault-row">
-              <input type="text" class="xvault-input" id="xvault-keywords" placeholder="关键词（逗号分隔）" />
-              <select class="xvault-select" id="xvault-keyword-mode">
+          <div class="BetterX-adv-body">
+            <div class="BetterX-adv-label">仅作用于已记录的帖子：关键词用于高亮与筛选；排除词命中后会从列表隐藏。</div>
+            <div class="BetterX-row">
+              <input type="text" class="BetterX-input" id="BetterX-keywords" placeholder="关键词（逗号分隔）" />
+              <select class="BetterX-select" id="BetterX-keyword-mode">
                 <option value="plain">任意匹配</option>
                 <option value="and">全部匹配</option>
                 <option value="regex">正则</option>
               </select>
-              <button class="xvault-btn primary" data-action="save-keywords">保存</button>
+              <button class="BetterX-btn primary" data-action="save-keywords">保存</button>
             </div>
-            <div class="xvault-row">
-              <input type="text" class="xvault-input" id="xvault-exclude" placeholder="排除词（命中则隐藏，逗号分隔）" />
-              <button class="xvault-btn" data-action="save-exclude">保存</button>
+            <div class="BetterX-row">
+              <input type="text" class="BetterX-input" id="BetterX-exclude" placeholder="排除词（命中则隐藏，逗号分隔）" />
+              <button class="BetterX-btn" data-action="save-exclude">保存</button>
             </div>
           </div>
         </details>
-        <details class="xvault-advanced xvault-settings-card">
+        <details class="BetterX-advanced BetterX-settings-card">
           <summary>内容净化</summary>
-          <div class="xvault-adv-body">
-            <div class="xvault-row xvault-adultspam-master-row">
-              <label class="xvault-field inline"><input type="checkbox" id="xvault-hide-adult-spam" /> 隐藏黄推 / 成人引流机器人</label>
-              <select class="xvault-select" id="xvault-adultspam-level" title="检测强度">
+          <div class="BetterX-adv-body">
+            <div class="BetterX-row BetterX-adultspam-master-row">
+              <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-adult-spam" /> 隐藏黄推 / 成人引流机器人</label>
+              <select class="BetterX-select" id="BetterX-adultspam-level" title="检测强度">
                 <option value="balanced">均衡</option>
                 <option value="conservative">保守</option>
               </select>
             </div>
-            <div class="xvault-dependent-options" id="xvault-adultspam-options">
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-adultspam-skip-following" /> 不审查已关注账号（转发内容除外）</label>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-adultspam-skip-following-reposts" /> 不审查已关注账号的转发内容</label>
-            <div class="xvault-adv-label">使用多信号评分，只隐藏当前页面帖子，不改写网络响应、不自动拉黑账号；关闭开关即可恢复。</div>
-            <div class="xvault-row">
-              <input type="text" class="xvault-input" id="xvault-adultspam-keywords" placeholder="自定义屏蔽词（字面匹配，逗号分隔）" />
+            <div class="BetterX-dependent-options" id="BetterX-adultspam-auto-options">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-skip-following" /> 不审查已关注账号（转发内容除外）</label>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-skip-following-reposts" /> 不审查已关注账号的转发内容</label>
+            <div class="BetterX-adv-label">使用多信号评分，只隐藏当前页面 DOM，不改写网络响应、不自动拉黑账号；关闭开关即可恢复。</div>
             </div>
-            <div class="xvault-row">
-              <input type="text" class="xvault-input" id="xvault-adultspam-whitelist" placeholder="账号白名单（如 @example，逗号分隔）" />
-              <button class="xvault-btn primary" data-action="save-adultspam">保存规则</button>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-custom-enabled" /> 启用自定义规则（屏蔽词与账号白名单）</label>
+            <div class="BetterX-dependent-options" id="BetterX-adultspam-custom-options">
+            <div class="BetterX-tag-editor">
+              <div class="BetterX-keyword-tags" id="BetterX-adultspam-keyword-tags"></div>
+              <input type="text" class="BetterX-input" id="BetterX-adultspam-keywords" placeholder="输入自定义屏蔽词，按回车添加" maxlength="500" />
+            </div>
+            <div class="BetterX-tag-editor">
+              <div class="BetterX-keyword-tags" id="BetterX-adultspam-whitelist-tags"></div>
+              <input type="text" class="BetterX-input" id="BetterX-adultspam-whitelist" placeholder="输入账号白名单（如 @example），按回车添加" maxlength="500" />
+            </div>
+            <div class="BetterX-row">
+              <button class="BetterX-btn primary" data-action="save-adultspam">保存规则</button>
             </div>
             </div>
-            <div class="xvault-content-status" id="xvault-adultspam-count">当前隐藏 0 · 本次累计 0 · 已扫描 0 · 已识别关注 0</div>
+            <div class="BetterX-content-status" id="BetterX-adultspam-count">当前隐藏 0 · 本次累计 0 · 已扫描 0 · 已识别关注 0</div>
           </div>
         </details>
-        <details class="xvault-advanced xvault-settings-card">
-          <summary>界面净化与宽屏</summary>
-          <div class="xvault-adv-body">
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-layout-enabled" /> 启用界面净化与宽屏</label>
-            <div class="xvault-dependent-options" id="xvault-layout-options">
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-layout-auto-width" /> 自动读取 X 当前的时间线与左侧栏宽度（默认开启）</label>
-            <div class="xvault-row xvault-control-row">
-              <label class="xvault-field">时间线宽度(px)
-                <input type="number" min="600" max="3000" class="xvault-input small" id="xvault-timeline-width" />
+        <details class="BetterX-advanced BetterX-settings-card">
+          <summary>界面简化与宽屏</summary>
+          <div class="BetterX-adv-body">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-enabled" /> 启用界面简化与宽屏</label>
+            <div class="BetterX-dependent-options" id="BetterX-layout-options">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-auto-width" /> 自动读取 X 当前的时间线与左侧栏宽度（默认开启）</label>
+            <div class="BetterX-row BetterX-control-row">
+              <label class="BetterX-field">时间线宽度(px)
+                <input type="number" min="100" max="3000" class="BetterX-input small" id="BetterX-timeline-width" />
               </label>
-              <label class="xvault-field">左侧栏宽度(px)
-                <input type="number" min="160" max="500" class="xvault-input small" id="xvault-leftbar-width" />
+              <label class="BetterX-field">左侧栏宽度(px)
+                <input type="number" min="50" max="500" class="BetterX-input small" id="BetterX-leftbar-width" />
               </label>
-              <button class="xvault-btn primary" data-action="save-layout">应用宽度</button>
+              <button class="BetterX-btn primary" data-action="save-layout">应用宽度</button>
             </div>
-            <div class="xvault-adv-label">自动读取时，上方数字只显示实测值且不会改写 X 原生布局；关闭自动读取后即可编辑并应用手动宽度。</div>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-layout-hide-leftbar" /> 隐藏左侧导航栏</label>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-layout-hide-sidebar" /> 隐藏右侧栏</label>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-layout-fill-center" /> 中间栏填满（启用时同时隐藏左右栏）</label>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-layout-clean-nav" /> 精简导航、Premium 推广与页脚</label>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-layout-hide-message" /> 隐藏右下消息栏 / Grok</label>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-layout-hide-showmore" /> 隐藏帖子“显示更多”（可能影响长文展开，默认关闭）</label>
-            <div class="xvault-adv-label">消息页和设置页自动停用版面调整；所有改动均可关闭恢复。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-leftbar" /> 隐藏左侧栏</label>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-sidebar" /> 隐藏右侧栏</label>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-fill-center" /> 中间栏填满（启用时同时隐藏左右栏）</label>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-clean-nav" /> 精简导航、Premium 推广与页脚</label>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-message" /> 隐藏右下消息栏 / Grok</label>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-showmore" /> 隐藏帖子“显示更多”（可能影响长文展开，默认关闭）</label>
+            <div class="BetterX-adv-label">消息页和设置页自动停用版面调整；所有改动均可关闭恢复。</div>
             </div>
           </div>
         </details>
-        <details class="xvault-advanced xvault-settings-card">
+        <details class="BetterX-advanced BetterX-settings-card">
           <summary>高级设置</summary>
-          <div class="xvault-adv-body">
-            <div class="xvault-row">
-              <label class="xvault-field">自动清理(天)
-                <input type="number" min="0" class="xvault-input small" id="xvault-autoclean" />
+          <div class="BetterX-adv-body">
+            <div class="BetterX-row">
+              <label class="BetterX-field">自动清理(天)
+                <input type="number" min="0" class="BetterX-input small" id="BetterX-autoclean" />
               </label>
-              <label class="xvault-field">最大条数
-                <input type="number" min="50" class="xvault-input small" id="xvault-maxposts" />
+              <label class="BetterX-field">最大条数
+                <input type="number" min="50" class="BetterX-input small" id="BetterX-maxposts" />
               </label>
-              <label class="xvault-field">闪现阈值(秒)
-                <input type="number" min="1" class="xvault-input small" id="xvault-flashms" />
+              <label class="BetterX-field">闪现阈值(秒)
+                <input type="number" min="1" class="BetterX-input small" id="BetterX-flashms" />
               </label>
-              <label class="xvault-field">主题
-                <select class="xvault-select" id="xvault-theme">
+              <label class="BetterX-field">主题
+                <select class="BetterX-select" id="BetterX-theme">
                   <option value="auto">跟随系统</option>
                   <option value="dark">深色</option>
                   <option value="light">浅色</option>
                 </select>
               </label>
             </div>
-            <div class="xvault-row xvault-control-row">
-              <label class="xvault-field">下载超时(秒)
-                <input type="number" min="5" class="xvault-input small" id="xvault-dltimeout" />
+            <div class="BetterX-row BetterX-control-row">
+              <label class="BetterX-field">下载超时(秒)
+                <input type="number" min="5" class="BetterX-input small" id="BetterX-dltimeout" />
               </label>
-              <label class="xvault-field inline"><input type="checkbox" id="xvault-markread" /> 点空白处算已读</label>
-              <button class="xvault-btn primary" data-action="save-advanced">应用</button>
+              <label class="BetterX-field">下载并发
+                <input type="number" min="1" max="6" step="1" class="BetterX-input small" id="BetterX-dlconcurrency" />
+              </label>
+              <label class="BetterX-field inline"><input type="checkbox" id="BetterX-markread" /> 点帖子空白处算已读</label>
+              <button class="BetterX-btn primary" data-action="save-advanced">应用</button>
             </div>
-            <div class="xvault-adv-label">不记录以下来源：</div>
-            <div class="xvault-chip-row" id="xvault-skip-sources"></div>
+            <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。</div>
+            <div class="BetterX-adv-label">不记录以下来源：</div>
+            <div class="BetterX-chip-row" id="BetterX-skip-sources"></div>
           </div>
         </details>
-        <details class="xvault-advanced xvault-settings-card">
+        <details class="BetterX-advanced BetterX-settings-card">
+          <summary>常用功能</summary>
+          <div class="BetterX-adv-body">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（隐藏推广帖和独立广告位）</label>
+            <div class="BetterX-adv-label">开启后自动隐藏时间线推广帖及 X 新增的程序化广告卡片；推广帖不会记录，关闭开关即可恢复显示。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF（多文件自动压缩ZIP包）</label>
+            <div class="BetterX-adv-label">开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label>
+            <div class="BetterX-adv-label">将 X 新版的多媒体正文轮播改为网格展示；两张并排，三张为左大右二，四张为 2×2 网格。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label>
+            <div class="BetterX-adv-label">不显示的话，请稍等；实在不行，请重新关开按钮；仅本地操作，不改动账号设置。</div>
+          </div>
+        </details>
+        <details class="BetterX-advanced BetterX-settings-card">
           <summary>其他功能</summary>
-          <div class="xvault-adv-body">
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
-            <div class="xvault-adv-label">遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。</div>
-            <label class="xvault-field inline xvault-desktop-only-setting"><input type="checkbox" id="xvault-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label>
-            <div class="xvault-adv-label xvault-desktop-only-setting">使用圆形脚本图标与未读角标，并继续支持桌面端拖拽。</div>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-hideads" /> 关闭广告（隐藏含“广告”标记的推广帖）</label>
-            <div class="xvault-adv-label">开启后自动隐藏时间线里的推广帖，且不会记入保险箱。</div>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-mediadl" /> 一键下载图片 / 视频 / GIF</label>
-            <div class="xvault-adv-label">开启后帖子操作栏会出现 ⬇ 按钮：单个媒体按「用户ID_帖子ID」命名；多个则打包为同名 zip，包内按 1、2、3… 命名。</div>
-            <label class="xvault-field inline"><input type="checkbox" id="xvault-bypassage" /> 取消年龄限制（用原图 / 视频内联替换遮罩）</label>
-            <div class="xvault-adv-label">如果不显示，请耐心等待或者重新开关按钮；仅本地操作，不改动账号设置。</div>
+          <div class="BetterX-adv-body">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
+            <div class="BetterX-adv-label">遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。</div>
+            <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标（仅 PC）</label>
+            <div class="BetterX-adv-label BetterX-desktop-only-setting">隐藏后仍可使用 Alt+X 打开面板，也可通过油猴菜单“显示 / 隐藏应用徽标”恢复。</div>
+            <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label>
+            <div class="BetterX-adv-label BetterX-desktop-only-setting">使用圆形脚本图标与未读角标，并继续支持桌面端拖拽。</div>
           </div>
         </details>
       </div>
@@ -3620,59 +4988,95 @@
     fileInput.accept = 'application/json,.json';
     fileInput.style.display = 'none';
 
+    const downloadPill = document.createElement('button');
+    downloadPill.id = 'BetterX-download-pill';
+    downloadPill.type = 'button';
+    downloadPill.hidden = true;
+    downloadPill.setAttribute('aria-label', '查看下载任务');
+    downloadPill.title = '查看下载任务';
+    downloadPill.innerHTML = `
+      <span class="BetterX-download-pill-icon" aria-hidden="true">⬇</span>
+      <span class="BetterX-download-pill-label"></span>
+      <span class="BetterX-download-pill-count" hidden></span>
+    `;
+
+    const downloadPopover = document.createElement('div');
+    downloadPopover.id = 'BetterX-download-popover';
+    downloadPopover.hidden = true;
+    downloadPopover.setAttribute('role', 'status');
+
     root.appendChild(panel);
     root.appendChild(badge);
+    root.appendChild(downloadPill);
+    root.appendChild(downloadPopover);
     root.appendChild(fileInput);
     document.body.appendChild(root);
 
     state.rootEl = root;
     state.badgeEl = badge;
     state.panelEl = panel;
+    state.downloadPillEl = downloadPill;
+    state.downloadPopoverEl = downloadPopover;
     state.importInputEl = fileInput;
-    state.listEl = panel.querySelector('#xvault-list');
-    state.summaryEl = panel.querySelector('#xvault-summary');
-    state.filterBarEl = panel.querySelector('#xvault-filter-bar');
-    state.sourceSelectEl = panel.querySelector('#xvault-source');
-    state.mediaSelectEl = panel.querySelector('#xvault-media');
-    state.keywordInputEl = panel.querySelector('#xvault-keywords');
-    state.excludeInputEl = panel.querySelector('#xvault-exclude');
-    state.keywordModeEl = panel.querySelector('#xvault-keyword-mode');
-    state.searchEl = panel.querySelector('#xvault-search');
-    state.sortEl = panel.querySelector('#xvault-sort');
-    state.autoCleanInputEl = panel.querySelector('#xvault-autoclean');
-    state.maxPostsInputEl = panel.querySelector('#xvault-maxposts');
-    state.flashMsInputEl = panel.querySelector('#xvault-flashms');
-    state.dlTimeoutInputEl = panel.querySelector('#xvault-dltimeout');
-    state.markReadEl = panel.querySelector('#xvault-markread');
-    state.themeSelectEl = panel.querySelector('#xvault-theme');
-    state.skipSourcesEl = panel.querySelector('#xvault-skip-sources');
-    state.hideAdsEl = panel.querySelector('#xvault-hideads');
-    state.hideAdultSpamEl = panel.querySelector('#xvault-hide-adult-spam');
-    state.adultSpamLevelEl = panel.querySelector('#xvault-adultspam-level');
-    state.adultSpamSkipFollowingEl = panel.querySelector('#xvault-adultspam-skip-following');
-    state.adultSpamSkipFollowingRepostsEl = panel.querySelector('#xvault-adultspam-skip-following-reposts');
-    state.adultSpamKeywordsEl = panel.querySelector('#xvault-adultspam-keywords');
-    state.adultSpamWhitelistEl = panel.querySelector('#xvault-adultspam-whitelist');
-    state.adultSpamCountEl = panel.querySelector('#xvault-adultspam-count');
-    state.layoutEnabledEl = panel.querySelector('#xvault-layout-enabled');
-    state.layoutAutoWidthEl = panel.querySelector('#xvault-layout-auto-width');
-    state.timelineWidthEl = panel.querySelector('#xvault-timeline-width');
-    state.leftbarWidthEl = panel.querySelector('#xvault-leftbar-width');
-    state.layoutHideLeftbarEl = panel.querySelector('#xvault-layout-hide-leftbar');
-    state.layoutHideSidebarEl = panel.querySelector('#xvault-layout-hide-sidebar');
-    state.layoutFillCenterEl = panel.querySelector('#xvault-layout-fill-center');
-    state.layoutCleanNavigationEl = panel.querySelector('#xvault-layout-clean-nav');
-    state.layoutHideMessageGrokEl = panel.querySelector('#xvault-layout-hide-message');
-    state.layoutHideShowMoreEl = panel.querySelector('#xvault-layout-hide-showmore');
-    state.firefoxCompatibilityEl = panel.querySelector('#xvault-firefox-compat');
-    state.mediaDownloadEl = panel.querySelector('#xvault-mediadl');
-    state.bypassAgeEl = panel.querySelector('#xvault-bypassage');
-    state.useMobileBadgeOnDesktopEl = panel.querySelector('#xvault-desktop-mobile-badge');
-    state.menuEl = panel.querySelector('#xvault-menu');
+    state.listEl = panel.querySelector('#BetterX-list');
+    state.summaryEl = panel.querySelector('#BetterX-summary');
+    state.filterBarEl = panel.querySelector('#BetterX-filter-bar');
+    state.sourceSelectEl = panel.querySelector('#BetterX-source');
+    state.mediaSelectEl = panel.querySelector('#BetterX-media');
+    state.keywordInputEl = panel.querySelector('#BetterX-keywords');
+    state.excludeInputEl = panel.querySelector('#BetterX-exclude');
+    state.keywordModeEl = panel.querySelector('#BetterX-keyword-mode');
+    state.searchEl = panel.querySelector('#BetterX-search');
+    state.sortEl = panel.querySelector('#BetterX-sort');
+    state.autoCleanInputEl = panel.querySelector('#BetterX-autoclean');
+    state.maxPostsInputEl = panel.querySelector('#BetterX-maxposts');
+    state.flashMsInputEl = panel.querySelector('#BetterX-flashms');
+    state.dlTimeoutInputEl = panel.querySelector('#BetterX-dltimeout');
+    state.dlConcurrencyInputEl = panel.querySelector('#BetterX-dlconcurrency');
+    state.markReadEl = panel.querySelector('#BetterX-markread');
+    state.themeSelectEl = panel.querySelector('#BetterX-theme');
+    state.skipSourcesEl = panel.querySelector('#BetterX-skip-sources');
+    state.hideAdsEl = panel.querySelector('#BetterX-hideads');
+    state.hideAdultSpamEl = panel.querySelector('#BetterX-hide-adult-spam');
+    state.adultSpamCustomRulesEl = panel.querySelector('#BetterX-adultspam-custom-enabled');
+    state.adultSpamLevelEl = panel.querySelector('#BetterX-adultspam-level');
+    state.adultSpamSkipFollowingEl = panel.querySelector('#BetterX-adultspam-skip-following');
+    state.adultSpamSkipFollowingRepostsEl = panel.querySelector('#BetterX-adultspam-skip-following-reposts');
+    state.adultSpamKeywordsEl = panel.querySelector('#BetterX-adultspam-keywords');
+    state.adultSpamKeywordTagsEl = panel.querySelector('#BetterX-adultspam-keyword-tags');
+    state.adultSpamWhitelistEl = panel.querySelector('#BetterX-adultspam-whitelist');
+    state.adultSpamWhitelistTagsEl = panel.querySelector('#BetterX-adultspam-whitelist-tags');
+    state.adultSpamCountEl = panel.querySelector('#BetterX-adultspam-count');
+    state.layoutEnabledEl = panel.querySelector('#BetterX-layout-enabled');
+    state.layoutAutoWidthEl = panel.querySelector('#BetterX-layout-auto-width');
+    state.timelineWidthEl = panel.querySelector('#BetterX-timeline-width');
+    state.leftbarWidthEl = panel.querySelector('#BetterX-leftbar-width');
+    state.layoutHideLeftbarEl = panel.querySelector('#BetterX-layout-hide-leftbar');
+    state.layoutHideSidebarEl = panel.querySelector('#BetterX-layout-hide-sidebar');
+    state.layoutFillCenterEl = panel.querySelector('#BetterX-layout-fill-center');
+    state.layoutCleanNavigationEl = panel.querySelector('#BetterX-layout-clean-nav');
+    state.layoutHideMessageGrokEl = panel.querySelector('#BetterX-layout-hide-message');
+    state.layoutHideShowMoreEl = panel.querySelector('#BetterX-layout-hide-showmore');
+    state.firefoxCompatibilityEl = panel.querySelector('#BetterX-firefox-compat');
+    state.mediaDownloadEl = panel.querySelector('#BetterX-mediadl');
+    state.restoreMediaGridEl = panel.querySelector('#BetterX-restore-media-grid');
+    state.bypassAgeEl = panel.querySelector('#BetterX-bypassage');
+    state.useMobileBadgeOnDesktopEl = panel.querySelector('#BetterX-desktop-mobile-badge');
+    state.hideAppBadgeOnDesktopEl = panel.querySelector('#BetterX-hide-app-badge');
+    state.menuEl = panel.querySelector('#BetterX-menu');
 
     state.mediaSelectEl.innerHTML = buildMediaOptionsHtml();
 
     badge.addEventListener('click', () => togglePanel());
+    downloadPill.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleDownloadPopover();
+    });
+    // 长视频会高频刷新任务 DOM；PC 的 click 可能在按下与松开之间因按钮被替换而丢失。
+    // pointerdown 立即执行鼠标/触摸操作，click 则保留给键盘辅助操作兜底。
+    downloadPopover.addEventListener('pointerdown', (event) => handleDownloadPopoverAction(event, downloadPopover), true);
+    downloadPopover.addEventListener('click', (event) => handleDownloadPopoverAction(event, downloadPopover), true);
     makeBadgeDraggable();
 
     // 搜索
@@ -3691,11 +5095,26 @@
     state.themeSelectEl.addEventListener('change', (e) => setSettingsPartial({ theme: e.target.value }));
     state.hideAdsEl.addEventListener('change', (e) => setSettingsPartial({ hideAds: !!e.target.checked }));
     state.hideAdultSpamEl.addEventListener('change', (e) => setSettingsPartial({ hideAdultSpam: !!e.target.checked }));
+    state.adultSpamCustomRulesEl.addEventListener('change', (e) => {
+      setSettingsPartial({ adultSpamCustomRulesEnabled: !!e.target.checked });
+    });
     state.adultSpamLevelEl.addEventListener('change', (e) => setSettingsPartial({ adultSpamLevel: e.target.value }));
     state.adultSpamSkipFollowingEl.addEventListener('change', (e) => setSettingsPartial({ adultSpamSkipFollowing: !!e.target.checked }));
     state.adultSpamSkipFollowingRepostsEl.addEventListener('change', (e) => {
       setSettingsPartial({ adultSpamSkipFollowingReposts: !!e.target.checked });
     });
+    state.adultSpamKeywordsEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.isComposing) return;
+      e.preventDefault();
+      commitAdultSpamKeywordInput();
+    });
+    state.adultSpamKeywordsEl.addEventListener('blur', () => commitAdultSpamKeywordInput());
+    state.adultSpamWhitelistEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.isComposing) return;
+      e.preventDefault();
+      commitAdultSpamWhitelistInput();
+    });
+    state.adultSpamWhitelistEl.addEventListener('blur', () => commitAdultSpamWhitelistInput());
     state.layoutEnabledEl.addEventListener('change', (e) => setSettingsPartial({ layoutEnabled: !!e.target.checked }));
     state.layoutAutoWidthEl.addEventListener('change', (e) => setSettingsPartial({ layoutAutoWidth: !!e.target.checked }));
     state.layoutHideLeftbarEl.addEventListener('change', (e) => setSettingsPartial({ layoutHideLeftbar: !!e.target.checked }));
@@ -3709,9 +5128,14 @@
       showFirefoxCompatibilityToggleDialog(!state.settings.firefoxCompatibility);
     });
     state.mediaDownloadEl.addEventListener('change', (e) => setSettingsPartial({ mediaDownload: !!e.target.checked }));
+    state.restoreMediaGridEl.addEventListener('change', (e) => setSettingsPartial({ restoreMediaGrid: !!e.target.checked }));
     state.bypassAgeEl.addEventListener('change', (e) => setSettingsPartial({ bypassAgeRestriction: !!e.target.checked }));
     state.useMobileBadgeOnDesktopEl.addEventListener('change', (e) => {
       setSettingsPartial({ useMobileBadgeOnDesktop: !!e.target.checked });
+    });
+    state.hideAppBadgeOnDesktopEl.addEventListener('change', (e) => {
+      setSettingsPartial({ hideAppBadgeOnDesktop: !!e.target.checked });
+      if (e.target.checked) showToast('应用徽标已隐藏 · Alt+X 或油猴菜单可恢复');
     });
     state.importInputEl.addEventListener('change', (e) => {
       const file = e.target.files && e.target.files[0];
@@ -3736,6 +5160,12 @@
           if (state.menuEl) state.menuEl.hidden = !state.menuEl.hidden;
           break;
         case 'close': togglePanel(false); break;
+        case 'download-cancel':
+          cancelDownloadJob(actionEl.getAttribute('data-job-id'));
+          break;
+        case 'download-retry':
+          retryDownloadJob(actionEl.getAttribute('data-job-id'));
+          break;
         case 'refresh': scanArticles(document); refreshUI(); break;
         case 'mark-all-read': {
           const unreadPosts = filterPosts(state.posts).filter((p) => !p.clicked);
@@ -3781,16 +5211,26 @@
           break;
         }
         case 'save-adultspam': {
-          const adultSpamKeywords = parseKeywords(state.adultSpamKeywordsEl.value).slice(0, 50)
-            .map((item) => item.slice(0, 80));
-          const adultSpamWhitelist = parseAdultSpamWhitelist(state.adultSpamWhitelistEl.value).slice(0, 100);
-          setSettingsPartial({ adultSpamKeywords, adultSpamWhitelist });
+          commitAdultSpamKeywordInput();
+          commitAdultSpamWhitelistInput();
           showToast('✓ 已保存内容净化规则');
           break;
         }
+        case 'remove-adultspam-keyword': {
+          const keyword = actionEl.getAttribute('data-keyword') || '';
+          const adultSpamKeywords = (state.settings.adultSpamKeywords || []).filter((item) => item !== keyword);
+          setSettingsPartial({ adultSpamKeywords });
+          break;
+        }
+        case 'remove-adultspam-whitelist': {
+          const username = actionEl.getAttribute('data-username') || '';
+          const adultSpamWhitelist = (state.settings.adultSpamWhitelist || []).filter((item) => item !== username);
+          setSettingsPartial({ adultSpamWhitelist });
+          break;
+        }
         case 'save-layout': {
-          const timelineWidth = clampInt(state.timelineWidthEl.value, 600, 3000, state.settings.timelineWidth);
-          const leftbarWidth = clampInt(state.leftbarWidthEl.value, 160, 500, state.settings.leftbarWidth);
+          const timelineWidth = clampInt(state.timelineWidthEl.value, 100, 3000, state.settings.timelineWidth);
+          const leftbarWidth = clampInt(state.leftbarWidthEl.value, 50, 500, state.settings.leftbarWidth);
           setSettingsPartial({ layoutAutoWidth: false, timelineWidth, leftbarWidth });
           showToast('✓ 已切换为手动宽度并应用');
           break;
@@ -3800,7 +5240,11 @@
           const flashSec = clampInt(state.flashMsInputEl.value, 1, 60, Math.round((state.settings.flashMs || 8000) / 1000));
           const days = clampInt(state.autoCleanInputEl.value, 0, 3650, state.settings.autoCleanDays);
           const dlSec = state.dlTimeoutInputEl ? clampInt(state.dlTimeoutInputEl.value, 5, 600, Math.round((state.settings.downloadTimeout || DEFAULT_SETTINGS.downloadTimeout) / 1000)) : Math.round((state.settings.downloadTimeout || DEFAULT_SETTINGS.downloadTimeout) / 1000);
-          setSettingsPartial({ maxPosts, flashMs: flashSec * 1000, autoCleanDays: days, downloadTimeout: dlSec * 1000 });
+          const downloadConcurrency = state.dlConcurrencyInputEl
+            ? clampInt(state.dlConcurrencyInputEl.value, DOWNLOAD_MIN_CONCURRENCY, DOWNLOAD_MAX_CONCURRENCY, DEFAULT_SETTINGS.downloadConcurrency)
+            : DEFAULT_SETTINGS.downloadConcurrency;
+          setSettingsPartial({ maxPosts, flashMs: flashSec * 1000, autoCleanDays: days, downloadTimeout: dlSec * 1000, downloadConcurrency });
+          pumpDownloadTransferQueue();
           queueDbWrite(async () => { await enforceMaxPosts(); });
           runAutoClean();
           showToast('✅ 已应用高级设置');
@@ -3814,12 +5258,12 @@
           state.editingNoteId = id;
           refreshUI({ keepScroll: true });
           setTimeout(() => {
-            const ta = state.listEl.querySelector(`.xvault-note-input[data-id="${id}"]`);
+            const ta = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`);
             if (ta) { ta.focus(); ta.selectionStart = ta.value.length; }
           }, 20);
           break;
         case 'save-note': {
-          const ta = state.listEl.querySelector(`.xvault-note-input[data-id="${id}"]`);
+          const ta = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`);
           updatePostNote(id, ta ? ta.value.trim() : '');
           break;
         }
@@ -3854,7 +5298,6 @@
     setPanelView(state.panelView);
     refreshUI();
   }
-
   // ── 样式 ─────────────────────────────────────────────────────────
   function addStyle(css) {
     if (typeof GM_addStyle !== 'undefined') { GM_addStyle(css); return; }
@@ -3865,7 +5308,7 @@
 
   function installStyles() {
     addStyle(`
-      #xvault-root {
+      #BetterX-root {
         position: fixed; left: 16px; bottom: 16px; z-index: 2147483000;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         --xv-panel-bg: rgba(21,24,28,0.98);
@@ -3877,7 +5320,7 @@
         --xv-item-bg: rgba(255,255,255,0.03);
         --xv-accent: #1d9bf0;
       }
-      #xvault-root.xvault-light {
+      #BetterX-root.BetterX-light {
         --xv-panel-bg: rgba(255,255,255,0.99);
         --xv-text: #0f1419;
         --xv-border: rgba(0,0,0,0.12);
@@ -3886,41 +5329,130 @@
         --xv-muted: rgba(15,20,25,0.6);
         --xv-item-bg: rgba(0,0,0,0.02);
       }
-      #xvault-badge {
+      #BetterX-badge {
         background: var(--xv-accent); color: #fff; border: none; border-radius: 999px;
         padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
         box-shadow: 0 4px 16px rgba(0,0,0,0.35); touch-action: none; user-select: none;
       }
-      #xvault-badge:hover { filter: brightness(1.08); }
-      #xvault-badge.mobile-mode {
+      #BetterX-badge:hover { filter: brightness(1.08); }
+      #BetterX-root.BetterX-desktop-badge-hidden:not(.BetterX-mobile) #BetterX-badge {
+        visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;
+      }
+      #BetterX-badge.mobile-mode {
         width: 52px; height: 52px; padding: 0; border-radius: 50%; font-size: 22px;
         display: flex; align-items: center; justify-content: center; position: relative;
       }
-      .xvault-mobile-icon {
+      .BetterX-mobile-icon {
         width: 42px; height: 42px; border-radius: 50%; object-fit: cover;
         border: 2px solid rgba(255,255,255,.72); box-shadow: 0 2px 8px rgba(0,0,0,.22);
         pointer-events: none; user-select: none; -webkit-user-drag: none;
       }
-      #xvault-badge.mobile-mode.desktop-icon-mode { width: 64px; height: 64px; }
-      #xvault-badge.mobile-mode.desktop-icon-mode .xvault-mobile-icon { width: 54px; height: 54px; }
-      #xvault-badge.desktop-icon-mode { cursor: grab; }
-      #xvault-badge.desktop-icon-mode.is-dragging { cursor: grabbing; }
-      #xvault-badge.desktop-icon-mode .xvault-mobile-icon-fallback { font-size: 30px; }
-      .xvault-mobile-icon-fallback { line-height: 1; }
-      #xvault-root.xvault-mobile .xvault-desktop-only-setting { display: none !important; }
-      .xvault-mobile-dot {
+      #BetterX-badge.mobile-mode.desktop-icon-mode { width: 64px; height: 64px; }
+      #BetterX-badge.mobile-mode.desktop-icon-mode .BetterX-mobile-icon { width: 54px; height: 54px; }
+      #BetterX-badge.desktop-icon-mode { cursor: grab; }
+      #BetterX-badge.desktop-icon-mode.is-dragging { cursor: grabbing; }
+      #BetterX-badge.desktop-icon-mode .BetterX-mobile-icon-fallback { font-size: 30px; }
+      .BetterX-mobile-icon-fallback { line-height: 1; }
+      #BetterX-root.BetterX-mobile .BetterX-desktop-only-setting { display: none !important; }
+      .BetterX-mobile-dot {
         position: absolute; top: -2px; right: -2px; background: #f4212e; color: #fff;
         min-width: 18px; height: 18px; border-radius: 999px; font-size: 11px; font-weight: 700;
         line-height: 18px; text-align: center; padding: 0 4px;
       }
-      #xvault-root.xvault-mobile { left: auto; right: 16px; bottom: 84px; }
-      #xvault-root.xvault-mobile #xvault-badge {
+      #BetterX-root.BetterX-mobile { left: auto; right: 16px; bottom: 84px; }
+      #BetterX-root.BetterX-mobile #BetterX-badge {
         opacity: var(--xv-mobile-badge-opacity, 1);
         transition: opacity 170ms ease-out, filter .15s;
       }
-      #xvault-root.xvault-mobile.xvault-mobile-badge-inactive #xvault-badge { pointer-events: none; }
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-inactive #BetterX-badge,
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-inactive #BetterX-download-pill { pointer-events: none; }
 
-      #xvault-panel {
+      /* X 2026 的多媒体正文轮播恢复为传统网格；类名仅由脚本加到含 2+ 项媒体的轮播。 */
+      article .BetterX-media-grid-box {
+        padding-bottom: 0 !important; height: auto !important; min-height: 0 !important;
+      }
+      article nav.BetterX-media-grid {
+        position: relative !important; inset: auto !important; width: 100% !important;
+        height: auto !important; overflow: visible !important;
+      }
+      article nav.BetterX-media-grid [data-testid="ScrollSnap-prevButtonWrapper"],
+      article nav.BetterX-media-grid [data-testid="ScrollSnap-nextButtonWrapper"] { display: none !important; }
+      article nav.BetterX-media-grid [data-testid="ScrollSnap-SwipeableList"] {
+        width: 100% !important; height: auto !important; overflow: visible !important;
+      }
+      article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] {
+        display: grid !important; width: 100% !important; height: auto !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px;
+        margin: 0 !important; padding: 0 !important; overflow: hidden !important;
+        border-radius: 16px; scroll-snap-type: none !important;
+      }
+      article nav.BetterX-media-grid-count-2 [data-testid="ScrollSnap-List"] {
+        grid-template-rows: minmax(0, 1fr); aspect-ratio: 16 / 9;
+      }
+      article nav.BetterX-media-grid-count-3 [data-testid="ScrollSnap-List"],
+      article nav.BetterX-media-grid-count-4 [data-testid="ScrollSnap-List"] {
+        grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9;
+      }
+      article nav.BetterX-media-grid-count-3 [data-testid="ScrollSnap-List"] > [role="presentation"]:first-child {
+        grid-row: span 2;
+      }
+      article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] {
+        display: block !important; width: auto !important; min-width: 0 !important;
+        height: 100% !important; margin: 0 !important; overflow: hidden !important;
+        scroll-snap-align: none !important;
+      }
+      article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div,
+      article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div > div {
+        width: 100% !important; height: 100% !important; min-height: 0 !important;
+      }
+      article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div {
+        aspect-ratio: auto !important;
+      }
+
+      #BetterX-download-pill {
+        position: absolute; left: calc(100% + 8px); bottom: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        min-width: 42px; height: 36px;
+        padding: 0 12px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px;
+        background: var(--xv-panel-bg); color: var(--xv-text); box-shadow: 0 4px 16px rgba(0,0,0,.28);
+        font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; backdrop-filter: blur(10px);
+      }
+      .BetterX-download-pill-icon { font-size: 17px; line-height: 1; }
+      .BetterX-download-pill-label { line-height: 1; }
+      .BetterX-download-pill-count { display: none; }
+      #BetterX-download-pill:hover { border-color: var(--xv-accent); }
+      #BetterX-download-pill.is-progress {
+        border-color: transparent;
+        background: linear-gradient(var(--xv-panel-bg), var(--xv-panel-bg)) padding-box,
+          conic-gradient(var(--xv-accent) var(--xv-download-progress, 0deg), var(--xv-border) 0) border-box;
+      }
+      #BetterX-root.BetterX-panel-right #BetterX-download-pill { left: auto; right: calc(100% + 8px); }
+      #BetterX-download-popover {
+        position: absolute; left: calc(100% + 8px); bottom: 44px; width: min(360px, calc(100vw - 32px));
+        max-height: min(420px, calc(100vh - 120px)); overflow: auto; padding: 10px;
+        border: 1px solid var(--xv-border); border-radius: 14px; background: var(--xv-panel-bg); color: var(--xv-text);
+        box-shadow: 0 12px 42px rgba(0,0,0,.42); backdrop-filter: blur(12px);
+      }
+      #BetterX-root.BetterX-panel-right #BetterX-download-popover { left: auto; right: calc(100% + 8px); }
+      #BetterX-download-pill[hidden], #BetterX-download-popover[hidden],
+      .BetterX-dl-cancel[hidden] { display: none !important; }
+      .BetterX-download-popover-title { padding: 2px 4px 8px; font-size: 13px; font-weight: 800; }
+      .BetterX-download-empty { padding: 14px 8px; color: var(--xv-muted); text-align: center; font-size: 12px; }
+      .BetterX-download-task {
+        display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 8px; margin-top: 5px;
+        border: 1px solid var(--xv-border); border-radius: 10px;
+        background: linear-gradient(90deg, rgba(29,155,240,.14) var(--xv-task-progress, 0%), transparent 0), var(--xv-item-bg);
+      }
+      .BetterX-download-task-main { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 3px; }
+      .BetterX-download-task-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+      .BetterX-download-task-main span { color: var(--xv-muted); font-size: 11px; }
+      .BetterX-download-task-actions { display: flex; flex: 0 0 auto; gap: 4px; }
+      .BetterX-download-task-actions button {
+        padding: 4px 7px; border: 1px solid var(--xv-border); border-radius: 7px;
+        background: var(--xv-chip-bg); color: var(--xv-text); font-size: 11px; cursor: pointer;
+      }
+      .BetterX-download-task-actions button:hover { border-color: var(--xv-accent); }
+
+      #BetterX-panel {
         position: absolute; bottom: calc(100% + 10px); left: 0;
         width: min(94vw, 480px); max-height: calc(100vh - 96px);
         background: var(--xv-panel-bg); color: var(--xv-text);
@@ -3928,206 +5460,236 @@
         box-shadow: 0 12px 48px rgba(0,0,0,0.5); backdrop-filter: blur(12px);
         display: flex; flex-direction: column; overflow: hidden;
       }
-      #xvault-root.xvault-panel-right #xvault-panel { left: auto; right: 0; }
-      #xvault-root.xvault-mobile #xvault-panel { position: fixed; right: 12px; left: auto; bottom: 84px; max-height: calc(100vh - 120px); }
-      .xvault-ad-hidden { display: none !important; }
-      .xvault-adult-spam-hidden { display: none !important; }
-      .xvault-dl-btn {
+      #BetterX-root.BetterX-panel-right #BetterX-panel { left: auto; right: 0; }
+      #BetterX-root.BetterX-mobile #BetterX-panel { position: fixed; right: 12px; left: auto; bottom: 84px; max-height: calc(100vh - 120px); }
+      .BetterX-ad-hidden { display: none !important; }
+      .BetterX-adult-spam-hidden { display: none !important; }
+      .BetterX-download-controls {
+        display: inline-flex; align-items: center; justify-content: center; gap: 1px; flex: 0 0 auto;
+      }
+      .BetterX-download-controls.floating {
+        position: absolute; top: 8px; right: 8px; z-index: 5; padding: 2px;
+        border-radius: 999px; background: rgba(0,0,0,.62);
+      }
+      .BetterX-dl-btn, .BetterX-dl-cancel {
         display: inline-flex; align-items: center; justify-content: center;
-        min-width: 30px; height: 30px; margin-left: 2px; padding: 0 6px;
+        min-width: 34px; height: 34px; margin: 0; padding: 0 8px;
         border: none; background: transparent; color: rgb(83,100,113);
-        font-size: 16px; line-height: 1; cursor: pointer; border-radius: 999px;
-        transition: background .15s, color .15s;
+        font-size: 19px; font-weight: 700; line-height: 1; cursor: pointer; border-radius: 999px;
+        transition: background .15s, color .15s, min-width .15s;
       }
-      .xvault-dl-btn:hover { background: rgba(29,155,240,0.12); color: rgb(29,155,240); }
-      .xvault-dl-btn.in-group { align-self: center; flex: 0 0 auto; }
-      .xvault-dl-btn.floating {
-        position: absolute; top: 8px; right: 8px; z-index: 5;
-        width: 34px; height: 34px; margin: 0;
-        background: rgba(0,0,0,0.6); color: #fff;
+      .BetterX-download-controls:not([data-download-state="idle"]) .BetterX-dl-btn { font-size: 12px; }
+      .BetterX-dl-btn:hover { background: rgba(29,155,240,0.12); color: rgb(29,155,240); }
+      .BetterX-dl-btn.is-progress {
+        color: rgb(29,155,240);
+        background: conic-gradient(rgba(29,155,240,.24) var(--xv-download-progress, 0deg), transparent 0);
       }
-      .xvault-dl-btn.floating:hover { background: rgba(29,155,240,0.9); color: #fff; }
-      .xvault-mask-hidden { display: none !important; }
-      .xvault-unlocked { display: grid; gap: 3px; margin: 8px 0; width: 100%; max-width: 100%; border-radius: 14px; overflow: hidden; border: 1px solid rgba(0,0,0,0.15); }
-      .xvault-unlocked > a { display: block; overflow: hidden; }
-      /* 单图/单视频：按原始比例完整展示 */
-      .xvault-unlocked.xv-n1 { grid-template-columns: 1fr; }
-      .xvault-unlocked.xv-n1 img, .xvault-unlocked.xv-n1 video { display: block; margin: 0 auto; width: auto; height: auto; max-width: 100%; max-height: 510px; object-fit: contain; background: #000; }
-      /* 多图：X 经典马赛克，裁切填满方格 */
-      .xvault-unlocked.xv-multi > a, .xvault-unlocked.xv-multi > video { width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; }
-      .xvault-unlocked.xv-multi img, .xvault-unlocked.xv-multi video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; }
-      .xvault-unlocked.xv-n2 { grid-template-columns: 1fr 1fr; aspect-ratio: 16 / 9; }
-      .xvault-unlocked.xv-n3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 16 / 9; }
-      .xvault-unlocked.xv-n3 > *:first-child { grid-row: 1 / span 2; }
-      .xvault-unlocked.xv-n4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 16 / 9; }
-      .xvault-unlocked.xv-nm { grid-template-columns: 1fr 1fr; }
-      .xvault-unlocked.xv-nm > a, .xvault-unlocked.xv-nm > video { aspect-ratio: 1 / 1; min-width: 0; min-height: 0; overflow: hidden; }
-      #xvault-toast {
+      .BetterX-dl-cancel { min-width: 24px; width: 24px; padding: 0; color: rgb(244,33,46); font-size: 17px; }
+      .BetterX-dl-cancel:hover { background: rgba(244,33,46,.12); }
+      .BetterX-download-controls.in-group { align-self: center; }
+      .BetterX-download-controls.floating .BetterX-dl-btn,
+      .BetterX-download-controls.floating .BetterX-dl-cancel { color: #fff; }
+      .BetterX-download-controls.floating .BetterX-dl-btn:hover { background: rgba(29,155,240,.88); }
+      .BetterX-download-controls.floating .BetterX-dl-cancel:hover { background: rgba(244,33,46,.88); }
+      article[data-testid="notification"] .BetterX-download-controls { display: none !important; }
+      .BetterX-mask-hidden { display: none !important; }
+      /* 年龄限制媒体没有可复用的 X React 媒体节点；按旧版原生网格的结构与尺寸重建。 */
+      .BetterX-unlocked.BetterX-native-media-grid {
+        display: grid; gap: 2px; margin: 8px 0; width: 100%; max-width: 100%;
+        border-radius: 16px; overflow: hidden; background: #000;
+      }
+      .BetterX-unlocked .BetterX-unlocked-tile,
+      .BetterX-unlocked .BetterX-unlocked-media {
+        display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden;
+      }
+      .BetterX-unlocked .BetterX-unlocked-photo { cursor: pointer; }
+      /* 单媒体沿用 X 的“完整可见、受最大高度约束”效果。 */
+      .BetterX-unlocked.xv-n1 { grid-template-columns: 1fr; background: transparent; }
+      .BetterX-unlocked.xv-n1 .BetterX-unlocked-tile { height: auto; background: #000; }
+      .BetterX-unlocked.xv-n1 img, .BetterX-unlocked.xv-n1 video {
+        display: block; margin: 0 auto; width: auto; height: auto; max-width: 100%; max-height: 510px;
+        object-fit: contain; background: #000;
+      }
+      /* 多媒体遵循旧版 X 的 2 / 3 / 4 项马赛克布局。 */
+      .BetterX-unlocked.xv-multi img, .BetterX-unlocked.xv-multi video {
+        display: block; width: 100%; height: 100%; object-fit: cover; background: #000;
+      }
+      .BetterX-unlocked.xv-n2 { grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); aspect-ratio: 16 / 9; }
+      .BetterX-unlocked.xv-n3 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9; }
+      .BetterX-unlocked.xv-n3 > *:first-child { grid-row: span 2; }
+      .BetterX-unlocked.xv-n4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9; }
+      .BetterX-unlocked.xv-nm { grid-template-columns: 1fr 1fr; }
+      .BetterX-unlocked.xv-nm .BetterX-unlocked-tile { aspect-ratio: 1 / 1; }
+      #BetterX-toast {
         position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(10px);
         background: rgba(21,24,28,0.98); color: #fff; padding: 10px 16px; border-radius: 10px;
         font-size: 13px; z-index: 2147483600; box-shadow: 0 6px 24px rgba(0,0,0,0.4);
         opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: 80vw;
       }
-      #xvault-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      #BetterX-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-      .xvault-dialog-overlay {
+      .BetterX-dialog-overlay {
         position: fixed; inset: 0; z-index: 2147483646;
         display: flex; align-items: center; justify-content: center;
         padding: 18px; background: rgba(0,0,0,.64); backdrop-filter: blur(4px);
         color: var(--xv-text);
       }
-      .xvault-dialog {
+      .BetterX-dialog {
         width: min(92vw, 460px); max-height: min(82vh, 640px); overflow: auto;
         padding: 20px; border: 1px solid var(--xv-border); border-radius: 16px;
         background: var(--xv-panel-bg); box-shadow: 0 18px 64px rgba(0,0,0,.55);
       }
-      .xvault-dialog-title { font-size: 18px; line-height: 1.35; font-weight: 800; margin-bottom: 12px; }
-      .xvault-dialog-body { font-size: 14px; line-height: 1.65; color: var(--xv-text); }
-      .xvault-dialog-body p { margin: 0 0 10px; }
-      .xvault-dialog-body ul { margin: 0 0 12px; padding-left: 22px; }
-      .xvault-dialog-body li { margin: 4px 0; }
-      .xvault-dialog-body code {
+      .BetterX-dialog-title { font-size: 18px; line-height: 1.35; font-weight: 800; margin-bottom: 12px; }
+      .BetterX-dialog-body { font-size: 14px; line-height: 1.65; color: var(--xv-text); }
+      .BetterX-dialog-body p { margin: 0 0 10px; }
+      .BetterX-dialog-body ul { margin: 0 0 12px; padding-left: 22px; }
+      .BetterX-dialog-body li { margin: 4px 0; }
+      .BetterX-dialog-body code {
         padding: 1px 5px; border-radius: 5px; background: var(--xv-chip-bg);
         font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .92em;
       }
-      .xvault-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
-      .xvault-dialog-actions .xvault-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; }
+      .BetterX-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+      .BetterX-dialog-actions .BetterX-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; }
 
-      #xvault-panel * { box-sizing: border-box; }
-      .xvault-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 14px 14px 8px; }
-      .xvault-title-main { font-size: 15px; font-weight: 800; }
-      .xvault-title-sub { font-size: 11px; color: var(--xv-muted); margin-top: 2px; }
-      .xvault-header-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-      .xvault-tip { padding: 0 14px 8px; font-size: 13px; color: var(--xv-muted); }
+      #BetterX-panel * { box-sizing: border-box; }
+      .BetterX-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 14px 14px 8px; }
+      .BetterX-title-main { font-size: 15px; font-weight: 800; }
+      .BetterX-title-sub { font-size: 11px; color: var(--xv-muted); margin-top: 2px; }
+      .BetterX-header-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+      .BetterX-tip { padding: 0 14px 8px; font-size: 13px; color: var(--xv-muted); }
 
-      .xvault-btn {
+      .BetterX-btn {
         background: var(--xv-chip-bg); color: var(--xv-text); border: 1px solid var(--xv-border);
         border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap;
       }
-      .xvault-btn:hover { border-color: var(--xv-accent); }
-      .xvault-btn.primary { background: var(--xv-accent); color: #fff; border-color: var(--xv-accent); }
-      .xvault-btn.danger { color: #f4212e; }
-      .xvault-btn.danger:hover { border-color: #f4212e; }
+      .BetterX-btn:hover { border-color: var(--xv-accent); }
+      .BetterX-btn.primary { background: var(--xv-accent); color: #fff; border-color: var(--xv-accent); }
+      .BetterX-btn.danger { color: #f4212e; }
+      .BetterX-btn.danger:hover { border-color: #f4212e; }
 
-      .xvault-summary { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
-      .xvault-stat { background: var(--xv-chip-bg); border-radius: 8px; padding: 4px 8px; font-size: 11px; color: var(--xv-muted); }
-      .xvault-stat b { color: var(--xv-text); font-size: 12px; }
+      .BetterX-summary { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
+      .BetterX-stat { background: var(--xv-chip-bg); border-radius: 8px; padding: 4px 8px; font-size: 11px; color: var(--xv-muted); }
+      .BetterX-stat b { color: var(--xv-text); font-size: 12px; }
 
-      .xvault-filter-bar, .xvault-chip-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
-      .xvault-chip-row { padding: 6px 0 0; }
-      .xvault-chip {
+      .BetterX-filter-bar, .BetterX-chip-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
+      .BetterX-chip-row { padding: 6px 0 0; }
+      .BetterX-chip {
         background: var(--xv-chip-bg); color: var(--xv-text); border: 1px solid var(--xv-border);
         border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer;
       }
-      .xvault-chip.active { background: var(--xv-accent); color: #fff; border-color: var(--xv-accent); }
+      .BetterX-chip.active { background: var(--xv-accent); color: #fff; border-color: var(--xv-accent); }
 
-      .xvault-controls { padding: 0 14px 10px; display: flex; flex-direction: column; gap: 8px; }
-      .xvault-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-      .xvault-control-row { align-items: flex-end; }
-      .xvault-control-row > .xvault-btn,
-      .xvault-control-row > .xvault-field > .xvault-input { height: 32px; }
-      .xvault-control-row > .xvault-field.inline {
+      .BetterX-controls { padding: 0 14px 10px; display: flex; flex-direction: column; gap: 8px; }
+      .BetterX-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+      .BetterX-control-row { align-items: flex-end; }
+      .BetterX-control-row > .BetterX-btn,
+      .BetterX-control-row > .BetterX-field > .BetterX-input { height: 32px; }
+      .BetterX-control-row > .BetterX-field.inline {
         height: 32px; justify-content: center; align-self: flex-end;
       }
-      .xvault-row .xvault-input { flex: 1 1 120px; }
-      .xvault-input {
+      .BetterX-row .BetterX-input { flex: 1 1 120px; }
+      .BetterX-input {
         background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border);
         border-radius: 8px; padding: 7px 10px; font-size: 13px; width: 100%;
       }
-      .xvault-input.small { width: 90px; flex: 0 0 auto; }
-      .xvault-select {
+      .BetterX-input.small { width: 90px; flex: 0 0 auto; }
+      .BetterX-select {
         background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border);
         border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer;
       }
-      .xvault-select option { color: #000; }
-      .xvault-light .xvault-select option { color: #0f1419; }
+      .BetterX-select option { color: #000; }
+      .BetterX-light .BetterX-select option { color: #0f1419; }
 
-      .xvault-advanced { border: 1px solid var(--xv-border); border-radius: 8px; padding: 6px 10px; }
-      .xvault-advanced summary { cursor: pointer; font-size: 13px; color: var(--xv-muted); }
-      .xvault-adv-body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
-      .xvault-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--xv-muted); }
-      .xvault-field.inline { flex-direction: row; align-items: center; gap: 6px; }
-      .xvault-adv-label { font-size: 12px; color: var(--xv-muted); }
-      .xvault-content-status { font-size: 11px; color: var(--xv-muted); padding: 5px 8px; border-radius: 7px; background: var(--xv-chip-bg); }
+      .BetterX-advanced { border: 1px solid var(--xv-border); border-radius: 8px; padding: 6px 10px; }
+      .BetterX-advanced summary { cursor: pointer; font-size: 13px; color: var(--xv-muted); }
+      .BetterX-adv-body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
+      .BetterX-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--xv-muted); }
+      .BetterX-field.inline { flex-direction: row; align-items: center; gap: 6px; }
+      .BetterX-adv-label { font-size: 12px; color: var(--xv-muted); }
+      .BetterX-content-status { font-size: 11px; color: var(--xv-muted); padding: 5px 8px; border-radius: 7px; background: var(--xv-chip-bg); }
 
-      .xvault-list { overflow-y: auto; padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
-      .xvault-empty { padding: 24px 8px; text-align: center; color: var(--xv-muted); font-size: 13px; }
-      .xvault-loadmore {
+      .BetterX-list { overflow-y: auto; padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+      .BetterX-empty { padding: 24px 8px; text-align: center; color: var(--xv-muted); font-size: 13px; }
+      .BetterX-loadmore {
         margin-top: 4px; background: var(--xv-chip-bg); color: var(--xv-text); border: 1px dashed var(--xv-border);
         border-radius: 8px; padding: 8px; font-size: 12px; cursor: pointer;
       }
 
-      .xvault-item { background: var(--xv-item-bg); border: 1px solid var(--xv-border); border-radius: 12px; padding: 10px 12px; }
-      .xvault-item.is-flash-lost { border-color: rgba(244,33,46,0.5); }
-      .xvault-item.is-pinned { border-color: rgba(29,155,240,0.6); }
-      .xvault-item-top { display: flex; justify-content: space-between; gap: 8px; }
-      .xvault-author-head { display: flex; align-items: center; gap: 8px; }
-      .xvault-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
-      .xvault-author-line { font-size: 13px; font-weight: 700; word-break: break-word; }
-      .xvault-submeta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; font-size: 10px; color: var(--xv-muted); }
-      .xvault-actions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; align-content: flex-start; }
+      .BetterX-item { background: var(--xv-item-bg); border: 1px solid var(--xv-border); border-radius: 12px; padding: 10px 12px; }
+      .BetterX-item.is-flash-lost { border-color: rgba(244,33,46,0.5); }
+      .BetterX-item.is-pinned { border-color: rgba(29,155,240,0.6); }
+      .BetterX-item-top { display: flex; justify-content: space-between; gap: 8px; }
+      .BetterX-author-head { display: flex; align-items: center; gap: 8px; }
+      .BetterX-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+      .BetterX-author-line { font-size: 13px; font-weight: 700; word-break: break-word; line-height: 1.35; }
+      .BetterX-author-profile { color: inherit; text-decoration: none; }
+      .BetterX-author-profile:hover { color: var(--xv-accent); text-decoration: underline; }
+      .BetterX-author-handle { color: var(--xv-muted); font-weight: 400; font-size: 12px; }
+      .BetterX-author-time { color: var(--xv-muted); font-weight: 400; font-size: 12px; white-space: nowrap; }
+      .BetterX-submeta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; font-size: 10px; color: var(--xv-muted); }
+      .BetterX-actions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; align-content: flex-start; }
 
-      .xvault-text { margin: 8px 0 4px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
-      .xvault-text.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-      .xvault-expand-btn { background: none; border: none; color: var(--xv-accent); font-size: 12px; cursor: pointer; padding: 0; }
-      .xvault-hl { background: #ffd400; color: #000; border-radius: 3px; padding: 0 1px; }
+      .BetterX-text { margin: 8px 0 4px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+      .BetterX-text.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+      .BetterX-expand-btn { background: none; border: none; color: var(--xv-accent); font-size: 12px; cursor: pointer; padding: 0; }
+      .BetterX-hl { background: #ffd400; color: #000; border-radius: 3px; padding: 0 1px; }
 
-      .xvault-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
-      .xvault-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--xv-border); }
+      .BetterX-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+      .BetterX-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--xv-border); }
 
-      .xvault-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
-      .xvault-tag { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: var(--xv-chip-bg); color: var(--xv-muted); }
-      .xvault-tag.fav { background: rgba(255,212,0,0.15); color: #ffd400; }
-      .xvault-tag.pin { background: rgba(29,155,240,0.15); color: var(--xv-accent); }
-      .xvault-tag.flash { background: rgba(244,33,46,0.15); color: #f4212e; }
-      .xvault-tag.opened { background: rgba(0,186,124,0.15); color: #00ba7c; }
-      .xvault-tag.keyword { background: rgba(255,212,0,0.15); color: #ffd400; }
+      .BetterX-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+      .BetterX-tag { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: var(--xv-chip-bg); color: var(--xv-muted); }
+      .BetterX-tag.fav { background: rgba(255,212,0,0.15); color: #ffd400; }
+      .BetterX-tag.pin { background: rgba(29,155,240,0.15); color: var(--xv-accent); }
+      .BetterX-tag.flash { background: rgba(244,33,46,0.15); color: #f4212e; }
+      .BetterX-tag.opened { background: rgba(0,186,124,0.15); color: #00ba7c; }
+      .BetterX-tag.keyword { background: rgba(255,212,0,0.15); color: #ffd400; }
 
-      .xvault-note-area { margin-top: 4px; }
-      .xvault-note-btn { font-size: 11px; padding: 3px 8px; }
-      .xvault-note-text { margin-top: 4px; font-size: 12px; color: var(--xv-text); background: var(--xv-chip-bg); border-radius: 6px; padding: 6px 8px; word-break: break-word; }
-      .xvault-note-input { width: 100%; min-height: 60px; resize: vertical; background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 7px; font-size: 12px; }
-      .xvault-note-actions { display: flex; gap: 6px; margin-top: 6px; }
-      .xvault-bottom-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; color: var(--xv-muted); }
+      .BetterX-note-area { margin-top: 4px; }
+      .BetterX-note-btn { font-size: 11px; padding: 3px 8px; }
+      .BetterX-note-text { margin-top: 4px; font-size: 12px; color: var(--xv-text); background: var(--xv-chip-bg); border-radius: 6px; padding: 6px 8px; word-break: break-word; }
+      .BetterX-note-input { width: 100%; min-height: 60px; resize: vertical; background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 7px; font-size: 12px; }
+      .BetterX-note-actions { display: flex; gap: 6px; margin-top: 6px; }
+      .BetterX-bottom-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; color: var(--xv-muted); }
 
-      .xvault-list::-webkit-scrollbar { width: 8px; }
-      .xvault-list::-webkit-scrollbar-thumb { background: var(--xv-border); border-radius: 8px; }
+      .BetterX-list::-webkit-scrollbar { width: 8px; }
+      .BetterX-list::-webkit-scrollbar-thumb { background: var(--xv-border); border-radius: 8px; }
 
       /* ===== UI/UX 优化：吸顶 / 分区 / 菜单 / 视觉统一 ===== */
-      .xvault-panel-top { flex: 0 0 auto; }
-      .xvault-list { flex: 1 1 auto; min-height: 120px; }
-      .xvault-header { padding-bottom: 10px; border-bottom: 1px solid var(--xv-border); }
-      .xvault-section-label { padding: 8px 14px 2px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--xv-muted); }
-      .xvault-controls .xvault-section-label { padding: 4px 0 0; }
-      .xvault-controls { border-top: 1px solid var(--xv-border); padding-top: 12px; }
+      .BetterX-panel-top { flex: 0 0 auto; }
+      .BetterX-list { flex: 1 1 auto; min-height: 120px; }
+      .BetterX-header { padding-bottom: 10px; border-bottom: 1px solid var(--xv-border); }
+      .BetterX-section-label { padding: 8px 14px 2px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--xv-muted); }
+      .BetterX-controls .BetterX-section-label { padding: 4px 0 0; }
+      .BetterX-controls { border-top: 1px solid var(--xv-border); padding-top: 12px; }
       /* “…”下拉菜单 */
-      .xvault-menu-wrap { position: relative; display: inline-flex; }
-      .xvault-icon-btn { padding: 5px 10px; font-weight: 700; line-height: 1; }
-      .xvault-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; display: flex; flex-direction: column; gap: 2px; padding: 6px; min-width: 150px; background: var(--xv-panel-bg); border: 1px solid var(--xv-border); border-radius: 12px; box-shadow: 0 10px 32px rgba(0,0,0,0.45); backdrop-filter: blur(12px); }
-      .xvault-menu[hidden] { display: none; }
-      .xvault-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; color: var(--xv-text); border: none; border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; white-space: nowrap; transition: background .15s; }
-      .xvault-menu-item:hover { background: var(--xv-chip-bg); }
-      .xvault-menu-item.danger { color: #f4212e; }
-      .xvault-menu-item.danger:hover { background: rgba(244,33,46,0.12); }
+      .BetterX-menu-wrap { position: relative; display: inline-flex; }
+      .BetterX-icon-btn { padding: 5px 10px; font-weight: 700; line-height: 1; }
+      .BetterX-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; display: flex; flex-direction: column; gap: 2px; padding: 6px; min-width: 150px; background: var(--xv-panel-bg); border: 1px solid var(--xv-border); border-radius: 12px; box-shadow: 0 10px 32px rgba(0,0,0,0.45); backdrop-filter: blur(12px); }
+      .BetterX-menu[hidden] { display: none; }
+      .BetterX-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; color: var(--xv-text); border: none; border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; white-space: nowrap; transition: background .15s; }
+      .BetterX-menu-item:hover { background: var(--xv-chip-bg); }
+      .BetterX-menu-item.danger { color: #f4212e; }
+      .BetterX-menu-item.danger:hover { background: rgba(244,33,46,0.12); }
       /* 视觉统一：过渡 / 悬停 / 聚焦 */
-      .xvault-btn { transition: background .15s, border-color .15s, color .15s; }
-      .xvault-btn:hover { background: var(--xv-chip-bg); }
-      .xvault-btn.primary:hover { background: var(--xv-accent); filter: brightness(1.08); }
-      .xvault-chip { transition: background .15s, border-color .15s, color .15s; }
-      .xvault-input, .xvault-select, .xvault-note-input { transition: border-color .15s, box-shadow .15s; }
-      .xvault-input:focus, .xvault-select:focus, .xvault-note-input:focus { outline: none; border-color: var(--xv-accent); box-shadow: 0 0 0 2px rgba(29,155,240,0.25); }
-      .xvault-item { transition: border-color .15s, background .15s; }
-      .xvault-item:hover { border-color: rgba(29,155,240,0.5); }
+      .BetterX-btn { transition: background .15s, border-color .15s, color .15s; }
+      .BetterX-btn:hover { background: var(--xv-chip-bg); }
+      .BetterX-btn.primary:hover { background: var(--xv-accent); filter: brightness(1.08); }
+      .BetterX-chip { transition: background .15s, border-color .15s, color .15s; }
+      .BetterX-input, .BetterX-select, .BetterX-note-input { transition: border-color .15s, box-shadow .15s; }
+      .BetterX-input:focus, .BetterX-select:focus, .BetterX-note-input:focus { outline: none; border-color: var(--xv-accent); box-shadow: 0 0 0 2px rgba(29,155,240,0.25); }
+      .BetterX-item { transition: border-color .15s, background .15s; }
+      .BetterX-item:hover { border-color: rgba(29,155,240,0.5); }
       /* 折叠区：箭头指示 */
-      .xvault-advanced { transition: border-color .15s; }
-      .xvault-advanced[open] { border-color: rgba(29,155,240,0.4); }
-      .xvault-advanced summary { list-style: none; display: flex; align-items: center; gap: 6px; font-weight: 600; user-select: none; }
-      .xvault-advanced summary::-webkit-details-marker { display: none; }
-      .xvault-advanced summary::before { content: '▸'; font-size: 10px; color: var(--xv-muted); transition: transform .15s; }
-      .xvault-advanced[open] summary::before { transform: rotate(90deg); }
+      .BetterX-advanced { transition: border-color .15s; }
+      .BetterX-advanced[open] { border-color: rgba(29,155,240,0.4); }
+      .BetterX-advanced summary { list-style: none; display: flex; align-items: center; gap: 6px; font-weight: 600; user-select: none; }
+      .BetterX-advanced summary::-webkit-details-marker { display: none; }
+      .BetterX-advanced summary::before { content: '▸'; font-size: 10px; color: var(--xv-muted); transition: transform .15s; }
+      .BetterX-advanced[open] summary::before { transform: rotate(90deg); }
 
       /* ===== v1.7：双视图工作台 ===== */
-      #xvault-panel {
+      #BetterX-panel {
         position: fixed;
         top: 12px;
         bottom: 12px;
@@ -4135,169 +5697,212 @@
         height: auto;
         max-height: none;
       }
-      .xvault-header {
+      .BetterX-header {
         flex: 0 0 auto; align-items: center; min-height: 58px; padding: 11px 14px;
         border-bottom: none; background: var(--xv-panel-bg);
       }
-      .xvault-title { min-width: 0; }
-      .xvault-title-main { display: flex; align-items: center; gap: 8px; font-size: 17px; letter-spacing: -.01em; }
-      .xvault-title-icon {
+      .BetterX-title { min-width: 0; }
+      .BetterX-title-main { display: flex; align-items: center; gap: 8px; font-size: 17px; letter-spacing: -.01em; }
+      .BetterX-title-icon {
         width: 26px; height: 26px; flex: 0 0 26px; border-radius: 7px; object-fit: cover;
         box-shadow: 0 1px 5px rgba(0,0,0,.28); pointer-events: none; user-select: none; -webkit-user-drag: none;
       }
-      .xvault-title-sub { font-size: 11px; }
-      .xvault-header-actions { flex-wrap: nowrap; align-items: center; }
-      .xvault-header-actions .xvault-btn {
+      .BetterX-title-sub { font-size: 11px; }
+      .BetterX-header-actions { flex-wrap: nowrap; align-items: center; }
+      .BetterX-header-actions .BetterX-btn {
         display: inline-flex; align-items: center; justify-content: center; height: 30px; min-height: 30px;
       }
-      .xvault-header-actions .xvault-icon-btn { width: 30px; padding: 0; }
-      #xvault-panel.is-settings-view .xvault-vault-action { display: none; }
-      .xvault-btn:disabled, .xvault-input:disabled, .xvault-select:disabled {
+      .BetterX-header-actions .BetterX-icon-btn { width: 30px; padding: 0; }
+      #BetterX-panel.is-settings-view .BetterX-vault-action { display: none; }
+      .BetterX-btn:disabled, .BetterX-input:disabled, .BetterX-select:disabled {
         cursor: not-allowed; opacity: .48; filter: none;
       }
 
-      .xvault-tabs {
+      .BetterX-tabs {
         flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
         margin: 0 14px 10px; padding: 3px; border-radius: 11px; background: var(--xv-chip-bg);
       }
-      .xvault-tab {
+      .BetterX-tab {
         display: flex; align-items: center; justify-content: center; min-height: 32px;
         border: 0; border-radius: 8px; background: transparent; text-align: center;
         color: var(--xv-muted); font-size: 13px; font-weight: 700; cursor: pointer;
         transition: background .15s, color .15s, box-shadow .15s;
       }
-      .xvault-tab:hover { color: var(--xv-text); }
-      .xvault-tab.active {
+      .BetterX-tab:hover { color: var(--xv-text); }
+      .BetterX-tab.active {
         color: #fff; background: var(--xv-accent); box-shadow: 0 2px 8px rgba(29,155,240,.22);
       }
-      .xvault-view { flex: 1 1 auto; min-height: 0; }
-      .xvault-view[hidden] { display: none !important; }
-      .xvault-vault-view { display: flex; flex-direction: column; }
-      .xvault-vault-toolbar {
+      .BetterX-view { flex: 1 1 auto; min-height: 0; }
+      .BetterX-view[hidden] { display: none !important; }
+      .BetterX-vault-view { display: flex; flex-direction: column; }
+      .BetterX-vault-toolbar {
         flex: 0 0 auto; border-top: 1px solid var(--xv-border); border-bottom: 1px solid var(--xv-border);
         background: var(--xv-panel-bg);
       }
-      .xvault-tip {
+      .BetterX-tip {
         margin: 9px 14px 7px; padding: 7px 9px; border-radius: 8px;
         background: rgba(29,155,240,.08); color: var(--xv-muted); font-size: 12px; line-height: 1.45;
       }
-      .xvault-summary {
+      .BetterX-summary {
         flex-wrap: wrap; overflow-x: visible; padding: 0 14px 8px;
       }
-      .xvault-summary::-webkit-scrollbar, .xvault-filter-bar::-webkit-scrollbar { display: none; }
-      .xvault-stat { flex: 0 0 auto; border: 1px solid transparent; padding: 4px 8px; font-size: 12px; }
-      .xvault-stat b { font-size: 13px; }
-      .xvault-section-label { padding: 2px 14px 5px; font-size: 11px; text-transform: uppercase; }
-      .xvault-filter-bar {
+      .BetterX-summary::-webkit-scrollbar, .BetterX-filter-bar::-webkit-scrollbar { display: none; }
+      .BetterX-stat { flex: 0 0 auto; border: 1px solid transparent; padding: 4px 8px; font-size: 12px; }
+      .BetterX-stat b { font-size: 13px; }
+      .BetterX-section-label { padding: 2px 14px 5px; font-size: 11px; text-transform: uppercase; }
+      .BetterX-filter-bar {
         flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 0 14px 9px;
       }
-      .xvault-chip { flex: 0 0 auto; min-height: 28px; padding: 4px 11px; }
-      .xvault-search-tools { display: grid; gap: 7px; padding: 0 14px 11px; }
-      .xvault-search-tools > .xvault-input { height: 36px; padding-left: 12px; border-radius: 10px; }
-      .xvault-toolbar-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
-      .xvault-toolbar-row .xvault-select { width: 100%; min-width: 0; height: 32px; border-radius: 9px; font-size: 13px; }
-      .xvault-list {
+      .BetterX-chip { flex: 0 0 auto; min-height: 28px; padding: 4px 11px; }
+      .BetterX-search-tools { display: grid; gap: 7px; padding: 0 14px 11px; }
+      .BetterX-search-tools > .BetterX-input { height: 36px; padding-left: 12px; border-radius: 10px; }
+      .BetterX-toolbar-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+      .BetterX-toolbar-row .BetterX-select { width: 100%; min-width: 0; height: 32px; border-radius: 9px; font-size: 13px; }
+      .BetterX-list {
         flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding: 10px 12px 14px; gap: 8px;
         overscroll-behavior: contain;
       }
 
-      .xvault-settings-view { display: flex; flex-direction: column; border-top: 1px solid var(--xv-border); }
-      .xvault-settings-scroll {
+      .BetterX-settings-view { display: flex; flex-direction: column; border-top: 1px solid var(--xv-border); }
+      .BetterX-settings-scroll {
         flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
         padding: 12px 14px 18px; scrollbar-color: var(--xv-border) transparent;
       }
-      .xvault-settings-intro { display: flex; flex-direction: column; gap: 2px; padding: 0 2px 10px; }
-      .xvault-settings-intro strong { font-size: 15px; }
-      .xvault-settings-intro span { color: var(--xv-muted); font-size: 12px; line-height: 1.45; }
-      .xvault-settings-view .xvault-controls {
+      .BetterX-settings-intro { display: flex; flex-direction: column; gap: 2px; padding: 0 2px 10px; }
+      .BetterX-settings-intro strong { font-size: 15px; }
+      .BetterX-settings-intro span { color: var(--xv-muted); font-size: 12px; line-height: 1.45; }
+      .BetterX-settings-view .BetterX-controls {
         gap: 9px; padding: 0; border-top: 0;
       }
-      .xvault-settings-card {
+      .BetterX-settings-card {
         padding: 0; overflow: hidden; border-radius: 12px; background: var(--xv-item-bg);
       }
-      .xvault-settings-card > summary {
+      .BetterX-settings-card > summary {
         min-height: 43px; padding: 0 12px; color: var(--xv-text); font-size: 14px;
       }
-      .xvault-settings-card[open] { border-color: rgba(29,155,240,.34); }
-      .xvault-settings-card[open] > summary { border-bottom: 1px solid var(--xv-border); }
-      .xvault-settings-card > .xvault-adv-body { gap: 10px; padding: 12px; }
-      .xvault-settings-card .xvault-field,
-      .xvault-settings-card .xvault-adv-label { font-size: 13px; line-height: 1.45; }
-      .xvault-settings-card .xvault-content-status { font-size: 12px; line-height: 1.4; }
-      .xvault-dependent-options { display: flex; flex-direction: column; gap: 9px; }
-      .xvault-dependent-options.is-disabled { opacity: .5; }
-      .xvault-field.is-disabled { opacity: .5; }
-      .xvault-adultspam-master-row { flex-wrap: nowrap; justify-content: space-between; }
-      .xvault-adultspam-master-row > .xvault-field { flex: 1 1 auto; min-width: 0; }
-      .xvault-adultspam-master-row > .xvault-select { flex: 0 0 auto; min-width: 72px; }
-      .xvault-settings-view .xvault-field.inline {
+      .BetterX-settings-card[open] { border-color: rgba(29,155,240,.34); }
+      .BetterX-settings-card[open] > summary { border-bottom: 1px solid var(--xv-border); }
+      .BetterX-settings-card > .BetterX-adv-body { gap: 10px; padding: 12px; }
+      .BetterX-settings-card .BetterX-field,
+      .BetterX-settings-card .BetterX-adv-label { font-size: 13px; line-height: 1.45; }
+      .BetterX-settings-card .BetterX-content-status { font-size: 12px; line-height: 1.4; }
+      .BetterX-dependent-options { display: flex; flex-direction: column; gap: 9px; }
+      .BetterX-dependent-options.is-disabled { opacity: .5; }
+      .BetterX-field.is-disabled { opacity: .5; }
+      .BetterX-adultspam-master-row { flex-wrap: nowrap; justify-content: space-between; }
+      .BetterX-adultspam-master-row > .BetterX-field { flex: 1 1 auto; min-width: 0; }
+      .BetterX-adultspam-master-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; }
+      .BetterX-tag-editor {
+        display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 8px;
+        border: 1px solid var(--xv-border); border-radius: 10px; background: var(--xv-input-bg);
+      }
+      .BetterX-keyword-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+      .BetterX-keyword-tags:empty { display: none; }
+      .BetterX-keyword-tag {
+        display: inline-flex; align-items: center; gap: 5px; max-width: 100%; min-height: 26px;
+        padding: 3px 5px 3px 9px; border: 1px solid rgba(29,155,240,.35); border-radius: 999px;
+        background: rgba(29,155,240,.12); color: var(--xv-text); font-size: 12px; line-height: 1.3;
+      }
+      .BetterX-keyword-tag-label { overflow-wrap: anywhere; }
+      .BetterX-keyword-tag-remove {
+        display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+        width: 19px; height: 19px; padding: 0; border: 0; border-radius: 50%;
+        background: transparent; color: var(--xv-muted); cursor: pointer; font-size: 17px; line-height: 1;
+      }
+      .BetterX-keyword-tag-remove:hover { background: rgba(244,33,46,.14); color: #f4212e; }
+      .BetterX-tag-editor > .BetterX-input { width: 100%; margin: 0; background: transparent; }
+      .BetterX-settings-view .BetterX-field.inline {
         position: relative; min-height: 28px; padding-left: 46px; color: var(--xv-text); line-height: 1.35;
       }
-      .xvault-settings-view .xvault-field.inline > input[type="checkbox"] {
+      .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"] {
         appearance: none; -webkit-appearance: none; position: absolute; left: 0; top: 50%;
         width: 38px; height: 22px; margin: 0; border: 1px solid var(--xv-border); border-radius: 999px;
         background: var(--xv-input-bg); transform: translateY(-50%); cursor: pointer; transition: .16s ease;
       }
-      .xvault-settings-view .xvault-field.inline > input[type="checkbox"]::after {
+      .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]::after {
         content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px;
         border-radius: 50%; background: var(--xv-muted); box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: .16s ease;
       }
-      .xvault-settings-view .xvault-field.inline > input[type="checkbox"]:checked {
+      .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:checked {
         border-color: var(--xv-accent); background: var(--xv-accent);
       }
-      .xvault-settings-view .xvault-field.inline > input[type="checkbox"]:checked::after {
+      .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:checked::after {
         left: 18px; background: #fff;
       }
-      .xvault-settings-view .xvault-field.inline > input[type="checkbox"]:focus-visible {
+      .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:focus-visible {
         outline: 2px solid rgba(29,155,240,.45); outline-offset: 2px;
       }
-      .xvault-settings-view .xvault-control-row > .xvault-field.inline {
+      .BetterX-settings-view .BetterX-control-row > .BetterX-field.inline {
         align-self: flex-end; justify-content: center; height: 32px;
       }
 
-      .xvault-item { position: relative; flex: 0 0 auto; padding: 11px 12px; border-radius: 13px; overflow: hidden; }
-      .xvault-empty, .xvault-loadmore { flex: 0 0 auto; }
-      .xvault-item.is-unread::before {
+      .BetterX-item { position: relative; flex: 0 0 auto; padding: 11px 12px; border-radius: 13px; overflow: hidden; }
+      .BetterX-empty, .BetterX-loadmore { flex: 0 0 auto; }
+      .BetterX-item.is-unread::before {
         content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
         border-radius: 0 3px 3px 0; background: var(--xv-accent);
       }
-      .xvault-avatar { width: 32px; height: 32px; }
-      .xvault-author { min-width: 120px; }
-      .xvault-author-line { font-size: 14px; }
-      .xvault-submeta, .xvault-tag, .xvault-bottom-meta { font-size: 11px; }
-      .xvault-text { font-size: 14px; line-height: 1.55; }
-      .xvault-note-btn { font-size: 12px; }
-      .xvault-item-top { align-items: flex-start; }
-      .xvault-actions { max-width: 58%; }
-      .xvault-actions .xvault-btn { min-height: 28px; padding: 4px 8px; }
-      .xvault-bottom-meta { padding-top: 7px; border-top: 1px solid var(--xv-border); }
+      .BetterX-avatar { width: 32px; height: 32px; }
+      .BetterX-author { min-width: 120px; }
+      .BetterX-author-line { font-size: 14px; }
+      .BetterX-submeta, .BetterX-tag, .BetterX-bottom-meta { font-size: 11px; }
+      .BetterX-text { font-size: 14px; line-height: 1.55; }
+      .BetterX-note-btn { font-size: 12px; }
+      .BetterX-item-top { align-items: flex-start; }
+      .BetterX-actions { max-width: 58%; }
+      .BetterX-actions .BetterX-btn { min-height: 28px; padding: 4px 8px; }
+      .BetterX-bottom-meta { padding-top: 7px; border-top: 1px solid var(--xv-border); }
 
       @media (max-width: 640px) {
-        #xvault-root.xvault-mobile #xvault-panel {
+        #BetterX-root.BetterX-mobile #BetterX-panel {
           inset: 8px; width: auto; height: calc(100dvh - 16px); max-height: none; border-radius: 18px;
         }
-        #xvault-root.xvault-mobile.is-open #xvault-badge { opacity: 0; pointer-events: none; }
-        .xvault-header { min-height: 54px; padding: 9px 11px; }
-        .xvault-title-icon { display: none; }
-        .xvault-title-sub { display: none; }
-        .xvault-header-actions { gap: 4px; }
-        .xvault-header-actions .xvault-btn { padding: 5px 7px; }
-        .xvault-tabs { margin: 0 10px 8px; }
-        .xvault-tip { margin: 7px 10px 6px; }
-        .xvault-summary, .xvault-filter-bar { padding-left: 10px; padding-right: 10px; }
-        .xvault-section-label { padding-left: 10px; padding-right: 10px; }
-        .xvault-search-tools { padding: 0 10px 9px; }
-        .xvault-toolbar-row { grid-template-columns: 1fr 1fr; }
-        .xvault-toolbar-row .xvault-select:last-child { grid-column: 1 / -1; }
-        .xvault-list { padding: 8px 9px 12px; }
-        .xvault-settings-scroll { padding: 10px 10px 16px; }
-        .xvault-item-top { flex-direction: column; }
-        .xvault-actions { max-width: none; justify-content: flex-start; }
-        .xvault-thumb { width: 64px; height: 64px; }
+        #BetterX-root.BetterX-mobile #BetterX-download-pill {
+          left: auto; right: 0; bottom: calc(100% + 10px); width: 52px; min-width: 52px; height: 52px; padding: 0;
+          overflow: visible; border: 0; background: var(--xv-accent); color: var(--xv-accent);
+          box-shadow: 0 4px 16px rgba(0,0,0,.35); opacity: var(--xv-mobile-badge-opacity, 1);
+          transition: opacity 170ms ease-out, filter .15s;
+        }
+        #BetterX-root.BetterX-mobile #BetterX-download-pill.is-progress { border: 0; background: var(--xv-accent); }
+        #BetterX-root.BetterX-mobile .BetterX-download-pill-icon {
+          display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+          border-radius: 50%; background: #fff; color: var(--xv-accent); font-size: 24px; font-weight: 900;
+          box-shadow: 0 1px 5px rgba(0,0,0,.18);
+        }
+        #BetterX-root.BetterX-mobile .BetterX-download-pill-label { display: none; }
+        #BetterX-root.BetterX-mobile .BetterX-download-pill-count {
+          position: absolute; display: block; top: -2px; right: -2px; min-width: 18px; height: 18px;
+          padding: 0 4px; border-radius: 999px; background: #f4212e; color: #fff;
+          font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+        }
+        #BetterX-root.BetterX-mobile .BetterX-download-pill-count[hidden] { display: none !important;
+        }
+        #BetterX-root.BetterX-mobile #BetterX-download-popover {
+          position: absolute; left: auto; right: 0; bottom: calc(200% + 20px);
+          width: min(360px, calc(100vw - 16px)); max-height: min(52vh, 420px);
+        }
+        #BetterX-root.BetterX-mobile.is-open #BetterX-badge,
+        #BetterX-root.BetterX-mobile.is-open #BetterX-download-pill { opacity: 0; pointer-events: none; }
+        .BetterX-header { min-height: 54px; padding: 9px 11px; }
+        .BetterX-title-icon { display: none; }
+        .BetterX-title-sub { display: none; }
+        .BetterX-header-actions { gap: 4px; }
+        .BetterX-header-actions .BetterX-btn { padding: 5px 7px; }
+        .BetterX-tabs { margin: 0 10px 8px; }
+        .BetterX-tip { margin: 7px 10px 6px; }
+        .BetterX-summary, .BetterX-filter-bar { padding-left: 10px; padding-right: 10px; }
+        .BetterX-section-label { padding-left: 10px; padding-right: 10px; }
+        .BetterX-search-tools { padding: 0 10px 9px; }
+        .BetterX-toolbar-row { grid-template-columns: 1fr 1fr; }
+        .BetterX-toolbar-row .BetterX-select:last-child { grid-column: 1 / -1; }
+        .BetterX-list { padding: 8px 9px 12px; }
+        .BetterX-settings-scroll { padding: 10px 10px 16px; }
+        .BetterX-item-top { flex-direction: column; }
+        .BetterX-actions { max-width: none; justify-content: flex-start; }
+        .BetterX-thumb { width: 64px; height: 64px; }
       }
     `);
   }
-
   // ── 观察器 / 定时器 / 导航 ───────────────────────────────────────────
   function startObserver() {
     if (state.observer) state.observer.disconnect();
@@ -4306,7 +5911,7 @@
     const throttledLayoutRefresh = throttle(applyLayoutEnhancements, 250);
     const pendingRoots = new Set();
     const collectArticlesFromRoot = (root, articles) => {
-      if (!root || !root.isConnected || root.closest('#xvault-root')) return;
+      if (!root || !root.isConnected || root.closest('#BetterX-root')) return;
       if (root.matches('article')) { articles.add(root); return; }
       const parentArticle = root.closest('article');
       if (parentArticle) { articles.add(parentArticle); return; }
@@ -4321,9 +5926,10 @@
       for (const article of articles) {
         captureArticle(article);
         if (state.settings.mediaDownload) injectDownloadButtons(article);
+        if (state.settings.restoreMediaGrid) applyMediaGridLayout(article);
         if (state.settings.bypassAgeRestriction) revealAgeRestricted(article);
       }
-      if (state.settings.hideAdultSpam) throttledAdultSpamCount();
+      if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
       if (state.settings.layoutEnabled) throttledLayoutRefresh();
     }, 100);
     state.observer = new MutationObserver((mutations) => {
@@ -4332,12 +5938,13 @@
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
-          if (node.id === 'xvault-root' || node.closest && node.closest('#xvault-root')) continue;
+          if (node.id === 'BetterX-root' || node.closest && node.closest('#BetterX-root')) continue;
+          if (state.settings.hideAds) sweepStandaloneAds(node);
           harvestFollowingControlsFromRoot(node);
           pendingRoots.add(node);
-          if (state.settings.hideAdultSpam) collectArticlesFromRoot(node, immediateAdultArticles);
+          if (adultSpamFilteringEnabled()) collectArticlesFromRoot(node, immediateAdultArticles);
         }
-        if (state.settings.hideAdultSpam && mutation.addedNodes.length && mutation.target instanceof HTMLElement) {
+        if (adultSpamFilteringEnabled() && mutation.addedNodes.length && mutation.target instanceof HTMLElement) {
           // 正文可能以 Text 节点分步补入；同时检查 mutation.target，确保内容补全后仍能在本帧重判。
           collectArticlesFromRoot(mutation.target, immediateAdultArticles);
         }
@@ -4354,10 +5961,10 @@
       }
       if (hadRemoval) {
         throttledDisappear();
-        if (state.settings.hideAdultSpam) throttledAdultSpamCount();
+        if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
       }
       if (pendingRoots.size) flushAddedRoots();
-      if (state.rootEl && state.rootEl.classList.contains('xvault-mobile')) scheduleMobileBadgeSync();
+      if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) scheduleMobileBadgeSync();
     });
     // X 是 SPA，主时间线容器会被整体替换；保留 body 作为稳定根节点，但把重活批量延后并按 article 去重。
     state.observer.observe(document.body, { childList: true, subtree: true });
@@ -4402,12 +6009,21 @@
 
   async function loadStateFromDb() {
     const savedSettings = await dbGetSetting('settings');
-    if (savedSettings && typeof savedSettings === 'object') {
-      const migratedSettings = migrateSettingsDefaults(savedSettings);
+    const mirroredSettings = readSettingsMirror();
+    const hasDbSettings = !!(savedSettings && typeof savedSettings === 'object' && !Array.isArray(savedSettings));
+    const sourceSettings = hasDbSettings ? savedSettings : mirroredSettings;
+    if (sourceSettings && typeof sourceSettings === 'object') {
+      const migratedSettings = migrateSettingsDefaults(sourceSettings);
       state.settings = sanitizeSettings(migratedSettings);
-      if (Number(savedSettings.settingsRevision || 0) < DEFAULT_SETTINGS.settingsRevision) {
+      // IndexedDB 缺失时从油猴存储自动恢复；版本迁移后也同步回两处。
+      if (!hasDbSettings || Number(sourceSettings.settingsRevision || 0) < DEFAULT_SETTINGS.settingsRevision) {
         await dbPutSetting('settings', state.settings);
       }
+      writeSettingsMirror(state.settings);
+    } else {
+      // 首次安装也建立一份镜像，后续即使 x.com 网站数据被清理仍有恢复来源。
+      state.settings = sanitizeSettings(state.settings);
+      writeSettingsMirror(state.settings);
     }
     if (IS_FIREFOX) {
       if (firefoxCompatibilityMode === 'compat' || firefoxCompatibilityMode === 'normal') {
@@ -4416,7 +6032,11 @@
           || !state.settings.firefoxCompatibilityPrompted;
         state.settings.firefoxCompatibility = compatibilityEnabled;
         state.settings.firefoxCompatibilityPrompted = true;
-        if (needsSync) await dbPutSetting('settings', sanitizeSettings(state.settings));
+        if (needsSync) {
+          const sanitized = sanitizeSettings(state.settings);
+          writeSettingsMirror(sanitized);
+          await dbPutSetting('settings', sanitized);
+        }
       } else if (state.settings.firefoxCompatibilityPrompted) {
         // 从仅有 IndexedDB 设置的旧安装补写 document-start 可读取的启动标记。
         writeFirefoxCompatibilityMode(state.settings.firefoxCompatibility ? 'compat' : 'normal');
@@ -4424,6 +6044,7 @@
     }
     const persistedFollowedHandles = state.settings.knownFollowedHandles || [];
     persistedFollowedHandles.forEach((handle) => followedHandles.add(handle));
+    trimFollowedHandlesToMax();
     state.settingsLoaded = true;
     if (followedHandles.size !== persistedFollowedHandles.length) scheduleFollowedHandlesPersist();
     const rawPosts = (await dbGetAllPosts()).filter(Boolean);
@@ -4531,7 +6152,6 @@
       return r;
     };
   }
-
   // ── 启动 ──────────────────────────────────────────────────────
   async function boot() {
     installStyles();
@@ -4553,6 +6173,7 @@
     applyAdHiding();
     applyAdultSpamFiltering();
     applyMediaDownload();
+    applyMediaGridLayout();
     applyAgeBypass();
     applyLayoutEnhancements();
     startObserver();
@@ -4583,7 +6204,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v2.2.0 started');
+    debugLog('v2.5.0 started');
   }
 
   function waitForPageReady() {
@@ -4593,6 +6214,7 @@
     }, 100);
   }
 
+  registerMenuCommands();
   installNetworkHooks();
   waitForPageReady();
 })();
