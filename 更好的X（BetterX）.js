@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         更好的 X（BetterX）
 // @namespace    https://github.com/Iskongkongyo
-// @version      2.5.0
-// @description  自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体自动打包 zip)、取消年龄限制(自动去除敏感/成人内容遮罩)、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
+// @version      2.6.0
+// @description  自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
 // @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://twitter.com/*
@@ -135,6 +135,17 @@
     { key: 'text', label: '纯文字' },
   ];
 
+  const SORT_HINTS = {
+    smart: '智能排序：置顶、收藏和快消失的帖子先显示，其他的按抓到的顺序排。',
+    recent_viewed: '最近浏览：按你在屏幕上看到的帖子顺序排。适合用来找刚刷过的帖子。',
+    recent_captured: '最近抓取：按脚本发现帖子的时间排。X 会提前加载，顺序不一定等于你看到的顺序。',
+    first_captured: '首次抓取（新→旧）：新发现的帖子排在前；同一条帖子后来又出现，也不会换位置。',
+    time_asc: '首次抓取（旧→新）：最早发现的帖子排在前，适合从头慢慢翻。',
+    captures: '出现次数：反复刷到的帖子排在前面。',
+    author: '按作者：把同一个作者的帖子排在一起。',
+    source: '按来源：按主页、为你推荐、搜索、书签等页面分类排。',
+  };
+
   const SKIP_SOURCE_OPTIONS = [
     { key: 'profile', label: '个人主页' },
     { key: 'thread', label: '帖子详情' },
@@ -145,14 +156,14 @@
   ];
 
   const DEFAULT_SETTINGS = {
-    settingsRevision: 14,
+    settingsRevision: 16,
     keywords: [],
     excludeKeywords: [],
     keywordMode: 'plain',   // 'plain' | 'and' | 'regex'
     filter: 'all',
     sourceFilter: 'all',
     mediaFilter: 'all',
-    sortBy: 'default',      // 'default' | 'time_asc' | 'captures' | 'author' | 'source'
+    sortBy: 'smart',        // 'smart' | 'recent_viewed' | 'recent_captured' | 'first_captured' | 'time_asc' | 'captures' | 'author' | 'source'
     autoCleanDays: 0,
     maxPosts: 1000,
     flashMs: 8000,
@@ -181,6 +192,7 @@
     layoutHideMessageGrok: true,
     layoutHideShowMore: false,
     mediaDownload: true,    // 默认开启一键下载图片/视频/GIF
+    downloadZip: true,      // 多媒体默认自动压缩为 ZIP 包
     bypassAgeRestriction: false, // 取消年龄限制：用原图/视频内联替换遮罩
     restoreMediaGrid: false, // 将 X 的多媒体正文轮播恢复为网格视图
     firefoxCompatibility: false, // Firefox 兼容模式：停用页面 fetch/XHR Hook
@@ -205,6 +217,8 @@
     visibleMap: new Map(),
 
     observer: null,
+    viewObserver: null,
+    viewedArticleIds: new WeakMap(),
     cleanupTimer: null,
     networkHookTimer: null,
     settingsLoaded: false,
@@ -226,6 +240,7 @@
     keywordModeEl: null,
     searchEl: null,
     sortEl: null,
+    sortHintEl: null,
     autoCleanInputEl: null,
     maxPostsInputEl: null,
     flashMsInputEl: null,
@@ -256,6 +271,8 @@
     layoutHideMessageGrokEl: null,
     layoutHideShowMoreEl: null,
     firefoxCompatibilityEl: null,
+    mediaDownloadEl: null,
+    downloadZipEl: null,
     restoreMediaGridEl: null,
     useMobileBadgeOnDesktopEl: null,
     hideAppBadgeOnDesktopEl: null,
@@ -1093,6 +1110,12 @@
     }).join('');
   }
 
+  function updateSortHint() {
+    if (!state.sortHintEl) return;
+    const sortBy = state.settings.sortBy || DEFAULT_SETTINGS.sortBy;
+    state.sortHintEl.textContent = SORT_HINTS[sortBy] || SORT_HINTS.smart;
+  }
+
   function passesMediaFilter(p) {
     switch (state.settings.mediaFilter) {
       case 'image': return !!p.hasImage;
@@ -1129,11 +1152,17 @@
         (p.note        || '').toLowerCase().includes(q)
       );
     }
-    const sortBy = state.settings.sortBy || 'default';
+    const sortBy = state.settings.sortBy || 'smart';
     result.sort((a, b) => {
+      // 以下三种时间排序刻意不让置顶、收藏或闪现记录插队，便于按顺序找回刚浏览的帖子。
+      if (sortBy === 'recent_viewed') {
+        return (b.lastViewedAt || b.lastCapturedAt || 0) - (a.lastViewedAt || a.lastCapturedAt || 0);
+      }
+      if (sortBy === 'recent_captured') return (b.lastCapturedAt || 0) - (a.lastCapturedAt || 0);
+      if (sortBy === 'first_captured') return (b.firstCapturedAt || b.lastCapturedAt || 0) - (a.firstCapturedAt || a.lastCapturedAt || 0);
+      if (sortBy === 'time_asc') return (a.firstCapturedAt || a.lastCapturedAt || 0) - (b.firstCapturedAt || b.lastCapturedAt || 0);
       const pinDiff = Number(!!b.pinned) - Number(!!a.pinned);
       if (pinDiff !== 0) return pinDiff;
-      if (sortBy === 'time_asc') return (a.lastCapturedAt || 0) - (b.lastCapturedAt || 0);
       if (sortBy === 'captures')  return (b.capturedCount || 1) - (a.capturedCount || 1);
       if (sortBy === 'author')    return (a.displayName || '').localeCompare(b.displayName || '');
       if (sortBy === 'source')    return (a.sourceLabel || '').localeCompare(b.sourceLabel || '');
@@ -1167,8 +1196,10 @@
   function renderThumbs(post) {
     const thumbs = uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4);
     if (!thumbs.length) return '';
-    return `<div class="BetterX-thumbs">${thumbs.map((src) =>
-      `<img class="BetterX-thumb" src="${escapeHtml(src)}" loading="lazy" referrerpolicy="no-referrer" alt="" />`
+    return `<div class="BetterX-thumbs">${thumbs.map((src, index) =>
+      `<button type="button" class="BetterX-thumb-button" data-action="preview-image" data-image-url="${escapeHtml(src)}" aria-label="放大查看第 ${index + 1} 张图片">
+        <img class="BetterX-thumb" src="${escapeHtml(src)}" loading="lazy" referrerpolicy="no-referrer" alt="" />
+      </button>`
     ).join('')}</div>`;
   }
 
@@ -1224,9 +1255,10 @@
               ${avatarHtml}
               <div class="BetterX-author-line">${authorHtml}${timeHtml}</div>
             </div>
-            <div class="BetterX-submeta">
-              <span>抓取: ${escapeHtml(formatTime(post.lastCapturedAt))}</span>
-              <span>出现: ${escapeHtml(String(post.capturedCount || 1))} 次</span>
+          <div class="BetterX-submeta">
+            <span>抓取: ${escapeHtml(formatTime(post.lastCapturedAt))}</span>
+            ${post.lastViewedAt ? `<span>浏览: ${escapeHtml(formatTime(post.lastViewedAt))}</span>` : ''}
+            <span>出现: ${escapeHtml(String(post.capturedCount || 1))} 次</span>
             </div>
           </div>
           <div class="BetterX-actions">
@@ -1282,7 +1314,8 @@
       state.excludeInputEl.value = (state.settings.excludeKeywords || []).join(', ');
     }
     if (state.keywordModeEl) state.keywordModeEl.value = state.settings.keywordMode || 'plain';
-    if (state.sortEl) state.sortEl.value = state.settings.sortBy || 'default';
+    if (state.sortEl) state.sortEl.value = state.settings.sortBy || 'smart';
+    updateSortHint();
     if (state.autoCleanInputEl && document.activeElement !== state.autoCleanInputEl) {
       state.autoCleanInputEl.value = String(state.settings.autoCleanDays || 0);
     }
@@ -1337,6 +1370,7 @@
     if (state.layoutHideShowMoreEl) state.layoutHideShowMoreEl.checked = !!state.settings.layoutHideShowMore;
     updateAdultSpamCount();
     if (state.mediaDownloadEl) state.mediaDownloadEl.checked = !!state.settings.mediaDownload;
+    if (state.downloadZipEl) state.downloadZipEl.checked = state.settings.downloadZip !== false;
     if (state.bypassAgeEl) state.bypassAgeEl.checked = !!state.settings.bypassAgeRestriction;
     if (state.firefoxCompatibilityEl) {
       state.firefoxCompatibilityEl.checked = !!state.settings.firefoxCompatibility;
@@ -1387,7 +1421,7 @@
       filter: enumValue(input.filter, FILTERS.map((item) => item.key), DEFAULT_SETTINGS.filter),
       sourceFilter: safeString(input.sourceFilter, 100) || DEFAULT_SETTINGS.sourceFilter,
       mediaFilter: enumValue(input.mediaFilter, MEDIA_FILTERS.map((item) => item.key), DEFAULT_SETTINGS.mediaFilter),
-      sortBy: enumValue(input.sortBy, ['default', 'time_asc', 'captures', 'author', 'source'], DEFAULT_SETTINGS.sortBy),
+      sortBy: enumValue(input.sortBy, ['smart', 'recent_viewed', 'recent_captured', 'first_captured', 'time_asc', 'captures', 'author', 'source'], DEFAULT_SETTINGS.sortBy),
       autoCleanDays: clampInt(input.autoCleanDays, 0, 3650, DEFAULT_SETTINGS.autoCleanDays),
       maxPosts: clampInt(input.maxPosts, 50, 5000, DEFAULT_SETTINGS.maxPosts),
       flashMs: clampInt(input.flashMs, 1000, 60000, DEFAULT_SETTINGS.flashMs),
@@ -1427,6 +1461,7 @@
       layoutHideMessageGrok: input.layoutHideMessageGrok !== false,
       layoutHideShowMore: input.layoutHideShowMore === true,
       mediaDownload: typeof input.mediaDownload === 'boolean' ? input.mediaDownload : DEFAULT_SETTINGS.mediaDownload,
+      downloadZip: typeof input.downloadZip === 'boolean' ? input.downloadZip : DEFAULT_SETTINGS.downloadZip,
       bypassAgeRestriction: input.bypassAgeRestriction === true,
       restoreMediaGrid: input.restoreMediaGrid === true,
       firefoxCompatibility: input.firefoxCompatibility === true,
@@ -1455,6 +1490,10 @@
         if (input.hideAds == null || input.hideAds === false) input.hideAds = true;
         if (input.mediaDownload == null || input.mediaDownload === false) input.mediaDownload = true;
       }
+      // v2.6 将旧“默认排序”明确为智能排序，避免旧设置落入无效值。
+      if (revision < 15 && (!input.sortBy || input.sortBy === 'default')) input.sortBy = 'smart';
+      // v2.6.0 新增 ZIP 开关；旧设置未填写时保持默认自动压缩。
+      if (revision < 16 && input.downloadZip == null) input.downloadZip = DEFAULT_SETTINGS.downloadZip;
       // v1.6 已手动改过宽度的用户继续使用手动值；旧默认值则切换为自动读取。
       if (input.layoutAutoWidth == null) {
         const customTimeline = input.timelineWidth != null && Number(input.timelineWidth) !== 600;
@@ -1645,6 +1684,36 @@
   const mediaRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
   // 卡片媒体注册表（第三方引用卡片 / 内嵌播放器）
   const cardRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
+  const firefoxMediaLookupJobs = new Map(); // statusId -> Promise<boolean>
+  // 仅用于 Firefox 兼容模式下的按需单帖查询；避免为采集媒体而重新包装页面网络 API。
+  const FIREFOX_TWEET_DETAIL_QUERY_ID = 'zAz9764BcLZOJ0JU2wrd1A';
+  const FIREFOX_TWEET_DETAIL_FEATURES = {
+    creator_subscriptions_tweet_preview_api_enabled: true,
+    premium_content_api_read_enabled: false,
+    communities_web_enable_tweet_community_results_fetch: true,
+    c9s_tweet_anatomy_moderator_badge_enabled: true,
+    responsive_web_grok_analyze_button_fetch_trends_enabled: false,
+    responsive_web_grok_share_attachment_enabled: true,
+    articles_preview_enabled: true,
+    responsive_web_edit_tweet_api_enabled: true,
+    graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
+    view_counts_everywhere_api_enabled: true,
+    longform_notetweets_consumption_enabled: true,
+    longform_notetweets_inline_media_enabled: true,
+    responsive_web_twitter_article_tweet_consumption_enabled: true,
+    tweet_awards_web_tipping_enabled: false,
+    creator_subscriptions_quote_tweet_preview_enabled: false,
+    freedom_of_speech_not_reach_fetch_enabled: true,
+    standardized_nudges_misinfo: true,
+    tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+    profile_label_improvements_pcf_label_in_post_enabled: true,
+    rweb_tipjar_consumption_enabled: true,
+    verified_phone_label_enabled: false,
+    responsive_web_grok_image_annotation_enabled: true,
+    responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+    responsive_web_graphql_timeline_navigation_enabled: true,
+    responsive_web_enhance_cards_enabled: false,
+  };
 
   function setBoundedRegistryEntry(registry, key, value) {
     if (registry.has(key)) registry.delete(key);
@@ -1731,6 +1800,103 @@
       if (mp4s[0]) { (m.type === 'animated_gif' ? acc.gifs : acc.videos).push(mp4s[0].url); return true; }
     }
     return false;
+  }
+
+  function readCookieValue(name) {
+    const prefix = `${name}=`;
+    try {
+      const part = String(document.cookie || '').split(';').map((item) => item.trim()).find((item) => item.startsWith(prefix));
+      return part ? decodeURIComponent(part.slice(prefix.length)) : '';
+    } catch (err) { return ''; }
+  }
+
+  function isFirefoxCompatibilityActive() {
+    return IS_FIREFOX && firefoxCompatibilityMode === 'compat';
+  }
+
+  function buildFirefoxTweetDetailHeaders() {
+    const headers = {
+      authorization: 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
+      'x-twitter-client-language': 'en',
+      'x-twitter-active-user': 'yes',
+      'content-type': 'application/json',
+    };
+    const csrfToken = readCookieValue('ct0');
+    const guestToken = readCookieValue('gt');
+    if (csrfToken) headers['x-csrf-token'] = csrfToken;
+    if (guestToken) headers['x-guest-token'] = guestToken;
+    else headers['x-twitter-auth-type'] = 'OAuth2Session';
+    return headers;
+  }
+
+  function extractMediaFromTweetDetail(payload, statusId) {
+    const targetId = String(statusId || '');
+    if (!payload || !targetId) return false;
+    const stack = [payload];
+    let scanned = 0;
+    while (stack.length && scanned < 12000) {
+      const current = stack.pop();
+      scanned++;
+      if (!current || typeof current !== 'object') continue;
+      const candidates = [current, current.tweet, current.tweet_results && current.tweet_results.result].filter(Boolean);
+      for (const candidate of candidates) {
+        if (!candidate || typeof candidate !== 'object') continue;
+        const legacy = candidate.legacy && typeof candidate.legacy === 'object' ? candidate.legacy : null;
+        const candidateId = String(candidate.rest_id || candidate.id_str || candidate.id || (legacy && legacy.id_str) || '');
+        const media = (candidate.extended_entities && candidate.extended_entities.media)
+          || (legacy && legacy.extended_entities && legacy.extended_entities.media);
+        if (candidateId === targetId) {
+          if (Array.isArray(media) && media.length) {
+            registerMedia(targetId, media);
+            return true;
+          }
+          const card = candidate.card || (legacy && legacy.card);
+          if (card) {
+            harvestCard(targetId, card);
+            const cardMedia = cardRegistry.get(targetId);
+            if (cardMedia && (cardMedia.photos.length || cardMedia.gifs.length || cardMedia.videos.length)) return true;
+          }
+        }
+      }
+      const children = Array.isArray(current) ? current : Object.values(current);
+      for (const child of children) {
+        if (child && typeof child === 'object') stack.push(child);
+      }
+    }
+    return false;
+  }
+
+  function requestFirefoxTweetDetailMedia(statusId) {
+    const id = String(statusId || '');
+    if (!id || !isFirefoxCompatibilityActive() || typeof GM_xmlhttpRequest !== 'function') return Promise.resolve(false);
+    if (firefoxMediaLookupJobs.has(id)) return firefoxMediaLookupJobs.get(id);
+    const variables = { tweetId: id, withCommunity: false, includePromotedContent: false, withVoice: false };
+    const fieldToggles = { withArticleRichContentState: true, withArticlePlainText: false, withGrokAnalyze: false, withDisallowedReplyControls: false };
+    const url = `https://x.com/i/api/graphql/${FIREFOX_TWEET_DETAIL_QUERY_ID}/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(FIREFOX_TWEET_DETAIL_FEATURES))}&fieldToggles=${encodeURIComponent(JSON.stringify(fieldToggles))}`;
+    const task = new Promise((resolve) => {
+      try {
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url,
+          headers: buildFirefoxTweetDetailHeaders(),
+          responseType: 'json',
+          timeout: 30000,
+          onload: (response) => {
+            if (!response || response.status < 200 || response.status >= 300) { resolve(false); return; }
+            let payload = response.response;
+            if (typeof payload === 'string') {
+              try { payload = JSON.parse(payload); } catch (err) { resolve(false); return; }
+            }
+            resolve(extractMediaFromTweetDetail(payload, id));
+          },
+          onerror: () => resolve(false),
+          ontimeout: () => resolve(false),
+          onabort: () => resolve(false),
+        });
+      } catch (err) { resolve(false); }
+    }).finally(() => firefoxMediaLookupJobs.delete(id));
+    firefoxMediaLookupJobs.set(id, task);
+    return task;
   }
 
   // 解析推文的 card 结构：优先 unified_card 里的真实媒体，其次 mp4 流，最后退而用最大缩略图
@@ -2369,6 +2535,21 @@
     return items;
   }
 
+  function articleMayContainVideo(article) {
+    if (!article || !article.querySelector) return false;
+    return !!article.querySelector(
+      'video, [data-testid="videoComponent"], [data-testid="videoPlayer"], [data-testid="playButton"], '
+      + 'img[src*="ext_tw_video_thumb"], img[src*="amplify_video_thumb"], img[src*="tweet_video_thumb"]'
+    );
+  }
+
+  function needsFirefoxVideoLookup(article, statusId) {
+    if (!isFirefoxCompatibilityActive() || !articleMayContainVideo(article)) return false;
+    const id = String(statusId || '');
+    const registered = mediaRegistry.get(id) || cardRegistry.get(id);
+    return !registered || !((registered.videos && registered.videos.length) || (registered.gifs && registered.gifs.length));
+  }
+
   function formatDownloadBytes(value) {
     const bytes = Math.max(0, Number(value) || 0);
     if (bytes < 1024) return `${bytes.toFixed(0)} B`;
@@ -2601,7 +2782,8 @@
       : DOWNLOAD_ZIP_MEMORY_LIMIT_DESKTOP;
     const retainedResults = [];
     let retainedBytes = 0;
-    let individualMode = false;
+    // 此任务开始时固定读取开关，避免用户在下载途中切换设置导致同一任务的保存方式混杂。
+    let individualMode = job.zipEnabled === false;
 
     const acceptResult = (result) => {
       if (job.items.length === 1) {
@@ -2760,7 +2942,7 @@
     job.errorMessage = '';
     scheduleDownloadJobCleanup(job, 8000);
     scheduleDownloadUiRefresh();
-    showToast(job.fallbackIndividual
+    showToast(job.fallbackIndividual || job.individualDownloads
       ? `✅ 下载完成：已逐个保存 ${job.savedCount} 个文件`
       : `✅ 下载完成${job.failedCount ? `，跳过 ${job.failedCount} 个失败项` : ''}`,
     5000);
@@ -2778,6 +2960,7 @@
       itemProgress: items.map(() => ({ loaded: 0, total: 0, totalKnown: false, status: 'queued' })),
       status: 'queued', createdAt: now(), updatedAt: now(), completedCount: 0, failedCount: 0,
       savedCount: 0, retryCount: 0, packCompleted: 0, packTotal: 0, fallbackIndividual: false,
+      zipEnabled: state.settings.downloadZip !== false, individualDownloads: state.settings.downloadZip === false,
       cancelRequested: false, controllers: new Set(), requests: new Set(), cancelHandles: new Set(),
       cancelAbortTimers: [], cleanupTimer: null, errorMessage: '',
     };
@@ -2799,14 +2982,23 @@
     return startDownloadJob(previous.items, { username: previous.username }, previous.statusId);
   }
 
-  function handleDownloadClick(article, author, statusId) {
+  async function handleDownloadClick(article, author, statusId) {
     const existing = downloadJobs.get(String(statusId || ''));
     if (isActiveDownloadJob(existing)) { toggleDownloadPopover(true); return; }
-    const items = collectDownloadItems(article, statusId);
+    let items = collectDownloadItems(article, statusId);
+    if (needsFirefoxVideoLookup(article, statusId)) {
+      showToast('正在获取视频地址…');
+      const found = await requestFirefoxTweetDetailMedia(statusId);
+      if (found) items = collectDownloadItems(article, statusId);
+    }
     if (!items.length) {
-      showToast('未找到可下载的媒体，若为视频请先点开或播放一下再试');
+      showToast(isFirefoxCompatibilityActive()
+        ? '未能取得媒体地址，请确认已登录 X 后重试'
+        : '未找到可下载的媒体，若为视频请先点开或播放一下再试');
       return;
     }
+    const activeAfterLookup = downloadJobs.get(String(statusId || ''));
+    if (isActiveDownloadJob(activeAfterLookup)) { toggleDownloadPopover(true); return; }
     startDownloadJob(items, author, statusId);
   }
 
@@ -3207,7 +3399,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.5.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.6.0',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,
       readyState: document.readyState || '',
@@ -3644,11 +3836,11 @@
   // 只处理已经渲染的 DOM，不改写 XHR / Fetch 返回值，也不自动拉黑或举报账号。
   const ADULT_SPAM_STRONG_TERMS = [
     '抽插', '淫叫', '母狗', '肉便器', '母猪', '反差婊', '小穴', '穴穴', '性奴', '蜜穴',
-    '爆菊', '性交', '爆操', '福利姬', '里番', '裸照', '裸体', '阴茎', '做愛','嫩穴',
+    '爆菊', '性交', '爆操', '福利姬', '里番', '裸照', '裸体', '阴茎', '做愛','嫩穴','ntr',
     '做爱', '自慰', '精液', '打飞机', '性欲', '果照', '肏', '约炮', '裸聊','美鲍', '子宫',
-    '援交', '外围', '包夜', '无套', '全套服务', '上门约', '成人视频', '成人影片',
-    '黄片', '黄网', '色情网站', '看片网站', 'porn', 'nudes', 'onlyfans leak',
-    'sex video', 'wataa', 'Wataa', '私处', '尤物', '人妻', '口交', '内射', 'ts',
+    '援交', '外围', '包夜', '无套', '全套服务', '上门约', '成人视频', '成人影片','发情',
+    '黄片', '黄网', '色情网站', '看片网站', 'porn', 'nudes', 'onlyfans leak','网黄',
+    'sex video', 'wataa', 'Wataa', '私处', '尤物', '人妻', '口交', '内射', 'ts','NTR',
     '阴道', '偷拍', '手冲', '淫趴', 'p眼', '屁眼', '皮炎', '迷奸', '小烧货', '骚货', 'sao货',
     '破处', '陪睡', '后入', '肛交', '催情','约啪','艹','跳蛋','晨勃','Chudai','chudai',
     '露B','潮喷','龟头','射精','肉棒','鸡巴','3p','4i','被操','榨精','撸管','深喉','69',
@@ -3660,9 +3852,9 @@
     '痴女', '黑丝', '白丝', '玉足', '喷了', '涩涩', '私房', '纯欲', '蜜桃臀',
     '可瑟瑟', '固炮', '炮友', '找主人', '大一学生', '白虎', '烧鸡', '好色',
     '色色', '熟女', '少妇', '嫩模', '学生妹', '商k', '白给', '处男', '野战',
-    '射出来','魅魔','性瘾','打桩','喷出来','射出来','戴套','福照','无码',
+    '射出来','魅魔','性瘾','打桩','喷出来','射出来','戴套','福照','无码','蛋蛋',
     '有码','情趣','丝袜','刺激','娇喘','罩杯','早泄','失禁','毛毛','绝顶',
-    '肉欲','黑森林','制服','赤裸','粉嫩','水多','喷水','呻吟','吸吮',
+    '肉欲','黑森林','制服','赤裸','粉嫩','水多','喷水','呻吟','吸吮','成人',
   ];
   const ADULT_SPAM_BOT_BAIT_TERMS = [
     '陪我聊聊天', '有没有单男', '有没有单女', '我是真人', '互关', '互粉', '互fo',
@@ -4022,6 +4214,35 @@
   }
 
   // ── 抓取 / 扫描 / 闪现检测 ────────────────────────────────────────────
+  function markPostViewed(id) {
+    const index = getPostIndexById(id);
+    if (index < 0) return;
+    const existing = state.posts[index];
+    const timestamp = now();
+    // IntersectionObserver 可能因图片加载或布局变化再次回调；短时间内的重复回调不改写浏览顺序。
+    if (existing.lastViewedAt && timestamp - existing.lastViewedAt < 500) return;
+    const updated = {
+      ...existing,
+      firstViewedAt: existing.firstViewedAt || timestamp,
+      lastViewedAt: timestamp,
+    };
+    state.posts[index] = updated;
+    queueDbWrite(async () => { await dbPutPost(updated); });
+    debouncedRefreshUI();
+  }
+
+  function observeArticleView(article, id) {
+    if (!article || !id || !state.viewObserver) return;
+    state.viewedArticleIds.set(article, String(id));
+    state.viewObserver.observe(article);
+  }
+
+  function unobserveArticleViews(root) {
+    if (!root || !state.viewObserver || !(root instanceof HTMLElement)) return;
+    if (root.matches('article')) state.viewObserver.unobserve(root);
+    root.querySelectorAll('article').forEach((article) => state.viewObserver.unobserve(article));
+  }
+
   function captureArticle(article) {
     if (state.settings.hideAds && isAdArticle(article)) { hideAdElement(article); return; }
     if (adultSpamFilteringEnabled() && evaluateAndApplyAdultSpam(article)) return;
@@ -4029,6 +4250,7 @@
     const url = getStatusLink(article);
     const id = extractStatusIdFromUrl(url);
     if (!id) return;
+    observeArticleView(article, id);
 
     const sourceInfo = getCurrentSourceInfo();
     if ((state.settings.skipSources || []).includes(sourceInfo.type)) return;
@@ -4125,6 +4347,52 @@
       state.visibleMap.delete(id);
     }
   }
+
+  function closeImagePreview() {
+    const preview = document.getElementById('BetterX-image-preview');
+    if (preview) preview.remove();
+  }
+
+  function showImagePreview(rawUrl) {
+    const src = safeImportedAssetUrl(rawUrl);
+    if (!src) return;
+    closeImagePreview();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'BetterX-image-preview';
+    overlay.className = 'BetterX-image-preview';
+    overlay.tabIndex = -1;
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', '图片预览，按 Esc 或点击空白处关闭');
+
+    const box = document.createElement('div');
+    box.className = 'BetterX-image-preview-box';
+    const image = document.createElement('img');
+    image.src = src;
+    image.referrerPolicy = 'no-referrer';
+    image.alt = '帖子图片预览';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'BetterX-image-preview-close';
+    close.textContent = '×';
+    close.setAttribute('aria-label', '关闭图片预览');
+    close.addEventListener('click', closeImagePreview);
+    box.append(close, image);
+    overlay.appendChild(box);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) closeImagePreview();
+    });
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeImagePreview();
+      }
+    });
+    (state.rootEl || document.body).appendChild(overlay);
+    overlay.focus();
+  }
+
   // ── 交互 ─────────────────────────────────────────────────────────
   function handleDocumentClick(e) {
     const target = e.target;
@@ -4201,6 +4469,12 @@
       state.firefoxCompatibilityEl.disabled = !IS_FIREFOX;
       const label = state.firefoxCompatibilityEl.closest('label');
       if (label) label.classList.toggle('is-disabled', !IS_FIREFOX);
+    }
+    if (state.downloadZipEl) {
+      const disabled = !state.settings.mediaDownload;
+      state.downloadZipEl.disabled = disabled;
+      const label = state.downloadZipEl.closest('label');
+      if (label) label.classList.toggle('is-disabled', disabled);
     }
   }
 
@@ -4305,6 +4579,8 @@
     ).slice(0, 4);
     const firstCapturedAt = finiteInt(raw.firstCapturedAt, 0, Number.MAX_SAFE_INTEGER, timestamp);
     const lastCapturedAt = finiteInt(raw.lastCapturedAt, 0, Number.MAX_SAFE_INTEGER, firstCapturedAt);
+    const firstViewedAt = finiteInt(raw.firstViewedAt, 0, Number.MAX_SAFE_INTEGER, 0);
+    const lastViewedAt = finiteInt(raw.lastViewedAt, 0, Number.MAX_SAFE_INTEGER, firstViewedAt);
     const authorInfo = cleanAuthorInfo(raw.displayName, raw.username, raw.timeLabel);
     return {
       id,
@@ -4344,6 +4620,8 @@
       capturedCount: finiteInt(raw.capturedCount, 1, 1000000, 1),
       firstCapturedAt,
       lastCapturedAt: Math.max(firstCapturedAt, lastCapturedAt),
+      firstViewedAt,
+      lastViewedAt: Math.max(firstViewedAt, lastViewedAt),
       firstSeenInDomAt: finiteInt(raw.firstSeenInDomAt, 0, Number.MAX_SAFE_INTEGER, firstCapturedAt),
       lastSeenInDomAt: finiteInt(raw.lastSeenInDomAt, 0, Number.MAX_SAFE_INTEGER, lastCapturedAt),
       lastClickedAt: finiteInt(raw.lastClickedAt, 0, Number.MAX_SAFE_INTEGER, 0),
@@ -4823,13 +5101,17 @@
           <select class="BetterX-select" id="BetterX-source" aria-label="来源筛选"></select>
           <select class="BetterX-select" id="BetterX-media" aria-label="媒体筛选"></select>
           <select class="BetterX-select" id="BetterX-sort" aria-label="排序方式">
-            <option value="default">默认排序</option>
-            <option value="time_asc">最早先看</option>
+            <option value="smart">智能排序</option>
+            <option value="recent_viewed">最近浏览</option>
+            <option value="recent_captured">最近抓取</option>
+            <option value="first_captured">首次抓取（新→旧）</option>
+            <option value="time_asc">首次抓取（旧→新）</option>
             <option value="captures">出现次数</option>
             <option value="author">按作者</option>
             <option value="source">按来源</option>
           </select>
         </div>
+        <div class="BetterX-sort-hint" id="BetterX-sort-hint" role="status"></div>
       </div>
       </div>
       <div class="BetterX-list" id="BetterX-list"></div>
@@ -4950,7 +5232,7 @@
               <button class="BetterX-btn primary" data-action="save-advanced">应用</button>
             </div>
             <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。</div>
-            <div class="BetterX-adv-label">不记录以下来源：</div>
+            <div class="BetterX-adv-label">不记录以下来源的帖子：</div>
             <div class="BetterX-chip-row" id="BetterX-skip-sources"></div>
           </div>
         </details>
@@ -4959,8 +5241,10 @@
           <div class="BetterX-adv-body">
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（隐藏推广帖和独立广告位）</label>
             <div class="BetterX-adv-label">开启后自动隐藏时间线推广帖及 X 新增的程序化广告卡片；推广帖不会记录，关闭开关即可恢复显示。</div>
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF（多文件自动压缩ZIP包）</label>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF</label>
             <div class="BetterX-adv-label">开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。</div>
+            <label class="BetterX-field inline BetterX-download-zip-option"><input type="checkbox" id="BetterX-dlzip" /> 下载多个媒体自动压缩 ZIP 包</label>
+            <div class="BetterX-adv-label BetterX-download-zip-option">默认开启；关闭后下载帖子内多个媒体文件会分别保存为“用户名_帖子ID_序号.扩展名”。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label>
             <div class="BetterX-adv-label">将 X 新版的多媒体正文轮播改为网格展示；两张并排，三张为左大右二，四张为 2×2 网格。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label>
@@ -5028,6 +5312,7 @@
     state.keywordModeEl = panel.querySelector('#BetterX-keyword-mode');
     state.searchEl = panel.querySelector('#BetterX-search');
     state.sortEl = panel.querySelector('#BetterX-sort');
+    state.sortHintEl = panel.querySelector('#BetterX-sort-hint');
     state.autoCleanInputEl = panel.querySelector('#BetterX-autoclean');
     state.maxPostsInputEl = panel.querySelector('#BetterX-maxposts');
     state.flashMsInputEl = panel.querySelector('#BetterX-flashms');
@@ -5059,6 +5344,7 @@
     state.layoutHideShowMoreEl = panel.querySelector('#BetterX-layout-hide-showmore');
     state.firefoxCompatibilityEl = panel.querySelector('#BetterX-firefox-compat');
     state.mediaDownloadEl = panel.querySelector('#BetterX-mediadl');
+    state.downloadZipEl = panel.querySelector('#BetterX-dlzip');
     state.restoreMediaGridEl = panel.querySelector('#BetterX-restore-media-grid');
     state.bypassAgeEl = panel.querySelector('#BetterX-bypassage');
     state.useMobileBadgeOnDesktopEl = panel.querySelector('#BetterX-desktop-mobile-badge');
@@ -5128,6 +5414,7 @@
       showFirefoxCompatibilityToggleDialog(!state.settings.firefoxCompatibility);
     });
     state.mediaDownloadEl.addEventListener('change', (e) => setSettingsPartial({ mediaDownload: !!e.target.checked }));
+    state.downloadZipEl.addEventListener('change', (e) => setSettingsPartial({ downloadZip: !!e.target.checked }));
     state.restoreMediaGridEl.addEventListener('change', (e) => setSettingsPartial({ restoreMediaGrid: !!e.target.checked }));
     state.bypassAgeEl.addEventListener('change', (e) => setSettingsPartial({ bypassAgeRestriction: !!e.target.checked }));
     state.useMobileBadgeOnDesktopEl.addEventListener('change', (e) => {
@@ -5183,6 +5470,9 @@
         case 'load-more':
           state.renderLimit = (state.renderLimit || state.settings.pageSize || 60) + (state.settings.pageSize || 60);
           refreshUI({ keepScroll: true });
+          break;
+        case 'preview-image':
+          showImagePreview(actionEl.getAttribute('data-image-url') || '');
           break;
         case 'set-filter':
           setSettingsPartial({ filter: actionEl.getAttribute('data-filter') });
@@ -5605,6 +5895,7 @@
       .BetterX-adv-body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
       .BetterX-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--xv-muted); }
       .BetterX-field.inline { flex-direction: row; align-items: center; gap: 6px; }
+      .BetterX-download-zip-option { margin-left: 0; }
       .BetterX-adv-label { font-size: 12px; color: var(--xv-muted); }
       .BetterX-content-status { font-size: 11px; color: var(--xv-muted); padding: 5px 8px; border-radius: 7px; background: var(--xv-chip-bg); }
 
@@ -5635,7 +5926,14 @@
       .BetterX-hl { background: #ffd400; color: #000; border-radius: 3px; padding: 0 1px; }
 
       .BetterX-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
-      .BetterX-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--xv-border); }
+      .BetterX-thumb-button { padding: 0; border: 0; border-radius: 8px; background: none; cursor: zoom-in; line-height: 0; }
+      .BetterX-thumb-button:focus-visible { outline: 2px solid var(--xv-accent); outline-offset: 2px; }
+      .BetterX-thumb { display: block; width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--xv-border); transition: transform .16s ease, box-shadow .16s ease; }
+      .BetterX-thumb-button:hover .BetterX-thumb { transform: scale(1.04); box-shadow: 0 3px 12px rgba(0, 0, 0, .28); }
+      .BetterX-image-preview { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 24px; background: rgba(0, 0, 0, .82); cursor: zoom-out; }
+      .BetterX-image-preview-box { position: relative; max-width: min(96vw, 1280px); max-height: 92vh; cursor: default; }
+      .BetterX-image-preview-box img { display: block; max-width: min(96vw, 1280px); max-height: 92vh; object-fit: contain; border-radius: 10px; box-shadow: 0 12px 46px rgba(0, 0, 0, .55); }
+      .BetterX-image-preview-close { position: absolute; top: -12px; right: -12px; width: 32px; height: 32px; border: 1px solid rgba(255,255,255,.45); border-radius: 50%; background: rgba(20,20,20,.88); color: #fff; font: 700 24px/28px Arial, sans-serif; cursor: pointer; }
 
       .BetterX-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
       .BetterX-tag { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: var(--xv-chip-bg); color: var(--xv-muted); }
@@ -5758,6 +6056,7 @@
       .BetterX-search-tools > .BetterX-input { height: 36px; padding-left: 12px; border-radius: 10px; }
       .BetterX-toolbar-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
       .BetterX-toolbar-row .BetterX-select { width: 100%; min-width: 0; height: 32px; border-radius: 9px; font-size: 13px; }
+      .BetterX-sort-hint { min-height: 18px; padding: 0 2px; color: var(--xv-text); font-family: SimHei, "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; font-size: 12px; font-weight: 600; line-height: 1.5; }
       .BetterX-list {
         flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding: 10px 12px 14px; gap: 8px;
         overscroll-behavior: contain;
@@ -5904,8 +6203,30 @@
     `);
   }
   // ── 观察器 / 定时器 / 导航 ───────────────────────────────────────────
+  function startViewObserver() {
+    if (state.viewObserver) state.viewObserver.disconnect();
+    state.viewedArticleIds = new WeakMap();
+    if (typeof IntersectionObserver !== 'function') {
+      state.viewObserver = null;
+      return;
+    }
+    state.viewObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting || entry.intersectionRatio < 0.15) continue;
+        const article = entry.target;
+        const id = state.viewedArticleIds.get(article)
+          || extractStatusIdFromUrl(getStatusLink(article));
+        if (id) markPostViewed(id);
+      }
+    }, {
+      // 仅在帖子真正进入主视区后记录；15% 同时兼顾长帖和普通帖。
+      threshold: [0.15],
+    });
+  }
+
   function startObserver() {
     if (state.observer) state.observer.disconnect();
+    startViewObserver();
     const throttledDisappear = throttle(checkDisappearedPosts, 400);
     const throttledAdultSpamCount = throttle(updateAdultSpamCount, 300);
     const throttledLayoutRefresh = throttle(applyLayoutEnhancements, 250);
@@ -5948,7 +6269,10 @@
           // 正文可能以 Text 节点分步补入；同时检查 mutation.target，确保内容补全后仍能在本帧重判。
           collectArticlesFromRoot(mutation.target, immediateAdultArticles);
         }
-        if (mutation.removedNodes && mutation.removedNodes.length) hadRemoval = true;
+        if (mutation.removedNodes && mutation.removedNodes.length) {
+          hadRemoval = true;
+          for (const node of mutation.removedNodes) unobserveArticleViews(node);
+        }
       }
       if (immediateAdultArticles.size) {
         // MutationObserver 在浏览器绘制前执行；立即过滤可避免新黄推先闪现 100ms 再消失。
@@ -6169,6 +6493,7 @@
     repositionBadge();
     refreshUI();
     harvestFollowingControlsFromRoot(document);
+    startObserver();
     scanArticles(document);
     applyAdHiding();
     applyAdultSpamFiltering();
@@ -6176,7 +6501,6 @@
     applyMediaGridLayout();
     applyAgeBypass();
     applyLayoutEnhancements();
-    startObserver();
     installCleanupTimer();
     installNetworkHookTimer();
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -6204,7 +6528,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v2.5.0 started');
+    debugLog('v2.6.0 started');
   }
 
   function waitForPageReady() {
