@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         更好的 X（BetterX）
 // @namespace    https://github.com/Iskongkongyo
-// @version      2.6.0
-// @description  自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
-// @author        流萤可爱捏
+// @version      2.7.0
+// @description  自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
+// @author       流萤可爱捏
 // @match        https://x.com/*
 // @match        https://twitter.com/*
 // @grant        GM_addStyle
@@ -18,7 +18,7 @@
 // @connect      pbs.twimg.com
 // @connect      x.com
 // @run-at       document-start
-// @icon      data:image/jpeg;base64,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
+// @icon         data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAUEBAQEAwUEBAQGBQUGCA0ICAcHCBALDAkNExAUExIQEhIUFx0ZFBYcFhISGiMaHB4fISEhFBkkJyQgJh0gISD/2wBDAQUGBggHCA8ICA8gFRIVICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICD/wAARCABAAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7LoorC17XpdLsoorO08/Vr2UwWdrI20OwyS7EZ2xqo3MfTjqQCAX9S1fStHgWfVdQt7KNjtUzSBdx9BnqfYVgD4ieGJYXmspL6+jXPz29hMyHHX59oXj61mG3t9BZtSvdQhudZmQm41e+IRYYx12gnEUYJwsYIyTyScmuF1j41/CzTrlllvbjxBeodrz2dkGDEHjLHarYPTrUOXYtRuenQ+PtDktheT2mrWVn/FdXemzRRJ/vMVwB/tH5feuohmgubeO4t5UmhlUOkkbBldTyCCOCK+etO/aJ8Fi+QTz61DbuwV2vbVWMWf4g8bHgdwR06Hse/m0268PsfEXgm8ijspF+0XGlM2bK6Ujd5kWAfJYg53J8pzkqeTQpdwcGj0qivO/EHiGDVvAyPoWoXenanqF7Fbp5ZxPayo4eVWHI+VEcnqrDHUMM9R4T1efXPCtnqF2ipd/PDcKn3fNjdo3I9iykj2IpxlfR7kdbGrdZFuX81YlT5mZm2gADnJ7Vw2m202veIZPFl67m0aFLbTLZgV/cg7mnYesjbSF7KiE8nA2fGMsMlpYaTczCK0v5yLticD7PHG0sgJ9GCBT7Map+GNWOtaPDrRJ23rCeND0jjIBQD/gJBPuTWbilJy7lI8Pux4h+I/xk8UW9tZXF54f0snT4pNwSCGSMEM29gRu37idoZsccA1s6P+zF4YhzP4k8SXt47fN5FoRCi+24hnb65FdVqcgfwDD4S01o7KbVY5IHmB2+UjfNcS9ufn27s8tIK6bw1rA1PQ7MSlY7xLdfNizyCv7tjj0Dqw/D3pJq5r7OUVzrr+hxx+Afwmkglgj0y886FtjMuoTbuRkHk46H0rq/B+ixeFNOfwnbXVxc2NgFksmumDyJC+f3ZIAyFYMBx0IHauV8TeObLwf43W51DWre30ya2aO4tpZFVjIkgO6PP3nCyAlP4l6cgZ67TNX0/WdRs9X0q/ttQsrmxcJcWzhkcB0I+h5PB5FHNccoSSTezOTks00L4x20ETNCup6e6Wbuu6GNhKisSOnmBdsa56rsHatrwrpEenfEVrXT7+9u47G0uDePcTmQI80quiYB2qxIkcjAIyM8EV57+0fYrd+BEvjIyHTpobpXB+4C/lP+B3oceqCvTfgto1/oXwd0Oy1XTn06/ZHmmgcgsC7swJH8OQQdpyV6HkVcaf8Ay8v8jCW5e+Imj32qaLbGwtJLtxKbaaKPG7yJ1MMrDJH3Q+76Ke9ct4T1qytrW30aS6jjKy/Y7cn5BK8a4ULns8aLIv8AeBOOldt4u1VILMaUk/kvdITNLnHkw5wx/wB5s7VHXJJHSvJZ9PtfFvju7i1GB9P0vSjBaqSdm5kHmnevbG9QAeVAP3SxwTLp2vZmB4q+EzeLPHt5fa9rM80NtcAWliGWOGKzcBwcn1k81Sf7yr6iuq8H/Ca70jSVl0XWpLG6tLyU27SsZYjFJ5ZYdc4wuCo+VioyMjdVbxBqNx4e1221GTXHutL0kG4VbqXbuQ5Ur54UyFTgfKdwbjPQVb0L9oDwxrqywx6NqtjcWitNLHNPbxgRqDucl3GVUDJGMjg4pRlePJb/ADOyVRtXT/y+4i8U/CS11PWdU1HX7s3rXkKn7T5bokeAoJVF3BSFjUEk85B4AxWP8NdL8JeF/Ez2Xhm68ybV7WELBDKJFjSJN09yeflWWQBVHfG4DBrauPjM17r1z4Ss9DFjfwIv73U7hbkPuXdgCElWbac7S447cGsvRtJ1CDXrrV5L0W9rfGO2nvLe3WKcJ3VXHyxqX2/dXIAGCDkknJuKj0QlUUVru/PfsZPxi8QR+INH8S+E9NjW4uIYo4mIcEMIy1xcAAdCixqPdmAr1X4D60dd+CehXEupS6hcW6vazSSjlWRiNoPdQNuD3GK5n+xLDQvFurfY9Lt7MX9nby294i8wNCQux8/8sw4jYn1kO7Ocj2LRbtL/AEW3vIkESSrkRBdvlHoUPuCCK0g/dscc2m9DhviWLzSbjTPEGnT26XUk8dnGbgZWJzvxLg8NtRpDj1C++eDj13R4IfsNpqNv5aFjJLLcKXlcklmJJ5JYks3ck177eWNjqNv9n1Czgu4chvLnjDrkdDg8VAuiaKqhV0iyVVGABbpgD06UNJ7ka9D5V8Y3UvjO7sPCfh64glm1F0haRmBjESnkv2wzkAA+nqQDXh8K6H4e8U/bPEl1Yz6qs8Xk6MGWNLaJG/fToHbc23aRlsAh2+UYBH0vq3w98K6zqAvrnTzFKYfs8gtpDCs0W7dscLjIzk+tXF8FeD1WJV8MaWBEwdf9FTO4DGSccnHrUSppxaQ1Od9dvI+fvEtl4R1jVTpehPb6TqccUmoQ3Ej+VmdOPMKDGSudhGNxD4A+bNaNp410m50WGKLUEtLaVY/Ps7q4jys2cSDr0BOPwr3G88G+FL8H7R4esN5xiWOFY5Fx0w64Yfga0rfS9NtLSG0trGCOCBBHGgQYVQMAflUUqMacVHe39dROUm9WfPN1qkuopeWcet2t1bxSv9jfzVEkS/ZvMaMuD+8iJUxuDyBKgyeK9w8EK58EaZdSAK17H9tKBshPNJkC574DAZ74rTutF0a9CC80myudgIXzYEfbnrjI4q8qqiBEUKqjAAGABWyVg1P/2Q==
 // @noframes
 // @license      MIT
 // @downloadURL https://update.greasyfork.org/scripts/588748/%E6%9B%B4%E5%A5%BD%E7%9A%84%20X%EF%BC%88BetterX%EF%BC%89.user.js
@@ -55,6 +55,7 @@
   const MAX_MEDIA_REGISTRY_ENTRIES = 2000;
   const MAX_SESSION_STAT_IDS = 20000;
   const MAX_FOLLOWED_HANDLES = 5000;
+  const MAX_DOWNLOADED_POST_IDS = 5000;
   const DOWNLOAD_MIN_CONCURRENCY = 1;
   const DOWNLOAD_MAX_CONCURRENCY = 6;
   const DOWNLOAD_MAX_RETRIES = 1;
@@ -155,8 +156,21 @@
     { key: 'list', label: '列表页' },
   ];
 
+  const PROFILE_DEFAULT_VIEW_OPTIONS = ['posts', 'all', 'highlights'];
+  const POST_SHOW_MORE_LABELS = new Set([
+    '显示更多', '顯示更多', 'Show more', 'さらに表示', '더 보기',
+  ]);
+  const PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY = 'betterx_profile_default_view_redirect_guard_v1';
+  const PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_MS = 15000;
+  // 这些是 X 的一级功能路由，不应被误判为用户名主页。
+  const PROFILE_ROOT_ROUTE_EXCLUSIONS = new Set([
+    'about', 'account', 'compose', 'download', 'explore', 'home', 'i', 'intent', 'jobs',
+    'legal', 'login', 'logout', 'messages', 'notifications', 'privacy', 'search', 'settings',
+    'share', 'signup', 'tos', 'x',
+  ]);
+
   const DEFAULT_SETTINGS = {
-    settingsRevision: 16,
+    settingsRevision: 17,
     keywords: [],
     excludeKeywords: [],
     keywordMode: 'plain',   // 'plain' | 'and' | 'regex'
@@ -193,12 +207,21 @@
     layoutHideShowMore: false,
     mediaDownload: true,    // 默认开启一键下载图片/视频/GIF
     downloadZip: true,      // 多媒体默认自动压缩为 ZIP 包
+    downloadFileNameTemplate: '{用户ID}_{帖子ID}', // 单媒体 / ZIP 内文件名（不含扩展名）
+    downloadZipNameTemplate: '{用户ID}_{帖子ID}', // ZIP 包名（不含 .zip）
+    downloadNameRegex: '',  // 可选：对渲染后的名称执行全局正则替换
+    downloadNameReplacement: '',
+    trackDownloadedPosts: false, // 记录已下载过媒体的帖子
+    downloadedPostIds: [],
     bypassAgeRestriction: false, // 取消年龄限制：用原图/视频内联替换遮罩
     restoreMediaGrid: false, // 将 X 的多媒体正文轮播恢复为网格视图
     firefoxCompatibility: false, // Firefox 兼容模式：停用页面 fetch/XHR Hook
     firefoxCompatibilityPrompted: false, // 是否已完成 Firefox 首次兼容性询问
     useMobileBadgeOnDesktop: false, // PC 端可选使用移动端圆形图标徽标
     hideAppBadgeOnDesktop: false, // PC 端隐藏 BetterX 应用徽标；仍可用 Alt+X / 油猴菜单打开
+    profileDefaultViewEnabled: true, // 进入纯用户主页时，按所选页签打开
+    profileDefaultView: 'posts', // 'posts' | 'all' | 'highlights'
+    autoExpandPostText: false, // 自动展开帖子正文“显示更多”
     downloadTimeout: 360000, // 下载超时（毫秒），默认 360 秒
     downloadConcurrency: 2, // 同时传输的媒体数量，允许 1～6
   };
@@ -273,9 +296,19 @@
     firefoxCompatibilityEl: null,
     mediaDownloadEl: null,
     downloadZipEl: null,
+    downloadFileNameTemplateEl: null,
+    downloadZipNameTemplateEl: null,
+    downloadNameRegexEl: null,
+    downloadNameReplacementEl: null,
+    downloadNamePreviewEl: null,
+    trackDownloadedPostsEl: null,
+    downloadNameTemplateTargetEl: null,
     restoreMediaGridEl: null,
     useMobileBadgeOnDesktopEl: null,
     hideAppBadgeOnDesktopEl: null,
+    profileDefaultViewEnabledEl: null,
+    profileDefaultViewEl: null,
+    autoExpandPostTextEl: null,
     layoutStyleEl: null,
     detectedTimelineWidth: 0,
     detectedLeftbarWidth: 0,
@@ -289,6 +322,7 @@
   // 关键词匹配缓存（避免每次渲染都重算）
   let matchCache = new Map();
   let matchCacheVersion = 0;
+  const autoExpandedPostShowMoreControls = new WeakSet();
 
   // 内容净化判定缓存：文章节点会持续补全，指纹变化时自动重新判断。
   let adultSpamCache = new WeakMap();
@@ -1371,6 +1405,20 @@
     updateAdultSpamCount();
     if (state.mediaDownloadEl) state.mediaDownloadEl.checked = !!state.settings.mediaDownload;
     if (state.downloadZipEl) state.downloadZipEl.checked = state.settings.downloadZip !== false;
+    if (state.downloadFileNameTemplateEl && document.activeElement !== state.downloadFileNameTemplateEl) {
+      state.downloadFileNameTemplateEl.value = state.settings.downloadFileNameTemplate || DEFAULT_SETTINGS.downloadFileNameTemplate;
+    }
+    if (state.downloadZipNameTemplateEl && document.activeElement !== state.downloadZipNameTemplateEl) {
+      state.downloadZipNameTemplateEl.value = state.settings.downloadZipNameTemplate || DEFAULT_SETTINGS.downloadZipNameTemplate;
+    }
+    if (state.downloadNameRegexEl && document.activeElement !== state.downloadNameRegexEl) {
+      state.downloadNameRegexEl.value = state.settings.downloadNameRegex || '';
+    }
+    if (state.downloadNameReplacementEl && document.activeElement !== state.downloadNameReplacementEl) {
+      state.downloadNameReplacementEl.value = state.settings.downloadNameReplacement || '';
+    }
+    if (state.trackDownloadedPostsEl) state.trackDownloadedPostsEl.checked = !!state.settings.trackDownloadedPosts;
+    updateDownloadNamingPreview();
     if (state.bypassAgeEl) state.bypassAgeEl.checked = !!state.settings.bypassAgeRestriction;
     if (state.firefoxCompatibilityEl) {
       state.firefoxCompatibilityEl.checked = !!state.settings.firefoxCompatibility;
@@ -1380,6 +1428,16 @@
     }
     if (state.hideAppBadgeOnDesktopEl) {
       state.hideAppBadgeOnDesktopEl.checked = !!state.settings.hideAppBadgeOnDesktop;
+    }
+    if (state.profileDefaultViewEnabledEl) {
+      state.profileDefaultViewEnabledEl.checked = state.settings.profileDefaultViewEnabled !== false;
+    }
+    if (state.profileDefaultViewEl) {
+      state.profileDefaultViewEl.value = state.settings.profileDefaultView || DEFAULT_SETTINGS.profileDefaultView;
+      state.profileDefaultViewEl.disabled = state.settings.profileDefaultViewEnabled === false;
+    }
+    if (state.autoExpandPostTextEl) {
+      state.autoExpandPostTextEl.checked = !!state.settings.autoExpandPostText;
     }
     updateSettingsDependencyUI();
 
@@ -1462,12 +1520,26 @@
       layoutHideShowMore: input.layoutHideShowMore === true,
       mediaDownload: typeof input.mediaDownload === 'boolean' ? input.mediaDownload : DEFAULT_SETTINGS.mediaDownload,
       downloadZip: typeof input.downloadZip === 'boolean' ? input.downloadZip : DEFAULT_SETTINGS.downloadZip,
+      downloadFileNameTemplate: safeString(input.downloadFileNameTemplate, 180).trim() || DEFAULT_SETTINGS.downloadFileNameTemplate,
+      downloadZipNameTemplate: safeString(input.downloadZipNameTemplate, 180).trim() || DEFAULT_SETTINGS.downloadZipNameTemplate,
+      downloadNameRegex: isSafeRegexSource(safeString(input.downloadNameRegex, MAX_REGEX_SOURCE_LENGTH))
+        ? safeString(input.downloadNameRegex, MAX_REGEX_SOURCE_LENGTH)
+        : DEFAULT_SETTINGS.downloadNameRegex,
+      downloadNameReplacement: safeString(input.downloadNameReplacement, 180),
+      trackDownloadedPosts: input.trackDownloadedPosts === true,
+      downloadedPostIds: uniqueStrings(stringList(input.downloadedPostIds, MAX_DOWNLOADED_POST_IDS, 30)
+        .filter((item) => /^\d{1,30}$/.test(item))),
       bypassAgeRestriction: input.bypassAgeRestriction === true,
       restoreMediaGrid: input.restoreMediaGrid === true,
       firefoxCompatibility: input.firefoxCompatibility === true,
       firefoxCompatibilityPrompted: input.firefoxCompatibilityPrompted === true,
       useMobileBadgeOnDesktop: input.useMobileBadgeOnDesktop === true,
       hideAppBadgeOnDesktop: input.hideAppBadgeOnDesktop === true,
+      profileDefaultViewEnabled: typeof input.profileDefaultViewEnabled === 'boolean'
+        ? input.profileDefaultViewEnabled
+        : DEFAULT_SETTINGS.profileDefaultViewEnabled,
+      profileDefaultView: enumValue(input.profileDefaultView, PROFILE_DEFAULT_VIEW_OPTIONS, DEFAULT_SETTINGS.profileDefaultView),
+      autoExpandPostText: input.autoExpandPostText === true,
     };
   }
 
@@ -1494,6 +1566,28 @@
       if (revision < 15 && (!input.sortBy || input.sortBy === 'default')) input.sortBy = 'smart';
       // v2.6.0 新增 ZIP 开关；旧设置未填写时保持默认自动压缩。
       if (revision < 16 && input.downloadZip == null) input.downloadZip = DEFAULT_SETTINGS.downloadZip;
+      // v2.7.0 新增用户主页默认页签；旧设置沿用 X 原本的“帖子”页。
+      if (revision < 17 && input.profileDefaultView == null) input.profileDefaultView = DEFAULT_SETTINGS.profileDefaultView;
+      // v2.7.0 新增自动展开长文；默认关闭，避免改变旧用户的阅读习惯。
+      if (revision < 18 && input.autoExpandPostText == null) input.autoExpandPostText = DEFAULT_SETTINGS.autoExpandPostText;
+      // v2.7.0 新增下载命名模板；沿用原“用户名_帖子 ID”的默认命名。
+      if (revision < 19) {
+        if (input.downloadFileNameTemplate == null) input.downloadFileNameTemplate = DEFAULT_SETTINGS.downloadFileNameTemplate;
+        if (input.downloadZipNameTemplate == null) input.downloadZipNameTemplate = DEFAULT_SETTINGS.downloadZipNameTemplate;
+        if (input.downloadNameRegex == null) input.downloadNameRegex = DEFAULT_SETTINGS.downloadNameRegex;
+        if (input.downloadNameReplacement == null) input.downloadNameReplacement = DEFAULT_SETTINGS.downloadNameReplacement;
+      }
+      // v2.7.0 下载模板改用中文变量；旧英文变量继续兼容，自定义模板不改写。
+      if (revision < 20) {
+        if (input.downloadFileNameTemplate === '{user-id}_{status-id}') {
+          input.downloadFileNameTemplate = DEFAULT_SETTINGS.downloadFileNameTemplate;
+        }
+        if (input.downloadZipNameTemplate === '{user-id}_{status-id}') {
+          input.downloadZipNameTemplate = DEFAULT_SETTINGS.downloadZipNameTemplate;
+        }
+        if (input.trackDownloadedPosts == null) input.trackDownloadedPosts = DEFAULT_SETTINGS.trackDownloadedPosts;
+        if (input.downloadedPostIds == null) input.downloadedPostIds = [];
+      }
       // v1.6 已手动改过宽度的用户继续使用手动值；旧默认值则切换为自动读取。
       if (input.layoutAutoWidth == null) {
         const customTimeline = input.timelineWidth != null && Number(input.timelineWidth) !== 600;
@@ -1537,6 +1631,7 @@
     if ('mediaDownload' in nextPartial) applyMediaDownload();
     if ('bypassAgeRestriction' in nextPartial) applyAgeBypass();
     if ('restoreMediaGrid' in nextPartial) applyMediaGridLayout();
+    if ('autoExpandPostText' in nextPartial && nextPartial.autoExpandPostText) expandPostShowMore(document);
     if ('firefoxCompatibility' in nextPartial && IS_FIREFOX) {
       state.settings.firefoxCompatibilityPrompted = true;
       writeFirefoxCompatibilityMode(nextPartial.firefoxCompatibility ? 'compat' : 'normal');
@@ -2199,6 +2294,147 @@
     } catch (e) {}
   }
 
+  // ── 下载命名 ──────────────────────────────────────────────────────
+  // 模板变量与参考格式保持直观：账号显示名 / ID、帖子 ID、正文、时间和媒体类型都可组合。
+  // 扩展名统一由下载器追加，避免模板误填后出现 .jpg.jpg。
+  const DOWNLOAD_NAME_TOKENS = [
+    { token: '{用户名}', key: 'user-name' },
+    { token: '{用户ID}', key: 'user-id' },
+    { token: '{帖子ID}', key: 'status-id' },
+    { token: '{发布时间}', key: 'date-time' },
+    { token: '{帖子正文}', key: 'full-text' },
+    { token: '{文件类型}', key: 'file-type' },
+    { token: '{原文件名}', key: 'file-name' },
+    { token: '{序号}', key: 'index' },
+  ];
+  // 英文变量仅用于兼容已保存的旧模板；设置面板只展示中文变量。
+  const DOWNLOAD_NAME_LEGACY_TOKENS = {
+    'user-name': 'user-name', 'user-id': 'user-id', 'status-id': 'status-id', 'date-time': 'date-time',
+    'full-text': 'full-text', 'file-type': 'file-type', 'file-name': 'file-name', index: 'index',
+  };
+  const DOWNLOAD_NAME_CHINESE_TOKENS = {
+    用户名: 'user-name', 用户ID: 'user-id', 帖子ID: 'status-id', 发布时间: 'date-time',
+    帖子正文: 'full-text', 文件类型: 'file-type', 原文件名: 'file-name', 序号: 'index',
+  };
+
+  function formatDownloadNameDate(value) {
+    const date = new Date(value || Date.now());
+    const safeDate = Number.isFinite(date.getTime()) ? date : new Date();
+    const pad = (number) => String(number).padStart(2, '0');
+    return `${safeDate.getFullYear()}-${pad(safeDate.getMonth() + 1)}-${pad(safeDate.getDate())}_${pad(safeDate.getHours())}-${pad(safeDate.getMinutes())}-${pad(safeDate.getSeconds())}`;
+  }
+
+  function sanitizeDownloadName(value, fallback) {
+    let name = String(value == null ? '' : value);
+    try { name = name.normalize('NFKC'); } catch (err) {}
+    name = name
+      .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_')
+      .replace(/\s+/g, ' ')
+      .replace(/[. ]+$/g, '')
+      .trim();
+    // Windows 单个文件名通常最多 255 字节；按字符保守截断，仍给扩展名留出空间。
+    return (name || fallback || 'x_download').slice(0, 160);
+  }
+
+  function getDownloadSourceName(url, ext) {
+    let raw = '';
+    try { raw = new URL(url).pathname.split('/').pop() || ''; } catch (err) {}
+    raw = raw.replace(new RegExp(`\\.${escapeRegExp(String(ext || ''))}$`, 'i'), '');
+    return sanitizeDownloadName(raw, 'media');
+  }
+
+  function renderDownloadNameTemplate(template, values) {
+    return String(template || '').replace(/\{([^{}]+)\}/g, (all, rawKey) => {
+      const key = DOWNLOAD_NAME_CHINESE_TOKENS[rawKey] || DOWNLOAD_NAME_LEGACY_TOKENS[rawKey];
+      return key && values[key] != null ? String(values[key]) : all;
+    });
+  }
+
+  function downloadTemplateIncludesIndex(template) {
+    return /\{(?:序号|index)\}/.test(String(template || ''));
+  }
+
+  function applyDownloadNameRegex(name, regexSource, replacement) {
+    const source = String(regexSource || '').trim();
+    const regex = source ? safeRegex(source, 'g') : null;
+    if (!regex) return name;
+    try { return name.replace(regex, String(replacement || '')); } catch (err) { return name; }
+  }
+
+  function buildDownloadNameBase(job, purpose, item) {
+    const isZip = purpose === 'zip';
+    const mediaType = isZip ? 'zip' : (item && item.mediaType) || 'media';
+    const values = {
+      'user-name': job.displayName || job.username || 'x',
+      'user-id': job.username || 'x',
+      'status-id': job.statusId || 'post',
+      'date-time': formatDownloadNameDate(job.postDate || job.createdAt),
+      'full-text': String(job.postText || '').replace(/\s+/g, ' ').trim().slice(0, 80) || '无正文',
+      'file-type': mediaType,
+      'file-name': isZip ? 'media' : getDownloadSourceName(item && item.url, item && item.ext),
+      'index': isZip ? '' : String((item && item.index != null ? item.index : 0) + 1),
+    };
+    const template = isZip ? job.zipNameTemplate : job.fileNameTemplate;
+    const rendered = renderDownloadNameTemplate(template, values);
+    return sanitizeDownloadName(
+      applyDownloadNameRegex(rendered, job.downloadNameRegex, job.downloadNameReplacement),
+      `${values['user-id']}_${values['status-id']}`
+    );
+  }
+
+  function appendDownloadExtension(baseName, ext) {
+    const extension = String(ext || 'bin').replace(/^\.+/, '').toLowerCase() || 'bin';
+    const duplicateExtension = new RegExp(`\\.${escapeRegExp(extension)}$`, 'i');
+    return `${String(baseName || 'download').replace(duplicateExtension, '')}.${extension}`;
+  }
+
+  function getDownloadItemFilename(job, item) {
+    let baseName = buildDownloadNameBase(job, 'file', item);
+    // 兼容旧默认：多文件时自动补序号；手动写入 {index} 则完全由模板控制。
+    if (job.items.length > 1 && !downloadTemplateIncludesIndex(job.fileNameTemplate)) {
+      baseName = sanitizeDownloadName(`${baseName}_${(item.index || 0) + 1}`, baseName);
+    }
+    return appendDownloadExtension(baseName, item.ext);
+  }
+
+  function getDownloadZipFilename(job) {
+    return appendDownloadExtension(buildDownloadNameBase(job, 'zip'), 'zip');
+  }
+
+  function updateDownloadNamingPreview() {
+    if (!state.downloadNamePreviewEl) return;
+    const fileTemplate = state.downloadFileNameTemplateEl
+      ? state.downloadFileNameTemplateEl.value
+      : state.settings.downloadFileNameTemplate;
+    const zipTemplate = state.downloadZipNameTemplateEl
+      ? state.downloadZipNameTemplateEl.value
+      : state.settings.downloadZipNameTemplate;
+    const regex = state.downloadNameRegexEl ? state.downloadNameRegexEl.value : state.settings.downloadNameRegex;
+    const replacement = state.downloadNameReplacementEl ? state.downloadNameReplacementEl.value : state.settings.downloadNameReplacement;
+    const demoJob = {
+      username: 'BetterX', displayName: '示例用户', statusId: '1234567890',
+      postText: '这是用于预览下载文件名的帖子正文', postDate: new Date(2026, 0, 2, 3, 4, 5), createdAt: Date.now(),
+      fileNameTemplate: fileTemplate, zipNameTemplate: zipTemplate,
+      downloadNameRegex: isSafeRegexSource(regex) ? regex : '', downloadNameReplacement: replacement,
+      items: [{ url: 'https://pbs.twimg.com/media/example.jpg', ext: 'jpg', mediaType: 'image', index: 0 }],
+    };
+    const item = demoJob.items[0];
+    state.downloadNamePreviewEl.textContent = `命名效果预览：${getDownloadItemFilename(demoJob, item)} · ${getDownloadZipFilename(demoJob)}`;
+  }
+
+  function insertDownloadNameToken(token) {
+    const inputs = [state.downloadFileNameTemplateEl, state.downloadZipNameTemplateEl].filter(Boolean);
+    const remembered = state.downloadNameTemplateTargetEl;
+    const target = inputs.includes(remembered) ? remembered : state.downloadFileNameTemplateEl;
+    if (!target) return;
+    const start = Number.isFinite(target.selectionStart) ? target.selectionStart : target.value.length;
+    const end = Number.isFinite(target.selectionEnd) ? target.selectionEnd : start;
+    target.value = `${target.value.slice(0, start)}${token}${target.value.slice(end)}`;
+    target.focus();
+    target.selectionStart = target.selectionEnd = start + token.length;
+    updateDownloadNamingPreview();
+  }
+
   function extOfUrl(u, def) {
     const base = String(u || '').split('?')[0];
     const m = base.match(/\.([a-zA-Z0-9]{2,4})$/);
@@ -2517,19 +2753,35 @@
   let activeDownloadTransfers = 0;
   let downloadUiRaf = 0;
 
+  function isDownloadedPostRecorded(statusId) {
+    if (!state.settings.trackDownloadedPosts) return false;
+    return (state.settings.downloadedPostIds || []).includes(String(statusId || ''));
+  }
+
+  function recordDownloadedPost(statusId) {
+    const id = String(statusId || '');
+    if (!state.settings.trackDownloadedPosts || !/^\d{1,30}$/.test(id)) return;
+    const existing = state.settings.downloadedPostIds || [];
+    const next = [...existing.filter((item) => item !== id), id].slice(-MAX_DOWNLOADED_POST_IDS);
+    if (next.length === existing.length && next.every((item, index) => item === existing[index])) return;
+    state.settings.downloadedPostIds = next;
+    queueDbWrite(async () => { await persistSettings(); });
+    scheduleDownloadUiRefresh();
+  }
+
   function collectDownloadItems(article, statusId) {
     const media = collectMedia(article, statusId);
     const items = [];
-    media.photos.forEach((u) => items.push({ url: u, ext: extOfUrl(u, 'jpg') }));
-    media.gifs.forEach((u) => items.push({ url: u, ext: 'mp4' }));
-    media.videos.forEach((u) => items.push({ url: u, ext: 'mp4' }));
+    media.photos.forEach((u) => items.push({ url: u, ext: extOfUrl(u, 'jpg'), mediaType: 'image' }));
+    media.gifs.forEach((u) => items.push({ url: u, ext: 'mp4', mediaType: 'gif' }));
+    media.videos.forEach((u) => items.push({ url: u, ext: 'mp4', mediaType: 'video' }));
     if (!items.length) {
       // 第三方引用卡片（内嵌视频 / 缩略图）：标准媒体为空时回退到卡片注册表
       const card = statusId ? getRegistryEntry(cardRegistry, String(statusId)) : null;
       if (card) {
-        card.photos.forEach((u) => items.push({ url: u, ext: extOfUrl(u, 'jpg') }));
-        card.gifs.forEach((u) => items.push({ url: u, ext: 'mp4' }));
-        card.videos.forEach((u) => items.push({ url: u, ext: 'mp4' }));
+        card.photos.forEach((u) => items.push({ url: u, ext: extOfUrl(u, 'jpg'), mediaType: 'image' }));
+        card.gifs.forEach((u) => items.push({ url: u, ext: 'mp4', mediaType: 'gif' }));
+        card.videos.forEach((u) => items.push({ url: u, ext: 'mp4', mediaType: 'video' }));
       }
     }
     return items;
@@ -2651,12 +2903,23 @@
       const cancel = control.querySelector('.BetterX-dl-cancel');
       if (!button) return;
       const active = isActiveDownloadJob(job);
+      const downloadedBefore = !active && isDownloadedPostRecorded(control.dataset.statusId || '');
       const progress = getDownloadJobProgress(job);
       control.dataset.downloadState = job ? job.status : 'idle';
       button.classList.toggle('is-progress', active);
+      button.classList.toggle('is-downloaded', downloadedBefore);
       button.style.setProperty('--xv-download-progress', `${progress.percent * 3.6}deg`);
-      button.textContent = job ? describeDownloadJob(job, true) : '⬇';
-      button.title = job ? describeDownloadJob(job, false) : '下载图片/视频/GIF';
+      if (job && !downloadedBefore) {
+        button.textContent = describeDownloadJob(job, true);
+      } else if (downloadedBefore) {
+        button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v9.17l3.59-3.59L18 10l-6 6-6-6 1.41-1.42L11 12.17V3zM4 14v4a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-4h-2v4a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4z"/></svg>';
+      } else {
+        button.textContent = '⬇';
+      }
+      button.title = job && !downloadedBefore
+        ? describeDownloadJob(job, false)
+        : (downloadedBefore ? '已下载过媒体；点击可再次下载' : '下载图片/视频/GIF');
+      button.setAttribute('aria-label', button.title);
       if (cancel) cancel.hidden = !active;
     });
 
@@ -2766,7 +3029,7 @@
   function saveIndividualDownload(job, result) {
     if (!result || !result.blob) return;
     job.updatedAt = now();
-    saveBlob(result.blob, `${job.baseName}_${result.index + 1}.${result.ext}`);
+    saveBlob(result.blob, getDownloadItemFilename(job, result));
     result.blob = null;
     result.saved = true;
     job.savedCount++;
@@ -2788,7 +3051,7 @@
     const acceptResult = (result) => {
       if (job.items.length === 1) {
         job.status = 'saving';
-        saveBlob(result.blob, `${job.baseName}.${result.ext}`);
+        saveBlob(result.blob, getDownloadItemFilename(job, result));
         result.blob = null;
         result.saved = true;
         job.savedCount++;
@@ -2849,7 +3112,7 @@
         progress.totalKnown = true;
         progress.status = 'done';
         job.completedCount++;
-        const result = { blob, ext: item.ext, index };
+        const result = { blob, ext: item.ext, mediaType: item.mediaType, url: item.url, index };
         acceptResult(result);
         return { ok: true, result };
       } catch (error) {
@@ -2900,7 +3163,7 @@
           const buffer = await blobToArrayBuffer(result.blob);
           if (job.cancelRequested) throw makeDownloadCancelledError();
           result.blob = null;
-          files.push({ resultIndex: result.index, name: `${result.index + 1}.${result.ext}`, data: new Uint8Array(buffer), modifiedAt: new Date() });
+          files.push({ resultIndex: result.index, name: getDownloadItemFilename(job, result), data: new Uint8Array(buffer), modifiedAt: new Date() });
           job.packCompleted++;
           scheduleDownloadUiRefresh();
         }
@@ -2908,7 +3171,7 @@
         const content = buildStoreZip(files, new Date());
         if (job.cancelRequested) throw makeDownloadCancelledError();
         job.status = 'saving';
-        saveBlob(content, `${job.baseName}.zip`);
+        saveBlob(content, getDownloadZipFilename(job));
         job.savedCount = files.length;
         files.length = 0;
       } catch (error) {
@@ -2925,7 +3188,7 @@
           const prepared = files.find((file) => file.resultIndex === result.index);
           const fallbackBlob = result.blob || (prepared ? new Blob([prepared.data]) : null);
           if (fallbackBlob) {
-            saveBlob(fallbackBlob, `${job.baseName}_${result.index + 1}.${result.ext}`);
+            saveBlob(fallbackBlob, getDownloadItemFilename(job, result));
             fallbackSaved++;
           }
           result.blob = null;
@@ -2940,6 +3203,7 @@
     job.status = 'done';
     job.updatedAt = now();
     job.errorMessage = '';
+    if (job.savedCount > 0) recordDownloadedPost(job.statusId);
     scheduleDownloadJobCleanup(job, 8000);
     scheduleDownloadUiRefresh();
     showToast(job.fallbackIndividual || job.individualDownloads
@@ -2948,15 +3212,19 @@
     5000);
   }
 
-  function startDownloadJob(items, author, statusId) {
+  function startDownloadJob(items, author, statusId, postText, postDate) {
     const id = String(statusId || '');
     const previous = downloadJobs.get(id);
     if (isActiveDownloadJob(previous)) { toggleDownloadPopover(true); return previous; }
     if (previous && previous.cleanupTimer) clearTimeout(previous.cleanupTimer);
     const uname = String((author && author.username) || 'x').replace(/^@/, '') || 'x';
-    const baseName = (uname + '_' + statusId).replace(/[\\/:*?"<>|]+/g, '_');
     const job = {
-      id, statusId: id, baseName, username: uname, items: items.map((item) => ({ ...item })),
+      id, statusId: id, username: uname, displayName: String((author && author.displayName) || '').trim(),
+      postText: String(postText || '').slice(0, 2000), postDate: postDate || '', items: items.map((item) => ({ ...item })),
+      fileNameTemplate: state.settings.downloadFileNameTemplate || DEFAULT_SETTINGS.downloadFileNameTemplate,
+      zipNameTemplate: state.settings.downloadZipNameTemplate || DEFAULT_SETTINGS.downloadZipNameTemplate,
+      downloadNameRegex: state.settings.downloadNameRegex || '',
+      downloadNameReplacement: state.settings.downloadNameReplacement || '',
       itemProgress: items.map(() => ({ loaded: 0, total: 0, totalKnown: false, status: 'queued' })),
       status: 'queued', createdAt: now(), updatedAt: now(), completedCount: 0, failedCount: 0,
       savedCount: 0, retryCount: 0, packCompleted: 0, packTotal: 0, fallbackIndividual: false,
@@ -2964,6 +3232,7 @@
       cancelRequested: false, controllers: new Set(), requests: new Set(), cancelHandles: new Set(),
       cancelAbortTimers: [], cleanupTimer: null, errorMessage: '',
     };
+    job.baseName = buildDownloadNameBase(job, 'zip');
     downloadJobs.set(id, job);
     scheduleDownloadUiRefresh();
     Promise.resolve(runDownloadJob(job)).catch((error) => {
@@ -2979,12 +3248,17 @@
   function retryDownloadJob(jobId) {
     const previous = downloadJobs.get(String(jobId || ''));
     if (!previous || isActiveDownloadJob(previous)) return;
-    return startDownloadJob(previous.items, { username: previous.username }, previous.statusId);
+    return startDownloadJob(previous.items, {
+      username: previous.username,
+      displayName: previous.displayName,
+    }, previous.statusId, previous.postText, previous.postDate);
   }
 
   async function handleDownloadClick(article, author, statusId) {
     const existing = downloadJobs.get(String(statusId || ''));
     if (isActiveDownloadJob(existing)) { toggleDownloadPopover(true); return; }
+    if (isDownloadedPostRecorded(statusId)
+      && !window.confirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
     let items = collectDownloadItems(article, statusId);
     if (needsFirefoxVideoLookup(article, statusId)) {
       showToast('正在获取视频地址…');
@@ -2999,7 +3273,8 @@
     }
     const activeAfterLookup = downloadJobs.get(String(statusId || ''));
     if (isActiveDownloadJob(activeAfterLookup)) { toggleDownloadPopover(true); return; }
-    startDownloadJob(items, author, statusId);
+    const postDate = article.querySelector('time')?.getAttribute('datetime') || '';
+    startDownloadJob(items, author, statusId, extractText(article), postDate);
   }
 
   function isDownloadExcludedArticle(article) {
@@ -3399,7 +3674,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.6.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.7.0',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,
       readyState: document.readyState || '',
@@ -3788,7 +4063,7 @@
     }
 
     document.querySelectorAll('.BetterX-layout-showmore-hidden').forEach((el) => el.classList.remove('BetterX-layout-showmore-hidden'));
-    if (state.settings.layoutHideShowMore) {
+    if (state.settings.layoutHideShowMore && !state.settings.autoExpandPostText) {
       document.querySelectorAll('article a[role="link"]').forEach((link) => {
         if (LAYOUT_SHOW_MORE_LABELS.has((link.textContent || '').trim())) link.classList.add('BetterX-layout-showmore-hidden');
       });
@@ -4317,13 +4592,38 @@
     }
   }
 
+  function expandPostShowMore(scope) {
+    if (!state.settings.autoExpandPostText) return 0;
+    const root = (scope && scope.querySelectorAll) ? scope : document;
+    const articles = root.matches && root.matches('article') ? [root] : root.querySelectorAll('article');
+    let expanded = 0;
+    articles.forEach((article) => {
+      if (article.closest('#BetterX-root')) return;
+      article.querySelectorAll('button, a[role="link"], [role="button"]').forEach((control) => {
+        if (autoExpandedPostShowMoreControls.has(control)) return;
+        const label = (control.innerText || control.textContent || '').trim();
+        if (!POST_SHOW_MORE_LABELS.has(label)) return;
+        // 只命中帖子 article 内文案完全等于“显示更多”的可交互控件；
+        // “显示更多回复”等不同文案不会命中，避免自动展开讨论串或侧栏内容。
+        autoExpandedPostShowMoreControls.add(control);
+        try {
+          control.click();
+          expanded++;
+        } catch (err) {}
+      });
+    });
+    return expanded;
+  }
+
   function scanArticles(root) {
     const scope = root && root.querySelectorAll ? root : document;
     if (state.settings.hideAds) sweepStandaloneAds(scope);
-    scope.querySelectorAll('article').forEach(captureArticle);
+    const articles = scope.matches && scope.matches('article') ? [scope] : scope.querySelectorAll('article');
+    articles.forEach(captureArticle);
     if (state.settings.mediaDownload) injectDownloadButtons(scope);
     if (state.settings.restoreMediaGrid) applyMediaGridLayout(scope);
     if (state.settings.bypassAgeRestriction) revealAgeRestricted(scope);
+    if (state.settings.autoExpandPostText) expandPostShowMore(scope);
     if (adultSpamFilteringEnabled()) updateAdultSpamCount();
   }
 
@@ -4470,12 +4770,26 @@
       const label = state.firefoxCompatibilityEl.closest('label');
       if (label) label.classList.toggle('is-disabled', !IS_FIREFOX);
     }
+    const downloadControlsDisabled = !state.settings.mediaDownload;
+    [
+      state.downloadZipEl, state.downloadFileNameTemplateEl, state.downloadZipNameTemplateEl,
+      state.downloadNameRegexEl, state.downloadNameReplacementEl, state.trackDownloadedPostsEl,
+    ].forEach((control) => {
+      if (control) control.disabled = downloadControlsDisabled;
+    });
     if (state.downloadZipEl) {
-      const disabled = !state.settings.mediaDownload;
-      state.downloadZipEl.disabled = disabled;
       const label = state.downloadZipEl.closest('label');
-      if (label) label.classList.toggle('is-disabled', disabled);
+      if (label) label.classList.toggle('is-disabled', downloadControlsDisabled);
     }
+    if (state.trackDownloadedPostsEl) {
+      const label = state.trackDownloadedPostsEl.closest('label');
+      if (label) label.classList.toggle('is-disabled', downloadControlsDisabled);
+    }
+    const saveDownloadNamingButton = state.panelEl.querySelector('[data-action="save-download-naming"]');
+    if (saveDownloadNamingButton) saveDownloadNamingButton.disabled = downloadControlsDisabled;
+    state.panelEl.querySelectorAll('.BetterX-download-name-tokens button').forEach((button) => {
+      button.disabled = downloadControlsDisabled;
+    });
   }
 
   function setPanelView(view) {
@@ -5201,6 +5515,61 @@
           </div>
         </details>
         <details class="BetterX-advanced BetterX-settings-card">
+          <summary>下载功能</summary>
+          <div class="BetterX-adv-body">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF</label>
+            <div class="BetterX-adv-label">开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。</div>
+            <label class="BetterX-field inline BetterX-download-zip-option"><input type="checkbox" id="BetterX-dlzip" /> 下载多个媒体自动压缩 ZIP 包</label>
+            <div class="BetterX-adv-label BetterX-download-zip-option">默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。</div>
+            <label class="BetterX-field inline BetterX-download-history-option"><input type="checkbox" id="BetterX-track-downloaded-posts" /> 记录已经下载过的帖子</label>
+            <div class="BetterX-adv-label BetterX-download-history-option">默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。</div>
+            <label class="BetterX-field">媒体文件名（不含扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="{用户ID}_{帖子ID}" /></label>
+            <label class="BetterX-field">ZIP 压缩包名（不含 .zip）<input class="BetterX-input" id="BetterX-download-zip-name-template" maxlength="180" spellcheck="false" placeholder="{用户ID}_{帖子ID}" /></label>
+            <div class="BetterX-adv-label">点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。</div>
+            <div class="BetterX-chip-row BetterX-download-name-tokens">
+              ${DOWNLOAD_NAME_TOKENS.map(({ token }) => `<button type="button" class="BetterX-chip" data-action="insert-download-name-token" data-token="${escapeHtml(token)}">${escapeHtml(token)}</button>`).join('')}
+            </div>
+            <label class="BetterX-field">正则替换（可选）<input class="BetterX-input" id="BetterX-download-name-regex" maxlength="180" spellcheck="false" placeholder="例如：[\\s_]+" /></label>
+            <label class="BetterX-field">替换为<input class="BetterX-input" id="BetterX-download-name-replacement" maxlength="180" spellcheck="false" placeholder="例如：_；支持 $1" /></label>
+            <div class="BetterX-adv-label">正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。</div>
+            <div class="BetterX-adv-label BetterX-download-name-preview" id="BetterX-download-name-preview"></div>
+            <div class="BetterX-row"><button class="BetterX-btn primary" data-action="save-download-naming">保存自定义命名设置</button></div>
+          </div>
+        </details>
+        <details class="BetterX-advanced BetterX-settings-card">
+          <summary>常用功能</summary>
+          <div class="BetterX-adv-body">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（隐藏推广帖和独立广告位）</label>
+            <div class="BetterX-adv-label">开启后自动隐藏时间线推广帖及 X 新增的程序化广告卡片；推广帖不会记录，关闭开关即可恢复显示。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label>
+            <div class="BetterX-adv-label">将 X 新版的多媒体正文轮播改为网格展示；两张并排，三张为左大右二，四张为 2×2 网格。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label>
+            <div class="BetterX-adv-label">不显示的话，请稍等或者重新开关按钮；仅本地操作，不改动账号设置。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-auto-expand-post-text" /> 自动展开帖子里“显示更多”</label>
+            <div class="BetterX-adv-label">自动展开时间线和帖子详情中的长文正文；只点击帖内的“显示更多 / Show more”，不会展开回复或侧栏内容。</div>
+            <div class="BetterX-row BetterX-profile-default-view-row">
+              <label class="BetterX-field inline"><input type="checkbox" id="BetterX-profile-default-view-enabled" /> 进入用户主页默认查看</label>
+              <select class="BetterX-select" id="BetterX-profile-default-view" aria-label="进入用户主页默认查看">
+                <option value="posts">帖子</option>
+                <option value="all">全部</option>
+                <option value="highlights">亮点</option>
+              </select>
+            </div>
+            <div class="BetterX-adv-label">开启后，仅在进入用户的主页时自动切换；帖子详情、媒体、回复、关注者等其他内容不受影响。</div>
+          </div>
+        </details>
+        <details class="BetterX-advanced BetterX-settings-card">
+          <summary>其他功能</summary>
+          <div class="BetterX-adv-body">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
+            <div class="BetterX-adv-label">遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。</div>
+            <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标（仅 PC）</label>
+            <div class="BetterX-adv-label BetterX-desktop-only-setting">隐藏后仍可使用 Alt+X 打开面板，也可通过油猴菜单“显示 / 隐藏应用徽标”恢复。</div>
+            <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label>
+            <div class="BetterX-adv-label BetterX-desktop-only-setting">使用圆形脚本图标与未读角标，并继续支持桌面端拖拽。</div>
+          </div>
+        </details>
+        <details class="BetterX-advanced BetterX-settings-card">
           <summary>高级设置</summary>
           <div class="BetterX-adv-body">
             <div class="BetterX-row">
@@ -5234,32 +5603,6 @@
             <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。</div>
             <div class="BetterX-adv-label">不记录以下来源的帖子：</div>
             <div class="BetterX-chip-row" id="BetterX-skip-sources"></div>
-          </div>
-        </details>
-        <details class="BetterX-advanced BetterX-settings-card">
-          <summary>常用功能</summary>
-          <div class="BetterX-adv-body">
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（隐藏推广帖和独立广告位）</label>
-            <div class="BetterX-adv-label">开启后自动隐藏时间线推广帖及 X 新增的程序化广告卡片；推广帖不会记录，关闭开关即可恢复显示。</div>
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF</label>
-            <div class="BetterX-adv-label">开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。</div>
-            <label class="BetterX-field inline BetterX-download-zip-option"><input type="checkbox" id="BetterX-dlzip" /> 下载多个媒体自动压缩 ZIP 包</label>
-            <div class="BetterX-adv-label BetterX-download-zip-option">默认开启；关闭后下载帖子内多个媒体文件会分别保存为“用户名_帖子ID_序号.扩展名”。</div>
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label>
-            <div class="BetterX-adv-label">将 X 新版的多媒体正文轮播改为网格展示；两张并排，三张为左大右二，四张为 2×2 网格。</div>
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label>
-            <div class="BetterX-adv-label">不显示的话，请稍等；实在不行，请重新关开按钮；仅本地操作，不改动账号设置。</div>
-          </div>
-        </details>
-        <details class="BetterX-advanced BetterX-settings-card">
-          <summary>其他功能</summary>
-          <div class="BetterX-adv-body">
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
-            <div class="BetterX-adv-label">遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。</div>
-            <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标（仅 PC）</label>
-            <div class="BetterX-adv-label BetterX-desktop-only-setting">隐藏后仍可使用 Alt+X 打开面板，也可通过油猴菜单“显示 / 隐藏应用徽标”恢复。</div>
-            <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label>
-            <div class="BetterX-adv-label BetterX-desktop-only-setting">使用圆形脚本图标与未读角标，并继续支持桌面端拖拽。</div>
           </div>
         </details>
       </div>
@@ -5345,10 +5688,19 @@
     state.firefoxCompatibilityEl = panel.querySelector('#BetterX-firefox-compat');
     state.mediaDownloadEl = panel.querySelector('#BetterX-mediadl');
     state.downloadZipEl = panel.querySelector('#BetterX-dlzip');
+    state.downloadFileNameTemplateEl = panel.querySelector('#BetterX-download-file-name-template');
+    state.downloadZipNameTemplateEl = panel.querySelector('#BetterX-download-zip-name-template');
+    state.downloadNameRegexEl = panel.querySelector('#BetterX-download-name-regex');
+    state.downloadNameReplacementEl = panel.querySelector('#BetterX-download-name-replacement');
+    state.downloadNamePreviewEl = panel.querySelector('#BetterX-download-name-preview');
+    state.trackDownloadedPostsEl = panel.querySelector('#BetterX-track-downloaded-posts');
     state.restoreMediaGridEl = panel.querySelector('#BetterX-restore-media-grid');
     state.bypassAgeEl = panel.querySelector('#BetterX-bypassage');
     state.useMobileBadgeOnDesktopEl = panel.querySelector('#BetterX-desktop-mobile-badge');
     state.hideAppBadgeOnDesktopEl = panel.querySelector('#BetterX-hide-app-badge');
+    state.profileDefaultViewEnabledEl = panel.querySelector('#BetterX-profile-default-view-enabled');
+    state.profileDefaultViewEl = panel.querySelector('#BetterX-profile-default-view');
+    state.autoExpandPostTextEl = panel.querySelector('#BetterX-auto-expand-post-text');
     state.menuEl = panel.querySelector('#BetterX-menu');
 
     state.mediaSelectEl.innerHTML = buildMediaOptionsHtml();
@@ -5415,6 +5767,15 @@
     });
     state.mediaDownloadEl.addEventListener('change', (e) => setSettingsPartial({ mediaDownload: !!e.target.checked }));
     state.downloadZipEl.addEventListener('change', (e) => setSettingsPartial({ downloadZip: !!e.target.checked }));
+    state.trackDownloadedPostsEl.addEventListener('change', (e) => {
+      setSettingsPartial({ trackDownloadedPosts: !!e.target.checked });
+      scheduleDownloadUiRefresh();
+    });
+    [state.downloadFileNameTemplateEl, state.downloadZipNameTemplateEl, state.downloadNameRegexEl, state.downloadNameReplacementEl]
+      .forEach((input) => input.addEventListener('input', updateDownloadNamingPreview));
+    [state.downloadFileNameTemplateEl, state.downloadZipNameTemplateEl].forEach((input) => {
+      input.addEventListener('focus', () => { state.downloadNameTemplateTargetEl = input; });
+    });
     state.restoreMediaGridEl.addEventListener('change', (e) => setSettingsPartial({ restoreMediaGrid: !!e.target.checked }));
     state.bypassAgeEl.addEventListener('change', (e) => setSettingsPartial({ bypassAgeRestriction: !!e.target.checked }));
     state.useMobileBadgeOnDesktopEl.addEventListener('change', (e) => {
@@ -5423,6 +5784,15 @@
     state.hideAppBadgeOnDesktopEl.addEventListener('change', (e) => {
       setSettingsPartial({ hideAppBadgeOnDesktop: !!e.target.checked });
       if (e.target.checked) showToast('应用徽标已隐藏 · Alt+X 或油猴菜单可恢复');
+    });
+    state.profileDefaultViewEnabledEl.addEventListener('change', (e) => {
+      setSettingsPartial({ profileDefaultViewEnabled: !!e.target.checked });
+    });
+    state.profileDefaultViewEl.addEventListener('change', (e) => {
+      setSettingsPartial({ profileDefaultView: e.target.value });
+    });
+    state.autoExpandPostTextEl.addEventListener('change', (e) => {
+      setSettingsPartial({ autoExpandPostText: !!e.target.checked });
     });
     state.importInputEl.addEventListener('change', (e) => {
       const file = e.target.files && e.target.files[0];
@@ -5453,6 +5823,26 @@
         case 'download-retry':
           retryDownloadJob(actionEl.getAttribute('data-job-id'));
           break;
+        case 'insert-download-name-token':
+          insertDownloadNameToken(actionEl.getAttribute('data-token') || '');
+          break;
+        case 'save-download-naming': {
+          const fileNameTemplate = safeString(state.downloadFileNameTemplateEl.value, 180).trim() || DEFAULT_SETTINGS.downloadFileNameTemplate;
+          const zipNameTemplate = safeString(state.downloadZipNameTemplateEl.value, 180).trim() || DEFAULT_SETTINGS.downloadZipNameTemplate;
+          const regex = safeString(state.downloadNameRegexEl.value, MAX_REGEX_SOURCE_LENGTH).trim();
+          if (regex && !isSafeRegexSource(regex)) {
+            showToast('⚠️ 正则无效或风险过高，未保存');
+            break;
+          }
+          setSettingsPartial({
+            downloadFileNameTemplate: fileNameTemplate,
+            downloadZipNameTemplate: zipNameTemplate,
+            downloadNameRegex: regex,
+            downloadNameReplacement: safeString(state.downloadNameReplacementEl.value, 180),
+          });
+          showToast('✅ 已保存下载命名');
+          break;
+        }
         case 'refresh': scanArticles(document); refreshUI(); break;
         case 'mark-all-read': {
           const unreadPosts = filterPosts(state.posts).filter((p) => !p.clicked);
@@ -5774,11 +6164,15 @@
         color: rgb(29,155,240);
         background: conic-gradient(rgba(29,155,240,.24) var(--xv-download-progress, 0deg), transparent 0);
       }
+      .BetterX-dl-btn.is-downloaded { color: rgb(29,155,240); text-shadow: 0 0 8px rgba(29,155,240,.28); }
+      .BetterX-dl-btn.is-downloaded:hover { color: rgb(29,155,240); background: rgba(29,155,240,.14); }
+      .BetterX-dl-btn.is-downloaded svg { width: 22px; height: 22px; fill: currentColor; }
       .BetterX-dl-cancel { min-width: 24px; width: 24px; padding: 0; color: rgb(244,33,46); font-size: 17px; }
       .BetterX-dl-cancel:hover { background: rgba(244,33,46,.12); }
       .BetterX-download-controls.in-group { align-self: center; }
       .BetterX-download-controls.floating .BetterX-dl-btn,
       .BetterX-download-controls.floating .BetterX-dl-cancel { color: #fff; }
+      .BetterX-download-controls.floating .BetterX-dl-btn.is-downloaded { color: rgb(29,155,240); }
       .BetterX-download-controls.floating .BetterX-dl-btn:hover { background: rgba(29,155,240,.88); }
       .BetterX-download-controls.floating .BetterX-dl-cancel:hover { background: rgba(244,33,46,.88); }
       article[data-testid="notification"] .BetterX-download-controls { display: none !important; }
@@ -6084,6 +6478,9 @@
       .BetterX-settings-card > .BetterX-adv-body { gap: 10px; padding: 12px; }
       .BetterX-settings-card .BetterX-field,
       .BetterX-settings-card .BetterX-adv-label { font-size: 13px; line-height: 1.45; }
+      .BetterX-download-name-tokens { gap: 6px; }
+      .BetterX-download-name-tokens .BetterX-chip { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--xv-text); font-weight: 650; }
+      .BetterX-download-name-preview { color: var(--xv-text); font-weight: 650; }
       .BetterX-settings-card .BetterX-content-status { font-size: 12px; line-height: 1.4; }
       .BetterX-dependent-options { display: flex; flex-direction: column; gap: 9px; }
       .BetterX-dependent-options.is-disabled { opacity: .5; }
@@ -6091,6 +6488,9 @@
       .BetterX-adultspam-master-row { flex-wrap: nowrap; justify-content: space-between; }
       .BetterX-adultspam-master-row > .BetterX-field { flex: 1 1 auto; min-width: 0; }
       .BetterX-adultspam-master-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; }
+      .BetterX-profile-default-view-row { flex-wrap: nowrap; justify-content: space-between; }
+      .BetterX-profile-default-view-row > .BetterX-field { flex: 1 1 auto; min-width: 0; }
+      .BetterX-profile-default-view-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; }
       .BetterX-tag-editor {
         display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 8px;
         border: 1px solid var(--xv-border); border-radius: 10px; background: var(--xv-input-bg);
@@ -6249,6 +6649,8 @@
         if (state.settings.mediaDownload) injectDownloadButtons(article);
         if (state.settings.restoreMediaGrid) applyMediaGridLayout(article);
         if (state.settings.bypassAgeRestriction) revealAgeRestricted(article);
+        // 向下滚动时 X 通过虚拟列表异步插入帖子；这里是首屏 scanArticles 之外的增量入口。
+        if (state.settings.autoExpandPostText) expandPostShowMore(article);
       }
       if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
       if (state.settings.layoutEnabled) throttledLayoutRefresh();
@@ -6446,11 +6848,147 @@
     });
   }
 
+  function getConfiguredProfileDefaultView() {
+    // document-start 阶段 IndexedDB 尚未就绪，优先读取同步可用的 GM 设置镜像；
+    // 正常运行后则使用内存设置，让刚改完下拉框的下一次点击立即生效。
+    const settings = state.settingsLoaded ? state.settings : (readSettingsMirror() || DEFAULT_SETTINGS);
+    if (settings.profileDefaultViewEnabled === false) return 'posts';
+    return PROFILE_DEFAULT_VIEW_OPTIONS.includes(settings.profileDefaultView)
+      ? settings.profileDefaultView
+      : DEFAULT_SETTINGS.profileDefaultView;
+  }
+
+  function readProfileDefaultViewRedirectGuard() {
+    try {
+      const raw = sessionStorage.getItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY);
+      const guard = raw ? JSON.parse(raw) : null;
+      if (!guard || typeof guard !== 'object'
+          || !/^[a-z0-9_]{1,15}$/i.test(guard.handle || '')
+          || !PROFILE_DEFAULT_VIEW_OPTIONS.includes(guard.view)
+          || !Number.isFinite(guard.createdAt)
+          || now() - guard.createdAt > PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_MS) {
+        if (raw) sessionStorage.removeItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY);
+        return null;
+      }
+      return guard;
+    } catch (err) { return null; }
+  }
+
+  function armProfileDefaultViewRedirectGuard(handle, view) {
+    try {
+      sessionStorage.setItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY, JSON.stringify({
+        handle: String(handle || '').toLowerCase(), view, createdAt: now(),
+      }));
+    } catch (err) {}
+  }
+
+  function consumeProfileDefaultViewRedirectGuard(handle, view) {
+    const guard = readProfileDefaultViewRedirectGuard();
+    if (!guard || guard.handle !== String(handle || '').toLowerCase() || guard.view !== view) return false;
+    try { sessionStorage.removeItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY); } catch (err) {}
+    return true;
+  }
+
+  function getBareProfileHandle(pathname) {
+    const normalizedPath = String(pathname == null ? location.pathname : pathname)
+      .replace(/^\/+|\/+$/g, '');
+    if (!normalizedPath || normalizedPath.includes('/')) return '';
+    let handle = '';
+    try { handle = decodeURIComponent(normalizedPath); } catch (err) { return ''; }
+    if (!/^[a-z0-9_]{1,15}$/i.test(handle)) return '';
+    if (PROFILE_ROOT_ROUTE_EXCLUSIONS.has(handle.toLowerCase())) return '';
+    return handle;
+  }
+
+  function getPreferredProfileViewUrl(rawUrl) {
+    const view = getConfiguredProfileDefaultView();
+    if (view === 'posts') return '';
+    let targetUrl;
+    try { targetUrl = new URL(rawUrl, location.href); } catch (err) { return ''; }
+    if (!/^(?:x|twitter)\.com$/i.test(targetUrl.hostname)) return '';
+    const handle = getBareProfileHandle(targetUrl.pathname);
+    if (!handle) return '';
+    targetUrl.pathname = `/${handle}/${view}`;
+    return targetUrl.href;
+  }
+
+  function navigateToPreferredProfileView(targetUrl, replace) {
+    try {
+      const method = replace ? 'replaceState' : 'pushState';
+      history[method](history.state, '', targetUrl);
+      // document-start 时 X 尚未启动，改写 URL 后让它首次读取正确页签即可；
+      // 已启动时主动通知路由器，避免整页刷新出现黑色开屏。
+      if (document.readyState !== 'loading') {
+        const event = typeof PopStateEvent === 'function' ? new PopStateEvent('popstate') : new Event('popstate');
+        window.dispatchEvent(event);
+      }
+      return true;
+    } catch (err) {
+      try {
+        if (replace) location.replace(targetUrl);
+        else location.assign(targetUrl);
+      } catch (fallbackError) {}
+      return false;
+    }
+  }
+
+  function isExplicitProfileTabLink(link) {
+    return !!(link && (link.getAttribute('role') === 'tab' || link.closest('[role="tab"]')));
+  }
+
+  function redirectBareProfileToPreferredView() {
+    const view = getConfiguredProfileDefaultView();
+    // “帖子”就是 X 的用户主页默认页，无需额外改写 URL。
+    if (view === 'posts') return false;
+    const handle = getBareProfileHandle();
+    if (!handle) return false;
+
+    // X 在目标页签不可用时会自行回退到 /用户名；消费本次跳转的短期标记后停留在“帖子”，避免来回跳转。
+    if (consumeProfileDefaultViewRedirectGuard(handle, view)) return false;
+
+    const targetPath = `/${handle}/${view}`;
+    if (location.pathname.replace(/\/+$/, '') === targetPath) return false;
+    const targetUrl = new URL(location.href);
+    targetUrl.pathname = targetPath;
+    // replaceState 不会把“纯主页”留在历史记录里，按返回键时也不会来回重定向。
+    armProfileDefaultViewRedirectGuard(handle, view);
+    navigateToPreferredProfileView(targetUrl.href, true);
+    return true;
+  }
+
+  function installProfileDefaultViewLinkRewrite() {
+    document.addEventListener('click', (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target;
+      if (!target || !target.closest) return;
+      const link = target.closest('a[href]');
+      if (!link || link.hasAttribute('download')) return;
+      const handle = getBareProfileHandle(link.pathname);
+      const view = getConfiguredProfileDefaultView();
+      // 用户点击个人主页的“帖子”页签是明确选择，跳过一次默认页签重定向。
+      if (handle && view !== 'posts' && isExplicitProfileTabLink(link)) {
+        armProfileDefaultViewRedirectGuard(handle, view);
+        return;
+      }
+      const preferredUrl = getPreferredProfileViewUrl(link.href || link.getAttribute('href') || '');
+      // 某些 X SPA 路由会在事件开始时缓存原 href，单纯改写属性可能仍打开“帖子”页。
+      // 因此直接接管普通左键点击，确保不会先绘制“帖子”页，也不会误消费回退保护标记。
+      if (preferredUrl && link.href !== preferredUrl) {
+        if (!handle || view === 'posts') return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        armProfileDefaultViewRedirectGuard(handle, view);
+        navigateToPreferredProfileView(preferredUrl, false);
+      }
+    }, true);
+  }
+
   function installNavigationListener() {
     let lastUrl = location.href;
     const onNav = (restorePosition) => {
       if (location.href !== lastUrl) {
         lastUrl = location.href;
+        if (redirectBareProfileToPreferredView()) return;
         installNetworkHooks();
         scheduleNavigationRefresh(restorePosition ? layoutScrollPositions.get(lastUrl) : null);
       }
@@ -6492,6 +7030,7 @@
     applyTheme();
     repositionBadge();
     refreshUI();
+    redirectBareProfileToPreferredView();
     harvestFollowingControlsFromRoot(document);
     startObserver();
     scanArticles(document);
@@ -6528,7 +7067,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v2.6.0 started');
+    debugLog('v2.7.0 started');
   }
 
   function waitForPageReady() {
@@ -6538,6 +7077,9 @@
     }, 100);
   }
 
+  // document-start 先改写当前 URL，让 X 首次启动时直接读取目标页签，避免黑色开屏。
+  redirectBareProfileToPreferredView();
+  installProfileDefaultViewLinkRewrite();
   registerMenuCommands();
   installNetworkHooks();
   waitForPageReady();
