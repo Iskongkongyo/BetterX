@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         更好的 X（BetterX）
 // @namespace    https://github.com/Iskongkongyo
-// @version      2.7.0
+// @version      2.8.0
 // @description  自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
-// @author       流萤可爱捏
+// @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://twitter.com/*
 // @grant        GM_addStyle
@@ -18,7 +18,7 @@
 // @connect      pbs.twimg.com
 // @connect      x.com
 // @run-at       document-start
-// @icon         data:image/jpeg;base64,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
+// @icon      data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAUEBAQEAwUEBAQGBQUGCA0ICAcHCBALDAkNExAUExIQEhIUFx0ZFBYcFhISGiMaHB4fISEhFBkkJyQgJh0gISD/2wBDAQUGBggHCA8ICA8gFRIVICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICD/wAARCABAAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7LoorC17XpdLsoorO08/Vr2UwWdrI20OwyS7EZ2xqo3MfTjqQCAX9S1fStHgWfVdQt7KNjtUzSBdx9BnqfYVgD4ieGJYXmspL6+jXPz29hMyHHX59oXj61mG3t9BZtSvdQhudZmQm41e+IRYYx12gnEUYJwsYIyTyScmuF1j41/CzTrlllvbjxBeodrz2dkGDEHjLHarYPTrUOXYtRuenQ+PtDktheT2mrWVn/FdXemzRRJ/vMVwB/tH5feuohmgubeO4t5UmhlUOkkbBldTyCCOCK+etO/aJ8Fi+QTz61DbuwV2vbVWMWf4g8bHgdwR06Hse/m0268PsfEXgm8ijspF+0XGlM2bK6Ujd5kWAfJYg53J8pzkqeTQpdwcGj0qivO/EHiGDVvAyPoWoXenanqF7Fbp5ZxPayo4eVWHI+VEcnqrDHUMM9R4T1efXPCtnqF2ipd/PDcKn3fNjdo3I9iykj2IpxlfR7kdbGrdZFuX81YlT5mZm2gADnJ7Vw2m202veIZPFl67m0aFLbTLZgV/cg7mnYesjbSF7KiE8nA2fGMsMlpYaTczCK0v5yLticD7PHG0sgJ9GCBT7Map+GNWOtaPDrRJ23rCeND0jjIBQD/gJBPuTWbilJy7lI8Pux4h+I/xk8UW9tZXF54f0snT4pNwSCGSMEM29gRu37idoZsccA1s6P+zF4YhzP4k8SXt47fN5FoRCi+24hnb65FdVqcgfwDD4S01o7KbVY5IHmB2+UjfNcS9ufn27s8tIK6bw1rA1PQ7MSlY7xLdfNizyCv7tjj0Dqw/D3pJq5r7OUVzrr+hxx+Afwmkglgj0y886FtjMuoTbuRkHk46H0rq/B+ixeFNOfwnbXVxc2NgFksmumDyJC+f3ZIAyFYMBx0IHauV8TeObLwf43W51DWre30ya2aO4tpZFVjIkgO6PP3nCyAlP4l6cgZ67TNX0/WdRs9X0q/ttQsrmxcJcWzhkcB0I+h5PB5FHNccoSSTezOTks00L4x20ETNCup6e6Wbuu6GNhKisSOnmBdsa56rsHatrwrpEenfEVrXT7+9u47G0uDePcTmQI80quiYB2qxIkcjAIyM8EV57+0fYrd+BEvjIyHTpobpXB+4C/lP+B3oceqCvTfgto1/oXwd0Oy1XTn06/ZHmmgcgsC7swJH8OQQdpyV6HkVcaf8Ay8v8jCW5e+Imj32qaLbGwtJLtxKbaaKPG7yJ1MMrDJH3Q+76Ke9ct4T1qytrW30aS6jjKy/Y7cn5BK8a4ULns8aLIv8AeBOOldt4u1VILMaUk/kvdITNLnHkw5wx/wB5s7VHXJJHSvJZ9PtfFvju7i1GB9P0vSjBaqSdm5kHmnevbG9QAeVAP3SxwTLp2vZmB4q+EzeLPHt5fa9rM80NtcAWliGWOGKzcBwcn1k81Sf7yr6iuq8H/Ca70jSVl0XWpLG6tLyU27SsZYjFJ5ZYdc4wuCo+VioyMjdVbxBqNx4e1221GTXHutL0kG4VbqXbuQ5Ur54UyFTgfKdwbjPQVb0L9oDwxrqywx6NqtjcWitNLHNPbxgRqDucl3GVUDJGMjg4pRlePJb/ADOyVRtXT/y+4i8U/CS11PWdU1HX7s3rXkKn7T5bokeAoJVF3BSFjUEk85B4AxWP8NdL8JeF/Ez2Xhm68ybV7WELBDKJFjSJN09yeflWWQBVHfG4DBrauPjM17r1z4Ss9DFjfwIv73U7hbkPuXdgCElWbac7S447cGsvRtJ1CDXrrV5L0W9rfGO2nvLe3WKcJ3VXHyxqX2/dXIAGCDkknJuKj0QlUUVru/PfsZPxi8QR+INH8S+E9NjW4uIYo4mIcEMIy1xcAAdCixqPdmAr1X4D60dd+CehXEupS6hcW6vazSSjlWRiNoPdQNuD3GK5n+xLDQvFurfY9Lt7MX9nby294i8wNCQux8/8sw4jYn1kO7Ocj2LRbtL/AEW3vIkESSrkRBdvlHoUPuCCK0g/dscc2m9DhviWLzSbjTPEGnT26XUk8dnGbgZWJzvxLg8NtRpDj1C++eDj13R4IfsNpqNv5aFjJLLcKXlcklmJJ5JYks3ck177eWNjqNv9n1Czgu4chvLnjDrkdDg8VAuiaKqhV0iyVVGABbpgD06UNJ7ka9D5V8Y3UvjO7sPCfh64glm1F0haRmBjESnkv2wzkAA+nqQDXh8K6H4e8U/bPEl1Yz6qs8Xk6MGWNLaJG/fToHbc23aRlsAh2+UYBH0vq3w98K6zqAvrnTzFKYfs8gtpDCs0W7dscLjIzk+tXF8FeD1WJV8MaWBEwdf9FTO4DGSccnHrUSppxaQ1Od9dvI+fvEtl4R1jVTpehPb6TqccUmoQ3Ej+VmdOPMKDGSudhGNxD4A+bNaNp410m50WGKLUEtLaVY/Ps7q4jys2cSDr0BOPwr3G88G+FL8H7R4esN5xiWOFY5Fx0w64Yfga0rfS9NtLSG0trGCOCBBHGgQYVQMAflUUqMacVHe39dROUm9WfPN1qkuopeWcet2t1bxSv9jfzVEkS/ZvMaMuD+8iJUxuDyBKgyeK9w8EK58EaZdSAK17H9tKBshPNJkC574DAZ74rTutF0a9CC80myudgIXzYEfbnrjI4q8qqiBEUKqjAAGABWyVg1P/2Q==
 // @noframes
 // @license      MIT
 // @downloadURL https://update.greasyfork.org/scripts/588748/%E6%9B%B4%E5%A5%BD%E7%9A%84%20X%EF%BC%88BetterX%EF%BC%89.user.js
@@ -170,10 +170,10 @@
   ]);
 
   const DEFAULT_SETTINGS = {
-    settingsRevision: 17,
+    settingsRevision: 24,
     keywords: [],
     excludeKeywords: [],
-    keywordMode: 'plain',   // 'plain' | 'and' | 'regex'
+    keywordMode: 'plain',   // 'plain' | 'and'；正则由 /表达式/ 标签声明
     filter: 'all',
     sourceFilter: 'all',
     mediaFilter: 'all',
@@ -218,7 +218,9 @@
     firefoxCompatibility: false, // Firefox 兼容模式：停用页面 fetch/XHR Hook
     firefoxCompatibilityPrompted: false, // 是否已完成 Firefox 首次兼容性询问
     useMobileBadgeOnDesktop: false, // PC 端可选使用移动端圆形图标徽标
-    hideAppBadgeOnDesktop: false, // PC 端隐藏 BetterX 应用徽标；仍可用 Alt+X / 油猴菜单打开
+    hideAppBadge: false, // PC 端隐藏徽标；移动端收纳为右侧蓝色唤醒半透明蓝色条
+    useMobileBadgeHandle: false, // 移动端将圆形徽标切换为右侧小蓝条
+    mobileBadgeHandleTop: null, // 移动端收纳半透明蓝色条距顶部位置（像素）
     profileDefaultViewEnabled: true, // 进入纯用户主页时，按所选页签打开
     profileDefaultView: 'posts', // 'posts' | 'all' | 'highlights'
     autoExpandPostText: false, // 自动展开帖子正文“显示更多”
@@ -259,7 +261,9 @@
     sourceSelectEl: null,
     mediaSelectEl: null,
     keywordInputEl: null,
+    keywordTagsEl: null,
     excludeInputEl: null,
+    excludeKeywordTagsEl: null,
     keywordModeEl: null,
     searchEl: null,
     sortEl: null,
@@ -305,7 +309,8 @@
     downloadNameTemplateTargetEl: null,
     restoreMediaGridEl: null,
     useMobileBadgeOnDesktopEl: null,
-    hideAppBadgeOnDesktopEl: null,
+    hideAppBadgeEl: null,
+    useMobileBadgeHandleEl: null,
     profileDefaultViewEnabledEl: null,
     profileDefaultViewEl: null,
     autoExpandPostTextEl: null,
@@ -317,6 +322,7 @@
     mobileComposeObserver: null,
     mobileComposeResizeObserver: null,
     mobileBadgeRaf: 0,
+    suppressNextBadgeClick: false,
   };
 
   // 关键词匹配缓存（避免每次渲染都重算）
@@ -439,6 +445,38 @@
         .map((s) => s.trim().slice(0, 500))
         .filter(Boolean)
     ).slice(0, 50);
+  }
+
+  // 关键词规则允许 /表达式/ 中包含逗号（如 /a{1,3}/）；普通标签仍可用逗号或换行分隔。
+  function parseKeywordRules(raw) {
+    const values = [];
+    let current = '';
+    let inRegex = false;
+    let escaped = false;
+    const pushCurrent = () => {
+      const value = current.trim().slice(0, 500);
+      if (value) values.push(value);
+      current = '';
+      inRegex = false;
+      escaped = false;
+    };
+    for (const ch of String(raw || '')) {
+      if (inRegex) {
+        current += ch;
+        if (escaped) escaped = false;
+        else if (ch === '\\') escaped = true;
+        else if (ch === '/') inRegex = false;
+        continue;
+      }
+      if (ch === ',' || ch === '，' || ch === '\n') {
+        if (current.trim()) pushCurrent();
+        continue;
+      }
+      current += ch;
+      if (ch === '/' && current.trim() === '/') inRegex = true;
+    }
+    pushCurrent();
+    return uniqueStrings(values).slice(0, 50);
   }
 
   function debounce(fn, delay) {
@@ -814,7 +852,13 @@
       if (ch === '?' && text[i - 1] === '(') continue;
       if (quantifierAt(i)) stack[stack.length - 1].hasRepeat = true;
     }
-    return stack.length === 1 && !inClass && !escaped;
+    if (stack.length !== 1 || inClass || escaped) return false;
+    try {
+      new RegExp(text);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function safeRegex(src, flags) {
@@ -822,24 +866,42 @@
     try { return new RegExp(src, flags); } catch { return null; }
   }
 
+  // 用 /表达式/ 明确声明正则；未包裹的标签始终按普通文字匹配。
+  function getDelimitedRegexSource(value) {
+    const text = String(value || '').trim();
+    return text.length >= 3 && text.startsWith('/') && text.endsWith('/') ? text.slice(1, -1) : null;
+  }
+
+  function isSafeKeywordRule(value) {
+    const source = getDelimitedRegexSource(value);
+    return source === null || isSafeRegexSource(source);
+  }
+
+  function keywordRuleMatches(rule, haystack, lowerHaystack) {
+    const source = getDelimitedRegexSource(rule);
+    if (source !== null) {
+      const regex = safeRegex(source, 'i');
+      return !!(regex && regex.test(haystack));
+    }
+    return lowerHaystack.includes(String(rule || '').toLowerCase());
+  }
+
   function computeMatchedKeywords(post) {
     const cached = matchCache.get(post.id);
     if (cached && cached.v === matchCacheVersion) return cached.matched;
 
     const keywords = state.settings.keywords || [];
-    const mode = state.settings.keywordMode || 'plain';
+    const mode = state.settings.keywordMode === 'and' ? 'and' : 'plain';
     let matched = [];
 
     if (keywords.length) {
       const haystack = buildHaystack(post).slice(0, MAX_REGEX_HAYSTACK_LENGTH);
       const lower = haystack.toLowerCase();
-      if (mode === 'regex') {
-        matched = keywords.filter((kw) => { const re = safeRegex(kw, 'i'); return re ? re.test(haystack) : false; });
-      } else if (mode === 'and') {
-        const all = keywords.every((kw) => lower.includes(kw.toLowerCase()));
+      if (mode === 'and') {
+        const all = keywords.every((kw) => keywordRuleMatches(kw, haystack, lower));
         matched = all ? [...keywords] : [];
       } else {
-        matched = keywords.filter((kw) => lower.includes(kw.toLowerCase()));
+        matched = keywords.filter((kw) => keywordRuleMatches(kw, haystack, lower));
       }
     }
     matchCache.set(post.id, { v: matchCacheVersion, matched });
@@ -849,30 +911,22 @@
   function matchesExclude(post) {
     const ex = state.settings.excludeKeywords || [];
     if (!ex.length) return false;
-    const mode = state.settings.keywordMode || 'plain';
     const haystack = buildHaystack(post).slice(0, MAX_REGEX_HAYSTACK_LENGTH);
     const lower = haystack.toLowerCase();
-    if (mode === 'regex') {
-      return ex.some((kw) => { const re = safeRegex(kw, 'i'); return re ? re.test(haystack) : false; });
-    }
-    return ex.some((kw) => lower.includes(kw.toLowerCase()));
+    return ex.some((kw) => keywordRuleMatches(kw, haystack, lower));
   }
 
   // 在“原始文本”上定位匹配区间再分段转义，修复关键词含特殊字符时高亮失效
   function highlightText(rawText, matchedKeywords) {
     const text = rawText || '';
-    const mode = state.settings.keywordMode || 'plain';
     const usable = uniqueStrings(matchedKeywords || []).filter(Boolean);
     if (!usable.length) return escapeHtml(text).replace(/\n/g, '<br>');
 
-    let combined = null;
-    if (mode === 'regex') {
-      const parts = usable.filter((kw) => safeRegex(kw, ''));
-      combined = parts.length ? safeRegex(`(${parts.join('|')})`, 'gi') : null;
-    } else {
-      const sorted = [...usable].sort((a, b) => b.length - a.length);
-      combined = safeRegex(`(${sorted.map(escapeRegExp).join('|')})`, 'gi');
-    }
+    const parts = [...usable]
+      .sort((a, b) => b.length - a.length)
+      .map((rule) => getDelimitedRegexSource(rule) ?? escapeRegExp(rule))
+      .filter((source) => safeRegex(source, ''));
+    const combined = parts.length ? safeRegex(`(${parts.join('|')})`, 'gi') : null;
     if (!combined) return escapeHtml(text).replace(/\n/g, '<br>');
 
     let out = '';
@@ -1341,13 +1395,9 @@
     }
     if (state.mediaSelectEl) state.mediaSelectEl.value = state.settings.mediaFilter || 'all';
     if (state.skipSourcesEl) state.skipSourcesEl.innerHTML = buildSkipSourcesHtml();
-    if (state.keywordInputEl && document.activeElement !== state.keywordInputEl) {
-      state.keywordInputEl.value = (state.settings.keywords || []).join(', ');
-    }
-    if (state.excludeInputEl && document.activeElement !== state.excludeInputEl) {
-      state.excludeInputEl.value = (state.settings.excludeKeywords || []).join(', ');
-    }
-    if (state.keywordModeEl) state.keywordModeEl.value = state.settings.keywordMode || 'plain';
+    renderSavedKeywordTags();
+    renderSavedExcludeKeywordTags();
+    if (state.keywordModeEl) state.keywordModeEl.value = state.settings.keywordMode === 'and' ? 'and' : 'plain';
     if (state.sortEl) state.sortEl.value = state.settings.sortBy || 'smart';
     updateSortHint();
     if (state.autoCleanInputEl && document.activeElement !== state.autoCleanInputEl) {
@@ -1426,8 +1476,11 @@
     if (state.useMobileBadgeOnDesktopEl) {
       state.useMobileBadgeOnDesktopEl.checked = !!state.settings.useMobileBadgeOnDesktop;
     }
-    if (state.hideAppBadgeOnDesktopEl) {
-      state.hideAppBadgeOnDesktopEl.checked = !!state.settings.hideAppBadgeOnDesktop;
+    if (state.hideAppBadgeEl) {
+      state.hideAppBadgeEl.checked = !!state.settings.hideAppBadge;
+    }
+    if (state.useMobileBadgeHandleEl) {
+      state.useMobileBadgeHandleEl.checked = !!state.settings.useMobileBadgeHandle;
     }
     if (state.profileDefaultViewEnabledEl) {
       state.profileDefaultViewEnabledEl.checked = state.settings.profileDefaultViewEnabled !== false;
@@ -1475,7 +1528,7 @@
       settingsRevision: DEFAULT_SETTINGS.settingsRevision,
       keywords: stringList(input.keywords, 50, 500),
       excludeKeywords: stringList(input.excludeKeywords, 50, 500),
-      keywordMode: enumValue(input.keywordMode, ['plain', 'and', 'regex'], DEFAULT_SETTINGS.keywordMode),
+      keywordMode: enumValue(input.keywordMode, ['plain', 'and'], DEFAULT_SETTINGS.keywordMode),
       filter: enumValue(input.filter, FILTERS.map((item) => item.key), DEFAULT_SETTINGS.filter),
       sourceFilter: safeString(input.sourceFilter, 100) || DEFAULT_SETTINGS.sourceFilter,
       mediaFilter: enumValue(input.mediaFilter, MEDIA_FILTERS.map((item) => item.key), DEFAULT_SETTINGS.mediaFilter),
@@ -1534,7 +1587,13 @@
       firefoxCompatibility: input.firefoxCompatibility === true,
       firefoxCompatibilityPrompted: input.firefoxCompatibilityPrompted === true,
       useMobileBadgeOnDesktop: input.useMobileBadgeOnDesktop === true,
-      hideAppBadgeOnDesktop: input.hideAppBadgeOnDesktop === true,
+      // 兼容 2.7/2.8.0 早期仅在 PC 隐藏徽标的设置。
+      hideAppBadge: input.hideAppBadge === true || input.hideAppBadgeOnDesktop === true,
+      useMobileBadgeHandle: input.useMobileBadgeHandle === true
+        && input.hideAppBadge !== true && input.hideAppBadgeOnDesktop !== true,
+      mobileBadgeHandleTop: Number.isFinite(input.mobileBadgeHandleTop)
+        ? Math.max(0, Math.min(100000, Math.round(input.mobileBadgeHandleTop)))
+        : DEFAULT_SETTINGS.mobileBadgeHandleTop,
       profileDefaultViewEnabled: typeof input.profileDefaultViewEnabled === 'boolean'
         ? input.profileDefaultViewEnabled
         : DEFAULT_SETTINGS.profileDefaultViewEnabled,
@@ -1588,6 +1647,21 @@
         if (input.trackDownloadedPosts == null) input.trackDownloadedPosts = DEFAULT_SETTINGS.trackDownloadedPosts;
         if (input.downloadedPostIds == null) input.downloadedPostIds = [];
       }
+      // 2.8.0 收尾：移动端隐藏改为右侧唤醒半透明蓝色条，沿用旧开关的选择。
+      if (revision < 21 && input.hideAppBadge == null && input.hideAppBadgeOnDesktop != null) {
+        input.hideAppBadge = input.hideAppBadgeOnDesktop === true;
+      }
+      // 关键词/排除词改为标签内 /表达式/ 声明正则；旧“正则”模式的规则自动保留为新写法。
+      if (revision < 24 && input.keywordMode === 'regex') {
+        ['keywords', 'excludeKeywords'].forEach((key) => {
+          if (!Array.isArray(input[key])) return;
+          input[key] = input[key].map((item) => {
+            const rule = safeString(item, 500).trim();
+            return isSafeRegexSource(rule) ? `/${rule}/` : rule;
+          });
+        });
+        input.keywordMode = DEFAULT_SETTINGS.keywordMode;
+      }
       // v1.6 已手动改过宽度的用户继续使用手动值；旧默认值则切换为自动读取。
       if (input.layoutAutoWidth == null) {
         const customTimeline = input.timelineWidth != null && Number(input.timelineWidth) !== 600;
@@ -1636,7 +1710,7 @@
       state.settings.firefoxCompatibilityPrompted = true;
       writeFirefoxCompatibilityMode(nextPartial.firefoxCompatibility ? 'compat' : 'normal');
     }
-    if ('useMobileBadgeOnDesktop' in nextPartial || 'hideAppBadgeOnDesktop' in nextPartial) repositionBadge();
+    if ('useMobileBadgeOnDesktop' in nextPartial || 'hideAppBadge' in nextPartial || 'useMobileBadgeHandle' in nextPartial) repositionBadge();
     resetPaging();
     queueDbWrite(async () => { await persistSettings(); });
     refreshUI();
@@ -3674,7 +3748,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.7.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.8.0',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,
       readyState: document.readyState || '',
@@ -3719,21 +3793,20 @@
     if (state.rootEl) showToast('已导出 Firefox 兼容诊断');
   }
 
-  function toggleDesktopBadgeFromMenu() {
-    if (isMobileBadgeViewport()) {
-      if (state.rootEl) showToast('“隐藏应用徽标”仅对 PC 生效');
-      else window.alert('BetterX：“隐藏应用徽标”仅对 PC 生效。');
-      return;
+  function toggleAppBadgeFromMenu() {
+    const hidden = !state.settings.hideAppBadge;
+    setSettingsPartial({ hideAppBadge: hidden });
+    if (state.rootEl) {
+      showToast(hidden
+        ? (isMobileBadgeViewport() ? '点击屏幕右侧小蓝条可显示徽标' : '已隐藏应用徽标 · Alt+X 可打开面板')
+        : '已显示应用徽标');
     }
-    const hidden = !state.settings.hideAppBadgeOnDesktop;
-    setSettingsPartial({ hideAppBadgeOnDesktop: hidden });
-    if (state.rootEl) showToast(hidden ? '已隐藏应用徽标 · Alt+X 可打开面板' : '已显示应用徽标');
   }
 
   function registerMenuCommands() {
     if (typeof GM_registerMenuCommand !== 'function') return;
     try {
-      GM_registerMenuCommand('BetterX：显示 / 隐藏应用徽标（仅 PC）', toggleDesktopBadgeFromMenu);
+      GM_registerMenuCommand('BetterX：显示 / 隐藏应用徽标', toggleAppBadgeFromMenu);
       if (IS_FIREFOX) {
         GM_registerMenuCommand('BetterX：强制开启 Firefox 兼容模式并刷新', () => {
           switchFirefoxCompatibilityFromMenu(true);
@@ -4766,9 +4839,9 @@
     const saveLayoutButton = state.panelEl.querySelector('[data-action="save-layout"]');
     if (saveLayoutButton) saveLayoutButton.disabled = manualWidthDisabled;
     if (state.firefoxCompatibilityEl) {
-      state.firefoxCompatibilityEl.disabled = !IS_FIREFOX;
-      const label = state.firefoxCompatibilityEl.closest('label');
-      if (label) label.classList.toggle('is-disabled', !IS_FIREFOX);
+      state.panelEl.querySelectorAll('.BetterX-firefox-only-setting').forEach((element) => {
+        element.hidden = !IS_FIREFOX;
+      });
     }
     const downloadControlsDisabled = !state.settings.mediaDownload;
     [
@@ -5122,6 +5195,7 @@
 
   function syncMobileBadgeToComposeButton() {
     if (!state.rootEl || !state.badgeEl || !state.rootEl.classList.contains('BetterX-mobile')) return;
+    if (state.rootEl.classList.contains('BetterX-mobile-badge-collapsed')) return;
     const composeEl = findMobileComposeButton();
     if (!composeEl) {
       if (state.mobileComposeEl) stopMobileComposeTracking();
@@ -5192,24 +5266,52 @@
     state.panelEl.style.bottom = safeDistance + 'px';
   }
 
+  function getMobileBadgeHandleTop(preferredTop) {
+    const badgeHeight = Math.max(1, state.badgeEl ? state.badgeEl.offsetHeight : 74);
+    const minTop = 12;
+    const maxTop = Math.max(minTop, window.innerHeight - badgeHeight - 12);
+    // 没有保存过拖动位置时，默认紧贴屏幕右侧的垂直中点。
+    const fallbackTop = Math.round(window.innerHeight / 2 - badgeHeight / 2);
+    const savedTop = Number.isFinite(preferredTop) ? Number(preferredTop) : Number(state.settings.mobileBadgeHandleTop);
+    const desiredTop = Number.isFinite(savedTop) ? savedTop : fallbackTop;
+    return Math.round(Math.max(minTop, Math.min(maxTop, desiredTop)));
+  }
+
   function repositionBadge() {
     if (!state.badgeEl || !state.rootEl) return;
     const isMobile = isMobileBadgeViewport();
-    const hideDesktopBadge = !isMobile && !!state.settings.hideAppBadgeOnDesktop;
+    const collapseMobileBadge = isMobile && (!!state.settings.hideAppBadge || !!state.settings.useMobileBadgeHandle);
+    const hideDesktopBadge = !isMobile && !!state.settings.hideAppBadge;
     state.rootEl.classList.toggle('BetterX-desktop-badge-hidden', hideDesktopBadge);
+    state.rootEl.classList.toggle('BetterX-mobile-badge-collapsed', collapseMobileBadge);
     const useIconBadge = isMobile || !!state.settings.useMobileBadgeOnDesktop;
     state.badgeEl.classList.toggle('mobile-mode', useIconBadge);
     state.badgeEl.classList.toggle('desktop-icon-mode', !isMobile && useIconBadge);
+    state.badgeEl.setAttribute('aria-label', collapseMobileBadge ? '显示 BetterX 应用徽标' : '打开 BetterX 面板');
+    state.badgeEl.title = collapseMobileBadge ? '点按显示 BetterX 徽标' : '打开 BetterX 面板';
     if (isMobile) {
       state.rootEl.classList.add('BetterX-mobile');
-      syncMobileBadgeToComposeButton();
+      if (collapseMobileBadge) {
+        stopMobileComposeTracking();
+        state.rootEl.style.left = 'auto';
+        state.rootEl.style.right = '0';
+        state.rootEl.style.top = getMobileBadgeHandleTop() + 'px';
+        state.rootEl.style.bottom = 'auto';
+        state.rootEl.style.setProperty('--xv-mobile-badge-opacity', '1');
+        state.rootEl.classList.remove('BetterX-mobile-badge-inactive');
+      } else {
+        state.rootEl.style.top = '';
+        syncMobileBadgeToComposeButton();
+      }
     } else {
       stopMobileComposeTracking();
       state.rootEl.classList.remove('BetterX-mobile');
+      state.rootEl.classList.remove('BetterX-mobile-badge-collapsed');
       state.rootEl.classList.remove('BetterX-mobile-badge-inactive');
       state.rootEl.style.removeProperty('--xv-mobile-badge-opacity');
       state.rootEl.style.left = '';
       state.rootEl.style.right = '';
+      state.rootEl.style.top = '';
       state.rootEl.style.bottom = '';
       applyBadgePos();
     }
@@ -5222,11 +5324,36 @@
     const badge = state.badgeEl;
     if (!badge) return;
     let startX = 0, startY = 0, origLeft = 0, origBottom = 0, dragging = false, moved = false;
+    let mobilePointerId = null, mobileStartX = 0, mobileStartY = 0, mobileLongPressTimer = null, mobileDragging = false;
+
+    const clearMobileLongPress = () => {
+      if (mobileLongPressTimer) clearTimeout(mobileLongPressTimer);
+      mobileLongPressTimer = null;
+    };
 
     badge.addEventListener('dragstart', (e) => e.preventDefault());
+    badge.addEventListener('contextmenu', (e) => {
+      if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile-badge-collapsed')) e.preventDefault();
+    });
 
     badge.addEventListener('pointerdown', (e) => {
-      if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) return;
+      if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) {
+        if (!state.rootEl.classList.contains('BetterX-mobile-badge-collapsed')) return;
+        mobilePointerId = e.pointerId;
+        mobileStartX = e.clientX;
+        mobileStartY = e.clientY;
+        mobileDragging = false;
+        clearMobileLongPress();
+        mobileLongPressTimer = setTimeout(() => {
+          if (mobilePointerId !== e.pointerId) return;
+          mobileLongPressTimer = null;
+          mobileDragging = true;
+          state.suppressNextBadgeClick = true;
+          badge.classList.add('is-mobile-dragging');
+        }, 450);
+        try { badge.setPointerCapture(e.pointerId); } catch (err) {}
+        return;
+      }
       dragging = true; moved = false;
       badge.classList.add('is-dragging');
       startX = e.clientX; startY = e.clientY;
@@ -5236,6 +5363,19 @@
       try { badge.setPointerCapture(e.pointerId); } catch (err) {}
     });
     badge.addEventListener('pointermove', (e) => {
+      if (mobilePointerId === e.pointerId) {
+        if (!mobileDragging) {
+          if (Math.abs(e.clientX - mobileStartX) > 10 || Math.abs(e.clientY - mobileStartY) > 10) {
+            clearMobileLongPress();
+            mobilePointerId = null;
+          }
+          return;
+        }
+        const badgeHeight = Math.max(1, badge.offsetHeight);
+        const top = Math.max(12, Math.min(window.innerHeight - badgeHeight - 12, e.clientY - badgeHeight / 2));
+        state.rootEl.style.top = Math.round(top) + 'px';
+        return;
+      }
       if (!dragging) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
@@ -5249,7 +5389,18 @@
       state.rootEl.style.bottom = bottom + 'px';
       updatePanelPlacement();
     });
-    const end = () => {
+    const end = (e) => {
+      if (e && mobilePointerId === e.pointerId) {
+        clearMobileLongPress();
+        if (mobileDragging) {
+          state.settings.mobileBadgeHandleTop = getMobileBadgeHandleTop(parseFloat(state.rootEl.style.top));
+          queueDbWrite(async () => { await persistSettings(); });
+        }
+        mobilePointerId = null;
+        mobileDragging = false;
+        badge.classList.remove('is-mobile-dragging');
+        return;
+      }
       if (!dragging) return;
       dragging = false;
       badge.classList.remove('is-dragging');
@@ -5262,6 +5413,40 @@
     };
     badge.addEventListener('pointerup', end);
     badge.addEventListener('pointercancel', end);
+  }
+
+  function revealMobileBadge() {
+    if (!isMobileBadgeViewport() || !state.settings.hideAppBadge) return false;
+    setSettingsPartial({ hideAppBadge: false });
+    showToast('已恢复应用徽标');
+    return true;
+  }
+
+  function installMobileBadgeRevealGesture() {
+    let edgeStart = null;
+    document.addEventListener('pointerdown', (event) => {
+      if (!event.isPrimary || event.pointerType === 'mouse' || !isMobileBadgeViewport() || !state.settings.hideAppBadge) return;
+      if (event.clientX < window.innerWidth - 24) return;
+      edgeStart = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        startsOnBadge: !!(state.badgeEl && state.badgeEl.contains(event.target)),
+      };
+    }, true);
+    document.addEventListener('pointerup', (event) => {
+      if (!edgeStart || event.pointerId !== edgeStart.pointerId) return;
+      const deltaX = edgeStart.x - event.clientX;
+      const deltaY = Math.abs(edgeStart.y - event.clientY);
+      const startsOnBadge = edgeStart.startsOnBadge;
+      edgeStart = null;
+      if (deltaX >= 32 && deltaY <= 80) {
+        // 手势终点若落在半透明蓝色条上，浏览器随后仍会派发 click；拦住它以免恢复后又打开面板。
+        state.suppressNextBadgeClick = startsOnBadge;
+        revealMobileBadge();
+      }
+    }, true);
+    document.addEventListener('pointercancel', () => { edgeStart = null; }, true);
   }
 
   // ── 创建 UI ─────────────────────────────────────────────────────
@@ -5302,6 +5487,70 @@
       tag.appendChild(removeButton);
       state.adultSpamKeywordTagsEl.appendChild(tag);
     }
+  }
+
+  function renderKeywordTagList(container, values, action, dataAttribute, labelPrefix) {
+    if (!container) return;
+    container.textContent = '';
+    for (const value of values || []) {
+      const tag = document.createElement('span');
+      tag.className = 'BetterX-keyword-tag';
+      const label = document.createElement('span');
+      label.className = 'BetterX-keyword-tag-label';
+      label.textContent = value;
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'BetterX-keyword-tag-remove';
+      removeButton.setAttribute('data-action', action);
+      removeButton.setAttribute(dataAttribute, value);
+      removeButton.setAttribute('aria-label', `删除${labelPrefix} ${value}`);
+      removeButton.title = `删除“${value}”`;
+      removeButton.textContent = '×';
+      tag.append(label, removeButton);
+      container.appendChild(tag);
+    }
+  }
+
+  function renderSavedKeywordTags() {
+    renderKeywordTagList(
+      state.keywordTagsEl, state.settings.keywords,
+      'remove-keyword', 'data-keyword', '关键词'
+    );
+  }
+
+  function renderSavedExcludeKeywordTags() {
+    renderKeywordTagList(
+      state.excludeKeywordTagsEl, state.settings.excludeKeywords,
+      'remove-exclude-keyword', 'data-keyword', '排除词'
+    );
+  }
+
+  function commitKeywordTagInput(input, settingKey, label) {
+    if (!input) return { changed: false, rejected: 0 };
+    const parsed = parseKeywordRules(input.value);
+    const rejected = parsed.filter((item) => !isSafeKeywordRule(item));
+    const accepted = rejected.length ? parsed.filter((item) => isSafeKeywordRule(item)) : parsed;
+    input.value = '';
+    if (!accepted.length) {
+      if (rejected.length) showToast(`⚠️ 已忽略 ${rejected.length} 条高风险或无效正则`, 5000);
+      return { changed: false, rejected: rejected.length };
+    }
+    const current = state.settings[settingKey] || [];
+    const combined = uniqueStrings([...current, ...accepted]);
+    const next = combined.slice(0, 50);
+    const changed = next.length !== current.length || next.some((item, index) => item !== current[index]);
+    if (changed) setSettingsPartial({ [settingKey]: next });
+    if (combined.length > next.length) showToast(`最多保存 50 个${label}`);
+    if (rejected.length) showToast(`⚠️ 已忽略 ${rejected.length} 条高风险或无效正则`, 5000);
+    return { changed, rejected: rejected.length };
+  }
+
+  function commitKeywordInput() {
+    return commitKeywordTagInput(state.keywordInputEl, 'keywords', '关键词');
+  }
+
+  function commitExcludeKeywordInput() {
+    return commitKeywordTagInput(state.excludeInputEl, 'excludeKeywords', '排除词');
   }
 
   function commitAdultSpamKeywordInput() {
@@ -5442,18 +5691,24 @@
           <summary>关键词与排除词</summary>
           <div class="BetterX-adv-body">
             <div class="BetterX-adv-label">仅作用于已记录的帖子：关键词用于高亮与筛选；排除词命中后会从列表隐藏。</div>
-            <div class="BetterX-row">
-              <input type="text" class="BetterX-input" id="BetterX-keywords" placeholder="关键词（逗号分隔）" />
-              <select class="BetterX-select" id="BetterX-keyword-mode">
-                <option value="plain">任意匹配</option>
-                <option value="and">全部匹配</option>
-                <option value="regex">正则</option>
-              </select>
-              <button class="BetterX-btn primary" data-action="save-keywords">保存</button>
+            <div class="BetterX-adv-label">正则写法说明：用 <code>/表达式/</code> 包裹，例如 <code>/猫|狗/</code>；未包裹则被视为是普通文本。关键词与排除词都支持普通文本和正则混用。</div>
+            <div class="BetterX-tag-editor BetterX-keyword-section">
+              <div class="BetterX-row BetterX-keyword-input-row">
+                <input type="text" class="BetterX-input" id="BetterX-keywords" placeholder="输入关键词，支持正则，按回车添加" maxlength="500" />
+                <select class="BetterX-select" id="BetterX-keyword-mode">
+                  <option value="plain">任意匹配</option>
+                  <option value="and">全部匹配</option>
+                </select>
+                <button class="BetterX-btn primary" data-action="save-keywords">保存</button>
+              </div>
+              <div class="BetterX-keyword-tags BetterX-main-keyword-tags" id="BetterX-keyword-tags"></div>
             </div>
-            <div class="BetterX-row">
-              <input type="text" class="BetterX-input" id="BetterX-exclude" placeholder="排除词（命中则隐藏，逗号分隔）" />
-              <button class="BetterX-btn" data-action="save-exclude">保存</button>
+            <div class="BetterX-tag-editor BetterX-keyword-section">
+              <div class="BetterX-row BetterX-keyword-input-row">
+                <input type="text" class="BetterX-input" id="BetterX-exclude" placeholder="输入排除词，支持正则，按回车添加" maxlength="500" />
+                <button class="BetterX-btn primary" data-action="save-exclude">保存</button>
+              </div>
+              <div class="BetterX-keyword-tags BetterX-main-keyword-tags" id="BetterX-exclude-keyword-tags"></div>
             </div>
           </div>
         </details>
@@ -5475,15 +5730,18 @@
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-custom-enabled" /> 启用自定义规则（屏蔽词与账号白名单）</label>
             <div class="BetterX-dependent-options" id="BetterX-adultspam-custom-options">
             <div class="BetterX-tag-editor">
+              <div class="BetterX-row">
+                <input type="text" class="BetterX-input" id="BetterX-adultspam-keywords" placeholder="输入自定义屏蔽词，按回车添加" maxlength="500" />
+                <button class="BetterX-btn primary" data-action="save-adultspam-keywords">保存</button>
+              </div>
               <div class="BetterX-keyword-tags" id="BetterX-adultspam-keyword-tags"></div>
-              <input type="text" class="BetterX-input" id="BetterX-adultspam-keywords" placeholder="输入自定义屏蔽词，按回车添加" maxlength="500" />
             </div>
             <div class="BetterX-tag-editor">
+              <div class="BetterX-row">
+                <input type="text" class="BetterX-input" id="BetterX-adultspam-whitelist" placeholder="输入账号白名单（如 @example），按回车添加" maxlength="500" />
+                <button class="BetterX-btn primary" data-action="save-adultspam-whitelist">保存</button>
+              </div>
               <div class="BetterX-keyword-tags" id="BetterX-adultspam-whitelist-tags"></div>
-              <input type="text" class="BetterX-input" id="BetterX-adultspam-whitelist" placeholder="输入账号白名单（如 @example），按回车添加" maxlength="500" />
-            </div>
-            <div class="BetterX-row">
-              <button class="BetterX-btn primary" data-action="save-adultspam">保存规则</button>
             </div>
             </div>
             <div class="BetterX-content-status" id="BetterX-adultspam-count">当前隐藏 0 · 本次累计 0 · 已扫描 0 · 已识别关注 0</div>
@@ -5561,12 +5819,14 @@
         <details class="BetterX-advanced BetterX-settings-card">
           <summary>其他功能</summary>
           <div class="BetterX-adv-body">
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
-            <div class="BetterX-adv-label">遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。</div>
-            <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标（仅 PC）</label>
-            <div class="BetterX-adv-label BetterX-desktop-only-setting">隐藏后仍可使用 Alt+X 打开面板，也可通过油猴菜单“显示 / 隐藏应用徽标”恢复。</div>
+            <label class="BetterX-field inline BetterX-firefox-only-setting"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
+            <div class="BetterX-adv-label BetterX-firefox-only-setting">遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标</label>
+            <div class="BetterX-adv-label">PC 端会隐藏徽标；移动端会收纳为屏幕右侧中部的半透明蓝色条，点按或从右边缘向内滑动即可恢复。也可通过油猴菜单恢复。</div>
             <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label>
             <div class="BetterX-adv-label BetterX-desktop-only-setting">使用圆形脚本图标与未读角标，并继续支持桌面端拖拽。</div>
+            <label class="BetterX-field inline BetterX-mobile-only-setting"><input type="checkbox" id="BetterX-mobile-badge-handle" /> 切换为半透明蓝色条（仅移动端）</label>
+            <div class="BetterX-adv-label BetterX-mobile-only-setting">把移动端圆形应用徽标切换为紧贴屏幕右侧的半透明蓝色条，点击可打开面板，长按可上下拖动。</div>
           </div>
         </details>
         <details class="BetterX-advanced BetterX-settings-card">
@@ -5651,7 +5911,9 @@
     state.sourceSelectEl = panel.querySelector('#BetterX-source');
     state.mediaSelectEl = panel.querySelector('#BetterX-media');
     state.keywordInputEl = panel.querySelector('#BetterX-keywords');
+    state.keywordTagsEl = panel.querySelector('#BetterX-keyword-tags');
     state.excludeInputEl = panel.querySelector('#BetterX-exclude');
+    state.excludeKeywordTagsEl = panel.querySelector('#BetterX-exclude-keyword-tags');
     state.keywordModeEl = panel.querySelector('#BetterX-keyword-mode');
     state.searchEl = panel.querySelector('#BetterX-search');
     state.sortEl = panel.querySelector('#BetterX-sort');
@@ -5697,7 +5959,8 @@
     state.restoreMediaGridEl = panel.querySelector('#BetterX-restore-media-grid');
     state.bypassAgeEl = panel.querySelector('#BetterX-bypassage');
     state.useMobileBadgeOnDesktopEl = panel.querySelector('#BetterX-desktop-mobile-badge');
-    state.hideAppBadgeOnDesktopEl = panel.querySelector('#BetterX-hide-app-badge');
+    state.hideAppBadgeEl = panel.querySelector('#BetterX-hide-app-badge');
+    state.useMobileBadgeHandleEl = panel.querySelector('#BetterX-mobile-badge-handle');
     state.profileDefaultViewEnabledEl = panel.querySelector('#BetterX-profile-default-view-enabled');
     state.profileDefaultViewEl = panel.querySelector('#BetterX-profile-default-view');
     state.autoExpandPostTextEl = panel.querySelector('#BetterX-auto-expand-post-text');
@@ -5705,7 +5968,13 @@
 
     state.mediaSelectEl.innerHTML = buildMediaOptionsHtml();
 
-    badge.addEventListener('click', () => togglePanel());
+    badge.addEventListener('click', () => {
+      if (state.suppressNextBadgeClick) {
+        state.suppressNextBadgeClick = false;
+        return;
+      }
+      if (!revealMobileBadge()) togglePanel();
+    });
     downloadPill.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -5716,6 +5985,7 @@
     downloadPopover.addEventListener('pointerdown', (event) => handleDownloadPopoverAction(event, downloadPopover), true);
     downloadPopover.addEventListener('click', (event) => handleDownloadPopoverAction(event, downloadPopover), true);
     makeBadgeDraggable();
+    installMobileBadgeRevealGesture();
 
     // 搜索
     state.searchEl.addEventListener('input', debounce((e) => {
@@ -5741,6 +6011,18 @@
     state.adultSpamSkipFollowingRepostsEl.addEventListener('change', (e) => {
       setSettingsPartial({ adultSpamSkipFollowingReposts: !!e.target.checked });
     });
+    state.keywordInputEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.isComposing) return;
+      e.preventDefault();
+      commitKeywordInput();
+    });
+    state.keywordInputEl.addEventListener('blur', () => commitKeywordInput());
+    state.excludeInputEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.isComposing) return;
+      e.preventDefault();
+      commitExcludeKeywordInput();
+    });
+    state.excludeInputEl.addEventListener('blur', () => commitExcludeKeywordInput());
     state.adultSpamKeywordsEl.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' || e.isComposing) return;
       e.preventDefault();
@@ -5781,9 +6063,23 @@
     state.useMobileBadgeOnDesktopEl.addEventListener('change', (e) => {
       setSettingsPartial({ useMobileBadgeOnDesktop: !!e.target.checked });
     });
-    state.hideAppBadgeOnDesktopEl.addEventListener('change', (e) => {
-      setSettingsPartial({ hideAppBadgeOnDesktop: !!e.target.checked });
-      if (e.target.checked) showToast('应用徽标已隐藏 · Alt+X 或油猴菜单可恢复');
+    state.hideAppBadgeEl.addEventListener('change', (e) => {
+      setSettingsPartial({
+        hideAppBadge: !!e.target.checked,
+        ...(e.target.checked ? { useMobileBadgeHandle: false } : {}),
+      });
+      if (e.target.checked) {
+        showToast(isMobileBadgeViewport()
+          ? '点击屏幕右侧小蓝条可显示徽标'
+          : '应用徽标已隐藏 · Alt+X 或油猴菜单可恢复');
+      }
+    });
+    state.useMobileBadgeHandleEl.addEventListener('change', (e) => {
+      setSettingsPartial({
+        useMobileBadgeHandle: !!e.target.checked,
+        ...(e.target.checked ? { hideAppBadge: false } : {}),
+      });
+      if (e.target.checked) showToast('已切换为屏幕右侧小蓝条');
     });
     state.profileDefaultViewEnabledEl.addEventListener('change', (e) => {
       setSettingsPartial({ profileDefaultViewEnabled: !!e.target.checked });
@@ -5875,25 +6171,33 @@
           break;
         }
         case 'save-keywords': {
-          const parsed = parseKeywords(state.keywordInputEl.value);
-          const rejected = state.settings.keywordMode === 'regex' ? parsed.filter((item) => !isSafeRegexSource(item)) : [];
-          const accepted = rejected.length ? parsed.filter((item) => isSafeRegexSource(item)) : parsed;
-          setSettingsPartial({ keywords: accepted });
-          showToast(rejected.length ? `⚠️ 已忽略 ${rejected.length} 条高风险或无效正则` : '✅ 已保存关键词', rejected.length ? 5000 : undefined);
+          const result = commitKeywordInput();
+          if (!result.rejected) showToast('✅ 已保存关键词');
           break;
         }
         case 'save-exclude': {
-          const parsed = parseKeywords(state.excludeInputEl.value);
-          const rejected = state.settings.keywordMode === 'regex' ? parsed.filter((item) => !isSafeRegexSource(item)) : [];
-          const accepted = rejected.length ? parsed.filter((item) => isSafeRegexSource(item)) : parsed;
-          setSettingsPartial({ excludeKeywords: accepted });
-          showToast(rejected.length ? `⚠️ 已忽略 ${rejected.length} 条高风险或无效正则` : '✅ 已保存排除词', rejected.length ? 5000 : undefined);
+          const result = commitExcludeKeywordInput();
+          if (!result.rejected) showToast('✅ 已保存排除词');
           break;
         }
-        case 'save-adultspam': {
+        case 'remove-keyword': {
+          const keyword = actionEl.getAttribute('data-keyword') || '';
+          setSettingsPartial({ keywords: (state.settings.keywords || []).filter((item) => item !== keyword) });
+          break;
+        }
+        case 'remove-exclude-keyword': {
+          const keyword = actionEl.getAttribute('data-keyword') || '';
+          setSettingsPartial({ excludeKeywords: (state.settings.excludeKeywords || []).filter((item) => item !== keyword) });
+          break;
+        }
+        case 'save-adultspam-keywords': {
           commitAdultSpamKeywordInput();
+          showToast('✓ 已保存自定义屏蔽词');
+          break;
+        }
+        case 'save-adultspam-whitelist': {
           commitAdultSpamWhitelistInput();
-          showToast('✓ 已保存内容净化规则');
+          showToast('✓ 已保存账号白名单');
           break;
         }
         case 'remove-adultspam-keyword': {
@@ -6034,6 +6338,10 @@
       #BetterX-badge.desktop-icon-mode .BetterX-mobile-icon-fallback { font-size: 30px; }
       .BetterX-mobile-icon-fallback { line-height: 1; }
       #BetterX-root.BetterX-mobile .BetterX-desktop-only-setting { display: none !important; }
+      .BetterX-firefox-only-setting[hidden] { display: none !important; }
+      .BetterX-mobile-only-setting { display: none !important; }
+      #BetterX-root.BetterX-mobile label.BetterX-mobile-only-setting { display: flex !important; }
+      #BetterX-root.BetterX-mobile div.BetterX-mobile-only-setting { display: block !important; }
       .BetterX-mobile-dot {
         position: absolute; top: -2px; right: -2px; background: #f4212e; color: #fff;
         min-width: 18px; height: 18px; border-radius: 999px; font-size: 11px; font-weight: 700;
@@ -6044,6 +6352,21 @@
         opacity: var(--xv-mobile-badge-opacity, 1);
         transition: opacity 170ms ease-out, filter .15s;
       }
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge {
+        width: 10px; height: 76px; min-height: 76px; padding: 0; border-radius: 999px 0 0 999px;
+        background: #1d9bf0; box-shadow: -1px 2px 8px rgba(0,0,0,.2); opacity: .56 !important;
+      }
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge::after {
+        content: '‹'; display: block; color: rgba(255,255,255,.92); font-size: 16px; font-weight: 400; line-height: 1;
+        transform: translateX(-1px);
+      }
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge.is-mobile-dragging {
+        opacity: .88 !important; transition: none; cursor: ns-resize;
+      }
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-icon,
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-icon-fallback,
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-dot,
+      #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-download-pill { display: none !important; }
       #BetterX-root.BetterX-mobile.BetterX-mobile-badge-inactive #BetterX-badge,
       #BetterX-root.BetterX-mobile.BetterX-mobile-badge-inactive #BetterX-download-pill { pointer-events: none; }
 
@@ -6497,6 +6820,8 @@
       }
       .BetterX-keyword-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
       .BetterX-keyword-tags:empty { display: none; }
+      .BetterX-main-keyword-tags { padding: 0 2px; }
+      .BetterX-keyword-section > .BetterX-row { width: 100%; }
       .BetterX-keyword-tag {
         display: inline-flex; align-items: center; gap: 5px; max-width: 100%; min-height: 26px;
         padding: 3px 5px 3px 9px; border: 1px solid rgba(29,155,240,.35); border-radius: 999px;
@@ -7067,7 +7392,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v2.7.0 started');
+    debugLog('v2.8.0 started');
   }
 
   function waitForPageReady() {
