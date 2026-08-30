@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         更好的 X（BetterX）
 // @namespace    https://github.com/Iskongkongyo
-// @version      2.8.0
+// @version      2.9.0
 // @description  自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
 // @author        流萤可爱捏
 // @match        https://x.com/*
@@ -147,6 +147,17 @@
     source: '按来源：按主页、为你推荐、搜索、书签等页面分类排。',
   };
 
+  const SORT_LABELS = {
+    smart: '智能排序',
+    recent_viewed: '最近浏览',
+    recent_captured: '最近抓取',
+    first_captured: '首次抓取（新→旧）',
+    time_asc: '首次抓取（旧→新）',
+    captures: '出现次数',
+    author: '按作者',
+    source: '按来源',
+  };
+
   const SKIP_SOURCE_OPTIONS = [
     { key: 'profile', label: '个人主页' },
     { key: 'thread', label: '帖子详情' },
@@ -170,7 +181,7 @@
   ]);
 
   const DEFAULT_SETTINGS = {
-    settingsRevision: 24,
+    settingsRevision: 25,
     keywords: [],
     excludeKeywords: [],
     keywordMode: 'plain',   // 'plain' | 'and'；正则由 /表达式/ 标签声明
@@ -178,6 +189,7 @@
     sourceFilter: 'all',
     mediaFilter: 'all',
     sortBy: 'smart',        // 'smart' | 'recent_viewed' | 'recent_captured' | 'first_captured' | 'time_asc' | 'captures' | 'author' | 'source'
+    quickFilterOpen: false, // 记住帖子页“快速筛选”的展开 / 收起状态
     autoCleanDays: 0,
     maxPosts: 1000,
     flashMs: 8000,
@@ -258,6 +270,8 @@
     listEl: null,
     summaryEl: null,
     filterBarEl: null,
+    quickFilterDetailsEl: null,
+    quickFilterStateEl: null,
     sourceSelectEl: null,
     mediaSelectEl: null,
     keywordInputEl: null,
@@ -1190,6 +1204,30 @@
     }).join('');
   }
 
+  function buildQuickFilterStateText() {
+    const filterKey = state.settings.filter || DEFAULT_SETTINGS.filter;
+    const filterLabel = FILTERS.find((item) => item.key === filterKey)?.label || '全部';
+    const source = state.settings.sourceFilter || 'all';
+    const sourceLabel = source === 'all' ? '全部来源' : (localizeSourceLabel(source) || '全部来源');
+    const mediaKey = state.settings.mediaFilter || DEFAULT_SETTINGS.mediaFilter;
+    const mediaLabel = MEDIA_FILTERS.find((item) => item.key === mediaKey)?.label || '全部媒体';
+    const sortKey = state.settings.sortBy || DEFAULT_SETTINGS.sortBy;
+    const sortLabel = SORT_LABELS[sortKey] || SORT_LABELS.smart;
+    return `(当前选择：${filterLabel} · ${sourceLabel} · ${mediaLabel} · ${sortLabel})`;
+  }
+
+  function updateQuickFilterHeader() {
+    if (state.quickFilterDetailsEl) {
+      const shouldOpen = !!state.settings.quickFilterOpen;
+      if (state.quickFilterDetailsEl.open !== shouldOpen) state.quickFilterDetailsEl.open = shouldOpen;
+    }
+    if (state.quickFilterStateEl) {
+      const text = buildQuickFilterStateText();
+      state.quickFilterStateEl.textContent = text;
+      state.quickFilterStateEl.title = text;
+    }
+  }
+
   function buildSkipSourcesHtml() {
     const skip = state.settings.skipSources || [];
     return SKIP_SOURCE_OPTIONS.map((o) => {
@@ -1285,7 +1323,7 @@
     const thumbs = uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4);
     if (!thumbs.length) return '';
     return `<div class="BetterX-thumbs">${thumbs.map((src, index) =>
-      `<button type="button" class="BetterX-thumb-button" data-action="preview-image" data-image-url="${escapeHtml(src)}" aria-label="放大查看第 ${index + 1} 张图片">
+      `<button type="button" class="BetterX-thumb-button" data-action="preview-image" data-post-id="${escapeHtml(post.id)}" data-image-index="${index}" data-image-url="${escapeHtml(src)}" aria-label="放大查看第 ${index + 1} 张图片">
         <img class="BetterX-thumb" src="${escapeHtml(src)}" loading="lazy" referrerpolicy="no-referrer" alt="" />
       </button>`
     ).join('')}</div>`;
@@ -1400,6 +1438,7 @@
     if (state.keywordModeEl) state.keywordModeEl.value = state.settings.keywordMode === 'and' ? 'and' : 'plain';
     if (state.sortEl) state.sortEl.value = state.settings.sortBy || 'smart';
     updateSortHint();
+    updateQuickFilterHeader();
     if (state.autoCleanInputEl && document.activeElement !== state.autoCleanInputEl) {
       state.autoCleanInputEl.value = String(state.settings.autoCleanDays || 0);
     }
@@ -1533,6 +1572,7 @@
       sourceFilter: safeString(input.sourceFilter, 100) || DEFAULT_SETTINGS.sourceFilter,
       mediaFilter: enumValue(input.mediaFilter, MEDIA_FILTERS.map((item) => item.key), DEFAULT_SETTINGS.mediaFilter),
       sortBy: enumValue(input.sortBy, ['smart', 'recent_viewed', 'recent_captured', 'first_captured', 'time_asc', 'captures', 'author', 'source'], DEFAULT_SETTINGS.sortBy),
+      quickFilterOpen: typeof input.quickFilterOpen === 'boolean' ? input.quickFilterOpen : DEFAULT_SETTINGS.quickFilterOpen,
       autoCleanDays: clampInt(input.autoCleanDays, 0, 3650, DEFAULT_SETTINGS.autoCleanDays),
       maxPosts: clampInt(input.maxPosts, 50, 5000, DEFAULT_SETTINGS.maxPosts),
       flashMs: clampInt(input.flashMs, 1000, 60000, DEFAULT_SETTINGS.flashMs),
@@ -3748,7 +3788,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.8.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.9.0',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,
       readyState: document.readyState || '',
@@ -3827,6 +3867,14 @@
   const AD_LABELS = ['广告', '推广', 'Ad', 'Promoted', 'Publicidad', 'Anúncio', '広告', '광고'];
   // X 新增的独立程序化广告位（Google SafeFrame），不属于 article，需隐藏整个卡片以免留下空白。
   const STANDALONE_AD_SELECTOR = '[data-testid="whoToFollowSspAd"], [data-testid$="SspAd"]';
+  const PREMIUM_UPSELL_SELECTOR = 'aside[role="complementary"][aria-label], a[href*="/i/premium_sign_up"]';
+  const PREMIUM_UPSELL_LABELS = new Set([
+    '订阅 Premium', '訂閱 Premium', 'Subscribe to Premium',
+    'プレミアムにサブスクライブ', 'Premium 구독하기',
+  ]);
+  const PREMIUM_UPSELL_ACTION_LABELS = new Set([
+    '订阅', '訂閱', 'Subscribe', 'サブスクライブ', '구독하기',
+  ]);
   function isAdArticle(article) {
     if (!article || !article.querySelector) return false;
     const cell = article.closest('[data-testid="cellInnerDiv"]') || article;
@@ -3859,12 +3907,51 @@
     else if (container.style) container.style.display = 'none';
   }
 
+  function hidePremiumUpsellElement(element) {
+    if (!element || !element.closest) return;
+    const aside = element.matches && element.matches('aside[role="complementary"]')
+      ? element
+      : element.closest('aside[role="complementary"]');
+    if (aside) {
+      const label = (aside.getAttribute('aria-label') || '').trim();
+      const hasPremiumSignupLink = !!aside.querySelector('a[href*="/i/premium_sign_up"]');
+      if (!hasPremiumSignupLink && !PREMIUM_UPSELL_LABELS.has(label)) return;
+
+      // PC 端 aside 外还有一层带边框和留白的卡片容器；仅在它没有其他内容时一并隐藏。
+      const wrapper = aside.parentElement && aside.parentElement.children.length === 1
+        ? aside.parentElement
+        : aside;
+      wrapper.classList.add('BetterX-ad-hidden');
+      return;
+    }
+
+    // 移动端只有一个“订阅”链接，没有 aside；动作文本校验可避免误伤普通 Premium 导航入口。
+    const signupLink = element.matches && element.matches('a[href*="/i/premium_sign_up"]')
+      ? element
+      : element.closest('a[href*="/i/premium_sign_up"]');
+    const actionLabel = (signupLink && (signupLink.innerText || signupLink.textContent) || '').trim();
+    if (!signupLink || !PREMIUM_UPSELL_ACTION_LABELS.has(actionLabel)) return;
+
+    // 提供的移动端 DOM 中按钮外有三层独占包装；逐层确认没有兄弟元素后再隐藏，避免留下占位。
+    let wrapper = signupLink;
+    for (let depth = 0; depth < 3; depth++) {
+      const parent = wrapper.parentElement;
+      if (!parent || parent.children.length !== 1
+          || parent.matches('body, main, header, nav, [role="navigation"]')) break;
+      wrapper = parent;
+    }
+    wrapper.classList.add('BetterX-ad-hidden');
+  }
+
   function sweepStandaloneAds(root) {
     if (!state.settings.hideAds) return;
     const scope = root && root.querySelectorAll ? root : document;
     if (scope.matches && scope.matches(STANDALONE_AD_SELECTOR)) hideStandaloneAdElement(scope);
     if (scope.closest) hideStandaloneAdElement(scope.closest(STANDALONE_AD_SELECTOR));
     scope.querySelectorAll(STANDALONE_AD_SELECTOR).forEach(hideStandaloneAdElement);
+    if (scope.matches && scope.matches(PREMIUM_UPSELL_SELECTOR)) hidePremiumUpsellElement(scope);
+    if (scope.closest) hidePremiumUpsellElement(scope.closest(PREMIUM_UPSELL_SELECTOR));
+    scope.querySelectorAll(PREMIUM_UPSELL_SELECTOR).forEach(hidePremiumUpsellElement);
   }
 
   function sweepAds(root) {
@@ -4723,12 +4810,29 @@
 
   function closeImagePreview() {
     const preview = document.getElementById('BetterX-image-preview');
-    if (preview) preview.remove();
+    if (!preview) return;
+    try {
+      if (typeof preview._betterxCleanup === 'function') preview._betterxCleanup();
+    } catch (err) {}
+    preview.remove();
   }
 
-  function showImagePreview(rawUrl) {
-    const src = safeImportedAssetUrl(rawUrl);
-    if (!src) return;
+  function showImagePreview(rawUrl, rawUrls, rawIndex) {
+    const clickedSrc = safeImportedAssetUrl(rawUrl);
+    const sources = uniqueStrings(
+      (Array.isArray(rawUrls) ? rawUrls : [rawUrl])
+        .map(safeImportedAssetUrl)
+        .filter(Boolean)
+    ).slice(0, 4);
+    if (clickedSrc && !sources.includes(clickedSrc)) sources.unshift(clickedSrc);
+    if (!sources.length) return;
+
+    let currentIndex = Number.parseInt(rawIndex, 10);
+    if (!Number.isFinite(currentIndex) || currentIndex < 0 || currentIndex >= sources.length) {
+      currentIndex = clickedSrc ? sources.indexOf(clickedSrc) : 0;
+      if (currentIndex < 0) currentIndex = 0;
+    }
+
     closeImagePreview();
 
     const overlay = document.createElement('div');
@@ -4737,33 +4841,354 @@
     overlay.tabIndex = -1;
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', '图片预览，按 Esc 或点击空白处关闭');
+    overlay.setAttribute('aria-label', '图片预览；电脑端可滚轮缩放并用左右按钮或方向键切图，移动端可双指缩放并左右滑动切图；按 Esc 或点击空白处关闭');
 
     const box = document.createElement('div');
     box.className = 'BetterX-image-preview-box';
     const image = document.createElement('img');
-    image.src = src;
     image.referrerPolicy = 'no-referrer';
     image.alt = '帖子图片预览';
+    image.draggable = false;
+
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'BetterX-image-preview-close';
-    close.textContent = '×';
+    close.innerHTML = '<span aria-hidden="true">×</span>';
     close.setAttribute('aria-label', '关闭图片预览');
-    close.addEventListener('click', closeImagePreview);
-    box.append(close, image);
-    overlay.appendChild(box);
+    close.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeImagePreview();
+    });
+
+    const previous = document.createElement('button');
+    previous.type = 'button';
+    previous.className = 'BetterX-image-preview-nav BetterX-image-preview-prev';
+    previous.innerHTML = '<span aria-hidden="true">‹</span>';
+    previous.setAttribute('aria-label', '上一张图片');
+
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'BetterX-image-preview-nav BetterX-image-preview-next';
+    next.innerHTML = '<span aria-hidden="true">›</span>';
+    next.setAttribute('aria-label', '下一张图片');
+
+    box.appendChild(image);
+    overlay.append(box, previous, next, close);
+
+    const zoom = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      min: 1,
+      max: 6,
+      pointers: new Map(),
+      panStart: null,
+      pinchStart: null,
+      swipeStart: null,
+    };
+
+    let navRaf = 0;
+    const clampScale = (value) => Math.max(zoom.min, Math.min(zoom.max, value));
+    const isFinePointer = () => {
+      try { return window.matchMedia('(hover: hover) and (pointer: fine)').matches; }
+      catch (err) { return !isMobileBadgeViewport(); }
+    };
+    const updateNavVisibility = () => {
+      const multi = sources.length > 1;
+      previous.hidden = !multi;
+      next.hidden = !multi;
+      previous.disabled = currentIndex <= 0;
+      next.disabled = currentIndex >= sources.length - 1;
+    };
+    const updateNavPositions = () => {
+      if (sources.length <= 1 || !isFinePointer() || !image.isConnected || !image.complete) return;
+      const rect = image.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const size = 44;
+      const gap = 14;
+      const edge = 12;
+      const viewportWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+      const viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
+      const top = Math.max(edge, Math.min(viewportHeight - edge - size, rect.top + rect.height / 2 - size / 2));
+      const prevLeft = Math.max(edge, Math.min(viewportWidth - edge - size, rect.left - gap - size));
+      const nextLeft = Math.max(edge, Math.min(viewportWidth - edge - size, rect.right + gap));
+      previous.style.left = `${Math.round(prevLeft)}px`;
+      previous.style.top = `${Math.round(top)}px`;
+      next.style.left = `${Math.round(nextLeft)}px`;
+      next.style.top = `${Math.round(top)}px`;
+    };
+    const scheduleNavPositions = () => {
+      if (navRaf) return;
+      navRaf = requestAnimationFrame(() => {
+        navRaf = 0;
+        updateNavPositions();
+      });
+    };
+    const constrainTranslation = () => {
+      if (zoom.scale <= 1.0001) {
+        zoom.scale = 1;
+        zoom.x = 0;
+        zoom.y = 0;
+        return;
+      }
+      const baseWidth = image.offsetWidth || 0;
+      const baseHeight = image.offsetHeight || 0;
+      const viewWidth = box.clientWidth || window.innerWidth;
+      const viewHeight = box.clientHeight || window.innerHeight;
+      const maxX = Math.max(0, (baseWidth * zoom.scale - viewWidth) / 2);
+      const maxY = Math.max(0, (baseHeight * zoom.scale - viewHeight) / 2);
+      zoom.x = Math.max(-maxX, Math.min(maxX, zoom.x));
+      zoom.y = Math.max(-maxY, Math.min(maxY, zoom.y));
+    };
+    const applyZoom = () => {
+      constrainTranslation();
+      image.style.transform = `translate3d(${zoom.x}px, ${zoom.y}px, 0) scale(${zoom.scale})`;
+      box.classList.toggle('is-zoomed', zoom.scale > 1.0001);
+      scheduleNavPositions();
+    };
+    const resetZoom = () => {
+      zoom.scale = 1;
+      zoom.x = 0;
+      zoom.y = 0;
+      zoom.panStart = null;
+      zoom.pinchStart = null;
+      zoom.swipeStart = null;
+      box.classList.remove('is-panning');
+      applyZoom();
+    };
+    const getStageCenter = () => {
+      const rect = box.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    };
+    const zoomAt = (nextScale, clientX, clientY) => {
+      const previousScale = zoom.scale;
+      const scale = clampScale(nextScale);
+      if (Math.abs(scale - previousScale) < 0.0001) return;
+      const center = getStageCenter();
+      const focalX = (clientX - center.x - zoom.x) / previousScale;
+      const focalY = (clientY - center.y - zoom.y) / previousScale;
+      zoom.scale = scale;
+      zoom.x = clientX - center.x - focalX * scale;
+      zoom.y = clientY - center.y - focalY * scale;
+      applyZoom();
+    };
+    const pointerPair = () => [...zoom.pointers.values()].slice(0, 2);
+    const startPinch = () => {
+      const pair = pointerPair();
+      if (pair.length < 2) { zoom.pinchStart = null; return; }
+      const [a, b] = pair;
+      const midpointX = (a.x + b.x) / 2;
+      const midpointY = (a.y + b.y) / 2;
+      const distance = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const center = getStageCenter();
+      zoom.pinchStart = {
+        distance,
+        scale: zoom.scale,
+        focalX: (midpointX - center.x - zoom.x) / zoom.scale,
+        focalY: (midpointY - center.y - zoom.y) / zoom.scale,
+      };
+      zoom.panStart = null;
+      zoom.swipeStart = null;
+    };
+    const preloadNeighbors = () => {
+      [currentIndex - 1, currentIndex + 1].forEach((index) => {
+        if (index < 0 || index >= sources.length) return;
+        const preload = new Image();
+        preload.referrerPolicy = 'no-referrer';
+        preload.src = sources[index];
+      });
+    };
+    const setCurrentImage = (index) => {
+      if (index < 0 || index >= sources.length || index === currentIndex && image.src) return false;
+      currentIndex = index;
+      resetZoom();
+      image.alt = sources.length > 1 ? `帖子图片预览，第 ${currentIndex + 1} 张，共 ${sources.length} 张` : '帖子图片预览';
+      image.src = sources[currentIndex];
+      updateNavVisibility();
+      preloadNeighbors();
+      scheduleNavPositions();
+      return true;
+    };
+    const navigateImage = (step) => setCurrentImage(currentIndex + step);
+
+    previous.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      navigateImage(-1);
+    });
+    next.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      navigateImage(1);
+    });
+
+    overlay.addEventListener('wheel', (event) => {
+      if (event.target && event.target.closest && event.target.closest('button')) return;
+      event.preventDefault();
+      const factor = event.deltaY < 0 ? 1.16 : (1 / 1.16);
+      zoomAt(zoom.scale * factor, event.clientX, event.clientY);
+    }, { passive: false });
+
+    box.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (event.pointerType === 'mouse' && zoom.scale <= 1.0001) return;
+      // 未缩放时点按空白仍用于关闭；已有触点时则允许第二根手指落在图片外缘参与捏合。
+      if (event.target === box && zoom.scale <= 1.0001 && zoom.pointers.size === 0) return;
+      if (event.pointerType !== 'mouse') event.preventDefault();
+      if (event.pointerType !== 'mouse' && zoom.scale <= 1.0001 && zoom.pointers.size === 0) {
+        zoom.swipeStart = {
+          id: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          time: Date.now(),
+        };
+      }
+      zoom.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, type: event.pointerType });
+      try { box.setPointerCapture(event.pointerId); } catch (err) {}
+      if (zoom.pointers.size >= 2) {
+        startPinch();
+      } else if (zoom.scale > 1.0001) {
+        zoom.swipeStart = null;
+        zoom.panStart = { id: event.pointerId, x: event.clientX, y: event.clientY, tx: zoom.x, ty: zoom.y };
+        box.classList.add('is-panning');
+      }
+    });
+
+    box.addEventListener('pointermove', (event) => {
+      if (!zoom.pointers.has(event.pointerId)) return;
+      if (event.pointerType !== 'mouse') event.preventDefault();
+      zoom.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, type: event.pointerType });
+
+      if (zoom.pointers.size >= 2) {
+        if (!zoom.pinchStart) startPinch();
+        const pair = pointerPair();
+        if (pair.length < 2 || !zoom.pinchStart) return;
+        const [a, b] = pair;
+        const midpointX = (a.x + b.x) / 2;
+        const midpointY = (a.y + b.y) / 2;
+        const distance = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const nextScale = clampScale(zoom.pinchStart.scale * (distance / zoom.pinchStart.distance));
+        const center = getStageCenter();
+        zoom.scale = nextScale;
+        zoom.x = midpointX - center.x - zoom.pinchStart.focalX * nextScale;
+        zoom.y = midpointY - center.y - zoom.pinchStart.focalY * nextScale;
+        applyZoom();
+        return;
+      }
+
+      if (zoom.panStart && zoom.panStart.id === event.pointerId && zoom.scale > 1.0001) {
+        zoom.x = zoom.panStart.tx + event.clientX - zoom.panStart.x;
+        zoom.y = zoom.panStart.ty + event.clientY - zoom.panStart.y;
+        applyZoom();
+      }
+    }, { passive: false });
+
+    const endPointer = (event, cancelled) => {
+      if (!zoom.pointers.has(event.pointerId)) return;
+      const pointerCountBeforeEnd = zoom.pointers.size;
+      const swipe = !cancelled && zoom.swipeStart && zoom.swipeStart.id === event.pointerId
+        && pointerCountBeforeEnd === 1 && zoom.scale <= 1.0001
+        ? {
+            dx: event.clientX - zoom.swipeStart.x,
+            dy: event.clientY - zoom.swipeStart.y,
+            elapsed: Date.now() - zoom.swipeStart.time,
+          }
+        : null;
+
+      zoom.pointers.delete(event.pointerId);
+      try { if (box.hasPointerCapture(event.pointerId)) box.releasePointerCapture(event.pointerId); } catch (err) {}
+      zoom.pinchStart = null;
+      zoom.swipeStart = null;
+      box.classList.remove('is-panning');
+
+      if (swipe && swipe.elapsed <= 900 && Math.abs(swipe.dx) >= 52 && Math.abs(swipe.dx) > Math.abs(swipe.dy) * 1.15) {
+        if (swipe.dx < 0) navigateImage(1);
+        else navigateImage(-1);
+      }
+
+      if (zoom.pointers.size >= 2) {
+        startPinch();
+      } else if (zoom.pointers.size === 1 && zoom.scale > 1.0001) {
+        const [id, point] = zoom.pointers.entries().next().value;
+        zoom.panStart = { id, x: point.x, y: point.y, tx: zoom.x, ty: zoom.y };
+        box.classList.add('is-panning');
+      } else {
+        zoom.panStart = null;
+      }
+    };
+    box.addEventListener('pointerup', (event) => endPointer(event, false));
+    box.addEventListener('pointercancel', (event) => endPointer(event, true));
+
     overlay.addEventListener('click', (event) => {
-      if (event.target === overlay) closeImagePreview();
+      if (event.target === overlay || event.target === box) closeImagePreview();
     });
     overlay.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         event.preventDefault();
         closeImagePreview();
+        return;
+      }
+      if (event.key === 'ArrowLeft' && sources.length > 1) {
+        event.preventDefault();
+        navigateImage(-1);
+      } else if (event.key === 'ArrowRight' && sources.length > 1) {
+        event.preventDefault();
+        navigateImage(1);
       }
     });
-    (state.rootEl || document.body).appendChild(overlay);
+
+    const onViewportChange = () => scheduleNavPositions();
+    window.addEventListener('resize', onViewportChange, { passive: true });
+    window.addEventListener('orientationchange', onViewportChange, { passive: true });
+    image.addEventListener('load', () => {
+      applyZoom();
+      scheduleNavPositions();
+    });
+    overlay._betterxCleanup = () => {
+      window.removeEventListener('resize', onViewportChange);
+      window.removeEventListener('orientationchange', onViewportChange);
+      if (navRaf) cancelAnimationFrame(navRaf);
+      navRaf = 0;
+    };
+
+    // 预览层必须直接挂在页面根节点，避免移动端 BetterX 浮动根节点的位置/宽度影响 fixed 定位。
+    (document.body || document.documentElement).appendChild(overlay);
+    updateNavVisibility();
+    image.src = sources[currentIndex];
+    image.alt = sources.length > 1 ? `帖子图片预览，第 ${currentIndex + 1} 张，共 ${sources.length} 张` : '帖子图片预览';
+    preloadNeighbors();
     overlay.focus();
+  }
+
+  function openRecordedPost(post) {
+    if (!post || !post.url || !post.id) return;
+    const safeUrl = safeImportedStatusUrl(post.url, post.id);
+    if (!safeUrl) return;
+    markClicked(post.id);
+
+    if (!isMobileBadgeViewport()) {
+      window.open(safeUrl, '_blank', 'noopener');
+      return;
+    }
+
+    // 移动端用当前 x.com 页面内的同源相对链接跳转。
+    // 避免 window.open(https://x.com/...) 被 Android/iOS 当作 App Link / Universal Link，弹出“打开 X”提示。
+    try {
+      const target = new URL(safeUrl, location.href);
+      const relativeHref = `${target.pathname}${target.search}${target.hash}`;
+      const anchor = document.createElement('a');
+      anchor.href = relativeHref;
+      anchor.target = '_self';
+      anchor.setAttribute('data-betterx-internal-nav', 'true');
+      anchor.style.display = 'none';
+      (document.body || document.documentElement).appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    } catch (err) {
+      const id = encodeURIComponent(String(post.id));
+      location.assign(`/i/status/${id}`);
+    }
   }
 
   // ── 交互 ─────────────────────────────────────────────────────────
@@ -4776,7 +5201,7 @@
       toggleDownloadPopover(false);
     }
 
-    if (state.panelOpen && !target.closest('#BetterX-root')) {
+    if (state.panelOpen && !target.closest('#BetterX-root') && !target.closest('#BetterX-image-preview')) {
       togglePanel(false);
     }
 
@@ -5272,7 +5697,11 @@
     const maxTop = Math.max(minTop, window.innerHeight - badgeHeight - 12);
     // 没有保存过拖动位置时，默认紧贴屏幕右侧的垂直中点。
     const fallbackTop = Math.round(window.innerHeight / 2 - badgeHeight / 2);
-    const savedTop = Number.isFinite(preferredTop) ? Number(preferredTop) : Number(state.settings.mobileBadgeHandleTop);
+    const storedTop = state.settings.mobileBadgeHandleTop;
+    // Number(null) 会得到 0；先判断原值，避免未拖动过的用户被错误放到屏幕顶部。
+    const savedTop = Number.isFinite(preferredTop)
+      ? Number(preferredTop)
+      : (Number.isFinite(storedTop) ? Number(storedTop) : NaN);
     const desiredTop = Number.isFinite(savedTop) ? savedTop : fallbackTop;
     return Math.round(Math.max(minTop, Math.min(maxTop, desiredTop)));
   }
@@ -5607,6 +6036,72 @@
     return true;
   }
 
+  function installHorizontalFilterScroller(el) {
+    if (!el) return;
+
+    // PC 鼠标滚轮映射为横向滚动；触控板原生横向 deltaX 继续按浏览器默认行为。
+    el.addEventListener('wheel', (event) => {
+      if (el.scrollWidth <= el.clientWidth + 1) return;
+      if (Math.abs(event.deltaX) >= Math.abs(event.deltaY) || event.deltaY === 0) return;
+      const maxScrollLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+      const canMove = event.deltaY > 0 ? el.scrollLeft < maxScrollLeft - 1 : el.scrollLeft > 1;
+      if (!canMove) return;
+      event.preventDefault();
+      el.scrollLeft = Math.max(0, Math.min(maxScrollLeft, el.scrollLeft + event.deltaY));
+    }, { passive: false });
+
+    // 鼠标按住按钮行左右拖动，体验接近移动端滑动。
+    // 注意：不能在 pointerdown 时立即 capture，否则正常点击筛选按钮会被容器抢走。
+    // 只有移动超过阈值、确认用户是在拖动后，才接管指针。
+    let pointerId = null;
+    let startX = 0;
+    let startScrollLeft = 0;
+    let dragged = false;
+    let captured = false;
+    let suppressClickUntil = 0;
+    el.addEventListener('pointerdown', (event) => {
+      if (event.pointerType !== 'mouse' || event.button !== 0 || el.scrollWidth <= el.clientWidth + 1) return;
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startScrollLeft = el.scrollLeft;
+      dragged = false;
+      captured = false;
+    });
+    el.addEventListener('pointermove', (event) => {
+      if (pointerId !== event.pointerId) return;
+      const delta = event.clientX - startX;
+      if (!dragged && Math.abs(delta) < 5) return;
+      if (!dragged) {
+        dragged = true;
+        try {
+          el.setPointerCapture(pointerId);
+          captured = true;
+        } catch (err) {}
+        el.classList.add('is-dragging');
+      }
+      event.preventDefault();
+      el.scrollLeft = startScrollLeft - delta;
+    });
+    const finishDrag = (event) => {
+      if (pointerId !== event.pointerId) return;
+      if (dragged) suppressClickUntil = performance.now() + 120;
+      if (captured) {
+        try { el.releasePointerCapture(pointerId); } catch (err) {}
+      }
+      pointerId = null;
+      dragged = false;
+      captured = false;
+      el.classList.remove('is-dragging');
+    };
+    el.addEventListener('pointerup', finishDrag);
+    el.addEventListener('pointercancel', finishDrag);
+    el.addEventListener('click', (event) => {
+      if (performance.now() >= suppressClickUntil) return;
+      event.preventDefault();
+      event.stopPropagation();
+    }, true);
+  }
+
   function createUI() {
     const root = document.createElement('div');
     root.id = 'BetterX-root';
@@ -5655,27 +6150,32 @@
       <div class="BetterX-tip">提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。</div>
 
       <div class="BetterX-summary" id="BetterX-summary"></div>
-      <div class="BetterX-section-label">快速筛选</div>
-      <div class="BetterX-filter-bar" id="BetterX-filter-bar"></div>
 
-      <div class="BetterX-search-tools">
-        <input type="text" class="BetterX-input" id="BetterX-search" placeholder="搜索作者、正文或备注…" aria-label="搜索帖子" />
-        <div class="BetterX-toolbar-row">
-          <select class="BetterX-select" id="BetterX-source" aria-label="来源筛选"></select>
-          <select class="BetterX-select" id="BetterX-media" aria-label="媒体筛选"></select>
-          <select class="BetterX-select" id="BetterX-sort" aria-label="排序方式">
-            <option value="smart">智能排序</option>
-            <option value="recent_viewed">最近浏览</option>
-            <option value="recent_captured">最近抓取</option>
-            <option value="first_captured">首次抓取（新→旧）</option>
-            <option value="time_asc">首次抓取（旧→新）</option>
-            <option value="captures">出现次数</option>
-            <option value="author">按作者</option>
-            <option value="source">按来源</option>
-          </select>
+      <details class="BetterX-advanced BetterX-vault-filter-card" id="BetterX-quick-filter">
+        <summary><span class="BetterX-vault-filter-title">快速筛选</span><span class="BetterX-vault-filter-state" id="BetterX-quick-filter-state"></span></summary>
+        <div class="BetterX-adv-body BetterX-vault-filter-body">
+          <div class="BetterX-filter-bar" id="BetterX-filter-bar"></div>
+
+          <div class="BetterX-search-tools">
+            <input type="text" class="BetterX-input" id="BetterX-search" placeholder="搜索作者、正文或备注…" aria-label="搜索帖子" />
+            <div class="BetterX-toolbar-row">
+              <select class="BetterX-select" id="BetterX-source" aria-label="来源筛选"></select>
+              <select class="BetterX-select" id="BetterX-media" aria-label="媒体筛选"></select>
+              <select class="BetterX-select" id="BetterX-sort" aria-label="排序方式">
+                <option value="smart">智能排序</option>
+                <option value="recent_viewed">最近浏览</option>
+                <option value="recent_captured">最近抓取</option>
+                <option value="first_captured">首次抓取（新→旧）</option>
+                <option value="time_asc">首次抓取（旧→新）</option>
+                <option value="captures">出现次数</option>
+                <option value="author">按作者</option>
+                <option value="source">按来源</option>
+              </select>
+            </div>
+            <div class="BetterX-sort-hint" id="BetterX-sort-hint" role="status"></div>
+          </div>
         </div>
-        <div class="BetterX-sort-hint" id="BetterX-sort-hint" role="status"></div>
-      </div>
+      </details>
       </div>
       <div class="BetterX-list" id="BetterX-list"></div>
       </section>
@@ -5797,8 +6297,8 @@
         <details class="BetterX-advanced BetterX-settings-card">
           <summary>常用功能</summary>
           <div class="BetterX-adv-body">
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（隐藏推广帖和独立广告位）</label>
-            <div class="BetterX-adv-label">开启后自动隐藏时间线推广帖及 X 新增的程序化广告卡片；推广帖不会记录，关闭开关即可恢复显示。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（含“订阅 Premium”）</label>
+            <div class="BetterX-adv-label">开启后自动隐藏时间线推广帖、程序化广告卡片，以及桌面侧栏和移动端的“订阅 Premium”；推广帖不会记录，关闭开关即可恢复显示。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label>
             <div class="BetterX-adv-label">将 X 新版的多媒体正文轮播改为网格展示；两张并排，三张为左大右二，四张为 2×2 网格。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label>
@@ -5908,6 +6408,8 @@
     state.listEl = panel.querySelector('#BetterX-list');
     state.summaryEl = panel.querySelector('#BetterX-summary');
     state.filterBarEl = panel.querySelector('#BetterX-filter-bar');
+    state.quickFilterDetailsEl = panel.querySelector('#BetterX-quick-filter');
+    state.quickFilterStateEl = panel.querySelector('#BetterX-quick-filter-state');
     state.sourceSelectEl = panel.querySelector('#BetterX-source');
     state.mediaSelectEl = panel.querySelector('#BetterX-media');
     state.keywordInputEl = panel.querySelector('#BetterX-keywords');
@@ -5967,6 +6469,15 @@
     state.menuEl = panel.querySelector('#BetterX-menu');
 
     state.mediaSelectEl.innerHTML = buildMediaOptionsHtml();
+    installHorizontalFilterScroller(state.filterBarEl);
+    if (state.quickFilterDetailsEl) {
+      state.quickFilterDetailsEl.addEventListener('toggle', () => {
+        if (!state.settingsLoaded) return;
+        const nextOpen = !!state.quickFilterDetailsEl.open;
+        if (nextOpen === !!state.settings.quickFilterOpen) return;
+        setSettingsPartial({ quickFilterOpen: nextOpen });
+      });
+    }
 
     badge.addEventListener('click', () => {
       if (state.suppressNextBadgeClick) {
@@ -6157,9 +6668,17 @@
           state.renderLimit = (state.renderLimit || state.settings.pageSize || 60) + (state.settings.pageSize || 60);
           refreshUI({ keepScroll: true });
           break;
-        case 'preview-image':
-          showImagePreview(actionEl.getAttribute('data-image-url') || '');
+        case 'preview-image': {
+          const rawUrl = actionEl.getAttribute('data-image-url') || '';
+          const postId = actionEl.getAttribute('data-post-id') || '';
+          const post = postId ? getPostById(postId) : null;
+          const imageUrls = post
+            ? uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4)
+            : [rawUrl];
+          const imageIndex = parseInt(actionEl.getAttribute('data-image-index') || '0', 10);
+          showImagePreview(rawUrl, imageUrls, imageIndex);
           break;
+        }
         case 'set-filter':
           setSettingsPartial({ filter: actionEl.getAttribute('data-filter') });
           break;
@@ -6257,7 +6776,7 @@
           break;
         case 'open': {
           const post = getPostById(id);
-          if (post && post.url) { markClicked(id); window.open(post.url, '_blank', 'noopener'); }
+          openRecordedPost(post);
           break;
         }
         case 'copy': {
@@ -6353,7 +6872,7 @@
         transition: opacity 170ms ease-out, filter .15s;
       }
       #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge {
-        width: 10px; height: 76px; min-height: 76px; padding: 0; border-radius: 999px 0 0 999px;
+        width: 15px; height: 76px; min-height: 76px; padding: 0; border-radius: 999px 0 0 999px;
         background: #1d9bf0; box-shadow: -1px 2px 8px rgba(0,0,0,.2); opacity: .56 !important;
       }
       #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge::after {
@@ -6431,7 +6950,8 @@
       #BetterX-root.BetterX-panel-right #BetterX-download-pill { left: auto; right: calc(100% + 8px); }
       #BetterX-download-popover {
         position: absolute; left: calc(100% + 8px); bottom: 44px; width: min(360px, calc(100vw - 32px));
-        max-height: min(420px, calc(100vh - 120px)); overflow: auto; padding: 10px;
+        box-sizing: border-box; max-width: calc(100vw - 16px);
+        max-height: min(420px, calc(100vh - 120px)); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 10px;
         border: 1px solid var(--xv-border); border-radius: 14px; background: var(--xv-panel-bg); color: var(--xv-text);
         box-shadow: 0 12px 42px rgba(0,0,0,.42); backdrop-filter: blur(12px);
       }
@@ -6447,7 +6967,7 @@
       }
       .BetterX-download-task-main { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 3px; }
       .BetterX-download-task-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
-      .BetterX-download-task-main span { color: var(--xv-muted); font-size: 11px; }
+      .BetterX-download-task-main span { min-width: 0; overflow-wrap: anywhere; color: var(--xv-muted); font-size: 11px; }
       .BetterX-download-task-actions { display: flex; flex: 0 0 auto; gap: 4px; }
       .BetterX-download-task-actions button {
         padding: 4px 7px; border: 1px solid var(--xv-border); border-radius: 7px;
@@ -6647,10 +7167,46 @@
       .BetterX-thumb-button:focus-visible { outline: 2px solid var(--xv-accent); outline-offset: 2px; }
       .BetterX-thumb { display: block; width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--xv-border); transition: transform .16s ease, box-shadow .16s ease; }
       .BetterX-thumb-button:hover .BetterX-thumb { transform: scale(1.04); box-shadow: 0 3px 12px rgba(0, 0, 0, .28); }
-      .BetterX-image-preview { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 24px; background: rgba(0, 0, 0, .82); cursor: zoom-out; }
-      .BetterX-image-preview-box { position: relative; max-width: min(96vw, 1280px); max-height: 92vh; cursor: default; }
-      .BetterX-image-preview-box img { display: block; max-width: min(96vw, 1280px); max-height: 92vh; object-fit: contain; border-radius: 10px; box-shadow: 0 12px 46px rgba(0, 0, 0, .55); }
-      .BetterX-image-preview-close { position: absolute; top: -12px; right: -12px; width: 32px; height: 32px; border: 1px solid rgba(255,255,255,.45); border-radius: 50%; background: rgba(20,20,20,.88); color: #fff; font: 700 24px/28px Arial, sans-serif; cursor: pointer; }
+      .BetterX-image-preview {
+        position: fixed; inset: 0; z-index: 2147483647; display: flex; align-items: center; justify-content: center;
+        box-sizing: border-box; overflow: hidden; overscroll-behavior: contain; touch-action: none;
+        padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+        background: rgba(0, 0, 0, .86); cursor: zoom-out;
+      }
+      .BetterX-image-preview-box {
+        position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;
+        min-width: 0; min-height: 0; overflow: hidden; cursor: default; touch-action: none; user-select: none;
+      }
+      .BetterX-image-preview-box img {
+        display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain;
+        border-radius: 10px; box-shadow: 0 12px 46px rgba(0, 0, 0, .55);
+        transform: translate3d(0, 0, 0) scale(1); transform-origin: center center; will-change: transform;
+        cursor: zoom-in; touch-action: none; user-select: none; -webkit-user-drag: none;
+      }
+      .BetterX-image-preview-box.is-zoomed img { cursor: grab; }
+      .BetterX-image-preview-box.is-panning img { cursor: grabbing; }
+      .BetterX-image-preview-close {
+        position: fixed; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 3;
+        display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid rgba(255,255,255,.52); border-radius: 50%;
+        background: rgba(20,20,20,.9); color: #fff; text-align: center; text-indent: 0; cursor: pointer;
+        box-shadow: 0 3px 14px rgba(0,0,0,.38); touch-action: manipulation;
+      }
+      .BetterX-image-preview-close > span {
+        display: block; margin: 0; padding: 0; font: 700 27px/1 Arial, sans-serif; line-height: 1; transform: translateY(-1px);
+      }
+      .BetterX-image-preview-nav {
+        position: fixed; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+        border: 1px solid rgba(255,255,255,.48); border-radius: 50%; background: rgba(20,20,20,.78); color: #fff;
+        text-align: center; text-indent: 0; cursor: pointer; box-shadow: 0 3px 14px rgba(0,0,0,.34);
+        touch-action: manipulation; transition: opacity .14s ease, background .14s ease, transform .14s ease;
+      }
+      .BetterX-image-preview-nav > span { display: block; font: 700 34px/1 Arial, sans-serif; line-height: 1; transform: translateY(-1px); }
+      .BetterX-image-preview-nav:hover:not(:disabled) { background: rgba(20,20,20,.94); transform: scale(1.06); }
+      .BetterX-image-preview-nav:disabled { opacity: .24; cursor: default; }
+      .BetterX-image-preview-nav[hidden] { display: none !important; }
+      @media (hover: none), (pointer: coarse) {
+        .BetterX-image-preview-nav { display: none !important; }
+      }
 
       .BetterX-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
       .BetterX-tag { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: var(--xv-chip-bg); color: var(--xv-muted); }
@@ -6766,14 +7322,27 @@
       .BetterX-stat b { font-size: 13px; }
       .BetterX-section-label { padding: 2px 14px 5px; font-size: 11px; text-transform: uppercase; }
       .BetterX-filter-bar {
-        flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 0 14px 9px;
+        flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; min-width: 0; width: 100%;
+        scrollbar-width: none; padding: 0 14px 9px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
       }
+      .BetterX-filter-bar.is-dragging { cursor: grabbing; user-select: none; }
+      .BetterX-filter-bar.is-dragging .BetterX-chip { pointer-events: none; }
       .BetterX-chip { flex: 0 0 auto; min-height: 28px; padding: 4px 11px; }
       .BetterX-search-tools { display: grid; gap: 7px; padding: 0 14px 11px; }
       .BetterX-search-tools > .BetterX-input { height: 36px; padding-left: 12px; border-radius: 10px; }
       .BetterX-toolbar-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
       .BetterX-toolbar-row .BetterX-select { width: 100%; min-width: 0; height: 32px; border-radius: 9px; font-size: 13px; }
       .BetterX-sort-hint { min-height: 18px; padding: 0 2px; color: var(--xv-text); font-family: SimHei, "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; font-size: 12px; font-weight: 600; line-height: 1.5; }
+      .BetterX-vault-filter-card { margin: 0 14px 10px; min-width: 0; }
+      .BetterX-vault-filter-card > summary { min-width: 0; max-width: 100%; overflow: hidden; }
+      .BetterX-vault-filter-title { flex: 0 0 auto; }
+      .BetterX-vault-filter-state {
+        flex: 1 1 auto; min-width: 0; max-width: 100%; margin-left: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        color: var(--xv-muted); font-size: 11px; font-weight: 500;
+      }
+      .BetterX-vault-filter-card .BetterX-adv-body { min-width: 0; }
+      .BetterX-vault-filter-card .BetterX-filter-bar { padding: 0 0 3px; }
+      .BetterX-vault-filter-card .BetterX-search-tools { padding: 0; min-width: 0; }
       .BetterX-list {
         flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding: 10px 12px 14px; gap: 8px;
         overscroll-behavior: contain;
@@ -6790,15 +7359,15 @@
       .BetterX-settings-view .BetterX-controls {
         gap: 9px; padding: 0; border-top: 0;
       }
-      .BetterX-settings-card {
+      .BetterX-settings-card, .BetterX-vault-filter-card {
         padding: 0; overflow: hidden; border-radius: 12px; background: var(--xv-item-bg);
       }
-      .BetterX-settings-card > summary {
+      .BetterX-settings-card > summary, .BetterX-vault-filter-card > summary {
         min-height: 43px; padding: 0 12px; color: var(--xv-text); font-size: 14px;
       }
-      .BetterX-settings-card[open] { border-color: rgba(29,155,240,.34); }
-      .BetterX-settings-card[open] > summary { border-bottom: 1px solid var(--xv-border); }
-      .BetterX-settings-card > .BetterX-adv-body { gap: 10px; padding: 12px; }
+      .BetterX-settings-card[open], .BetterX-vault-filter-card[open] { border-color: rgba(29,155,240,.34); }
+      .BetterX-settings-card[open] > summary, .BetterX-vault-filter-card[open] > summary { border-bottom: 1px solid var(--xv-border); }
+      .BetterX-settings-card > .BetterX-adv-body, .BetterX-vault-filter-card > .BetterX-adv-body { gap: 10px; padding: 12px; }
       .BetterX-settings-card .BetterX-field,
       .BetterX-settings-card .BetterX-adv-label { font-size: 13px; line-height: 1.45; }
       .BetterX-download-name-tokens { gap: 6px; }
@@ -6903,7 +7472,7 @@
         }
         #BetterX-root.BetterX-mobile #BetterX-download-popover {
           position: absolute; left: auto; right: 0; bottom: calc(200% + 20px);
-          width: min(360px, calc(100vw - 16px)); max-height: min(52vh, 420px);
+          width: min(360px, calc(100vw - 16px)); max-width: calc(100vw - 16px); max-height: min(52dvh, 420px);
         }
         #BetterX-root.BetterX-mobile.is-open #BetterX-badge,
         #BetterX-root.BetterX-mobile.is-open #BetterX-download-pill { opacity: 0; pointer-events: none; }
@@ -6917,6 +7486,9 @@
         .BetterX-summary, .BetterX-filter-bar { padding-left: 10px; padding-right: 10px; }
         .BetterX-section-label { padding-left: 10px; padding-right: 10px; }
         .BetterX-search-tools { padding: 0 10px 9px; }
+        .BetterX-vault-filter-card { margin: 0 10px 8px; }
+        .BetterX-vault-filter-card .BetterX-filter-bar,
+        .BetterX-vault-filter-card .BetterX-search-tools { padding-left: 0; padding-right: 0; }
         .BetterX-toolbar-row { grid-template-columns: 1fr 1fr; }
         .BetterX-toolbar-row .BetterX-select:last-child { grid-column: 1 / -1; }
         .BetterX-list { padding: 8px 9px 12px; }
@@ -6924,6 +7496,12 @@
         .BetterX-item-top { flex-direction: column; }
         .BetterX-actions { max-width: none; justify-content: flex-start; }
         .BetterX-thumb { width: 64px; height: 64px; }
+        .BetterX-image-preview {
+          padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+        }
+        .BetterX-image-preview-close {
+          top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); width: 40px; height: 40px;
+        }
       }
     `);
   }
@@ -7261,6 +7839,50 @@
     return !!(link && (link.getAttribute('role') === 'tab' || link.closest('[role="tab"]')));
   }
 
+  function getSearchResultProfileHandle(resultContainer) {
+    if (!resultContainer || !resultContainer.querySelector) return '';
+    const avatar = resultContainer.querySelector('[data-testid^="UserAvatar-Container-"]');
+    const avatarTestId = avatar ? (avatar.getAttribute('data-testid') || '') : '';
+    const avatarMatch = avatarTestId.match(/^UserAvatar-Container-([a-z0-9_]{1,15})$/i);
+    if (avatarMatch && !PROFILE_ROOT_ROUTE_EXCLUSIONS.has(avatarMatch[1].toLowerCase())) return avatarMatch[1];
+
+    // 搜索联想项目前是没有 href 的 button；头像 testid 取不到时，再从独立的 @用户名文本兜底。
+    const handleMatch = String(resultContainer.innerText || resultContainer.textContent || '')
+      .match(/(?:^|\s)@([a-z0-9_]{1,15})(?=\s|$)/i);
+    return handleMatch && !PROFILE_ROOT_ROUTE_EXCLUSIONS.has(handleMatch[1].toLowerCase())
+      ? handleMatch[1]
+      : '';
+  }
+
+  function getProfileTargetFromClickTarget(target) {
+    if (!target || !target.closest) return null;
+    const directLink = target.closest('a[href]');
+    const directHandle = directLink ? getBareProfileHandle(directLink.pathname) : '';
+    if (directHandle) return { link: directLink, handle: directHandle, url: directLink.href };
+
+    const resultContainer = target.closest('[data-testid="UserCell"], [data-testid="typeaheadResult"]');
+    if (!resultContainer) return null;
+    // PC 的 UserCell 自身就是 button；移动端探索页则是 typeaheadResult 包住 TypeaheadUser 主按钮。
+    // 只放行这两个“打开用户”的主控件，继续排除内部额外嵌套的关注、菜单和表单控件。
+    const interactive = target.closest('button, [role="button"], [role="menuitem"], input, select, textarea');
+    const interactiveTestId = interactive ? (interactive.getAttribute('data-testid') || '') : '';
+    const isPrimaryResultControl = interactive === resultContainer
+      || interactiveTestId === 'UserCell'
+      || interactiveTestId === 'TypeaheadUser';
+    if (interactive && !isPrimaryResultControl) return null;
+
+    const nestedLink = [...resultContainer.querySelectorAll('a[href]')].find((candidate) => (
+      !!getBareProfileHandle(candidate.pathname)
+    ));
+    if (nestedLink) {
+      return { link: nestedLink, handle: getBareProfileHandle(nestedLink.pathname), url: nestedLink.href };
+    }
+    const handle = getSearchResultProfileHandle(resultContainer);
+    return handle
+      ? { link: null, handle, url: new URL(`/${handle}`, location.origin).href }
+      : null;
+  }
+
   function redirectBareProfileToPreferredView() {
     const view = getConfiguredProfileDefaultView();
     // “帖子”就是 X 的用户主页默认页，无需额外改写 URL。
@@ -7286,19 +7908,20 @@
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const target = event.target;
       if (!target || !target.closest) return;
-      const link = target.closest('a[href]');
-      if (!link || link.hasAttribute('download')) return;
-      const handle = getBareProfileHandle(link.pathname);
+      const profileTarget = getProfileTargetFromClickTarget(target);
+      if (!profileTarget) return;
+      const { link, handle } = profileTarget;
+      if (link && link.hasAttribute('download')) return;
       const view = getConfiguredProfileDefaultView();
       // 用户点击个人主页的“帖子”页签是明确选择，跳过一次默认页签重定向。
-      if (handle && view !== 'posts' && isExplicitProfileTabLink(link)) {
+      if (handle && view !== 'posts' && link && isExplicitProfileTabLink(link)) {
         armProfileDefaultViewRedirectGuard(handle, view);
         return;
       }
-      const preferredUrl = getPreferredProfileViewUrl(link.href || link.getAttribute('href') || '');
+      const preferredUrl = getPreferredProfileViewUrl(profileTarget.url);
       // 某些 X SPA 路由会在事件开始时缓存原 href，单纯改写属性可能仍打开“帖子”页。
-      // 因此直接接管普通左键点击，确保不会先绘制“帖子”页，也不会误消费回退保护标记。
-      if (preferredUrl && link.href !== preferredUrl) {
+      // 搜索联想的 UserCell 甚至没有 href；必须在 X 先初始化“帖子”页之前接管点击。
+      if (preferredUrl && (!link || link.href !== preferredUrl)) {
         if (!handle || view === 'posts') return;
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -7392,7 +8015,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v2.8.0 started');
+    debugLog('v2.9.0 started');
   }
 
   function waitForPageReady() {
