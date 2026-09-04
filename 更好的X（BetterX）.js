@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         更好的 X（BetterX）
 // @namespace    https://github.com/Iskongkongyo
-// @version      2.9.0
-// @description  自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
+// @version      3.1.2
+// @description  管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
 // @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://twitter.com/*
@@ -55,6 +55,10 @@
   const MAX_MEDIA_REGISTRY_ENTRIES = 2000;
   const MAX_SESSION_STAT_IDS = 20000;
   const MAX_FOLLOWED_HANDLES = 5000;
+  const MAX_NOTIFICATION_SUBSCRIPTIONS = 2000;
+  // 铃铛接口成功前后，网络 Hook 仍可能延迟处理到操作前的用户资料响应。
+  // 在短暂保护期内以用户刚确认的操作为准，避免旧状态把界面覆盖回去。
+  const NOTIFICATION_MUTATION_GUARD_MS = 5000;
   const MAX_DOWNLOADED_POST_IDS = 5000;
   const DOWNLOAD_MIN_CONCURRENCY = 1;
   const DOWNLOAD_MAX_CONCURRENCY = 6;
@@ -67,7 +71,17 @@
   const MAX_IMPORT_POSTS = 20000;
   const MAX_REGEX_SOURCE_LENGTH = 180;
   const MAX_REGEX_HAYSTACK_LENGTH = 20000;
+  const MAX_REGEX_BOUNDED_REPETITION = 1000;
+  const PAGE_SCROLL_SETTLE_MS = 180;
   const IS_FIREFOX = /(?:^|\s)Firefox\//i.test(navigator.userAgent || '');
+  const USERSCRIPT_MANAGER = (() => {
+    try {
+      return typeof GM_info !== 'undefined' && GM_info
+        ? String(GM_info.scriptHandler || '')
+        : '';
+    } catch (err) { return ''; }
+  })();
+  const IS_VIOLENTMONKEY = /violent\s*monkey/i.test(USERSCRIPT_MANAGER);
   const FIREFOX_COMPAT_MODE_KEY = 'betterx_firefox_compatibility_mode';
   const SETTINGS_MIRROR_KEY = 'betterx_settings_mirror_v1';
   const DEBUG = false;
@@ -181,7 +195,7 @@
   ]);
 
   const DEFAULT_SETTINGS = {
-    settingsRevision: 25,
+    settingsRevision: 28,
     keywords: [],
     excludeKeywords: [],
     keywordMode: 'plain',   // 'plain' | 'and'；正则由 /表达式/ 标签声明
@@ -205,6 +219,8 @@
     adultSpamSkipFollowing: true, // 默认不审查已经关注的账号
     adultSpamSkipFollowingReposts: false, // 可选：不审查已关注账号转发的第三方内容
     knownFollowedHandles: [], // 从 X 接口、主页按钮和“正在关注”时间线学习的本地关注关系
+    notificationSubscriptions: [], // 从 X 接口学习到的帖子通知订阅账号（仅管理，不抓取订阅时间线）
+    notificationSubscriptionsSyncedAt: 0,
     adultSpamKeywords: [],  // 用户自定义字面关键词（命中即隐藏）
     adultSpamWhitelist: [], // 用户名白名单（不带 @）
     layoutEnabled: false,   // 界面简化与宽屏总开关
@@ -301,6 +317,10 @@
     adultSpamWhitelistEl: null,
     adultSpamWhitelistTagsEl: null,
     adultSpamCountEl: null,
+    notificationListEl: null,
+    notificationStatusEl: null,
+    notificationSearchEl: null,
+    notificationSearchQuery: '',
     layoutEnabledEl: null,
     layoutAutoWidthEl: null,
     timelineWidthEl: null,
@@ -337,6 +357,8 @@
     mobileComposeResizeObserver: null,
     mobileBadgeRaf: 0,
     suppressNextBadgeClick: false,
+    notificationSyncInProgress: false,
+    notificationMutationUsers: new Set(),
   };
 
   // 关键词匹配缓存（避免每次渲染都重算）
@@ -348,11 +370,18 @@
   let adultSpamCache = new WeakMap();
   let adultSpamRulesVersion = 0;
   const followedHandles = new Set();
+  const notificationSubscriptions = new Map();
+  const notificationMutationGuards = new Map();
   const adultSpamScannedIds = new Set();
   const adultSpamSessionHiddenIds = new Set();
   let adultSpamScannedIdsCapped = false;
   let adultSpamSessionHiddenIdsCapped = false;
   let adultSpamScrollToken = 0;
+  let pageScrollBusyUntil = 0;
+  let pageScrollTrackingInstalled = false;
+  let autoExpandIdleTimer = null;
+  let adultSpamLayoutIdleTimer = null;
+  const pendingAdultSpamLayoutArticles = new Set();
   const scheduleFollowingFilterRefresh = debounce(() => {
     adultSpamRulesVersion++;
     adultSpamCache = new WeakMap();
@@ -367,6 +396,15 @@
     state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, MAX_FOLLOWED_HANDLES);
     queueDbWrite(async () => { await persistSettings(); });
   }, 750);
+  const scheduleNotificationSubscriptionsPersist = debounce(() => {
+    if (!state.settingsLoaded) return;
+    state.settings.notificationSubscriptions = [...notificationSubscriptions.values()]
+      .sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true)
+        || Number(b.enabled) - Number(a.enabled) || (b.updatedAt || 0) - (a.updatedAt || 0))
+      .slice(0, MAX_NOTIFICATION_SUBSCRIPTIONS);
+    queueDbWrite(async () => { await persistSettings(); });
+    renderNotificationSubscriptions();
+  }, 500);
 
   function trimFollowedHandlesToMax() {
     while (followedHandles.size > MAX_FOLLOWED_HANDLES) {
@@ -447,6 +485,118 @@
     return safeHttpsUrl(value, ['twimg.com']);
   }
 
+  function sanitizeNotificationSubscription(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const id = safeString(raw.id, 30).trim();
+    const username = safeString(raw.username, 30).replace(/^@+/, '').trim();
+    if (!/^\d{1,30}$/.test(id) || !/^[a-z0-9_]{1,15}$/i.test(username)) return null;
+    const updatedAt = Number(raw.updatedAt);
+    const item = {
+      id,
+      username,
+      displayName: safeString(raw.displayName, 100).trim(),
+      avatarUrl: safeImportedAssetUrl(raw.avatarUrl),
+      enabled: raw.enabled !== false,
+      updatedAt: Number.isFinite(updatedAt) ? Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(updatedAt))) : now(),
+    };
+    // pinned 是 BetterX 本地管理状态。接口返回未携带该字段时不要写入 false，
+    // 这样同步 / 开关 X 通知时可以通过对象合并自然保留已有置顶状态。
+    if (typeof raw.pinned === 'boolean') item.pinned = raw.pinned;
+    return item;
+  }
+
+  function getNotificationMutationGuard(key) {
+    const guard = notificationMutationGuards.get(key);
+    if (!guard) return null;
+    if (!guard.pending && guard.expiresAt <= now()) {
+      notificationMutationGuards.delete(key);
+      return null;
+    }
+    return guard;
+  }
+
+  function beginNotificationMutationGuard(key, enabled) {
+    const timestamp = now();
+    for (const [username, guard] of notificationMutationGuards) {
+      if (!guard.pending && guard.expiresAt <= timestamp) notificationMutationGuards.delete(username);
+    }
+    const guard = {
+      enabled: enabled === true,
+      pending: true,
+      expiresAt: timestamp + NOTIFICATION_MUTATION_GUARD_MS,
+    };
+    if (notificationMutationGuards.has(key)) notificationMutationGuards.delete(key);
+    notificationMutationGuards.set(key, guard);
+    while (notificationMutationGuards.size > MAX_NOTIFICATION_SUBSCRIPTIONS) {
+      notificationMutationGuards.delete(notificationMutationGuards.keys().next().value);
+    }
+    return guard;
+  }
+
+  function rememberNotificationSubscription(raw, enabled, options) {
+    const input = sanitizeNotificationSubscription({ ...raw, enabled, updatedAt: now() });
+    if (!input) return false;
+    const key = input.username.toLowerCase();
+    const opts = options || {};
+    const guard = getNotificationMutationGuard(key);
+    // 请求尚未完成时不接受被动采集结果；成功后的保护期内只接受与刚才操作一致的状态。
+    // 铃铛操作自身使用 authoritative 显式越过该限制。
+    if (guard && opts.authoritative !== true
+        && (guard.pending || guard.enabled !== (enabled === true))) return false;
+    const existing = notificationSubscriptions.get(key);
+    if (!enabled && !existing && !opts.trackDisabled) return false;
+    const next = {
+      ...(existing || {}),
+      ...input,
+      displayName: input.displayName || (existing && existing.displayName) || '',
+      avatarUrl: input.avatarUrl || (existing && existing.avatarUrl) || '',
+      enabled: enabled === true,
+      updatedAt: now(),
+    };
+    const changed = !existing || existing.id !== next.id || existing.username !== next.username
+      || existing.displayName !== next.displayName || existing.avatarUrl !== next.avatarUrl
+      || existing.enabled !== next.enabled;
+    if (!changed) return false;
+    notificationSubscriptions.set(key, next);
+    if (next.enabled) rememberFollowingRelation(next.username, true);
+    scheduleNotificationSubscriptionsPersist();
+    return true;
+  }
+
+  function removeRememberedNotificationSubscription(username) {
+    const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
+    if (!notificationSubscriptions.delete(key)) return false;
+    scheduleNotificationSubscriptionsPersist();
+    return true;
+  }
+
+  function toggleNotificationSubscriptionPinned(username) {
+    const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
+    const existing = notificationSubscriptions.get(key);
+    if (!existing) return false;
+    const pinned = existing.pinned !== true;
+    notificationSubscriptions.set(key, { ...existing, pinned });
+    scheduleNotificationSubscriptionsPersist();
+    renderNotificationSubscriptions();
+    showToast(pinned ? `📌 已置顶 @${existing.username}` : `已取消置顶 @${existing.username}`);
+    return true;
+  }
+
+  function notificationMatchesSearch(item, query) {
+    const terms = safeString(query, 120).trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return true;
+    const username = safeString(item && item.username, 30).toLocaleLowerCase();
+    const displayName = safeString(item && item.displayName, 100).toLocaleLowerCase();
+    const haystack = `${displayName}\n${username}\n@${username}`;
+    return terms.every((term) => haystack.includes(term));
+  }
+
+  function applyNotificationSearch() {
+    const value = state.notificationSearchEl ? state.notificationSearchEl.value : '';
+    state.notificationSearchQuery = safeString(value, 120).trim();
+    renderNotificationSubscriptions();
+  }
+
   function safeImportedStatusUrl(value, expectedId) {
     const safe = safeHttpsUrl(value, ['x.com', 'twitter.com']);
     return safe && extractStatusIdFromUrl(safe) === String(expectedId) ? safe : '';
@@ -510,6 +660,88 @@
         fn.apply(this, args);
       }
     };
+  }
+
+  function monotonicNow() {
+    return typeof performance !== 'undefined' && typeof performance.now === 'function'
+      ? performance.now()
+      : Date.now();
+  }
+
+  function markPageScrollBusy(duration) {
+    pageScrollBusyUntil = Math.max(
+      pageScrollBusyUntil,
+      monotonicNow() + Math.max(PAGE_SCROLL_SETTLE_MS, Number(duration) || 0)
+    );
+    // 用户开始或继续滚动后，立即取消尚未执行的页面位置校正。
+    adultSpamScrollToken++;
+  }
+
+  function isPageScrollBusy() {
+    return monotonicNow() < pageScrollBusyUntil;
+  }
+
+  function installPageScrollActivityTracking() {
+    if (pageScrollTrackingInstalled) return;
+    pageScrollTrackingInstalled = true;
+    const markWheel = () => markPageScrollBusy(320);
+    const markTouch = () => markPageScrollBusy(700);
+    const markTouchEnd = () => markPageScrollBusy(900);
+    const markScroll = () => markPageScrollBusy(PAGE_SCROLL_SETTLE_MS);
+    window.addEventListener('wheel', markWheel, { passive: true, capture: true });
+    window.addEventListener('touchstart', markTouch, { passive: true, capture: true });
+    window.addEventListener('touchmove', markTouch, { passive: true, capture: true });
+    window.addEventListener('touchend', markTouchEnd, { passive: true, capture: true });
+    window.addEventListener('touchcancel', markTouchEnd, { passive: true, capture: true });
+    window.addEventListener('scroll', markScroll, { passive: true, capture: true });
+    document.addEventListener('scroll', markScroll, { passive: true, capture: true });
+  }
+
+  function schedulePostShowMoreExpansion() {
+    if (autoExpandIdleTimer) clearTimeout(autoExpandIdleTimer);
+    const run = () => {
+      const remaining = pageScrollBusyUntil - monotonicNow();
+      if (remaining > 0) {
+        autoExpandIdleTimer = setTimeout(run, Math.ceil(remaining) + 60);
+        return;
+      }
+      autoExpandIdleTimer = null;
+      if (state.settings.autoExpandPostText) expandPostShowMore(document);
+    };
+    const remaining = Math.max(0, pageScrollBusyUntil - monotonicNow());
+    autoExpandIdleTimer = setTimeout(run, Math.max(100, Math.ceil(remaining) + 60));
+  }
+
+  function scheduleAdultSpamLayoutFlush(article) {
+    if (article) pendingAdultSpamLayoutArticles.add(article);
+    if (adultSpamLayoutIdleTimer) return;
+    const run = () => {
+      const remaining = pageScrollBusyUntil - monotonicNow();
+      if (remaining > 0) {
+        adultSpamLayoutIdleTimer = setTimeout(run, Math.ceil(remaining) + 60);
+        return;
+      }
+      adultSpamLayoutIdleTimer = null;
+      const articles = [...pendingAdultSpamLayoutArticles].filter((item) => item && item.isConnected);
+      pendingAdultSpamLayoutArticles.clear();
+      if (!articles.length) return;
+      const anchors = captureAdultSpamScrollAnchors();
+      let layoutChanged = false;
+      for (const item of articles) {
+        if (adultSpamFilteringEnabled()) {
+          const outcome = {};
+          evaluateAndApplyAdultSpam(item, outcome, false);
+          if (outcome.changed) layoutChanged = true;
+        } else {
+          const applied = setAdultSpamHidden(item, { hidden: false, score: 0, reasons: [] });
+          if (applied.changed) layoutChanged = true;
+        }
+      }
+      if (layoutChanged) stabilizeAdultSpamScroll(anchors);
+      updateAdultSpamCount();
+    };
+    const remaining = Math.max(0, pageScrollBusyUntil - monotonicNow());
+    adultSpamLayoutIdleTimer = setTimeout(run, Math.max(100, Math.ceil(remaining) + 60));
   }
 
   // 后台扫描时用防抖刷新；正在编辑备注时不重绘列表，避免打断输入
@@ -830,12 +1062,169 @@
     ].join('\n');
   }
 
+  function readRegexQuantifier(source, index) {
+    const ch = source[index];
+    if (ch === '*') return { end: index, min: 0, max: Infinity, unbounded: true, unsafe: false };
+    if (ch === '+') return { end: index, min: 1, max: Infinity, unbounded: true, unsafe: false };
+    if (ch === '?') return { end: index, min: 0, max: 1, unbounded: false, unsafe: false };
+    if (ch !== '{') return null;
+    const match = source.slice(index).match(/^\{(\d+)(?:,(\d*))?\}/);
+    if (!match) return null;
+    const min = Number(match[1]);
+    const hasComma = match[2] !== undefined;
+    const max = !hasComma ? min : (match[2] === '' ? Infinity : Number(match[2]));
+    return {
+      end: index + match[0].length - 1,
+      min,
+      max,
+      unbounded: max === Infinity,
+      unsafe: min > MAX_REGEX_BOUNDED_REPETITION
+        || (Number.isFinite(max) && max > MAX_REGEX_BOUNDED_REPETITION),
+    };
+  }
+
+  function literalMatchesRegexCategory(value, category) {
+    if (category === 'digit') return /^[0-9]$/.test(value);
+    if (category === 'word') return /^[A-Za-z0-9_]$/.test(value);
+    if (category === 'space') return /^\s$/.test(value);
+    if (category === 'not-digit') return !/^[0-9]$/.test(value);
+    if (category === 'not-word') return !/^[A-Za-z0-9_]$/.test(value);
+    if (category === 'not-space') return !/^\s$/.test(value);
+    return true;
+  }
+
+  function simplePositiveRegexClassMatcher(atom) {
+    if (!atom || atom.kind !== 'class' || !/^\[(?!\^)/.test(atom.value)) return null;
+    if ([...atom.value].some((ch) => ch.charCodeAt(0) > 0x7F) || /\\[pPxXuU]/.test(atom.value)) return null;
+    try { return new RegExp(`^(?:${atom.value})$`, 'i'); } catch (err) { return null; }
+  }
+
+  function regexAtomsDefinitelyDisjoint(left, right) {
+    if (!left || !right) return false;
+    if (left.kind === 'literal' && right.kind === 'literal') return left.value !== right.value;
+    if (left.kind === 'literal' && right.kind === 'category') {
+      return !literalMatchesRegexCategory(left.value, right.value);
+    }
+    if (left.kind === 'category' && right.kind === 'literal') {
+      return !literalMatchesRegexCategory(right.value, left.value);
+    }
+    if (left.kind === 'class' && right.kind === 'class') {
+      const leftMatcher = simplePositiveRegexClassMatcher(left);
+      const rightMatcher = simplePositiveRegexClassMatcher(right);
+      if (leftMatcher && rightMatcher) {
+        for (let code = 0; code <= 0x7F; code++) {
+          const value = String.fromCharCode(code);
+          if (leftMatcher.test(value) && rightMatcher.test(value)) return false;
+        }
+        return true;
+      }
+    }
+    if (left.kind !== 'category' || right.kind !== 'category') return false;
+    const pair = `${left.value}|${right.value}`;
+    return new Set([
+      'digit|space', 'space|digit', 'digit|not-digit', 'not-digit|digit',
+      'word|space', 'space|word', 'word|not-word', 'not-word|word',
+      'space|not-space', 'not-space|space',
+    ]).has(pair);
+  }
+
+  // 同层的可重叠可变量词同样会产生多项式/指数级回溯，例如 a*a*a*b 或 a?a?a?b。
+  // 旧检查只防住 (a+)+ 一类嵌套结构，这里额外追踪可能消费同一字符的量词链。
+  function hasRiskyAdjacentRegexQuantifiers(source) {
+    const contexts = [{ variableAtoms: [], groupStart: -1 }];
+    const currentContext = () => contexts[contexts.length - 1];
+    let inClass = false;
+    let classStart = -1;
+    let escapedInClass = false;
+
+    for (let i = 0; i < source.length; i++) {
+      const ch = source[i];
+      let atom = null;
+
+      if (inClass) {
+        if (escapedInClass) { escapedInClass = false; continue; }
+        if (ch === '\\') { escapedInClass = true; continue; }
+        if (ch !== ']') continue;
+        inClass = false;
+        atom = { kind: 'class', value: source.slice(classStart, i + 1) };
+      } else if (ch === '[') {
+        inClass = true;
+        classStart = i;
+        continue;
+      } else if (ch === '\\') {
+        if (i + 1 >= source.length) return true;
+        const escaped = source[++i];
+        if (escaped === 'b' || escaped === 'B') continue;
+        if ('dDwWsS'.includes(escaped)) {
+          const names = { d: 'digit', D: 'not-digit', w: 'word', W: 'not-word', s: 'space', S: 'not-space' };
+          atom = { kind: 'category', value: names[escaped] };
+        } else if ((escaped === 'p' || escaped === 'P') && source[i + 1] === '{') {
+          const end = source.indexOf('}', i + 2);
+          if (end < 0) return true;
+          atom = { kind: 'class', value: source.slice(i - 1, end + 1) };
+          i = end;
+        } else if (escaped === 'x' && /^[0-9a-f]{2}/i.test(source.slice(i + 1, i + 3))) {
+          atom = { kind: 'escape', value: source.slice(i - 1, i + 3) };
+          i += 2;
+        } else if (escaped === 'u' && /^[0-9a-f]{4}/i.test(source.slice(i + 1, i + 5))) {
+          atom = { kind: 'escape', value: source.slice(i - 1, i + 5) };
+          i += 4;
+        } else {
+          atom = { kind: 'literal', value: escaped };
+        }
+      } else if (ch === '(') {
+        contexts.push({ variableAtoms: [], groupStart: i });
+        continue;
+      } else if (ch === ')') {
+        if (contexts.length <= 1) continue;
+        const closed = contexts.pop();
+        atom = { kind: 'group', value: source.slice(closed.groupStart, i + 1) };
+      } else if (ch === '|') {
+        currentContext().variableAtoms = [];
+        continue;
+      } else if (ch === '^' || ch === '$') {
+        continue;
+      } else if (ch === '.') {
+        atom = { kind: 'any', value: '.' };
+      } else if (ch === '*' || ch === '+' || ch === '?' || ch === '{') {
+        // 孤立量词交给 RegExp 构造器判为无效；这里不把它误当作分隔字符。
+        continue;
+      } else {
+        atom = { kind: 'literal', value: ch };
+      }
+
+      if (!atom) continue;
+      const quantifier = readRegexQuantifier(source, i + 1);
+      if (!quantifier) {
+        // 只有明确不可能被此前可变量词消费的必选字符，才能构成回溯分隔符。
+        currentContext().variableAtoms = currentContext().variableAtoms
+          .filter((previous) => !regexAtomsDefinitelyDisjoint(previous, atom));
+        continue;
+      }
+      if (quantifier.unsafe) return true;
+      const context = currentContext();
+      const isVariable = quantifier.min !== quantifier.max;
+      if (isVariable && context.variableAtoms.some((previous) => !regexAtomsDefinitelyDisjoint(previous, atom))) {
+        return true;
+      }
+      if (quantifier.min > 0) {
+        context.variableAtoms = context.variableAtoms
+          .filter((previous) => !regexAtomsDefinitelyDisjoint(previous, atom));
+      }
+      if (isVariable) context.variableAtoms.push(atom);
+      i = quantifier.end;
+      if (source[i + 1] === '?') i++;
+    }
+    return false;
+  }
+
   // 拒绝常见灾难性回溯结构：过长表达式、反向引用，以及带重复/分支的分组再次重复。
   // JavaScript 正则没有原生超时，因此这里采用保守白名单式检查，并同时限制待匹配文本长度。
   function isSafeRegexSource(src) {
     const text = String(src || '');
     if (!text || text.length > MAX_REGEX_SOURCE_LENGTH) return false;
     if (/\\(?:[1-9][0-9]*|k<)/.test(text)) return false;
+    if (hasRiskyAdjacentRegexQuantifiers(text)) return false;
 
     const stack = [{ hasRepeat: false, hasAlternation: false }];
     let escaped = false;
@@ -1532,6 +1921,7 @@
       state.autoExpandPostTextEl.checked = !!state.settings.autoExpandPostText;
     }
     updateSettingsDependencyUI();
+    renderNotificationSubscriptions();
 
     if (!state.listEl) return;
     const scrollTop = keepListScroll ? state.listEl.scrollTop : 0;
@@ -1563,10 +1953,21 @@
     const badgePos = input.badgePos && Number.isFinite(input.badgePos.left) && Number.isFinite(input.badgePos.bottom)
       ? { left: input.badgePos.left, bottom: input.badgePos.bottom }
       : null;
+    const notificationList = [];
+    const notificationHandles = new Set();
+    for (const rawItem of Array.isArray(input.notificationSubscriptions) ? input.notificationSubscriptions : []) {
+      const item = sanitizeNotificationSubscription(rawItem);
+      if (!item) continue;
+      const key = item.username.toLowerCase();
+      if (notificationHandles.has(key)) continue;
+      notificationHandles.add(key);
+      notificationList.push(item);
+      if (notificationList.length >= MAX_NOTIFICATION_SUBSCRIPTIONS) break;
+    }
     return {
       settingsRevision: DEFAULT_SETTINGS.settingsRevision,
-      keywords: stringList(input.keywords, 50, 500),
-      excludeKeywords: stringList(input.excludeKeywords, 50, 500),
+      keywords: stringList(input.keywords, 50, 500).filter(isSafeKeywordRule),
+      excludeKeywords: stringList(input.excludeKeywords, 50, 500).filter(isSafeKeywordRule),
       keywordMode: enumValue(input.keywordMode, ['plain', 'and'], DEFAULT_SETTINGS.keywordMode),
       filter: enumValue(input.filter, FILTERS.map((item) => item.key), DEFAULT_SETTINGS.filter),
       sourceFilter: safeString(input.sourceFilter, 100) || DEFAULT_SETTINGS.sourceFilter,
@@ -1597,6 +1998,10 @@
       knownFollowedHandles: uniqueStrings(stringList(input.knownFollowedHandles, 5000, 30)
         .map((item) => item.replace(/^@+/, '').toLowerCase())
         .filter((item) => /^[a-z0-9_]{1,15}$/.test(item))),
+      notificationSubscriptions: notificationList,
+      notificationSubscriptionsSyncedAt: Number.isFinite(Number(input.notificationSubscriptionsSyncedAt))
+        ? Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(Number(input.notificationSubscriptionsSyncedAt))))
+        : 0,
       adultSpamKeywords: stringList(input.adultSpamKeywords, 50, 80),
       adultSpamWhitelist: uniqueStrings(stringList(input.adultSpamWhitelist, 100, 30)
         .map((item) => item.replace(/^@+/, '').toLowerCase())
@@ -1893,6 +2298,9 @@
   const mediaRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
   // 卡片媒体注册表（第三方引用卡片 / 内嵌播放器）
   const cardRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
+  // 视频海报 -> 真实 MP4。引用帖嵌套较深时，DOM 只保留外层帖子 ID，
+  // 而 GraphQL 会把媒体登记在内层帖子 ID 下；用页面可见的海报 ID 跨层关联两者。
+  const videoPosterRegistry = new Map(); // posterKey -> { type:'video'|'gif', url }
   const firefoxMediaLookupJobs = new Map(); // statusId -> Promise<boolean>
   // 仅用于 Firefox 兼容模式下的按需单帖查询；避免为采集媒体而重新包装页面网络 API。
   const FIREFOX_TWEET_DETAIL_QUERY_ID = 'zAz9764BcLZOJ0JU2wrd1A';
@@ -1941,6 +2349,30 @@
     return value;
   }
 
+  function getVideoPosterKey(rawUrl) {
+    if (!rawUrl) return '';
+    try {
+      const url = new URL(String(rawUrl), 'https://pbs.twimg.com');
+      if (!/(?:^|\.)twimg\.com$/i.test(url.hostname)) return '';
+      const path = url.pathname;
+      const directoryMatch = path.match(/\/(amplify_video_thumb|ext_tw_video_thumb)\/([A-Za-z0-9_-]+)/i);
+      if (directoryMatch) return `${directoryMatch[1].toLowerCase()}:${directoryMatch[2]}`;
+      const gifMatch = path.match(/\/tweet_video_thumb\/([A-Za-z0-9_-]+)(?:\.[A-Za-z0-9]+)?$/i);
+      return gifMatch ? `tweet_video_thumb:${gifMatch[1]}` : '';
+    } catch (err) { return ''; }
+  }
+
+  function registerVideoPosterMedia(media, mp4Url) {
+    if (!media || !mp4Url) return;
+    const posterUrl = media.media_url_https || media.media_url || '';
+    const posterKey = getVideoPosterKey(posterUrl);
+    if (!posterKey) return;
+    setBoundedRegistryEntry(videoPosterRegistry, posterKey, {
+      type: media.type === 'animated_gif' ? 'gif' : 'video',
+      url: mp4Url,
+    });
+  }
+
   function registerMedia(id, mediaArr) {
     if (!id || !Array.isArray(mediaArr) || !mediaArr.length) return;
     const key = String(id);
@@ -1955,6 +2387,7 @@
         if (mp4s[0]) {
           if (m.type === 'animated_gif') entry.gifs.push(mp4s[0].url);
           else entry.videos.push(mp4s[0].url);
+          registerVideoPosterMedia(m, mp4s[0].url);
         }
       }
     }
@@ -2006,7 +2439,11 @@
     if ((m.type === 'video' || m.type === 'animated_gif') && m.video_info && Array.isArray(m.video_info.variants)) {
       const mp4s = m.video_info.variants.filter((v) => v && v.content_type === 'video/mp4' && v.url);
       mp4s.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-      if (mp4s[0]) { (m.type === 'animated_gif' ? acc.gifs : acc.videos).push(mp4s[0].url); return true; }
+      if (mp4s[0]) {
+        (m.type === 'animated_gif' ? acc.gifs : acc.videos).push(mp4s[0].url);
+        registerVideoPosterMedia(m, mp4s[0].url);
+        return true;
+      }
     }
     return false;
   }
@@ -2038,11 +2475,170 @@
     return headers;
   }
 
+  function getCurrentViewerId() {
+    const twid = readCookieValue('twid');
+    const match = String(twid || '').match(/(?:^|=)u?=?([0-9]{1,30})$/i)
+      || String(twid || '').match(/u=([0-9]{1,30})/i);
+    return match ? match[1] : '';
+  }
+
+  async function requestXSessionJson(pathOrUrl, options) {
+    const opts = options || {};
+    const url = new URL(pathOrUrl, location.origin).href;
+    const headers = buildFirefoxTweetDetailHeaders();
+    if (readCookieValue('ct0')) headers['x-twitter-auth-type'] = 'OAuth2Session';
+    if (opts.form) headers['content-type'] = 'application/x-www-form-urlencoded';
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 30000) : null;
+    try {
+      const pageWin = getPageWindow();
+      const fetchImpl = pageWin && typeof pageWin.fetch === 'function' ? pageWin.fetch : fetch;
+      const response = await fetchImpl.call(pageWin || window, url, {
+        method: opts.method || 'GET',
+        credentials: 'include',
+        headers,
+        body: opts.body || undefined,
+        signal: controller ? controller.signal : undefined,
+      });
+      if (!response || !response.ok) throw new Error(`X 接口返回 ${response ? response.status : '未知状态'}`);
+      return await response.json();
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  function notificationUserFromRest(raw, enabled) {
+    if (!raw || typeof raw !== 'object') return null;
+    return sanitizeNotificationSubscription({
+      id: raw.id_str || raw.id,
+      username: raw.screen_name,
+      displayName: raw.name,
+      avatarUrl: raw.profile_image_url_https || raw.profile_image_url,
+      enabled,
+      updatedAt: now(),
+    });
+  }
+
+  async function syncNotificationSubscriptions() {
+    if (state.notificationSyncInProgress) return;
+    const viewerId = getCurrentViewerId();
+    if (!viewerId) {
+      showToast('⚠️ 无法读取当前 X 用户 ID，请确认已经登录');
+      return;
+    }
+    state.notificationSyncInProgress = true;
+    renderNotificationSubscriptions();
+    const collected = new Map();
+    let cursor = '-1';
+    let pageCount = 0;
+    try {
+      do {
+        const params = new URLSearchParams({
+          include_profile_interstitial_type: '1',
+          include_blocking: '1',
+          include_blocked_by: '1',
+          include_followed_by: '1',
+          include_want_retweets: '1',
+          include_mute_edge: '1',
+          include_can_dm: '1',
+          include_can_media_tag: '1',
+          include_ext_is_blue_verified: '1',
+          include_ext_verified_type: '1',
+          include_ext_profile_image_shape: '1',
+          skip_status: '1',
+          cursor,
+          user_id: viewerId,
+          count: '200',
+          with_total_count: 'true',
+        });
+        const payload = await requestXSessionJson(`/i/api/1.1/friends/following/list.json?${params}`);
+        const users = Array.isArray(payload && payload.users) ? payload.users : [];
+        for (const rawUser of users) {
+          const username = safeString(rawUser && rawUser.screen_name, 30).replace(/^@+/, '');
+          if (username) rememberFollowingRelation(username, true);
+          if (rawUser && rawUser.notifications === true) {
+            const item = notificationUserFromRest(rawUser, true);
+            if (item) collected.set(item.username.toLowerCase(), item);
+          }
+        }
+        cursor = safeString((payload && (payload.next_cursor_str || payload.next_cursor)) || '0', 200);
+        pageCount++;
+        if (pageCount >= 50 && cursor && cursor !== '0') throw new Error('关注账号过多，已达到 50 页安全上限');
+      } while (cursor && cursor !== '0');
+
+      // 同步响应可能被裁剪或暂时遗漏账号，只增量合并，不据此删除本地订阅。
+      for (const [key, item] of collected) {
+        const existing = notificationSubscriptions.get(key);
+        notificationSubscriptions.set(key, { ...(existing || {}), ...item, enabled: true, updatedAt: now() });
+      }
+      state.settings.notificationSubscriptionsSyncedAt = now();
+      scheduleNotificationSubscriptionsPersist();
+      const enabledTotal = [...notificationSubscriptions.values()].filter((item) => item.enabled).length;
+      showToast(`✅ 本次识别 ${collected.size} 个，当前保留 ${enabledTotal} 个订阅`);
+    } catch (err) {
+      console.error('[BetterX] sync notification subscriptions failed:', err);
+      showToast(`⚠️ 同步失败：${safeString(err && err.message, 120) || '未知错误'}`);
+    } finally {
+      state.notificationSyncInProgress = false;
+      renderNotificationSubscriptions();
+    }
+  }
+
+  async function updateNotificationSubscription(username, enabled) {
+    const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
+    const existing = notificationSubscriptions.get(key);
+    if (!existing || !/^\d{1,30}$/.test(existing.id) || state.notificationMutationUsers.has(key)) return;
+    const desiredEnabled = enabled === true;
+    const mutationGuard = beginNotificationMutationGuard(key, desiredEnabled);
+    const body = new URLSearchParams({
+      include_profile_interstitial_type: '1',
+      include_blocking: '1',
+      include_blocked_by: '1',
+      include_followed_by: '1',
+      include_want_retweets: '1',
+      include_mute_edge: '1',
+      include_can_dm: '1',
+      include_can_media_tag: '1',
+      include_ext_is_blue_verified: '1',
+      include_ext_verified_type: '1',
+      include_ext_profile_image_shape: '1',
+      skip_status: '1',
+      cursor: '-1',
+      id: existing.id,
+      device: desiredEnabled ? 'true' : 'false',
+    });
+    state.notificationMutationUsers.add(key);
+    renderNotificationSubscriptions();
+    try {
+      await requestXSessionJson('/i/api/1.1/friendships/update.json', {
+        method: 'POST',
+        form: true,
+        body: body.toString(),
+      });
+      rememberNotificationSubscription(existing, desiredEnabled, {
+        trackDisabled: true,
+        authoritative: true,
+      });
+      mutationGuard.pending = false;
+      mutationGuard.expiresAt = now() + NOTIFICATION_MUTATION_GUARD_MS;
+      renderNotificationSubscriptions();
+      showToast(desiredEnabled ? `✅ 已开启 @${existing.username} 的帖子通知` : `已关闭 @${existing.username} 的帖子通知`);
+    } catch (err) {
+      if (notificationMutationGuards.get(key) === mutationGuard) notificationMutationGuards.delete(key);
+      console.error('[BetterX] update notification subscription failed:', err);
+      showToast(`⚠️ 修改失败：${safeString(err && err.message, 120) || '未知错误'}`);
+    } finally {
+      state.notificationMutationUsers.delete(key);
+      renderNotificationSubscriptions();
+    }
+  }
+
   function extractMediaFromTweetDetail(payload, statusId) {
     const targetId = String(statusId || '');
     if (!payload || !targetId) return false;
     const stack = [payload];
     let scanned = 0;
+    let foundMedia = false;
     while (stack.length && scanned < 12000) {
       const current = stack.pop();
       scanned++;
@@ -2054,17 +2650,17 @@
         const candidateId = String(candidate.rest_id || candidate.id_str || candidate.id || (legacy && legacy.id_str) || '');
         const media = (candidate.extended_entities && candidate.extended_entities.media)
           || (legacy && legacy.extended_entities && legacy.extended_entities.media);
-        if (candidateId === targetId) {
-          if (Array.isArray(media) && media.length) {
-            registerMedia(targetId, media);
-            return true;
-          }
-          const card = candidate.card || (legacy && legacy.card);
-          if (card) {
-            harvestCard(targetId, card);
-            const cardMedia = cardRegistry.get(targetId);
-            if (cardMedia && (cardMedia.photos.length || cardMedia.gifs.length || cardMedia.videos.length)) return true;
-          }
+        // 同时登记内层引用帖：外层 TweetResultByRestId 的媒体可能只存在于
+        // quoted_status_result / retweeted_status_result 的后代节点中。
+        if (candidateId && Array.isArray(media) && media.length) {
+          registerMedia(candidateId, media);
+          foundMedia = true;
+        }
+        const card = candidate.card || (legacy && legacy.card);
+        if (candidateId && card) {
+          harvestCard(candidateId, card);
+          const cardMedia = cardRegistry.get(candidateId);
+          if (cardMedia && (cardMedia.photos.length || cardMedia.gifs.length || cardMedia.videos.length)) foundMedia = true;
         }
       }
       const children = Array.isArray(current) ? current : Object.values(current);
@@ -2072,17 +2668,12 @@
         if (child && typeof child === 'object') stack.push(child);
       }
     }
-    return false;
+    return foundMedia;
   }
 
-  function requestFirefoxTweetDetailMedia(statusId) {
-    const id = String(statusId || '');
-    if (!id || !isFirefoxCompatibilityActive() || typeof GM_xmlhttpRequest !== 'function') return Promise.resolve(false);
-    if (firefoxMediaLookupJobs.has(id)) return firefoxMediaLookupJobs.get(id);
-    const variables = { tweetId: id, withCommunity: false, includePromotedContent: false, withVoice: false };
-    const fieldToggles = { withArticleRichContentState: true, withArticlePlainText: false, withGrokAnalyze: false, withDisallowedReplyControls: false };
-    const url = `https://x.com/i/api/graphql/${FIREFOX_TWEET_DETAIL_QUERY_ID}/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(FIREFOX_TWEET_DETAIL_FEATURES))}&fieldToggles=${encodeURIComponent(JSON.stringify(fieldToggles))}`;
-    const task = new Promise((resolve) => {
+  function requestTweetDetailMediaWithGm(url, statusId) {
+    if (typeof GM_xmlhttpRequest !== 'function') return Promise.resolve(false);
+    return new Promise((resolve) => {
       try {
         GM_xmlhttpRequest({
           method: 'GET',
@@ -2090,20 +2681,46 @@
           headers: buildFirefoxTweetDetailHeaders(),
           responseType: 'json',
           timeout: 30000,
+          // Tampermonkey / Violentmonkey 默认行为略有差异，同时声明两项以明确携带 X 登录态。
+          anonymous: false,
+          withCredentials: true,
           onload: (response) => {
             if (!response || response.status < 200 || response.status >= 300) { resolve(false); return; }
             let payload = response.response;
+            // 部分 Violentmonkey + Firefox 组合即使声明 json，仍只提供 responseText。
+            if ((!payload || typeof payload === 'string') && response.responseText) payload = response.responseText;
             if (typeof payload === 'string') {
               try { payload = JSON.parse(payload); } catch (err) { resolve(false); return; }
             }
-            resolve(extractMediaFromTweetDetail(payload, id));
+            resolve(extractMediaFromTweetDetail(payload, statusId));
           },
           onerror: () => resolve(false),
           ontimeout: () => resolve(false),
           onabort: () => resolve(false),
         });
       } catch (err) { resolve(false); }
-    }).finally(() => firefoxMediaLookupJobs.delete(id));
+    });
+  }
+
+  function requestFirefoxTweetDetailMedia(statusId) {
+    const id = String(statusId || '');
+    if (!id || !isFirefoxCompatibilityActive()) return Promise.resolve(false);
+    if (firefoxMediaLookupJobs.has(id)) return firefoxMediaLookupJobs.get(id);
+    const variables = { tweetId: id, withCommunity: false, includePromotedContent: false, withVoice: false };
+    const fieldToggles = { withArticleRichContentState: true, withArticlePlainText: false, withGrokAnalyze: false, withDisallowedReplyControls: false };
+    const url = `https://x.com/i/api/graphql/${FIREFOX_TWEET_DETAIL_QUERY_ID}/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(FIREFOX_TWEET_DETAIL_FEATURES))}&fieldToggles=${encodeURIComponent(JSON.stringify(fieldToggles))}`;
+    const task = (async () => {
+      // 查询本身与页面同源，优先使用带 credentials 的会话 fetch。安卓 Firefox 上这比
+      // Violentmonkey 的扩展层 GM_xmlhttpRequest 更容易沿用当前 X 登录态。
+      try {
+        const payload = await requestXSessionJson(url);
+        if (extractMediaFromTweetDetail(payload, id)) return true;
+      } catch (err) {
+        debugLog('same-origin tweet detail lookup failed:', err);
+      }
+      // 同源 fetch 被环境或 CSP 拒绝时，再回退到脚本管理器的特权请求。
+      return requestTweetDetailMediaWithGm(url, id);
+    })().finally(() => firefoxMediaLookupJobs.delete(id));
     firefoxMediaLookupJobs.set(id, task);
     return task;
   }
@@ -2166,6 +2783,52 @@
     rememberFollowingRelation(handle, following);
   }
 
+  function harvestNotificationRelationship(obj) {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+    const relationship = obj.relationship && typeof obj.relationship === 'object' ? obj.relationship : null;
+    const relationshipSource = relationship && relationship.source && typeof relationship.source === 'object'
+      ? relationship.source
+      : null;
+    const relationshipTarget = relationship && relationship.target && typeof relationship.target === 'object'
+      ? relationship.target
+      : null;
+    if (relationshipSource && relationshipTarget && typeof relationshipSource.notifications_enabled === 'boolean') {
+      const targetUser = notificationUserFromRest(relationshipTarget, relationshipSource.notifications_enabled);
+      if (targetUser) {
+        rememberNotificationSubscription(targetUser, relationshipSource.notifications_enabled, { trackDisabled: true });
+      }
+    }
+    const legacy = obj.legacy && typeof obj.legacy === 'object' ? obj.legacy : null;
+    const core = obj.core && typeof obj.core === 'object' ? obj.core : null;
+    const settings = obj.notifications_settings && typeof obj.notifications_settings === 'object'
+      ? obj.notifications_settings
+      : null;
+    // 普通关注列表中的 notifications=false 可能来自裁剪响应；只把 true 当作新增证据。
+    // 明确关闭仅接受用户资料字段或铃铛修改响应，避免同步时误删本地订阅。
+    const enabled = settings && typeof settings.notifications_enabled === 'boolean'
+      ? settings.notifications_enabled
+      : (obj.notifications === true || (legacy && legacy.notifications === true) ? true : null);
+    if (typeof enabled !== 'boolean') return;
+
+    const username = safeString(
+      (legacy && legacy.screen_name) || (core && core.screen_name) || obj.screen_name || obj.username || '',
+      30
+    ).replace(/^@+/, '');
+    const id = safeString(obj.rest_id || obj.id_str || obj.id || (legacy && legacy.id_str) || '', 30);
+    if (!/^[a-z0-9_]{1,15}$/i.test(username) || !/^\d{1,30}$/.test(id)) return;
+    const avatar = obj.avatar && typeof obj.avatar === 'object' ? obj.avatar : null;
+    rememberNotificationSubscription({
+      id,
+      username,
+      displayName: safeString((core && core.name) || obj.name || (legacy && legacy.name) || '', 100),
+      avatarUrl: safeImportedAssetUrl(
+        (avatar && (avatar.image_url || avatar.imageUrl))
+        || (legacy && (legacy.profile_image_url_https || legacy.profile_image_url))
+        || obj.profile_image_url_https || obj.profile_image_url || ''
+      ),
+    }, enabled);
+  }
+
   function getHandleFromFollowControl(control) {
     if (!control || !control.getAttribute) return '';
     const labelText = `${control.getAttribute('aria-label') || ''} ${control.innerText || ''}`;
@@ -2204,7 +2867,9 @@
 
   function textMayContainHarvestData(txt) {
     return txt.indexOf('extended_entities') !== -1 || txt.indexOf('binding_values') !== -1
-      || txt.indexOf('"following"') !== -1 || txt.indexOf('relationship_perspectives') !== -1;
+      || txt.indexOf('"following"') !== -1 || txt.indexOf('relationship_perspectives') !== -1
+      || txt.indexOf('notifications_settings') !== -1 || txt.indexOf('notifications_enabled') !== -1
+      || txt.indexOf('"notifications"') !== -1;
   }
 
   function scheduleNetworkHarvestDrain() {
@@ -2248,6 +2913,7 @@
     if (!value || typeof value !== 'object' || depth > 40) return;
     if (!Array.isArray(value)) {
       harvestFollowingRelationship(value);
+      harvestNotificationRelationship(value);
       const idStr = value.id_str;
       const ext = value.extended_entities;
       if (idStr && ext && Array.isArray(ext.media)) registerMedia(idStr, ext.media);
@@ -2595,6 +3261,19 @@
       const g = poster.match(/tweet_video_thumb\/([A-Za-z0-9_-]+)\.(?:jpg|png|webp)/);
       if (g) addGif('https://video.twimg.com/tweet_video/' + g[1] + '.mp4');
     });
+    // 嵌套引用帖的视频只有 blob: 播放地址，但其海报仍带稳定的媒体 ID。
+    // 用网络响应中建立的海报映射找回真实 MP4，不依赖外层 / 内层帖子 ID 是否一致。
+    article.querySelectorAll(
+      'video[poster], img[src*="/amplify_video_thumb/"], '
+      + 'img[src*="/ext_tw_video_thumb/"], img[src*="/tweet_video_thumb/"]'
+    ).forEach((element) => {
+      const poster = element.getAttribute('poster') || element.currentSrc || element.src || '';
+      const posterKey = getVideoPosterKey(poster);
+      const matched = posterKey ? getRegistryEntry(videoPosterRegistry, posterKey) : null;
+      if (!matched || !matched.url) return;
+      if (matched.type === 'gif') addGif(matched.url);
+      else addVideo(matched.url);
+    });
     return out;
   }
 
@@ -2914,6 +3593,15 @@
     const id = String(statusId || '');
     const registered = mediaRegistry.get(id) || cardRegistry.get(id);
     return !registered || !((registered.videos && registered.videos.length) || (registered.gifs && registered.gifs.length));
+  }
+
+  function getMissingMediaMessage(article) {
+    if (IS_VIOLENTMONKEY && articleMayContainVideo(article)) {
+      return '⚠️ 未能取得视频地址：检测到 Violentmonkey。安卓 Firefox 上可能无法正确携带 X 登录态，请改用 Tampermonkey 后重试';
+    }
+    return isFirefoxCompatibilityActive()
+      ? '未能取得媒体地址，请确认已登录 X 后重试'
+      : '未找到可下载的媒体，若为视频请先点开或播放一下再试';
   }
 
   function formatDownloadBytes(value) {
@@ -3380,9 +4068,7 @@
       if (found) items = collectDownloadItems(article, statusId);
     }
     if (!items.length) {
-      showToast(isFirefoxCompatibilityActive()
-        ? '未能取得媒体地址，请确认已登录 X 后重试'
-        : '未找到可下载的媒体，若为视频请先点开或播放一下再试');
+      showToast(getMissingMediaMessage(article), IS_VIOLENTMONKEY ? 7000 : undefined);
       return;
     }
     const activeAfterLookup = downloadJobs.get(String(statusId || ''));
@@ -3788,7 +4474,8 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.9.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.1.2',
+      userscriptManager: USERSCRIPT_MANAGER || 'unknown',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,
       readyState: document.readyState || '',
@@ -4534,6 +5221,7 @@
   }
 
   function restoreAdultSpamScrollAnchor(candidates) {
+    if (isPageScrollBusy()) return false;
     for (const candidate of candidates || []) {
       const current = resolveAdultSpamScrollAnchor(candidate);
       if (!current) continue;
@@ -4550,22 +5238,19 @@
 
   function stabilizeAdultSpamScroll(candidates) {
     const token = ++adultSpamScrollToken;
-    if (!candidates || !candidates.length) return;
-    restoreAdultSpamScrollAnchor(candidates);
+    if (!candidates || !candidates.length || isPageScrollBusy()) return;
     if (typeof requestAnimationFrame !== 'function') return;
     requestAnimationFrame(() => {
-      if (token !== adultSpamScrollToken) return;
+      if (token !== adultSpamScrollToken || isPageScrollBusy()) return;
       restoreAdultSpamScrollAnchor(candidates);
-      requestAnimationFrame(() => {
-        if (token === adultSpamScrollToken) restoreAdultSpamScrollAnchor(candidates);
-      });
     });
   }
 
   function setAdultSpamHidden(article, decision) {
     // 保留 X 虚拟列表管理的 cellInnerDiv 外壳，只隐藏帖子本身，避免列表节点被反复销毁和重建。
     const target = article;
-    if (!target || !target.classList) return false;
+    if (!target || !target.classList) return { hidden: false, changed: false };
+    const wasHidden = target.classList.contains('BetterX-adult-spam-hidden');
     if (decision.hidden) {
       target.classList.add('BetterX-adult-spam-hidden');
       target.dataset.BetterXAdultSpamReason = `${decision.score} 分：${decision.reasons.join('、')}`;
@@ -4573,10 +5258,10 @@
       target.classList.remove('BetterX-adult-spam-hidden');
       delete target.dataset.BetterXAdultSpamReason;
     }
-    return decision.hidden;
+    return { hidden: !!decision.hidden, changed: wasHidden !== !!decision.hidden };
   }
 
-  function evaluateAndApplyAdultSpam(article) {
+  function evaluateAndApplyAdultSpam(article, outcome, deferLayoutWhileScrolling) {
     if (!adultSpamFilteringEnabled() || !article || !article.querySelector) return false;
     const input = getAdultSpamInput(article);
     const statusId = extractStatusIdFromUrl(getStatusLink(article)) || '';
@@ -4586,19 +5271,36 @@
       adultSpamScannedIds, statsKey, adultSpamScannedIdsCapped
     );
     const cached = adultSpamCache.get(article);
-    if (cached && cached.version === adultSpamRulesVersion && cached.fingerprint === fingerprint) {
-      return setAdultSpamHidden(article, cached.decision);
+    const decision = cached && cached.version === adultSpamRulesVersion && cached.fingerprint === fingerprint
+      ? cached.decision
+      : scoreAdultSpam(input);
+    if (!cached || cached.version !== adultSpamRulesVersion || cached.fingerprint !== fingerprint) {
+      adultSpamCache.set(article, { version: adultSpamRulesVersion, fingerprint, decision });
     }
-    const decision = scoreAdultSpam(input);
-    adultSpamCache.set(article, { version: adultSpamRulesVersion, fingerprint, decision });
-    const hidden = setAdultSpamHidden(article, decision);
-    if (hidden) {
+    const currentlyHidden = article.classList.contains('BetterX-adult-spam-hidden');
+    if (deferLayoutWhileScrolling && isPageScrollBusy() && currentlyHidden !== !!decision.hidden) {
+      scheduleAdultSpamLayoutFlush(article);
+      if (outcome && typeof outcome === 'object') {
+        outcome.hidden = !!decision.hidden;
+        outcome.changed = false;
+        outcome.deferred = true;
+      }
+      return !!decision.hidden;
+    }
+    const applied = setAdultSpamHidden(article, decision);
+    if (outcome && typeof outcome === 'object') {
+      outcome.hidden = applied.hidden;
+      outcome.changed = applied.changed;
+    }
+    if (applied.hidden) {
       adultSpamSessionHiddenIdsCapped = addBoundedSessionStat(
         adultSpamSessionHiddenIds, statsKey, adultSpamSessionHiddenIdsCapped
       );
     }
-    if (hidden) debugLog('内容净化已隐藏帖子', statusId || '(无 ID)', decision.score, decision.reasons);
-    return hidden;
+    if (applied.hidden && applied.changed) {
+      debugLog('内容净化已隐藏帖子', statusId || '(无 ID)', decision.score, decision.reasons);
+    }
+    return applied.hidden;
   }
 
   function updateAdultSpamCount() {
@@ -4620,11 +5322,15 @@
   function sweepAdultSpam() {
     if (!adultSpamFilteringEnabled()) return;
     harvestFollowingControlsFromRoot(document);
-    document.querySelectorAll('article').forEach(evaluateAndApplyAdultSpam);
+    document.querySelectorAll('article').forEach((article) => evaluateAndApplyAdultSpam(article));
     updateAdultSpamCount();
   }
 
   function applyAdultSpamFiltering() {
+    if (isPageScrollBusy()) {
+      document.querySelectorAll('article').forEach(scheduleAdultSpamLayoutFlush);
+      return;
+    }
     const anchors = captureAdultSpamScrollAnchors();
     if (adultSpamFilteringEnabled()) {
       // 直接按新判定更新差异，不再“全部显示 → 全部隐藏”，避免规则刷新时整页闪烁。
@@ -4680,7 +5386,7 @@
 
   function captureArticle(article) {
     if (state.settings.hideAds && isAdArticle(article)) { hideAdElement(article); return; }
-    if (adultSpamFilteringEnabled() && evaluateAndApplyAdultSpam(article)) return;
+    if (adultSpamFilteringEnabled() && evaluateAndApplyAdultSpam(article, null, true)) return;
     if (!isProbablyPostArticle(article)) return;
     const url = getStatusLink(article);
     const id = extractStatusIdFromUrl(url);
@@ -5290,9 +5996,62 @@
     });
   }
 
+  function formatNotificationSyncTime(timestamp) {
+    if (!timestamp) return '尚未完整同步';
+    try { return `上次同步：${new Date(timestamp).toLocaleString()}`; } catch (err) { return '已同步'; }
+  }
+
+  function renderNotificationSubscriptions() {
+    if (!state.notificationListEl) return;
+    const syncButton = state.panelEl && state.panelEl.querySelector('[data-action="sync-notification-users"]');
+    if (syncButton) {
+      syncButton.disabled = state.notificationSyncInProgress;
+      syncButton.textContent = state.notificationSyncInProgress ? '正在同步…' : '同步订阅用户';
+    }
+    const allItems = [...notificationSubscriptions.values()]
+      .sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true)
+        || Number(b.enabled) - Number(a.enabled)
+        || String(a.username).localeCompare(String(b.username), undefined, { sensitivity: 'base' }));
+    const query = safeString(state.notificationSearchQuery, 120).trim();
+    const items = query ? allItems.filter((item) => notificationMatchesSearch(item, query)) : allItems;
+    const enabledCount = allItems.filter((item) => item.enabled).length;
+    const pinnedCount = allItems.filter((item) => item.pinned === true).length;
+    if (state.notificationStatusEl) {
+      const filterSummary = query ? ` · 筛选到 ${items.length}/${allItems.length}` : '';
+      state.notificationStatusEl.textContent = state.notificationSyncInProgress
+        ? `正在读取关注列表… 已发现 ${enabledCount} 个订阅${filterSummary}`
+        : `已订阅 ${enabledCount} · 已置顶 ${pinnedCount} · 本地保留 ${allItems.length}${filterSummary} · ${formatNotificationSyncTime(state.settings.notificationSubscriptionsSyncedAt)}`;
+    }
+    if (!allItems.length) {
+      state.notificationListEl.innerHTML = '<div class="BetterX-empty">还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。</div>';
+      return;
+    }
+    if (!items.length) {
+      state.notificationListEl.innerHTML = `<div class="BetterX-empty">没有找到与“${escapeHtml(query)}”匹配的用户名或 @用户名。</div>`;
+      return;
+    }
+    state.notificationListEl.innerHTML = items.map((item) => {
+      const avatar = safeImportedAssetUrl(item.avatarUrl);
+      const profileUrl = `https://x.com/${encodeURIComponent(item.username)}`;
+      const pending = state.notificationMutationUsers.has(item.username.toLowerCase());
+      const pinned = item.pinned === true;
+      return `
+        <div class="BetterX-notification-user ${item.enabled ? '' : 'is-disabled'} ${pinned ? 'is-pinned' : ''}">
+          <a class="BetterX-notification-user-main" href="${escapeHtml(profileUrl)}" target="_blank" rel="noopener noreferrer">
+            ${avatar ? `<img src="${escapeHtml(avatar)}" alt="" referrerpolicy="no-referrer" />` : '<span class="BetterX-notification-avatar-fallback">@</span>'}
+            <span><b>${escapeHtml(item.displayName || item.username)}${pinned ? '<span class="BetterX-notification-pin-mark" title="已置顶" aria-label="已置顶"> 📌</span>' : ''}</b><small>@${escapeHtml(item.username)}</small></span>
+          </a>
+          <div class="BetterX-notification-user-actions">
+            <button class="BetterX-btn ${item.enabled ? 'danger' : 'primary'}" data-action="toggle-notification-user" data-username="${escapeHtml(item.username)}" data-enabled="${item.enabled ? 'false' : 'true'}" ${pending ? 'disabled' : ''}>${pending ? '处理中…' : (item.enabled ? '关闭通知' : '重新开启')}</button>
+            <button class="BetterX-btn ${pinned ? 'notification-pinned' : ''}" data-action="toggle-notification-pin" data-username="${escapeHtml(item.username)}">${pinned ? '取消置顶' : '置顶'}</button>
+            ${item.enabled ? '' : `<button class="BetterX-btn" data-action="forget-notification-user" data-username="${escapeHtml(item.username)}">移除记录</button>`}
+          </div>
+        </div>`;
+    }).join('');
+  }
   function setPanelView(view) {
     if (!state.panelEl) return;
-    const nextView = view === 'settings' ? 'settings' : 'vault';
+    const nextView = view === 'settings' || view === 'notifications' ? view : 'vault';
     const enteringSettings = nextView === 'settings' && state.panelView !== 'settings';
     state.panelView = nextView;
     if (enteringSettings) {
@@ -5300,7 +6059,7 @@
         detailsEl.removeAttribute('open');
       });
     }
-    state.panelEl.classList.toggle('is-settings-view', nextView === 'settings');
+    state.panelEl.classList.toggle('is-settings-view', nextView !== 'vault');
     state.panelEl.querySelectorAll('[data-view-panel]').forEach((viewEl) => {
       viewEl.hidden = viewEl.getAttribute('data-view-panel') !== nextView;
     });
@@ -5311,6 +6070,7 @@
       tabEl.tabIndex = active ? 0 : -1;
     });
     updateSettingsDependencyUI();
+    if (nextView === 'notifications') renderNotificationSubscriptions();
   }
 
   function togglePanel(force) {
@@ -5753,7 +6513,8 @@
     const badge = state.badgeEl;
     if (!badge) return;
     let startX = 0, startY = 0, origLeft = 0, origBottom = 0, dragging = false, moved = false;
-    let mobilePointerId = null, mobileStartX = 0, mobileStartY = 0, mobileLongPressTimer = null, mobileDragging = false;
+    let mobilePointerId = null, mobileStartX = 0, mobileStartY = 0, mobileLongPressTimer = null;
+    let mobileDragging = false, mobileCaptured = false;
 
     const clearMobileLongPress = () => {
       if (mobileLongPressTimer) clearTimeout(mobileLongPressTimer);
@@ -5772,15 +6533,19 @@
         mobileStartX = e.clientX;
         mobileStartY = e.clientY;
         mobileDragging = false;
+        mobileCaptured = false;
         clearMobileLongPress();
         mobileLongPressTimer = setTimeout(() => {
           if (mobilePointerId !== e.pointerId) return;
           mobileLongPressTimer = null;
           mobileDragging = true;
+          try {
+            badge.setPointerCapture(e.pointerId);
+            mobileCaptured = true;
+          } catch (err) {}
           state.suppressNextBadgeClick = true;
           badge.classList.add('is-mobile-dragging');
         }, 450);
-        try { badge.setPointerCapture(e.pointerId); } catch (err) {}
         return;
       }
       dragging = true; moved = false;
@@ -5825,8 +6590,12 @@
           state.settings.mobileBadgeHandleTop = getMobileBadgeHandleTop(parseFloat(state.rootEl.style.top));
           queueDbWrite(async () => { await persistSettings(); });
         }
+        if (mobileCaptured) {
+          try { badge.releasePointerCapture(e.pointerId); } catch (err) {}
+        }
         mobilePointerId = null;
         mobileDragging = false;
+        mobileCaptured = false;
         badge.classList.remove('is-mobile-dragging');
         return;
       }
@@ -6141,6 +6910,7 @@
 
       <div class="BetterX-tabs" role="tablist" aria-label="BetterX 面板">
         <button class="BetterX-tab active" type="button" role="tab" aria-selected="true" data-action="set-panel-view" data-view="vault">帖子</button>
+        <button class="BetterX-tab" type="button" role="tab" aria-selected="false" data-action="set-panel-view" data-view="notifications">通知</button>
         <button class="BetterX-tab" type="button" role="tab" aria-selected="false" data-action="set-panel-view" data-view="settings">设置</button>
       </div>
 
@@ -6178,6 +6948,23 @@
       </details>
       </div>
       <div class="BetterX-list" id="BetterX-list"></div>
+      </section>
+
+      <section class="BetterX-view BetterX-notifications-view" data-view-panel="notifications" hidden>
+        <div class="BetterX-notification-toolbar">
+          <div class="BetterX-settings-intro">
+            <strong>帖子通知管理</strong>
+            <span>读取 X 的铃铛订阅状态；开关操作会同步修改 X 账号设置。本页不会抓取或显示订阅账号的帖子。</span>
+          </div>
+          <div class="BetterX-row BetterX-notification-search-row">
+            <input type="search" class="BetterX-input" id="BetterX-notification-search" placeholder="搜索用户名或 @用户名…" aria-label="搜索帖子通知用户" maxlength="120" />
+            <button class="BetterX-btn" data-action="search-notification-users">搜索</button>
+            <button class="BetterX-btn primary" data-action="sync-notification-users">同步订阅用户</button>
+          </div>
+          <br/>
+          <div class="BetterX-content-status" id="BetterX-notification-status">尚未读取订阅用户</div>
+        </div>
+        <div class="BetterX-notification-list" id="BetterX-notification-list"></div>
       </section>
 
       <section class="BetterX-view BetterX-settings-view" data-view-panel="settings" hidden>
@@ -6439,6 +7226,9 @@
     state.adultSpamWhitelistEl = panel.querySelector('#BetterX-adultspam-whitelist');
     state.adultSpamWhitelistTagsEl = panel.querySelector('#BetterX-adultspam-whitelist-tags');
     state.adultSpamCountEl = panel.querySelector('#BetterX-adultspam-count');
+    state.notificationListEl = panel.querySelector('#BetterX-notification-list');
+    state.notificationStatusEl = panel.querySelector('#BetterX-notification-status');
+    state.notificationSearchEl = panel.querySelector('#BetterX-notification-search');
     state.layoutEnabledEl = panel.querySelector('#BetterX-layout-enabled');
     state.layoutAutoWidthEl = panel.querySelector('#BetterX-layout-auto-width');
     state.timelineWidthEl = panel.querySelector('#BetterX-timeline-width');
@@ -6546,6 +7336,17 @@
       commitAdultSpamWhitelistInput();
     });
     state.adultSpamWhitelistEl.addEventListener('blur', () => commitAdultSpamWhitelistInput());
+    if (state.notificationSearchEl) {
+      state.notificationSearchEl.addEventListener('input', () => {
+        state.notificationSearchQuery = safeString(state.notificationSearchEl.value, 120).trim();
+        renderNotificationSubscriptions();
+      });
+      state.notificationSearchEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || e.isComposing) return;
+        e.preventDefault();
+        applyNotificationSearch();
+      });
+    }
     state.layoutEnabledEl.addEventListener('change', (e) => setSettingsPartial({ layoutEnabled: !!e.target.checked }));
     state.layoutAutoWidthEl.addEventListener('change', (e) => setSettingsPartial({ layoutAutoWidth: !!e.target.checked }));
     state.layoutHideLeftbarEl.addEventListener('change', (e) => setSettingsPartial({ layoutHideLeftbar: !!e.target.checked }));
@@ -6619,6 +7420,24 @@
       switch (action) {
         case 'set-panel-view':
           setPanelView(actionEl.getAttribute('data-view'));
+          break;
+        case 'sync-notification-users':
+          syncNotificationSubscriptions();
+          break;
+        case 'search-notification-users':
+          applyNotificationSearch();
+          break;
+        case 'toggle-notification-pin':
+          toggleNotificationSubscriptionPinned(actionEl.getAttribute('data-username') || '');
+          break;
+        case 'toggle-notification-user':
+          updateNotificationSubscription(
+            actionEl.getAttribute('data-username') || '',
+            actionEl.getAttribute('data-enabled') === 'true'
+          );
+          break;
+        case 'forget-notification-user':
+          removeRememberedNotificationSubscription(actionEl.getAttribute('data-username') || '');
           break;
         case 'menu-toggle':
           if (state.menuEl) state.menuEl.hidden = !state.menuEl.hidden;
@@ -6870,6 +7689,9 @@
       #BetterX-root.BetterX-mobile #BetterX-badge {
         opacity: var(--xv-mobile-badge-opacity, 1);
         transition: opacity 170ms ease-out, filter .15s;
+      }
+      #BetterX-root.BetterX-mobile:not(.BetterX-mobile-badge-collapsed) #BetterX-badge {
+        touch-action: manipulation;
       }
       #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge {
         width: 15px; height: 76px; min-height: 76px; padding: 0; border-radius: 999px 0 0 999px;
@@ -7290,7 +8112,7 @@
       }
 
       .BetterX-tabs {
-        flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+        flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
         margin: 0 14px 10px; padding: 3px; border-radius: 11px; background: var(--xv-chip-bg);
       }
       .BetterX-tab {
@@ -7306,6 +8128,25 @@
       .BetterX-view { flex: 1 1 auto; min-height: 0; }
       .BetterX-view[hidden] { display: none !important; }
       .BetterX-vault-view { display: flex; flex-direction: column; }
+      .BetterX-notifications-view { display: flex; flex-direction: column; min-height: 0; }
+      .BetterX-notification-toolbar { flex: 0 0 auto; padding: 0 14px 12px; border-bottom: 1px solid var(--xv-border); }
+      .BetterX-notification-search-row { margin: 10px 0 0; gap: 8px; }
+      .BetterX-notification-search-row .BetterX-input { flex: 1 1 240px; min-width: 0; }
+      .BetterX-notification-actions { margin: 8px 0; flex-wrap: wrap; }
+      .BetterX-notification-list { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 14px 18px; }
+      .BetterX-notification-user { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--xv-border); }
+      .BetterX-notification-user.is-pinned { box-shadow: inset 3px 0 0 var(--xv-accent); padding-left: 8px; }
+      .BetterX-notification-user.is-disabled { opacity: .68; }
+      .BetterX-notification-user.is-disabled.is-pinned { opacity: .82; }
+      .BetterX-notification-pin-mark { font-size: 12px; vertical-align: 1px; }
+      .BetterX-btn.notification-pinned { color: var(--xv-accent); border-color: var(--xv-accent); font-weight: 700; }
+      .BetterX-notification-user-main { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--xv-text); text-decoration: none; }
+      .BetterX-notification-user-main img, .BetterX-notification-avatar-fallback { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; object-fit: cover; }
+      .BetterX-notification-avatar-fallback { display: grid; place-items: center; background: var(--xv-chip-bg); color: var(--xv-muted); font-weight: 800; }
+      .BetterX-notification-user-main span span, .BetterX-notification-user-main > span { min-width: 0; }
+      .BetterX-notification-user-main b, .BetterX-notification-user-main small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .BetterX-notification-user-main small { color: var(--xv-muted); font-size: 12px; }
+      .BetterX-notification-user-actions { display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
       .BetterX-vault-toolbar {
         flex: 0 0 auto; border-top: 1px solid var(--xv-border); border-bottom: 1px solid var(--xv-border);
         background: var(--xv-panel-bg);
@@ -7492,6 +8333,21 @@
         .BetterX-toolbar-row { grid-template-columns: 1fr 1fr; }
         .BetterX-toolbar-row .BetterX-select:last-child { grid-column: 1 / -1; }
         .BetterX-list { padding: 8px 9px 12px; }
+        .BetterX-notification-toolbar { padding: 0 10px 10px; }
+        .BetterX-notification-search-row { flex-wrap: nowrap; }
+        .BetterX-notification-search-row .BetterX-btn { flex: 0 0 auto; }
+        .BetterX-notification-list { padding: 8px 10px 14px; }
+        /* 通知用户卡片按实际可用宽度自适应：
+           两个按钮通常可与用户名同排；按钮更多或空间不足时再自然换到下一行。 */
+        .BetterX-notification-user {
+          align-items: center; flex-direction: row; flex-wrap: wrap;
+        }
+        .BetterX-notification-user-main {
+          width: auto; flex: 1 1 96px; min-width: 0;
+        }
+        .BetterX-notification-user-actions {
+          width: auto; max-width: 100%; flex: 0 1 auto; justify-content: flex-start;
+        }
         .BetterX-settings-scroll { padding: 10px 10px 16px; }
         .BetterX-item-top { flex-direction: column; }
         .BetterX-actions { max-width: none; justify-content: flex-start; }
@@ -7543,6 +8399,7 @@
     };
     const flushAddedRoots = debounce(() => {
       const articles = new Set();
+      const deferAutoExpand = state.settings.autoExpandPostText && isPageScrollBusy();
       for (const root of pendingRoots) {
         collectArticlesFromRoot(root, articles);
       }
@@ -7553,8 +8410,9 @@
         if (state.settings.restoreMediaGrid) applyMediaGridLayout(article);
         if (state.settings.bypassAgeRestriction) revealAgeRestricted(article);
         // 向下滚动时 X 通过虚拟列表异步插入帖子；这里是首屏 scanArticles 之外的增量入口。
-        if (state.settings.autoExpandPostText) expandPostShowMore(article);
+        if (state.settings.autoExpandPostText && !deferAutoExpand) expandPostShowMore(article);
       }
+      if (deferAutoExpand) schedulePostShowMoreExpansion();
       if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
       if (state.settings.layoutEnabled) throttledLayoutRefresh();
     }, 100);
@@ -7581,12 +8439,15 @@
       }
       if (immediateAdultArticles.size) {
         // MutationObserver 在浏览器绘制前执行；立即过滤可避免新黄推先闪现 100ms 再消失。
-        const anchors = captureAdultSpamScrollAnchors();
-        let hiddenAny = false;
+        // 用户正在滚动时不读取锚点、更不主动改写 scrollY；让触控惯性与 X 虚拟列表保持主导。
+        const anchors = isPageScrollBusy() ? null : captureAdultSpamScrollAnchors();
+        let layoutChanged = false;
         for (const article of immediateAdultArticles) {
-          if (evaluateAndApplyAdultSpam(article)) hiddenAny = true;
+          const outcome = {};
+          evaluateAndApplyAdultSpam(article, outcome, true);
+          if (outcome.changed) layoutChanged = true;
         }
-        if (hiddenAny) stabilizeAdultSpamScroll(anchors);
+        if (layoutChanged && anchors) stabilizeAdultSpamScroll(anchors);
       }
       if (hadRemoval) {
         throttledDisappear();
@@ -7674,7 +8535,17 @@
     const persistedFollowedHandles = state.settings.knownFollowedHandles || [];
     persistedFollowedHandles.forEach((handle) => followedHandles.add(handle));
     trimFollowedHandlesToMax();
+    // document-start 的网络 Hook 可能先于 IndexedDB 完成并学到订阅状态；
+    // 载入持久数据后再把这批早期结果合并回来，避免启动竞态覆盖新信息。
+    const earlyNotificationSubscriptions = new Map(notificationSubscriptions);
+    notificationSubscriptions.clear();
+    for (const item of state.settings.notificationSubscriptions || []) {
+      const sanitized = sanitizeNotificationSubscription(item);
+      if (sanitized) notificationSubscriptions.set(sanitized.username.toLowerCase(), sanitized);
+    }
+    for (const [key, item] of earlyNotificationSubscriptions) notificationSubscriptions.set(key, item);
     state.settingsLoaded = true;
+    if (earlyNotificationSubscriptions.size) scheduleNotificationSubscriptionsPersist();
     if (followedHandles.size !== persistedFollowedHandles.length) scheduleFollowedHandlesPersist();
     const rawPosts = (await dbGetAllPosts()).filter(Boolean);
     const all = rawPosts.map(sanitizeImportedPost).filter(Boolean)
@@ -7964,6 +8835,7 @@
   }
   // ── 启动 ──────────────────────────────────────────────────────
   async function boot() {
+    installPageScrollActivityTracking();
     installStyles();
     createUI();
     applyTheme();
@@ -7997,7 +8869,8 @@
 
     const throttledReposition = throttle(repositionBadge, 500);
     const throttledLayoutResize = throttle(applyLayoutEnhancements, 250);
-    const handleMobileBadgeViewportChange = () => scheduleMobileBadgeSync();
+    // 徽标只需跟随浮动发帖按钮的大致位置；限制到约 12 FPS，避免移动端滚动时逐帧强制布局。
+    const handleMobileBadgeViewportChange = throttle(scheduleMobileBadgeSync, 80);
     window.addEventListener('resize', throttledReposition);
     window.addEventListener('resize', throttledLayoutResize);
     window.addEventListener('scroll', handleMobileBadgeViewportChange, { passive: true });
@@ -8015,7 +8888,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v2.9.0 started');
+    debugLog('v3.1.2 started');
   }
 
   function waitForPageReady() {
