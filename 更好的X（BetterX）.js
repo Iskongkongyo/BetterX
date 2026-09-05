@@ -1,9 +1,17 @@
 // ==UserScript==
 // @name         更好的 X（BetterX）
+// @name:zh-CN   更好的 X（BetterX）
+// @name:zh-TW   更好的 X（BetterX）
+// @name:ja      もっと便利な X（BetterX）
+// @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      3.1.2
+// @version      3.2.0
 // @description  管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
-// @author        流萤可爱捏
+// @description:zh-CN 管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF（多媒体可自动压缩 ZIP）、取消年龄限制、记录与管理浏览过的帖子，并支持搜索、排序、关键词、备份、主题与 IndexedDB 持久化。
+// @description:zh-TW 管理 X 貼文通知訂閱狀態、自動隱藏成人引流帳號與廣告、簡化介面與寬螢幕、一鍵下載圖片/影片/GIF（多媒體可自動壓縮為 ZIP）、解除年齡限制、記錄與管理瀏覽過的貼文，並支援搜尋、排序、關鍵字、備份、主題與 IndexedDB 持久化。
+// @description:ja X のポスト通知購読を管理し、成人スパムや広告を自動非表示にします。UI の簡素化・ワイド表示、画像・動画・GIF の一括ダウンロード（ZIP 対応）、年齢制限の解除、閲覧ポストの記録・検索・並べ替え・キーワード・バックアップ・テーマ・IndexedDB 永続化に対応します。
+// @description:en Manage X post-notification subscriptions, hide adult spam and ads, simplify and widen the interface, download images/videos/GIFs with optional ZIP packaging, bypass age gates, and save browsed posts with search, sorting, keywords, backups, themes, and IndexedDB persistence.
+// @author       流萤可爱捏
 // @match        https://x.com/*
 // @match        https://twitter.com/*
 // @grant        GM_addStyle
@@ -38,6 +46,336 @@
       return '';
     }
   })();
+
+  // ── 界面国际化 ──────────────────────────────────────────────────────
+  const UI_LANGUAGE_OVERRIDE_KEY = 'betterx_ui_language_v1';
+  const SUPPORTED_UI_LANGUAGES = new Set(['zh-CN', 'zh-TW', 'ja', 'en']);
+  // 源文案统一使用简体中文；数组依次为繁体中文、日文、英文。
+  const UI_TEXT_ENTRIES = [
+    ['更好的 X', '更好的 X', 'もっと便利な X', 'Better X'],
+    ['Alt+X 开关', 'Alt+X 開關', 'Alt+X で開閉', 'Toggle with Alt+X'],
+    ['刷新', '重新整理', '更新', 'Refresh'], ['全部已读', '全部已讀', 'すべて既読', 'Mark all read'],
+    ['重新扫描当前页面', '重新掃描目前頁面', '現在のページを再スキャン', 'Rescan the current page'], ['把当前列表全部标为已读', '將目前列表全部標為已讀', '現在の一覧をすべて既読にする', 'Mark the current list as read'],
+    ['切换语言', '切換語言', '言語を切替', 'Switch language'], ['切换 BetterX 界面语言', '切換 BetterX 介面語言', 'BetterX の表示言語を切り替える', 'Switch BetterX interface language'],
+    ['选择界面语言', '選擇介面語言', '表示言語を選択', 'Choose interface language'],
+    ['选择后页面会刷新，帖子与设置数据不会受到影响。', '選擇後頁面會重新整理，貼文與設定資料不受影響。', '選択後にページを更新します。ポストや設定データには影響しません。', 'The page will reload after selection. Your posts and settings will not be affected.'],
+    ['正在切换语言并刷新…', '正在切換語言並重新整理…', '言語を切り替えて更新中…', 'Switching language and reloading…'],
+    ['无法保存语言设置', '無法儲存語言設定', '言語設定を保存できませんでした', 'Could not save the language setting'],
+    ['更多', '更多', 'その他', 'More'], ['关闭', '關閉', '閉じる', 'Close'],
+    ['帖子', '貼文', 'ポスト', 'Posts'], ['通知', '通知', '通知', 'Notifications'], ['设置', '設定', '設定', 'Settings'],
+    ['导出筛选', '匯出篩選結果', '絞り込み結果をエクスポート', 'Export filtered'],
+    ['备份全部', '備份全部', 'すべてバックアップ', 'Back up all'], ['导入', '匯入', 'インポート', 'Import'],
+    ['清空', '清空', '消去', 'Clear'], ['快速筛选', '快速篩選', 'クイックフィルター', 'Quick filters'],
+    ['搜索', '搜尋', '検索', 'Search'], ['搜索帖子', '搜尋貼文', 'ポストを検索', 'Search posts'],
+    ['搜索作者、正文或备注…', '搜尋作者、內文或備註…', '投稿者・本文・メモを検索…', 'Search author, text, or notes…'],
+    ['来源筛选', '來源篩選', 'ソースで絞り込む', 'Filter by source'], ['媒体筛选', '媒體篩選', 'メディアで絞り込む', 'Filter by media'],
+    ['排序方式', '排序方式', '並べ替え', 'Sort order'], ['智能排序', '智慧排序', 'スマート順', 'Smart sort'],
+    ['最近浏览', '最近瀏覽', '最近表示', 'Recently viewed'], ['最近抓取', '最近擷取', '最近取得', 'Recently captured'],
+    ['首次抓取（新→旧）', '首次擷取（新→舊）', '初回取得（新→古）', 'First captured (new→old)'],
+    ['首次抓取（旧→新）', '首次擷取（舊→新）', '初回取得（古→新）', 'First captured (old→new)'],
+    ['出现次数', '出現次數', '表示回数', 'Appearances'], ['按作者', '依作者', '投稿者順', 'By author'], ['按来源', '依來源', 'ソース順', 'By source'],
+    ['全部', '全部', 'すべて', 'All'], ['未打开', '未開啟', '未表示', 'Unopened'], ['已打开', '已開啟', '表示済み', 'Opened'],
+    ['快速消失', '快速消失', 'すぐ消えた', 'Disappeared quickly'], ['已收藏', '已收藏', 'お気に入り済み', 'Favorited'],
+    ['已置顶', '已置頂', '固定済み', 'Pinned'], ['命中关键词', '符合關鍵字', 'キーワード一致', 'Keyword matches'],
+    ['全部媒体', '全部媒體', 'すべてのメディア', 'All media'], ['含图片', '含圖片', '画像あり', 'With images'],
+    ['含视频', '含影片', '動画あり', 'With video'], ['纯文字', '純文字', 'テキストのみ', 'Text only'],
+    ['全部来源', '全部來源', 'すべてのソース', 'All sources'], ['主页', '首頁', 'ホーム', 'Home'],
+    ['正在关注', '正在關注', 'フォロー中', 'Following'], ['为你推荐', '為你推薦', 'おすすめ', 'For You'],
+    ['列表', '列表', 'リスト', 'List'], ['书签', '書籤', 'ブックマーク', 'Bookmarks'], ['未知页面', '未知頁面', '不明なページ', 'Unknown page'],
+    ['个人主页', '個人主頁', 'プロフィール', 'Profile'], ['帖子详情', '貼文詳情', 'ポスト詳細', 'Post details'],
+    ['搜索页', '搜尋頁', '検索ページ', 'Search page'], ['书签页', '書籤頁', 'ブックマークページ', 'Bookmarks page'],
+    ['通知页', '通知頁', '通知ページ', 'Notifications page'], ['列表页', '列表頁', 'リストページ', 'List page'],
+    ['总数', '總數', '合計', 'Total'], ['未读', '未讀', '未読', 'Unread'], ['图片', '圖片', '画像', 'Image'], ['视频', '影片', '動画', 'Video'],
+    ['来源:', '來源：', 'ソース：', 'Source:'], ['历史来源:', '歷史來源：', '過去のソース：', 'Source history:'],
+    ['抓取:', '擷取：', '取得：', 'Captured:'], ['浏览:', '瀏覽：', '表示：', 'Viewed:'], ['出现:', '出現：', '表示：', 'Seen:'],
+    ['当前来源:', '目前來源：', '現在のソース：', 'Current source:'], ['当前选择：', '目前選擇：', '現在の選択：', 'Current:'],
+    ['打开', '開啟', '開く', 'Open'], ['复制链接', '複製連結', 'リンクをコピー', 'Copy link'],
+    [' 的个人主页', ' 的個人主頁', ' のプロフィール', ' profile'], ['复制链接：', '複製連結：', 'リンクをコピー：', 'Copy link: '], ['已复制', '已複製', 'コピー済み', 'Copied'],
+    ['取消置顶', '取消置頂', '固定解除', 'Unpin'], ['置顶', '置頂', '固定', 'Pin'],
+    ['取消收藏', '取消收藏', 'お気に入り解除', 'Unfavorite'], ['收藏', '收藏', 'お気に入り', 'Favorite'], ['删', '刪除', '削除', 'Delete'],
+    ['展开全文', '展開全文', '全文を表示', 'Show full text'], ['收起', '收合', '折りたたむ', 'Collapse'],
+    ['备注', '備註', 'メモ', 'Note'], ['保存备注', '儲存備註', 'メモを保存', 'Save note'], ['取消', '取消', 'キャンセル', 'Cancel'],
+    ['在这里写备注…', '在這裡寫備註…', 'ここにメモを入力…', 'Write a note here…'], ['无正文', '無內文', '本文なし', 'No text'],
+    ['加载更多', '載入更多', 'さらに読み込む', 'Load more'],
+    ['帖子通知管理', '貼文通知管理', 'ポスト通知の管理', 'Post notification management'],
+    ['搜索用户名或 @用户名…', '搜尋使用者名稱或 @使用者名稱…', 'ユーザー名または @ユーザー名を検索…', 'Search name or @username…'],
+    ['搜索帖子通知用户', '搜尋貼文通知使用者', '通知ユーザーを検索', 'Search notification users'],
+    ['同步订阅用户', '同步訂閱使用者', '購読ユーザーを同期', 'Sync subscribed users'],
+    ['正在同步…', '正在同步…', '同期中…', 'Syncing…'], ['尚未读取订阅用户', '尚未讀取訂閱使用者', '購読ユーザー未取得', 'Subscribed users not loaded'],
+    ['正在读取关注列表…', '正在讀取關注列表…', 'フォロー一覧を取得中…', 'Reading following list…'],
+    ['已订阅', '已訂閱', '購読中', 'Subscribed'], ['本地保留', '本機保留', 'ローカル保存', 'Stored locally'],
+    ['筛选到', '篩選到', '絞り込み', 'Filtered'], ['上次同步：', '上次同步：', '最終同期：', 'Last sync: '],
+    ['尚未完整同步', '尚未完整同步', '完全同期前', 'Not fully synced'], ['已同步', '已同步', '同期済み', 'Synced'],
+    ['处理中…', '處理中…', '処理中…', 'Processing…'], ['关闭通知', '關閉通知', '通知をオフ', 'Disable notifications'],
+    ['重新开启', '重新開啟', '再度オン', 'Re-enable'], ['移除记录', '移除記錄', '記録を削除', 'Remove record'],
+    ['设置', '設定', '設定', 'Settings'], ['修改会立即生效；需要手动保存的项目仍保留应用按钮。', '修改會立即生效；需要手動儲存的項目仍保留套用按鈕。', '変更はすぐ反映されます。手動保存が必要な項目には適用ボタンがあります。', 'Changes apply immediately; items requiring manual saving retain an Apply button.'],
+    ['关键词与排除词', '關鍵字與排除詞', 'キーワードと除外語', 'Keywords and exclusions'],
+    ['任意匹配', '任意符合', 'いずれか一致', 'Match any'], ['全部匹配', '全部符合', 'すべて一致', 'Match all'], ['保存', '儲存', '保存', 'Save'],
+    ['输入关键词，支持正则，按回车添加', '輸入關鍵字，支援正則，按 Enter 新增', 'キーワードを入力（正規表現対応）、Enter で追加', 'Enter keywords (regex supported), press Enter to add'],
+    ['输入排除词，支持正则，按回车添加', '輸入排除詞，支援正則，按 Enter 新增', '除外語を入力（正規表現対応）、Enter で追加', 'Enter exclusions (regex supported), press Enter to add'],
+    ['内容净化', '內容淨化', 'コンテンツフィルター', 'Content filtering'], ['隐藏黄推 / 成人引流机器人', '隱藏成人內容／引流機器人', '成人スパムを非表示', 'Hide adult spam accounts'],
+    ['检测强度', '偵測強度', '検出強度', 'Detection strength'], ['均衡', '均衡', '標準', 'Balanced'], ['保守', '保守', '控えめ', 'Conservative'],
+    ['不审查已关注账号（转发内容除外）', '不審查已關注帳號（轉發內容除外）', 'フォロー中のアカウントを除外（リポストは対象）', 'Skip followed accounts (except reposts)'],
+    ['不审查已关注账号的转发内容', '不審查已關注帳號的轉發內容', 'フォロー中アカウントのリポストも除外', 'Also skip reposts by followed accounts'],
+    ['启用自定义规则（屏蔽词与账号白名单）', '啟用自訂規則（封鎖詞與帳號白名單）', 'カスタムルールを有効化（ブロック語・許可リスト）', 'Enable custom rules (blocked words and allowlist)'],
+    ['输入自定义屏蔽词，按回车添加', '輸入自訂封鎖詞，按 Enter 新增', 'ブロック語を入力し Enter で追加', 'Enter a blocked word and press Enter'],
+    ['输入账号白名单（如 @example），按回车添加', '輸入帳號白名單（如 @example），按 Enter 新增', '許可するアカウント（例 @example）を入力し Enter', 'Enter an allowed account (e.g. @example) and press Enter'],
+    ['当前隐藏', '目前隱藏', '現在非表示', 'Currently hidden'], ['本次累计', '本次累計', '今回の累計', 'This session'], ['已扫描', '已掃描', 'スキャン済み', 'Scanned'], ['已识别关注', '已識別關注', '認識済みフォロー', 'Known following'],
+    ['界面简化与宽屏', '介面簡化與寬螢幕', 'UI 簡素化とワイド表示', 'Simplified and wide layout'], ['启用界面简化与宽屏', '啟用介面簡化與寬螢幕', 'UI 簡素化とワイド表示を有効化', 'Enable simplified and wide layout'],
+    ['时间线宽度(px)', '時間軸寬度(px)', 'タイムライン幅 (px)', 'Timeline width (px)'], ['左侧栏宽度(px)', '左側欄寬度(px)', '左サイドバー幅 (px)', 'Left sidebar width (px)'],
+    ['应用宽度', '套用寬度', '幅を適用', 'Apply widths'], ['隐藏左侧栏', '隱藏左側欄', '左サイドバーを非表示', 'Hide left sidebar'], ['隐藏右侧栏', '隱藏右側欄', '右サイドバーを非表示', 'Hide right sidebar'],
+    ['中间栏填满（启用时同时隐藏左右栏）', '中間欄填滿（啟用時同時隱藏左右欄）', '中央列を全幅表示（左右列も非表示）', 'Fill center column (also hides sidebars)'],
+    ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'],
+    ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'],
+    ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'],
+    ['下载多个媒体自动压缩 ZIP 包', '下載多個媒體時自動壓縮 ZIP', '複数メディアを ZIP にまとめる', 'Package multiple media files as ZIP'],
+    ['记录已经下载过的帖子', '記錄已下載過的貼文', 'ダウンロード済みポストを記録', 'Track downloaded posts'],
+    ['媒体文件名（不含扩展名）', '媒體檔名（不含副檔名）', 'メディア名（拡張子なし）', 'Media filename (without extension)'],
+    ['ZIP 压缩包名（不含 .zip）', 'ZIP 壓縮檔名（不含 .zip）', 'ZIP 名（.zip なし）', 'ZIP filename (without .zip)'],
+    ['正则替换（可选）', '正則取代（選填）', '正規表現置換（任意）', 'Regex replacement (optional)'], ['替换为', '取代為', '置換後', 'Replace with'],
+    ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'],
+    ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'],
+    ['帖子内媒体改为网格视图', '貼文內媒體改為網格檢視', 'ポスト内メディアをグリッド表示', 'Show post media in a grid'],
+    ['取消年龄限制（用原图 / 视频进行替换）', '解除年齡限制（以原圖 / 影片取代）', '年齢制限を解除（元画像 / 動画に置換）', 'Bypass age gate (replace with original media)'],
+    ['自动展开帖子里“显示更多”', '自動展開貼文中的「顯示更多」', 'ポストの「さらに表示」を自動展開', 'Automatically expand “Show more” in posts'],
+    ['进入用户主页默认查看', '進入使用者主頁時預設檢視', 'プロフィールの既定タブ', 'Default profile tab'], ['亮点', '亮點', 'ハイライト', 'Highlights'],
+    ['用户主页帖子排序方式', '使用者主頁貼文排序方式', 'プロフィールのポスト並び順', 'Profile post sorting'],
+    ['最近', '最近', '最新', 'Recent'], ['热门', '熱門', '人気', 'Popular'],
+    ['“热门”会在用户主页地址后添加 ?sort=popular；“最近”保持 X 原本的用户主页地址。', '「熱門」會在使用者主頁網址後加入 ?sort=popular；「最近」則保留 X 原本的使用者主頁網址。', '「人気」はプロフィール URL に ?sort=popular を追加し、「最新」は X 本来のプロフィール URL を維持します。', 'Popular adds ?sort=popular to profile URLs; Recent keeps X’s original profile URL.'],
+    ['其他功能', '其他功能', 'その他の機能', 'Other features'], ['兼容 Firefox（仅 Firefox）', '相容 Firefox（僅 Firefox）', 'Firefox 互換モード（Firefox のみ）', 'Firefox compatibility (Firefox only)'],
+    ['隐藏应用徽标', '隱藏應用徽章', 'アプリバッジを非表示', 'Hide app badge'], ['切换为移动端徽标（仅 PC）', '切換為行動版徽章（僅 PC）', 'モバイル用バッジに切替（PC のみ）', 'Use mobile badge (PC only)'],
+    ['切换为半透明蓝色条（仅移动端）', '切換為半透明藍色條（僅行動裝置）', '半透明の青いバーに切替（モバイルのみ）', 'Use translucent blue bar (mobile only)'],
+    ['高级设置', '進階設定', '詳細設定', 'Advanced settings'], ['自动清理(天)', '自動清理（日）', '自動削除（日）', 'Auto-clean (days)'], ['最大条数', '最大筆數', '最大件数', 'Maximum posts'],
+    ['闪现阈值(秒)', '閃現門檻（秒）', '消失判定（秒）', 'Disappear threshold (sec)'], ['主题', '主題', 'テーマ', 'Theme'],
+    ['跟随系统', '跟隨系統', 'システムに合わせる', 'Follow system'], ['深色', '深色', 'ダーク', 'Dark'], ['浅色', '淺色', 'ライト', 'Light'],
+    ['下载超时(秒)', '下載逾時（秒）', 'タイムアウト（秒）', 'Download timeout (sec)'], ['下载并发', '下載並行數', '同時ダウンロード数', 'Concurrent downloads'],
+    ['点帖子空白处算已读', '點貼文空白處視為已讀', 'ポストの空白クリックで既読', 'Mark read when clicking post whitespace'], ['应用', '套用', '適用', 'Apply'],
+    ['不记录以下来源的帖子：', '不記錄以下來源的貼文：', '次のソースは記録しない：', 'Do not record posts from:'],
+    ['下载任务', '下載工作', 'ダウンロードタスク', 'Download tasks'], ['暂无下载任务', '暫無下載工作', 'ダウンロードはありません', 'No download tasks'],
+    ['下载', '下載', 'ダウンロード', 'Download'], ['下载中', '下載中', 'ダウンロード中', 'Downloading'],
+    ['排队中', '排隊中', '待機中', 'Queued'], ['排队', '排隊', '待機', 'Queued'], ['正在打包', '正在打包', '圧縮中', 'Packing'], ['打包', '打包', '圧縮', 'Packing'],
+    ['正在保存', '正在儲存', '保存中', 'Saving'], ['正在取消下载', '正在取消下載', 'キャンセル中', 'Cancelling download'], ['取消中', '取消中', 'キャンセル中', 'Cancelling'],
+    ['下载完成', '下載完成', 'ダウンロード完了', 'Download complete'], ['已取消', '已取消', 'キャンセル済み', 'Cancelled'], ['失败：', '失敗：', '失敗：', 'Failed: '],
+    ['重试', '重試', '再試行', 'Retry'], ['查看下载任务', '查看下載工作', 'ダウンロードを表示', 'View downloads'], ['取消下载', '取消下載', 'ダウンロードをキャンセル', 'Cancel download'],
+    ['下载图片/视频/GIF', '下載圖片/影片/GIF', '画像/動画/GIFを保存', 'Download images/videos/GIFs'], ['正在获取视频地址…', '正在取得影片網址…', '動画 URL を取得中…', 'Getting video URL…'],
+    ['已下载过媒体；点击可再次下载', '已下載過媒體；點擊可再次下載', 'ダウンロード済みです。クリックすると再保存できます', 'Downloaded before; click to download again'],
+    ['个任务', '個工作', '件のタスク', ' tasks'], ['查看下载任务：', '查看下載工作：', 'ダウンロードを表示：', 'View downloads: '],
+    ['命名效果预览：', '命名效果預覽：', 'ファイル名プレビュー：', 'Filename preview: '],
+    ['示例用户', '範例使用者', 'サンプルユーザー', 'Sample user'],
+    ['这是用于预览下载文件名的帖子正文', '這是用於預覽下載檔名的貼文內文', 'ダウンロード名を確認するためのサンプル本文', 'Sample post text for previewing download names'],
+    ['下载超时', '下載逾時', 'ダウンロードがタイムアウトしました', 'Download timed out'], ['网络错误', '網路錯誤', 'ネットワークエラー', 'Network error'],
+    ['下载失败', '下載失敗', 'ダウンロード失敗', 'Download failed'], ['读取失败', '讀取失敗', '読み込み失敗', 'Read failed'],
+    ['媒体总量超出经典 ZIP 范围，请改为逐个下载', '媒體總量超出傳統 ZIP 範圍，請改為逐一下載', 'メディア総量が従来形式の ZIP 上限を超えました。個別に保存してください', 'Media exceeds classic ZIP limits; download files separately'],
+    ['跨域下载失败：请使用支持 GM_xmlhttpRequest 的脚本管理器', '跨網域下載失敗：請使用支援 GM_xmlhttpRequest 的使用者腳本管理器', 'クロスオリジン保存に失敗しました。GM_xmlhttpRequest 対応のユーザースクリプト管理拡張を使用してください', 'Cross-origin download failed. Use a userscript manager that supports GM_xmlhttpRequest'],
+    ['⚠️ 未能取得视频地址：检测到 Violentmonkey。安卓 Firefox 上可能无法正确携带 X 登录态，请改用 Tampermonkey 后重试', '⚠️ 無法取得影片網址：偵測到 Violentmonkey。Android Firefox 可能無法正確攜帶 X 登入狀態，請改用 Tampermonkey 後重試', '⚠️ 動画 URL を取得できませんでした。Violentmonkey を検出しました。Android Firefox では X のログイン状態が正しく送信されない場合があるため、Tampermonkey に変更して再試行してください', '⚠️ Could not get the video URL. Violentmonkey was detected; Android Firefox may not pass the X login session correctly. Switch to Tampermonkey and try again'],
+    ['未能取得媒体地址，请确认已登录 X 后重试', '無法取得媒體網址，請確認已登入 X 後重試', 'メディア URL を取得できませんでした。X にログインして再試行してください', 'Could not get the media URL. Make sure you are signed in to X and try again'],
+    ['未找到可下载的媒体，若为视频请先点开或播放一下再试', '找不到可下載的媒體；若為影片，請先開啟或播放後再試', '保存できるメディアが見つかりません。動画の場合は一度開くか再生してから再試行してください', 'No downloadable media was found. For video, open or play it once and try again'],
+    ['图片预览', '圖片預覽', '画像プレビュー', 'Image preview'], ['关闭图片预览', '關閉圖片預覽', '画像プレビューを閉じる', 'Close image preview'], ['上一张图片', '上一張圖片', '前の画像', 'Previous image'], ['下一张图片', '下一張圖片', '次の画像', 'Next image'],
+    ['提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。', '提示：列表僅記錄你瀏覽時出現過的貼文。收藏／置頂貼文不會因數量上限或自動清理而刪除。', 'ヒント：閲覧中に表示されたポストだけを記録します。お気に入り／固定したポストは上限や自動削除の対象外です。', 'Tip: Only posts seen while browsing are saved. Favorited or pinned posts are never removed by limits or auto-cleaning.'],
+    ['读取 X 的铃铛订阅状态；开关操作会同步修改 X 账号设置。本页不会抓取或显示订阅账号的帖子。', '讀取 X 的鈴鐺訂閱狀態；開關操作會同步修改 X 帳號設定。本頁不會擷取或顯示訂閱帳號的貼文。', 'X のベル購読状態を読み取り、切替は X アカウントにも反映されます。このページで購読アカウントのポストを取得・表示することはありません。', 'Reads X bell-subscription status; toggles also update your X account. This page does not fetch or display posts from subscribed accounts.'],
+    ['仅作用于已记录的帖子：关键词用于高亮与筛选；排除词命中后会从列表隐藏。', '僅作用於已記錄的貼文：關鍵字用於醒目提示與篩選；符合排除詞的貼文會從列表隱藏。', '記録済みポストだけが対象です。キーワードは強調と絞り込みに、除外語は一覧からの非表示に使われます。', 'Applies only to saved posts: keywords highlight and filter; exclusion matches are hidden from the list.'],
+    ['正则写法说明：用 /表达式/ 包裹，例如 /猫|狗/；未包裹则被视为是普通文本。关键词与排除词都支持普通文本和正则混用。', '正則寫法：以 /運算式/ 包住，例如 /貓|狗/；未包住時視為一般文字。關鍵字與排除詞皆可混用一般文字和正則。', '正規表現は /式/ のように囲みます（例：/猫|犬/）。囲まない値は通常テキストとして扱われ、キーワードと除外語の両方で併用できます。', 'Regex syntax: wrap an expression in slashes, e.g. /cat|dog/. Unwrapped values are plain text; both forms can be mixed in keywords and exclusions.'],
+    ['使用多信号评分，只隐藏当前页面 DOM，不改写网络响应、不自动拉黑账号；关闭开关即可恢复。', '使用多訊號評分，僅隱藏目前頁面 DOM，不改寫網路回應、不自動封鎖帳號；關閉開關即可復原。', '複数のシグナルで判定し、現在の DOM だけを非表示にします。通信内容の書換えや自動ブロックは行わず、オフにすれば元に戻ります。', 'Uses multi-signal scoring and only hides the current DOM. It does not rewrite network responses or block accounts; disable it to restore content.'],
+    ['自动读取 X 当前的时间线与左侧栏宽度（默认开启）', '自動讀取 X 目前的時間軸與左側欄寬度（預設開啟）', 'X の現在のタイムライン幅と左サイドバー幅を自動取得（既定でオン）', 'Automatically detect X timeline and left-sidebar widths (enabled by default)'],
+    ['消息页和设置页自动停用版面调整；所有改动均可关闭恢复。', '訊息頁與設定頁會自動停用版面調整；所有變更皆可關閉復原。', 'メッセージ／設定ページではレイアウト調整を自動停止します。すべての変更はオフにして復元できます。', 'Layout changes are disabled automatically on Messages and Settings pages; every change can be turned off.'],
+    ['开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。', '開啟後貼文操作列會顯示下載進度與取消按鈕；桌面版顯示下載工作膠囊，行動版顯示帶工作數量的藍色下載按鈕。', '有効にするとポスト操作欄に進捗とキャンセルボタンを表示します。デスクトップではタスクピル、モバイルでは件数付きの青いボタンを表示します。', 'Shows download progress and cancel controls in post actions. Desktop gets a task pill; mobile gets a blue button with a task count.'],
+    ['默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。', '預設開啟；ZIP 內檔案使用下方「媒體檔名」範本。關閉後會同時下載多個媒體。', '既定でオンです。ZIP 内のファイル名には下のメディア名テンプレートを使います。オフの場合は複数ファイルを個別保存します。', 'Enabled by default. Files inside ZIP use the media filename template below. When disabled, media files download separately.'],
+    ['默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設關閉；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオフです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Disabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'],
+    ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 {序号}，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 {序號}，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで {序号} がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If {序号} is omitted for multiple media files, a number is appended automatically.'],
+    ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 $1）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 $1）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（$1 など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as $1 are supported; invalid or risky regexes are not saved.'],
+    ['开启后自动隐藏时间线推广帖、程序化广告卡片，以及桌面侧栏和移动端的“订阅 Premium”；推广帖不会记录，关闭开关即可恢复显示。', '開啟後自動隱藏時間軸推廣貼文、程式化廣告卡片，以及桌面側欄和行動版的「訂閱 Premium」；推廣貼文不會記錄，關閉即可復原。', 'タイムライン広告、プログラマティック広告、サイドバー／モバイルの Premium 案内を非表示にします。広告は記録されず、オフにすると復元します。', 'Hides promoted timeline posts, programmatic ad cards, and Subscribe to Premium prompts. Promoted posts are not saved; disable to restore them.'],
+    ['将 X 新版的多媒体正文轮播改为网格展示；两张并排，三张为左大右二，四张为 2×2 网格。', '將 X 新版多媒體輪播改為網格；兩張並排、三張左大右二、四張為 2×2。', 'X の新しいメディアカルーセルをグリッドに変更します。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Changes X’s media carousel to a grid: two side by side, three with one large left tile, and four in a 2×2 grid.'],
+    ['不显示的话，请稍等或者重新开关按钮；仅本地操作，不改动账号设置。', '若未顯示，請稍候或重新切換；僅在本機處理，不修改帳號設定。', '表示されない場合は少し待つか、スイッチを入れ直してください。ローカル処理のみでアカウント設定は変更しません。', 'If it does not appear, wait or toggle the option again. This is local only and does not change account settings.'],
+    ['自动展开时间线和帖子详情中的长文正文；只点击帖内的“显示更多 / Show more”，不会展开回复或侧栏内容。', '自動展開時間軸與貼文詳情中的長文；僅點擊貼文內「顯示更多 / Show more」，不展開回覆或側欄內容。', 'タイムラインと詳細ページの長文を自動展開します。ポスト内の「さらに表示 / Show more」だけを押し、返信やサイドバーは展開しません。', 'Expands long text in timelines and post details. Only the post’s “Show more” is clicked; replies and sidebar content are untouched.'],
+    ['开启后，仅在进入用户的主页时自动切换；帖子详情、媒体、回复、关注者等其他内容不受影响。', '開啟後僅在進入使用者主頁時自動切換；貼文詳情、媒體、回覆、追蹤者等不受影響。', '有効にするとプロフィールを開いた時だけ自動切替します。ポスト詳細、メディア、返信、フォロワーなどには影響しません。', 'When enabled, switching occurs only when entering a profile. Post details, media, replies, followers, and other pages are unaffected.'],
+    ['遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。', '頁面一直卡在 X 圖示時開啟；會停用頁面網路 Hook，點擊開關可查看影響。', 'X ロゴだけで止まる場合に有効にします。ページのネットワーク Hook を停止します。切替時に影響を確認できます。', 'Enable if the page is stuck on the X logo. This disables page network hooks; click the toggle to review the impact.'],
+    ['PC 端会隐藏徽标；移动端会收纳为屏幕右侧中部的半透明蓝色条，点按或从右边缘向内滑动即可恢复。也可通过油猴菜单恢复。', 'PC 端會隱藏徽章；行動端收納為螢幕右側中部的半透明藍色條，點按或從右側向內滑動即可復原，也可由使用者腳本選單復原。', 'PC ではバッジを非表示にし、モバイルでは右中央の半透明バーに収納します。タップ／右端からのスワイプ、またはユーザースクリプトメニューで復元できます。', 'Hides the badge on desktop; on mobile it collapses into a translucent bar at the right. Tap, swipe inward, or use the userscript menu to restore it.'],
+    ['使用圆形脚本图标与未读角标，并继续支持桌面端拖拽。', '使用圓形腳本圖示與未讀角標，並繼續支援桌面拖曳。', '丸いスクリプトアイコンと未読バッジを使い、デスクトップでのドラッグにも対応します。', 'Uses the circular script icon and unread badge while retaining desktop dragging.'],
+    ['把移动端圆形应用徽标切换为紧贴屏幕右侧的半透明蓝色条，点击可打开面板，长按可上下拖动。', '將行動版圓形徽章切換為貼齊螢幕右側的半透明藍色條；點擊開啟面板，長按可上下拖曳。', 'モバイルの丸いバッジを右端の半透明バーに変更します。タップでパネルを開き、長押しで上下移動できます。', 'Changes the mobile circular badge to a translucent right-edge bar. Tap to open; long-press to drag vertically.'],
+    ['下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。', '下載並行數可設為 1～6，預設 2；提高可加速多媒體工作，但也會增加頻寬與記憶體使用。', '同時数は1～6（既定2）。増やすと速くなりますが、帯域とメモリ使用量も増えます。', 'Concurrency can be 1–6 (default 2). Higher values speed up multi-media jobs but use more bandwidth and memory.'],
+    ['当前筛选条件下没有帖子。可以刷新页面、切换 X 标签页，或把筛选改回“全部”。', '目前篩選條件下沒有貼文。可重新整理頁面、切換 X 分頁，或將篩選改回「全部」。', '現在の条件に一致するポストはありません。ページや X のタブを更新するか、フィルターを「すべて」に戻してください。', 'No posts match the current filters. Refresh the page, switch X tabs, or reset the filter to All.'],
+    ['还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。', '尚未讀取貼文通知訂閱。請點擊「同步訂閱使用者」，或瀏覽已開啟鈴鐺的使用者主頁後再查看。', 'ポスト通知の購読情報がありません。「購読ユーザーを同期」を押すか、ベルを有効にしたプロフィールを開いてください。', 'No post-notification subscriptions have been read. Click “Sync subscribed users” or visit a profile with its bell enabled.'],
+    ['智能排序：置顶、收藏和快消失的帖子先显示，其他的按抓到的顺序排。', '智慧排序：置頂、收藏和快速消失的貼文優先，其餘依擷取順序排列。', 'スマート順：固定・お気に入り・すぐ消えたポストを優先し、残りは取得順に表示します。', 'Smart sort: pinned, favorited, and quickly disappeared posts first; others follow capture order.'],
+    ['最近浏览：按你在屏幕上看到的帖子顺序排。适合用来找刚刷过的帖子。', '最近瀏覽：依螢幕上看到貼文的順序排列，適合尋找剛瀏覽過的貼文。', '最近表示：画面で見た順に並べ、直前に見たポストを探すのに便利です。', 'Recently viewed: orders posts by when they appeared on screen, useful for finding what you just saw.'],
+    ['最近抓取：按脚本发现帖子的时间排。X 会提前加载，顺序不一定等于你看到的顺序。', '最近擷取：依腳本發現貼文的時間排列。X 會預先載入，因此不一定等於實際看到的順序。', '最近取得：スクリプトが見つけた時刻順です。X の先読みのため、実際に見た順とは限りません。', 'Recently captured: orders by discovery time. X preloads posts, so this may differ from viewing order.'],
+    ['出现次数：反复刷到的帖子排在前面。', '出現次數：反覆看到的貼文排在前面。', '表示回数：繰り返し表示されたポストを先にします。', 'Appearances: repeatedly seen posts come first.'],
+    ['按作者：把同一个作者的帖子排在一起。', '依作者：將同一作者的貼文排在一起。', '投稿者順：同じ投稿者のポストをまとめます。', 'By author: groups posts from the same author.'],
+    ['按来源：按主页、为你推荐、搜索、书签等页面分类排。', '依來源：依首頁、為你推薦、搜尋、書籤等頁面分類。', 'ソース順：ホーム、おすすめ、検索、ブックマークなどで分類します。', 'By source: groups posts by Home, For You, Search, Bookmarks, and other pages.'],
+    ['BetterX：显示 / 隐藏应用徽标', 'BetterX：顯示 / 隱藏應用徽章', 'BetterX：アプリバッジを表示 / 非表示', 'BetterX: Show / hide app badge'],
+    ['BetterX：强制开启 Firefox 兼容模式并刷新', 'BetterX：強制開啟 Firefox 相容模式並重新整理', 'BetterX：Firefox 互換モードを強制して更新', 'BetterX: Force Firefox compatibility and reload'],
+    ['BetterX：恢复 Firefox 完整模式并刷新', 'BetterX：恢復 Firefox 完整模式並重新整理', 'BetterX：Firefox フルモードに戻して更新', 'BetterX: Restore full Firefox mode and reload'],
+    ['BetterX：导出 Firefox 兼容诊断', 'BetterX：匯出 Firefox 相容診斷', 'BetterX：Firefox 互換診断をエクスポート', 'BetterX: Export Firefox compatibility diagnostics'],
+    ['无法读取当前 X 用户 ID，请确认已经登录', '無法讀取目前 X 使用者 ID，請確認已登入', '現在の X ユーザー ID を取得できません。ログインを確認してください', 'Could not read the current X user ID. Make sure you are signed in'],
+    ['本次识别', '本次識別', '今回検出', 'Found this time'], ['个，当前保留', '個，目前保留', '件、現在保持', '; currently keeping'], ['个订阅', '個訂閱', '件の購読', ' subscriptions'],
+    ['同步失败：', '同步失敗：', '同期失敗：', 'Sync failed: '], ['修改失败：', '修改失敗：', '変更失敗：', 'Update failed: '],
+    ['已开启', '已開啟', '有効化しました', 'Enabled'], ['的帖子通知', '的貼文通知', 'のポスト通知', ' post notifications'], ['已关闭', '已關閉', '無効化しました', 'Disabled'],
+    ['下载完成：已逐个保存', '下載完成：已逐一儲存', 'ダウンロード完了：個別に保存', 'Download complete: saved separately'], ['个文件', '個檔案', 'ファイル', ' files'],
+    ['，跳过', '，略過', '、スキップ', '; skipped'], ['个失败项', '個失敗項目', '件の失敗', ' failed items'],
+    ['正在开启 Firefox 兼容模式并刷新…', '正在開啟 Firefox 相容模式並重新整理…', 'Firefox 互換モードを有効にして更新中…', 'Enabling Firefox compatibility and reloading…'],
+    ['正在关闭 Firefox 兼容模式并刷新…', '正在關閉 Firefox 相容模式並重新整理…', 'Firefox 互換モードを無効にして更新中…', 'Disabling Firefox compatibility and reloading…'],
+    ['此选项仅用于 Firefox', '此選項僅適用於 Firefox', 'この設定は Firefox 専用です', 'This option is only for Firefox'],
+    ['已开启 Firefox 兼容模式', '已開啟 Firefox 相容模式', 'Firefox 互換モードを有効にしました', 'Firefox compatibility enabled'],
+    ['已使用 Firefox 完整功能模式', '已使用 Firefox 完整功能模式', 'Firefox フル機能モードを使用します', 'Using full Firefox mode'],
+    ['已导出 Firefox 兼容诊断', '已匯出 Firefox 相容診斷', 'Firefox 互換診断をエクスポートしました', 'Firefox compatibility diagnostics exported'],
+    ['已恢复应用徽标', '已恢復應用徽章', 'アプリバッジを復元しました', 'App badge restored'], ['已显示应用徽标', '已顯示應用徽章', 'アプリバッジを表示しました', 'App badge shown'],
+    ['已隐藏应用徽标 · Alt+X 可打开面板', '已隱藏應用徽章 · Alt+X 可開啟面板', 'アプリバッジを非表示にしました · Alt+X でパネルを開けます', 'App badge hidden · Press Alt+X to open the panel'],
+    ['点击屏幕右侧小蓝条可显示徽标', '點擊螢幕右側小藍條可顯示徽章', '画面右の青いバーをタップしてバッジを表示', 'Tap the blue bar on the right to show the badge'],
+    ['已切换为屏幕右侧小蓝条', '已切換為螢幕右側小藍條', '画面右の青いバーに切り替えました', 'Switched to the blue right-edge bar'],
+    ['显示 BetterX 应用徽标', '顯示 BetterX 應用徽章', 'BetterX アプリバッジを表示', 'Show BetterX app badge'], ['打开 BetterX 面板', '開啟 BetterX 面板', 'BetterX パネルを開く', 'Open BetterX panel'],
+    ['点按显示 BetterX 徽标', '點按以顯示 BetterX 徽章', 'タップして BetterX バッジを表示', 'Tap to show the BetterX badge'],
+    ['正则无效或风险过高，未保存', '正則無效或風險過高，未儲存', '正規表現が無効または危険なため保存しませんでした', 'Regex was invalid or too risky and was not saved'],
+    ['已保存下载命名', '已儲存下載命名', 'ダウンロード命名設定を保存しました', 'Download naming saved'], ['已将当前列表全部标为已读', '已將目前列表全部標為已讀', '現在の一覧をすべて既読にしました', 'Marked the current list as read'],
+    ['已保存关键词', '已儲存關鍵字', 'キーワードを保存しました', 'Keywords saved'], ['已保存排除词', '已儲存排除詞', '除外語を保存しました', 'Exclusions saved'],
+    ['已保存自定义屏蔽词', '已儲存自訂封鎖詞', 'カスタムブロック語を保存しました', 'Custom blocked words saved'], ['已保存账号白名单', '已儲存帳號白名單', 'アカウント許可リストを保存しました', 'Account allowlist saved'],
+    ['已切换为手动宽度并应用', '已切換為手動寬度並套用', '手動幅へ切り替えて適用しました', 'Switched to manual widths and applied'], ['已应用高级设置', '已套用進階設定', '詳細設定を適用しました', 'Advanced settings applied'],
+    ['确定要清空', '確定要清空', '消去しますか：', 'Clear'], ['条未收藏/未置顶的帖子吗？此操作不可撤销。', '筆未收藏／未置頂的貼文嗎？此操作無法復原。', '件のお気に入り／固定されていないポスト。この操作は取り消せません。', ' unfavorited/unpinned posts? This cannot be undone.'],
+    ['导入失败：单次最多允许', '匯入失敗：單次最多允許', 'インポート失敗：一度に許可される上限は', 'Import failed: at most'], ['条帖子。', '筆貼文。', '件です。', ' posts are allowed.'],
+    ['导入完成：新增', '匯入完成：新增', 'インポート完了：追加', 'Import complete: added'], ['条，合并', '筆，合併', '件、統合', ', merged'], ['条，跳过', '筆，略過', '件、スキップ', ', skipped'], ['条无效记录', '筆無效記錄', '件の無効な記録', ' invalid records'],
+    ['该帖子内媒体文件曾下载过，是否继续下载？', '此貼文的媒體曾下載過，是否繼續？', 'このポストのメディアはダウンロード済みです。続行しますか？', 'Media from this post was downloaded before. Continue?'],
+    ['是否同时恢复备份中的设置？', '是否同時還原備份中的設定？', 'バックアップ内の設定も復元しますか？', 'Restore settings from the backup too?'],
+    ['页面尚未就绪，诊断信息已输出到控制台。', '頁面尚未就緒，診斷資訊已輸出至主控台。', 'ページの準備ができていません。診断情報をコンソールへ出力しました。', 'The page is not ready; diagnostics were written to the console.'],
+    ['当前筛选结果为空，没有可导出的内容。', '目前篩選結果為空，沒有可匯出的內容。', '現在の絞り込み結果は空です。エクスポートする内容がありません。', 'The current filtered result is empty; there is nothing to export.'],
+    ['导入失败：备份文件不能超过 25 MB。', '匯入失敗：備份檔不得超過 25 MB。', 'インポート失敗：バックアップは 25 MB 以下にしてください。', 'Import failed: backup files cannot exceed 25 MB.'],
+    ['无法识别的备份文件格式。', '無法識別的備份檔格式。', '認識できないバックアップ形式です。', 'Unrecognized backup format.'],
+    ['导入失败：文件解析出错。', '匯入失敗：檔案解析錯誤。', 'インポート失敗：ファイルを解析できませんでした。', 'Import failed: file parsing error.'],
+    ['当前列表没有未读的帖子喂～', '目前列表沒有未讀貼文喔～', '現在の一覧に未読ポストはありません。', 'There are no unread posts in the current list.'],
+    ['确定要把当前列表的 ', '確定要將目前列表中的 ', '現在の一覧にある', 'Mark all '], [' 条未读帖子全部标为已读吗？', ' 筆未讀貼文全部標為已讀嗎？', '件の未読ポストをすべて既読にしますか？', ' unread posts in the current list as read?'],
+    ['⚠️ 已忽略', '⚠️ 已忽略', '⚠️ 無視しました：', '⚠️ Ignored'], ['条高风险或无效正则', '筆高風險或無效正則', '件の危険または無効な正規表現', ' risky or invalid regex rules'],
+    ['最多保存 50 个', '最多儲存 50 個', '保存できる上限は50件です：', 'At most 50 can be saved: '],
+    ['自定义屏蔽词', '自訂封鎖詞', 'カスタムブロック語', 'custom blocked words'], ['关键词', '關鍵字', 'キーワード', 'keywords'], ['排除词', '排除詞', '除外語', 'exclusions'],
+    ['没有找到与“', '找不到與「', '「', 'No username or @username matched “'], ['”匹配的用户名或 @用户名。', '」相符的使用者名稱或 @使用者名稱。', '」に一致するユーザー名または @ユーザー名はありません。', '”.'],
+    ['开启“兼容 Firefox”？', '開啟「Firefox 相容模式」？', 'Firefox 互換モードを有効にしますか？', 'Enable Firefox compatibility?'],
+    ['开启后 BetterX 不再改写页面的', '開啟後 BetterX 將不再改寫頁面的', '有効にすると BetterX はページの', 'When enabled, BetterX will stop wrapping the page’s'],
+    ['可避免部分 Firefox 环境或多个 X 脚本冲突时一直卡在 X 图标。', '可避免部分 Firefox 環境或多個 X 腳本衝突時一直卡在 X 圖示。', 'を変更しなくなり、一部の Firefox 環境や複数の X スクリプトが競合した際に X ロゴで停止する問題を避けられます。', ', which can prevent X from getting stuck on its logo in some Firefox setups or when multiple X scripts conflict.'],
+    ['以下能力可能降级：', '以下功能可能受限：', '次の機能が制限される場合があります：', 'The following features may be limited:'],
+    ['部分视频 / GIF 无法取得真实下载地址；', '部分影片 / GIF 可能無法取得實際下載網址；', '一部の動画 / GIF の実際のダウンロード URL を取得できない場合があります。', 'Some videos / GIFs may not expose a direct download URL;'],
+    ['部分年龄限制视频无法内联显示；', '部分年齡限制影片可能無法直接顯示；', '一部の年齢制限動画をページ内表示できない場合があります。', 'Some age-restricted videos may not display inline;'],
+    ['无法从接口响应学习关注关系，主要依靠主页按钮和“正在关注”时间线。', '無法從介面回應學習關注關係，主要依靠個人主頁按鈕與「正在關注」時間軸。', 'API 応答からフォロー関係を学習できず、プロフィールのボタンと「フォロー中」タイムラインが主な情報源になります。', 'Following relationships cannot be learned from API responses and instead rely mainly on profile buttons and the Following timeline.'],
+    ['帖子记录、搜索、面板、内容净化、广告过滤、布局和图片 DOM 兜底不受影响。确认后页面会刷新。', '貼文記錄、搜尋、面板、內容淨化、廣告過濾、版面配置與圖片 DOM 備援不受影響。確認後頁面會重新整理。', 'ポスト記録、検索、パネル、コンテンツフィルター、広告非表示、レイアウト、画像の DOM フォールバックには影響しません。確認後にページを更新します。', 'Post history, search, the panel, content filtering, ad hiding, layout, and the image DOM fallback are unaffected. The page will reload after confirmation.'],
+    ['开启并刷新', '開啟並重新整理', '有効にして更新', 'Enable and reload'],
+    ['关闭“兼容 Firefox”？', '關閉「Firefox 相容模式」？', 'Firefox 互換モードを無効にしますか？', 'Disable Firefox compatibility?'],
+    ['关闭后将恢复 v1.7 的网络媒体与关注关系采集。如果当前环境曾卡在只显示 X 图标的页面，建议继续保持开启。确认后页面会刷新。', '關閉後將恢復 v1.7 的網路媒體與關注關係擷取。如果目前環境曾卡在只顯示 X 圖示的頁面，建議繼續保持開啟。確認後頁面會重新整理。', '無効にすると v1.7 のネットワークメディア・フォロー関係の取得を再開します。X ロゴだけの画面で停止したことがある環境では、有効のままにすることをおすすめします。確認後にページを更新します。', 'Disabling restores v1.7 network media and following-relationship capture. If this setup has ever stalled on the X logo, keeping compatibility enabled is recommended. The page will reload after confirmation.'],
+    ['关闭并刷新', '關閉並重新整理', '無効にして更新', 'Disable and reload'],
+    ['检测到 Firefox', '偵測到 Firefox', 'Firefox を検出しました', 'Firefox detected'],
+    ['请问你在使用 BetterX 时，能否正常进入 X？', '使用 BetterX 時，是否能正常進入 X？', 'BetterX の使用中、X を正常に開けていますか？', 'Can you open X normally while using BetterX?'],
+    ['目前已知部分 Firefox 用户会一直卡在', '目前已知部分 Firefox 使用者會一直卡在', '一部の Firefox ユーザーでは', 'Some Firefox users may remain stuck on the'],
+    ['只显示 X 图标', '只顯示 X 圖示', 'X ロゴだけが表示される', 'X-logo-only'],
+    ['的启动页面，常见于广告过滤、媒体下载等多个 X 脚本同时运行的环境。', '的啟動畫面，常見於廣告過濾、媒體下載等多個 X 腳本同時執行的環境。', '起動画面で停止することがあります。広告フィルターやメディア保存など、複数の X スクリプトを同時に使う環境で起きやすい問題です。', ' startup screen, especially when multiple X scripts such as ad filters and media downloaders run together.'],
+    ['如果遇到异常，请点击', '如果遇到異常，請點擊', '問題がある場合は', 'If you encounter this issue, click'],
+    ['有异常', '有異常', '問題あり', 'Having problems'],
+    ['，BetterX 会开启', '，BetterX 會開啟', 'を選ぶと、BetterX は', '; BetterX will enable'],
+    ['“设置 → 其他功能 → 兼容 Firefox”', '「設定 → 其他功能 → Firefox 相容模式」', '「設定 → その他の機能 → Firefox 互換モード」', '“Settings → Other features → Firefox compatibility”'],
+    ['。该模式会停用页面网络 Hook；部分视频 / GIF 下载、年龄限制视频和接口关注关系识别可能降级，其他主体功能不受影响。', '。此模式會停用頁面網路 Hook；部分影片 / GIF 下載、年齡限制影片與介面關注關係識別可能受限，其他主要功能不受影響。', '。このモードはページのネットワーク Hook を無効化します。一部の動画 / GIF の保存、年齢制限動画、API によるフォロー関係の認識は制限される場合がありますが、その他の主要機能には影響しません。', '. This disables page network hooks. Some video / GIF downloads, age-restricted videos, and API-based following detection may be limited; other main features are unaffected.'],
+    ['目前正常', '目前正常', '現在は正常', 'Working normally'],
+    ['确定', '確定', '確認', 'OK'], ['未知错误', '未知錯誤', '不明なエラー', 'Unknown error'],
+  ];
+
+  function readUiLanguageOverride() {
+    try {
+      if (typeof GM_getValue !== 'function') return '';
+      const value = String(GM_getValue(UI_LANGUAGE_OVERRIDE_KEY, '') || '');
+      return SUPPORTED_UI_LANGUAGES.has(value) ? value : '';
+    } catch (err) { return ''; }
+  }
+
+  function detectUiLanguage() {
+    const override = readUiLanguageOverride();
+    if (override) return override;
+    let raw = '';
+    try { raw = (document.documentElement && document.documentElement.lang) || ''; } catch (err) {}
+    if (!raw) raw = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+    const value = String(raw).toLowerCase();
+    if (/^zh-(?:tw|hk|mo|hant)/.test(value)) return 'zh-TW';
+    if (/^ja(?:-|$)/.test(value)) return 'ja';
+    if (/^en(?:-|$)/.test(value)) return 'en';
+    return 'zh-CN';
+  }
+
+  const UI_LANGUAGE = detectUiLanguage();
+  const UI_LANGUAGE_INDEX = { 'zh-TW': 1, ja: 2, en: 3 };
+  const UI_TRANSLATION_INDEX = UI_LANGUAGE_INDEX[UI_LANGUAGE] || 0;
+  const UI_TRANSLATION_MAP = new Map(
+    UI_TEXT_ENTRIES.map((entry) => [entry[0], UI_TRANSLATION_INDEX ? entry[UI_TRANSLATION_INDEX] : entry[0]])
+  );
+  const UI_TRANSLATION_PATTERN = UI_TRANSLATION_INDEX
+    ? new RegExp(UI_TEXT_ENTRIES.map((entry) => entry[0])
+      .sort((a, b) => b.length - a.length)
+      .map((text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g')
+    : null;
+  const UI_LOCALIZATION_SKIP_SELECTOR = [
+    '.BetterX-text', '.BetterX-note-text', '.BetterX-note-input', '.BetterX-author-profile',
+    '.BetterX-notification-user-main b', '.BetterX-notification-user-main small',
+    '.BetterX-keyword-tags', '.BetterX-i18n-user-text', 'code', 'script', 'style',
+  ].join(',');
+
+  function uiText(value) {
+    const input = String(value == null ? '' : value);
+    if (!UI_TRANSLATION_PATTERN || !input) return input;
+    return input.replace(UI_TRANSLATION_PATTERN, (matched) => UI_TRANSLATION_MAP.get(matched) || matched);
+  }
+
+  function shouldSkipUiLocalization(node) {
+    const element = node && (node.nodeType === 1 ? node : node.parentElement);
+    return !!(element && element.closest && element.closest(UI_LOCALIZATION_SKIP_SELECTOR));
+  }
+
+  function localizeBetterXTree(root) {
+    if (!UI_TRANSLATION_PATTERN || !root) return;
+    if (root.nodeType === 3) {
+      if (shouldSkipUiLocalization(root)) return;
+      const before = root.nodeValue || '';
+      const after = uiText(before);
+      if (after !== before) root.nodeValue = after;
+      return;
+    }
+    const localizeElement = (element) => {
+      if (!element || element.nodeType !== 1 || element.matches('code, script, style')) return;
+      ['title', 'placeholder', 'aria-label'].forEach((name) => {
+        if (!element.hasAttribute(name)) return;
+        const before = element.getAttribute(name) || '';
+        const after = uiText(before);
+        if (after !== before) element.setAttribute(name, after);
+      });
+    };
+    if (root.nodeType === 1) localizeElement(root);
+    if (root.querySelectorAll) root.querySelectorAll('*').forEach(localizeElement);
+    const showText = typeof NodeFilter !== 'undefined' ? NodeFilter.SHOW_TEXT : 4;
+    if (!document.createTreeWalker) return;
+    const walker = document.createTreeWalker(root, showText);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (shouldSkipUiLocalization(node)) continue;
+      const before = node.nodeValue || '';
+      const after = uiText(before);
+      if (after !== before) node.nodeValue = after;
+    }
+  }
+
+  let uiLocalizationObserver = null;
+  function installUiLocalization(root) {
+    if (!UI_TRANSLATION_PATTERN || !root || typeof MutationObserver !== 'function') return;
+    localizeBetterXTree(root);
+    if (uiLocalizationObserver) uiLocalizationObserver.disconnect();
+    uiLocalizationObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'attributes' || mutation.type === 'characterData') {
+          localizeBetterXTree(mutation.target.nodeType === 1 ? mutation.target : mutation.target.parentElement);
+        } else {
+          mutation.addedNodes.forEach((node) => localizeBetterXTree(node));
+        }
+      }
+    });
+    uiLocalizationObserver.observe(root, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['title', 'placeholder', 'aria-label'],
+    });
+  }
+
+  function uiAlert(message) { window.alert(uiText(message)); }
+  function uiConfirm(message) { return window.confirm(uiText(message)); }
 
   // ── 常量 ──────────────────────────────────────────────────────────
   const DB_NAME = 'x_post_vault_db';
@@ -182,11 +520,22 @@
   ];
 
   const PROFILE_DEFAULT_VIEW_OPTIONS = ['posts', 'all', 'highlights'];
+  const PROFILE_POST_SORT_OPTIONS = ['recent', 'popular'];
   const POST_SHOW_MORE_LABELS = new Set([
     '显示更多', '顯示更多', 'Show more', 'さらに表示', '더 보기',
   ]);
   const PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY = 'betterx_profile_default_view_redirect_guard_v1';
   const PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_MS = 15000;
+  const PROFILE_NAVIGATION_BYPASS_GUARD_KEY = 'betterx_profile_navigation_bypass_guard_v1';
+  const PROFILE_NAVIGATION_BYPASS_GUARD_MS = 30000;
+  // 账号切换菜单里的账号项也可能带有 /用户名 链接，但点击语义是切换登录账号，
+  // 不能当成普通主页导航接管，否则会阻断 X 自己的账号切换处理。
+  const PROFILE_LINK_REWRITE_EXCLUSION_SELECTOR = [
+    '[role="menu"]',
+    '[role="menuitem"]',
+    '[data-testid="SideNav_AccountSwitcher_Button"]',
+    '[data-testid*="AccountSwitcher"]',
+  ].join(', ');
   // 这些是 X 的一级功能路由，不应被误判为用户名主页。
   const PROFILE_ROOT_ROUTE_EXCLUSIONS = new Set([
     'about', 'account', 'compose', 'download', 'explore', 'home', 'i', 'intent', 'jobs',
@@ -195,7 +544,7 @@
   ]);
 
   const DEFAULT_SETTINGS = {
-    settingsRevision: 28,
+    settingsRevision: 30,
     keywords: [],
     excludeKeywords: [],
     keywordMode: 'plain',   // 'plain' | 'and'；正则由 /表达式/ 标签声明
@@ -251,6 +600,8 @@
     mobileBadgeHandleTop: null, // 移动端收纳半透明蓝色条距顶部位置（像素）
     profileDefaultViewEnabled: true, // 进入纯用户主页时，按所选页签打开
     profileDefaultView: 'posts', // 'posts' | 'all' | 'highlights'
+    profilePostSortEnabled: true, // 是否按所选方式改写用户主页帖子排序
+    profilePostSort: 'recent', // 'recent' | 'popular'；热门会给主页目标 URL 加 ?sort=popular
     autoExpandPostText: false, // 自动展开帖子正文“显示更多”
     downloadTimeout: 360000, // 下载超时（毫秒），默认 360 秒
     downloadConcurrency: 2, // 同时传输的媒体数量，允许 1～6
@@ -347,6 +698,8 @@
     useMobileBadgeHandleEl: null,
     profileDefaultViewEnabledEl: null,
     profileDefaultViewEl: null,
+    profilePostSortEnabledEl: null,
+    profilePostSortEl: null,
     autoExpandPostTextEl: null,
     layoutStyleEl: null,
     detectedTimelineWidth: 0,
@@ -751,7 +1104,7 @@
     refreshUI({ keepScroll: true });
   }, 120);
 
-  const TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
+  const TIME_FORMATTER = new Intl.DateTimeFormat(UI_LANGUAGE, {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
   });
@@ -953,7 +1306,7 @@
   function isVideoPreviewImage(img, article) {
     if (!img) return false;
     const src = img.getAttribute('src') || '';
-    if (/(?:ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)/i.test(src)) return true;
+    if (/(?:ext_tw_video_thumb|amplify_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)/i.test(src)) return true;
     if (img.closest && img.closest(VIDEO_CONTAINER_SELECTORS)) return true;
 
     let container = img.parentElement;
@@ -981,7 +1334,7 @@
           }
           for (const img of article.querySelectorAll('img[src]')) {
             const src = img.getAttribute('src') || '';
-            if (/pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src)) {
+            if (/pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src)) {
               if (thumbs.length < 4) thumbs.push(src);
             }
           }
@@ -997,7 +1350,7 @@
         if (!hasImage && hasVideo) {
           for (const img of article.querySelectorAll('img[src]')) {
             const src = img.getAttribute('src') || '';
-            if (/pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src)) {
+            if (/pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src)) {
               if (thumbs.length < 4) thumbs.push(src);
             }
           }
@@ -1019,7 +1372,7 @@
     for (const img of article.querySelectorAll('img[src]')) {
       const src = img.getAttribute('src') || '';
       if (/profile_images|emoji|hashflags/i.test(src)) continue;
-      const isMediaAsset = /pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src) || /\/media\//.test(src);
+      const isMediaAsset = /pbs\.twimg\.com\/(?:media|ext_tw_video_thumb|amplify_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(src) || /\/media\//.test(src);
       if (!isMediaAsset) continue;
 
       if (isVideoPreviewImage(img, article)) {
@@ -1553,7 +1906,7 @@
           return 10;
         };
         const rankDiff = rank(a) - rank(b);
-        return rankDiff || localizeSourceLabel(a).localeCompare(localizeSourceLabel(b), 'zh-CN');
+        return rankDiff || localizeSourceLabel(a).localeCompare(localizeSourceLabel(b), UI_LANGUAGE);
       });
   }
 
@@ -1917,6 +2270,13 @@
       state.profileDefaultViewEl.value = state.settings.profileDefaultView || DEFAULT_SETTINGS.profileDefaultView;
       state.profileDefaultViewEl.disabled = state.settings.profileDefaultViewEnabled === false;
     }
+    if (state.profilePostSortEl) {
+      state.profilePostSortEl.value = state.settings.profilePostSort || DEFAULT_SETTINGS.profilePostSort;
+      state.profilePostSortEl.disabled = state.settings.profilePostSortEnabled === false;
+    }
+    if (state.profilePostSortEnabledEl) {
+      state.profilePostSortEnabledEl.checked = state.settings.profilePostSortEnabled !== false;
+    }
     if (state.autoExpandPostTextEl) {
       state.autoExpandPostTextEl.checked = !!state.settings.autoExpandPostText;
     }
@@ -2043,6 +2403,10 @@
         ? input.profileDefaultViewEnabled
         : DEFAULT_SETTINGS.profileDefaultViewEnabled,
       profileDefaultView: enumValue(input.profileDefaultView, PROFILE_DEFAULT_VIEW_OPTIONS, DEFAULT_SETTINGS.profileDefaultView),
+      profilePostSortEnabled: typeof input.profilePostSortEnabled === 'boolean'
+        ? input.profilePostSortEnabled
+        : DEFAULT_SETTINGS.profilePostSortEnabled,
+      profilePostSort: enumValue(input.profilePostSort, PROFILE_POST_SORT_OPTIONS, DEFAULT_SETTINGS.profilePostSort),
       autoExpandPostText: input.autoExpandPostText === true,
     };
   }
@@ -2074,6 +2438,12 @@
       if (revision < 17 && input.profileDefaultView == null) input.profileDefaultView = DEFAULT_SETTINGS.profileDefaultView;
       // v2.7.0 新增自动展开长文；默认关闭，避免改变旧用户的阅读习惯。
       if (revision < 18 && input.autoExpandPostText == null) input.autoExpandPostText = DEFAULT_SETTINGS.autoExpandPostText;
+      // v3.2.0 新增用户主页帖子排序；旧用户保持 X 原本的“最近”顺序。
+      if (revision < 29 && input.profilePostSort == null) input.profilePostSort = DEFAULT_SETTINGS.profilePostSort;
+      // 排序设置增加独立开关；已经使用该设置的用户保持启用。
+      if (revision < 30 && input.profilePostSortEnabled == null) {
+        input.profilePostSortEnabled = DEFAULT_SETTINGS.profilePostSortEnabled;
+      }
       // v2.7.0 新增下载命名模板；沿用原“用户名_帖子 ID”的默认命名。
       if (revision < 19) {
         if (input.downloadFileNameTemplate == null) input.downloadFileNameTemplate = DEFAULT_SETTINGS.downloadFileNameTemplate;
@@ -2225,7 +2595,7 @@
   function clearNonFavoritePosts() {
     const targets = state.posts.filter((p) => !protectedPost(p));
     if (!targets.length) return;
-    if (!window.confirm(`确定要清空 ${targets.length} 条未收藏/未置顶的帖子吗？此操作不可撤销。`)) return;
+    if (!uiConfirm(`确定要清空 ${targets.length} 条未收藏/未置顶的帖子吗？此操作不可撤销。`)) return;
     const ids = targets.map((p) => p.id);
     state.posts = state.posts.filter(protectedPost);
     prunePostRuntimeCaches(ids);
@@ -2301,15 +2671,17 @@
   // 视频海报 -> 真实 MP4。引用帖嵌套较深时，DOM 只保留外层帖子 ID，
   // 而 GraphQL 会把媒体登记在内层帖子 ID 下；用页面可见的海报 ID 跨层关联两者。
   const videoPosterRegistry = new Map(); // posterKey -> { type:'video'|'gif', url }
-  const firefoxMediaLookupJobs = new Map(); // statusId -> Promise<boolean>
-  // 仅用于 Firefox 兼容模式下的按需单帖查询；避免为采集媒体而重新包装页面网络 API。
-  const FIREFOX_TWEET_DETAIL_QUERY_ID = 'zAz9764BcLZOJ0JU2wrd1A';
-  const FIREFOX_TWEET_DETAIL_FEATURES = {
+  const tweetDetailMediaLookupJobs = new Map(); // statusId -> Promise<boolean>
+  // 当全局网络采集没有命中视频时按需查询单帖详情；不依赖浏览器或兼容模式。
+  const TWEET_DETAIL_QUERY_ID = 'zAz9764BcLZOJ0JU2wrd1A';
+  const TWEET_DETAIL_FEATURES = {
     creator_subscriptions_tweet_preview_api_enabled: true,
     premium_content_api_read_enabled: false,
     communities_web_enable_tweet_community_results_fetch: true,
     c9s_tweet_anatomy_moderator_badge_enabled: true,
     responsive_web_grok_analyze_button_fetch_trends_enabled: false,
+    responsive_web_grok_analyze_post_followups_enabled: false,
+    responsive_web_jetfuel_frame: false,
     responsive_web_grok_share_attachment_enabled: true,
     articles_preview_enabled: true,
     responsive_web_edit_tweet_api_enabled: true,
@@ -2319,10 +2691,13 @@
     longform_notetweets_inline_media_enabled: true,
     responsive_web_twitter_article_tweet_consumption_enabled: true,
     tweet_awards_web_tipping_enabled: false,
+    responsive_web_grok_show_grok_translated_post: false,
+    responsive_web_grok_analysis_button_from_backend: false,
     creator_subscriptions_quote_tweet_preview_enabled: false,
     freedom_of_speech_not_reach_fetch_enabled: true,
     standardized_nudges_misinfo: true,
     tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+    longform_notetweets_rich_text_read_enabled: true,
     profile_label_improvements_pcf_label_in_post_enabled: true,
     rweb_tipjar_consumption_enabled: true,
     verified_phone_label_enabled: false,
@@ -2355,7 +2730,7 @@
       const url = new URL(String(rawUrl), 'https://pbs.twimg.com');
       if (!/(?:^|\.)twimg\.com$/i.test(url.hostname)) return '';
       const path = url.pathname;
-      const directoryMatch = path.match(/\/(amplify_video_thumb|ext_tw_video_thumb)\/([A-Za-z0-9_-]+)/i);
+      const directoryMatch = path.match(/\/(amplify_tw_video_thumb|amplify_video_thumb|ext_tw_video_thumb)\/([A-Za-z0-9_-]+)/i);
       if (directoryMatch) return `${directoryMatch[1].toLowerCase()}:${directoryMatch[2]}`;
       const gifMatch = path.match(/\/tweet_video_thumb\/([A-Za-z0-9_-]+)(?:\.[A-Za-z0-9]+)?$/i);
       return gifMatch ? `tweet_video_thumb:${gifMatch[1]}` : '';
@@ -2681,9 +3056,6 @@
           headers: buildFirefoxTweetDetailHeaders(),
           responseType: 'json',
           timeout: 30000,
-          // Tampermonkey / Violentmonkey 默认行为略有差异，同时声明两项以明确携带 X 登录态。
-          anonymous: false,
-          withCredentials: true,
           onload: (response) => {
             if (!response || response.status < 200 || response.status >= 300) { resolve(false); return; }
             let payload = response.response;
@@ -2702,26 +3074,29 @@
     });
   }
 
-  function requestFirefoxTweetDetailMedia(statusId) {
+  function requestTweetDetailMedia(statusId) {
     const id = String(statusId || '');
-    if (!id || !isFirefoxCompatibilityActive()) return Promise.resolve(false);
-    if (firefoxMediaLookupJobs.has(id)) return firefoxMediaLookupJobs.get(id);
+    if (!id) return Promise.resolve(false);
+    if (tweetDetailMediaLookupJobs.has(id)) return tweetDetailMediaLookupJobs.get(id);
     const variables = { tweetId: id, withCommunity: false, includePromotedContent: false, withVoice: false };
     const fieldToggles = { withArticleRichContentState: true, withArticlePlainText: false, withGrokAnalyze: false, withDisallowedReplyControls: false };
-    const url = `https://x.com/i/api/graphql/${FIREFOX_TWEET_DETAIL_QUERY_ID}/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(FIREFOX_TWEET_DETAIL_FEATURES))}&fieldToggles=${encodeURIComponent(JSON.stringify(fieldToggles))}`;
+    const url = `https://x.com/i/api/graphql/${TWEET_DETAIL_QUERY_ID}/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(TWEET_DETAIL_FEATURES))}&fieldToggles=${encodeURIComponent(JSON.stringify(fieldToggles))}`;
     const task = (async () => {
-      // 查询本身与页面同源，优先使用带 credentials 的会话 fetch。安卓 Firefox 上这比
-      // Violentmonkey 的扩展层 GM_xmlhttpRequest 更容易沿用当前 X 登录态。
+      // 参考 Azuki 的 X/Twitter 媒体批量下载器（MIT）：
+      // https://greasyfork.org/scripts/528890
+      // 发现 DOM 视频后直接通过 GM_xmlhttpRequest 查询 TweetResultByRestId，
+      // 不依赖全局 fetch/XHR Hook 是否成功，也沿用脚本管理器默认的 Cookie 行为。
+      if (await requestTweetDetailMediaWithGm(url, id)) return true;
+      // 脚本管理器未提供 GM 请求或请求失败时，再用带登录态的同源 fetch 兜底。
       try {
         const payload = await requestXSessionJson(url);
-        if (extractMediaFromTweetDetail(payload, id)) return true;
+        return extractMediaFromTweetDetail(payload, id);
       } catch (err) {
         debugLog('same-origin tweet detail lookup failed:', err);
+        return false;
       }
-      // 同源 fetch 被环境或 CSP 拒绝时，再回退到脚本管理器的特权请求。
-      return requestTweetDetailMediaWithGm(url, id);
-    })().finally(() => firefoxMediaLookupJobs.delete(id));
-    firefoxMediaLookupJobs.set(id, task);
+    })().finally(() => tweetDetailMediaLookupJobs.delete(id));
+    tweetDetailMediaLookupJobs.set(id, task);
     return task;
   }
 
@@ -3249,6 +3624,14 @@
       reg.gifs.forEach(addGif);
       reg.videos.forEach(addVideo);
     }
+    // 某些移动端/Violentmonkey 环境会把真实 video.twimg.com 地址直接留在 video.src，
+    // 无需等待 GraphQL；blob: 地址仍交给后面的按需单帖查询处理。
+    article.querySelectorAll('video').forEach((video) => {
+      const directUrl = safeHttpsUrl(video.currentSrc || video.src || video.getAttribute('src') || '', ['video.twimg.com']);
+      if (!directUrl) return;
+      if (/video\.twimg\.com\/tweet_video\//i.test(directUrl)) addGif(directUrl);
+      else if (/video\.twimg\.com\/(?:ext_tw_video|amplify_tw_video|amplify_video)\//i.test(directUrl)) addVideo(directUrl);
+    });
     // DOM 兜底：图片（仅正文媒体，排除头像/表情/卡片图标）
     article.querySelectorAll('[data-testid="tweetPhoto"] img, img[src*="pbs.twimg.com/media/"]').forEach((img) => {
       const src = img.currentSrc || img.src || '';
@@ -3264,7 +3647,7 @@
     // 嵌套引用帖的视频只有 blob: 播放地址，但其海报仍带稳定的媒体 ID。
     // 用网络响应中建立的海报映射找回真实 MP4，不依赖外层 / 内层帖子 ID 是否一致。
     article.querySelectorAll(
-      'video[poster], img[src*="/amplify_video_thumb/"], '
+      'video[poster], img[src*="/amplify_tw_video_thumb/"], img[src*="/amplify_video_thumb/"], '
       + 'img[src*="/ext_tw_video_thumb/"], img[src*="/tweet_video_thumb/"]'
     ).forEach((element) => {
       const poster = element.getAttribute('poster') || element.currentSrc || element.src || '';
@@ -3584,12 +3967,13 @@
     if (!article || !article.querySelector) return false;
     return !!article.querySelector(
       'video, [data-testid="videoComponent"], [data-testid="videoPlayer"], [data-testid="playButton"], '
-      + 'img[src*="ext_tw_video_thumb"], img[src*="amplify_video_thumb"], img[src*="tweet_video_thumb"]'
+      + 'img[src*="ext_tw_video_thumb"], img[src*="amplify_tw_video_thumb"], '
+      + 'img[src*="amplify_video_thumb"], img[src*="tweet_video_thumb"]'
     );
   }
 
-  function needsFirefoxVideoLookup(article, statusId) {
-    if (!isFirefoxCompatibilityActive() || !articleMayContainVideo(article)) return false;
+  function needsOnDemandVideoLookup(article, statusId) {
+    if (!articleMayContainVideo(article)) return false;
     const id = String(statusId || '');
     const registered = mediaRegistry.get(id) || cardRegistry.get(id);
     return !registered || !((registered.videos && registered.videos.length) || (registered.gifs && registered.gifs.length));
@@ -3719,10 +4103,11 @@
         button.textContent = '⬇';
       }
       button.title = job && !downloadedBefore
-        ? describeDownloadJob(job, false)
-        : (downloadedBefore ? '已下载过媒体；点击可再次下载' : '下载图片/视频/GIF');
+        ? uiText(describeDownloadJob(job, false))
+        : uiText(downloadedBefore ? '已下载过媒体；点击可再次下载' : '下载图片/视频/GIF');
       button.setAttribute('aria-label', button.title);
       if (cancel) cancel.hidden = !active;
+      localizeBetterXTree(control);
     });
 
     if (!state.downloadPillEl) return;
@@ -3739,9 +4124,9 @@
     const percent = allKnown && total > 0 ? Math.round((loaded / total) * 100) : 0;
     const isMobile = state.rootEl && state.rootEl.classList.contains('BetterX-mobile');
     const recentJob = jobs.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0];
-    const label = activeJobs.length
+    const label = uiText(activeJobs.length
       ? `${activeJobs.length} 个任务 · ${allKnown ? percent + '%' : formatDownloadBytes(loaded)}`
-      : describeDownloadJob(recentJob, false);
+      : describeDownloadJob(recentJob, false));
     const labelEl = state.downloadPillEl.querySelector('.BetterX-download-pill-label');
     const countEl = state.downloadPillEl.querySelector('.BetterX-download-pill-count');
     if (labelEl) labelEl.textContent = label;
@@ -3749,7 +4134,7 @@
       countEl.hidden = !isMobile || activeJobs.length === 0;
       countEl.textContent = activeJobs.length > 99 ? '99+' : String(activeJobs.length);
     }
-    state.downloadPillEl.setAttribute('aria-label', activeJobs.length ? `查看下载任务：${label}` : `查看下载任务：${describeDownloadJob(recentJob, false)}`);
+    state.downloadPillEl.setAttribute('aria-label', uiText(activeJobs.length ? `查看下载任务：${label}` : `查看下载任务：${describeDownloadJob(recentJob, false)}`));
     state.downloadPillEl.style.setProperty('--xv-download-progress', `${percent * 3.6}deg`);
     state.downloadPillEl.classList.toggle('is-progress', activeJobs.length > 0);
     renderDownloadTaskPopover();
@@ -4060,11 +4445,11 @@
     const existing = downloadJobs.get(String(statusId || ''));
     if (isActiveDownloadJob(existing)) { toggleDownloadPopover(true); return; }
     if (isDownloadedPostRecorded(statusId)
-      && !window.confirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
+      && !uiConfirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
     let items = collectDownloadItems(article, statusId);
-    if (needsFirefoxVideoLookup(article, statusId)) {
+    if (needsOnDemandVideoLookup(article, statusId)) {
       showToast('正在获取视频地址…');
-      const found = await requestFirefoxTweetDetailMedia(statusId);
+      const found = await requestTweetDetailMedia(statusId);
       if (found) items = collectDownloadItems(article, statusId);
     }
     if (!items.length) {
@@ -4124,6 +4509,7 @@
         event.preventDefault(); event.stopPropagation(); cancelDownloadJob(statusId);
       }, true);
       controls.append(btn, cancel);
+      localizeBetterXTree(controls);
       if (group) { controls.classList.add('in-group'); group.appendChild(controls); }
       else {
         controls.classList.add('floating');
@@ -4264,6 +4650,7 @@
     '[data-testid="videoComponent"]',
     '[data-testid="videoPlayer"]',
     'img[src*="/card_img/"]',
+    'video[poster*="amplify_tw_video_thumb"]',
     'video[poster*="amplify_video_thumb"]',
     'video[poster*="ext_tw_video_thumb"]',
     'video[poster*="tweet_video_thumb"]',
@@ -4340,7 +4727,7 @@
       t.id = 'BetterX-toast';
       (state.rootEl || document.body).appendChild(t);
     }
-    t.textContent = msg;
+    t.textContent = uiText(msg);
     t.classList.add('show');
     if (xvToastTimer) clearTimeout(xvToastTimer);
     xvToastTimer = null;
@@ -4369,12 +4756,13 @@
         </div>
       </div>
     `;
-    overlay.querySelector('.BetterX-dialog-title').textContent = options.title || 'BetterX 提示';
+    overlay.querySelector('.BetterX-dialog-title').textContent = uiText(options.title || 'BetterX 提示');
     overlay.querySelector('.BetterX-dialog-body').innerHTML = options.bodyHtml || '';
     const primary = overlay.querySelector('[data-dialog-choice="primary"]');
     const secondary = overlay.querySelector('[data-dialog-choice="secondary"]');
-    primary.textContent = options.primaryText || '确定';
-    secondary.textContent = options.secondaryText || '取消';
+    primary.textContent = uiText(options.primaryText || '确定');
+    secondary.textContent = uiText(options.secondaryText || '取消');
+    localizeBetterXTree(overlay);
     primary.addEventListener('click', () => {
       closeBetterXDialog();
       if (typeof options.onPrimary === 'function') options.onPrimary();
@@ -4385,6 +4773,62 @@
     });
     state.rootEl.appendChild(overlay);
     setTimeout(() => primary.focus(), 0);
+  }
+
+  function chooseUiLanguage(language) {
+    if (!SUPPORTED_UI_LANGUAGES.has(language)) return;
+    if (language === UI_LANGUAGE && readUiLanguageOverride() === language) {
+      closeBetterXDialog();
+      return;
+    }
+    let saved;
+    try {
+      if (typeof GM_setValue !== 'function') throw new Error('GM_setValue unavailable');
+      saved = GM_setValue(UI_LANGUAGE_OVERRIDE_KEY, language);
+    } catch (err) {
+      showToast(`⚠️ ${uiText('无法保存语言设置')}`);
+      return;
+    }
+    closeBetterXDialog();
+    showToast('正在切换语言并刷新…', 0);
+    Promise.resolve(saved).then(() => location.reload()).catch(() => {
+      showToast(`⚠️ ${uiText('无法保存语言设置')}`);
+    });
+  }
+
+  function showLanguageDialog() {
+    const options = [
+      { value: 'zh-CN', label: '简体中文', code: '简体' },
+      { value: 'zh-TW', label: '繁體中文', code: '繁體' },
+      { value: 'ja', label: '日本語', code: 'JA' },
+      { value: 'en', label: 'English', code: 'EN' },
+    ];
+    showBetterXDialog({
+      title: '选择界面语言',
+      bodyHtml: `
+        <div class="BetterX-language-options" role="radiogroup" aria-label="${escapeHtml(uiText('选择界面语言'))}">
+          ${options.map((item) => `
+            <button type="button" class="BetterX-language-option${item.value === UI_LANGUAGE ? ' is-current' : ''}"
+              data-ui-language="${escapeHtml(item.value)}" role="radio" aria-checked="${item.value === UI_LANGUAGE ? 'true' : 'false'}">
+              <span class="BetterX-language-code">${escapeHtml(item.code)}</span>
+              <span>${escapeHtml(item.label)}</span>
+              <span class="BetterX-language-check" aria-hidden="true">${item.value === UI_LANGUAGE ? '✓' : ''}</span>
+            </button>
+          `).join('')}
+        </div>
+        <p class="BetterX-language-note">选择后页面会刷新，帖子与设置数据不会受到影响。</p>
+      `,
+      primaryText: '取消',
+    });
+    const overlay = document.getElementById('BetterX-choice-dialog');
+    if (!overlay) return;
+    const secondary = overlay.querySelector('[data-dialog-choice="secondary"]');
+    if (secondary) secondary.hidden = true;
+    overlay.querySelectorAll('[data-ui-language]').forEach((button) => {
+      button.addEventListener('click', () => chooseUiLanguage(button.getAttribute('data-ui-language') || ''));
+    });
+    const current = overlay.querySelector('.BetterX-language-option.is-current');
+    if (current) setTimeout(() => current.focus(), 0);
   }
 
   function setFirefoxCompatibilityChoice(enabled) {
@@ -4474,7 +4918,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.1.2',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.2.0',
       userscriptManager: USERSCRIPT_MANAGER || 'unknown',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,
@@ -4513,7 +4957,7 @@
     const json = JSON.stringify(diagnostic, null, 2);
     console.info('[BetterX] Firefox compatibility diagnostic:', diagnostic);
     if (!document.body) {
-      window.alert('页面尚未就绪，诊断信息已输出到控制台。');
+      uiAlert('页面尚未就绪，诊断信息已输出到控制台。');
       return;
     }
     download(`betterx-firefox-diagnostic-${new Date().toISOString().replace(/[:.]/g, '-')}.json`, json);
@@ -4533,15 +4977,15 @@
   function registerMenuCommands() {
     if (typeof GM_registerMenuCommand !== 'function') return;
     try {
-      GM_registerMenuCommand('BetterX：显示 / 隐藏应用徽标', toggleAppBadgeFromMenu);
+      GM_registerMenuCommand(uiText('BetterX：显示 / 隐藏应用徽标'), toggleAppBadgeFromMenu);
       if (IS_FIREFOX) {
-        GM_registerMenuCommand('BetterX：强制开启 Firefox 兼容模式并刷新', () => {
+        GM_registerMenuCommand(uiText('BetterX：强制开启 Firefox 兼容模式并刷新'), () => {
           switchFirefoxCompatibilityFromMenu(true);
         });
-        GM_registerMenuCommand('BetterX：恢复 Firefox 完整模式并刷新', () => {
+        GM_registerMenuCommand(uiText('BetterX：恢复 Firefox 完整模式并刷新'), () => {
           switchFirefoxCompatibilityFromMenu(false);
         });
-        GM_registerMenuCommand('BetterX：导出 Firefox 兼容诊断', downloadFirefoxCompatibilityDiagnostic);
+        GM_registerMenuCommand(uiText('BetterX：导出 Firefox 兼容诊断'), downloadFirefoxCompatibilityDiagnostic);
       }
     } catch (err) {
       console.error('[BetterX] register menu commands failed:', err);
@@ -5859,6 +6303,7 @@
     };
 
     // 预览层必须直接挂在页面根节点，避免移动端 BetterX 浮动根节点的位置/宽度影响 fixed 定位。
+    localizeBetterXTree(overlay);
     (document.body || document.documentElement).appendChild(overlay);
     updateNavVisibility();
     image.src = sources[currentIndex];
@@ -6027,7 +6472,7 @@
       return;
     }
     if (!items.length) {
-      state.notificationListEl.innerHTML = `<div class="BetterX-empty">没有找到与“${escapeHtml(query)}”匹配的用户名或 @用户名。</div>`;
+      state.notificationListEl.innerHTML = `<div class="BetterX-empty">没有找到与“<span class="BetterX-i18n-user-text">${escapeHtml(query)}</span>”匹配的用户名或 @用户名。</div>`;
       return;
     }
     state.notificationListEl.innerHTML = items.map((item) => {
@@ -6113,7 +6558,7 @@
 
   function exportPosts() {
     const data = filterPosts(state.posts);
-    if (!data.length) { window.alert('当前筛选结果为空，没有可导出的内容。'); return; }
+    if (!data.length) { uiAlert('当前筛选结果为空，没有可导出的内容。'); return; }
     download(`BetterX-filtered-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
   }
 
@@ -6167,7 +6612,7 @@
           return !hasVideo && mediaThumbs.length > 0;
         }
         if (hasVideo && raw.hasImage === true) {
-          const onlyVideoThumbs = mediaThumbs.length > 0 && mediaThumbs.every((u) => /(?:ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)/i.test(u));
+          const onlyVideoThumbs = mediaThumbs.length > 0 && mediaThumbs.every((u) => /(?:ext_tw_video_thumb|amplify_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)/i.test(u));
           if (onlyVideoThumbs) return false;
         }
         return raw.hasImage === true;
@@ -6203,7 +6648,7 @@
   async function importPosts(file) {
     try {
       if (!file || file.size > MAX_IMPORT_FILE_BYTES) {
-        window.alert('导入失败：备份文件不能超过 25 MB。');
+        uiAlert('导入失败：备份文件不能超过 25 MB。');
         return;
       }
       const text = await file.text();
@@ -6212,9 +6657,9 @@
       let importedSettings = null;
       if (Array.isArray(parsed)) posts = parsed;
       else if (parsed && Array.isArray(parsed.posts)) { posts = parsed.posts; importedSettings = parsed.settings || null; }
-      else { window.alert('无法识别的备份文件格式。'); return; }
+      else { uiAlert('无法识别的备份文件格式。'); return; }
       if (posts.length > MAX_IMPORT_POSTS) {
-        window.alert(`导入失败：单次最多允许 ${MAX_IMPORT_POSTS} 条帖子。`);
+        uiAlert(`导入失败：单次最多允许 ${MAX_IMPORT_POSTS} 条帖子。`);
         return;
       }
 
@@ -6254,7 +6699,7 @@
         }
       }
 
-      if (importedSettings && window.confirm('是否同时恢复备份中的设置？')) {
+      if (importedSettings && uiConfirm('是否同时恢复备份中的设置？')) {
         const localFirefoxCompatibility = {
           enabled: state.settings.firefoxCompatibility,
           prompted: state.settings.firefoxCompatibilityPrompted,
@@ -6291,10 +6736,10 @@
       resetPaging();
       refreshUI();
       const trimmedMessage = trimmedIds.length ? `，按最大条数清理 ${trimmedIds.length} 条` : '';
-      window.alert(`导入完成：新增 ${added} 条，合并 ${merged} 条，跳过 ${skipped} 条无效记录${trimmedMessage}。`);
+      uiAlert(`导入完成：新增 ${added} 条，合并 ${merged} 条，跳过 ${skipped} 条无效记录${trimmedMessage}。`);
     } catch (err) {
       console.error('[BetterX] import failed:', err);
-      window.alert('导入失败：文件解析出错。');
+      uiAlert('导入失败：文件解析出错。');
     }
   }
 
@@ -6476,8 +6921,8 @@
     const useIconBadge = isMobile || !!state.settings.useMobileBadgeOnDesktop;
     state.badgeEl.classList.toggle('mobile-mode', useIconBadge);
     state.badgeEl.classList.toggle('desktop-icon-mode', !isMobile && useIconBadge);
-    state.badgeEl.setAttribute('aria-label', collapseMobileBadge ? '显示 BetterX 应用徽标' : '打开 BetterX 面板');
-    state.badgeEl.title = collapseMobileBadge ? '点按显示 BetterX 徽标' : '打开 BetterX 面板';
+    state.badgeEl.setAttribute('aria-label', uiText(collapseMobileBadge ? '显示 BetterX 应用徽标' : '打开 BetterX 面板'));
+    state.badgeEl.title = uiText(collapseMobileBadge ? '点按显示 BetterX 徽标' : '打开 BetterX 面板');
     if (isMobile) {
       state.rootEl.classList.add('BetterX-mobile');
       if (collapseMobileBadge) {
@@ -6895,6 +7340,7 @@
         <div class="BetterX-header-actions">
           <button class="BetterX-btn BetterX-vault-action" data-action="refresh" title="重新扫描当前页面">刷新</button>
           <button class="BetterX-btn BetterX-vault-action" data-action="mark-all-read" title="把当前列表全部标为已读">全部已读</button>
+          <button class="BetterX-btn" data-action="switch-language" title="切换 BetterX 界面语言">切换语言</button>
           <div class="BetterX-menu-wrap">
             <button class="BetterX-btn BetterX-icon-btn" data-action="menu-toggle" aria-label="更多" title="更多">⋯</button>
             <div class="BetterX-menu" id="BetterX-menu" hidden>
@@ -7101,6 +7547,14 @@
               </select>
             </div>
             <div class="BetterX-adv-label">开启后，仅在进入用户的主页时自动切换；帖子详情、媒体、回复、关注者等其他内容不受影响。</div>
+            <div class="BetterX-row BetterX-profile-default-view-row">
+              <label class="BetterX-field inline"><input type="checkbox" id="BetterX-profile-post-sort-enabled" /> 用户主页帖子排序方式</label>
+              <select class="BetterX-select" id="BetterX-profile-post-sort" aria-label="用户主页帖子排序方式">
+                <option value="recent">最近</option>
+                <option value="popular">热门</option>
+              </select>
+            </div>
+            <div class="BetterX-adv-label">“热门”会在用户主页地址后添加 ?sort=popular；“最近”保持 X 原本的用户主页地址。</div>
           </div>
         </details>
         <details class="BetterX-advanced BetterX-settings-card">
@@ -7255,9 +7709,12 @@
     state.useMobileBadgeHandleEl = panel.querySelector('#BetterX-mobile-badge-handle');
     state.profileDefaultViewEnabledEl = panel.querySelector('#BetterX-profile-default-view-enabled');
     state.profileDefaultViewEl = panel.querySelector('#BetterX-profile-default-view');
+    state.profilePostSortEnabledEl = panel.querySelector('#BetterX-profile-post-sort-enabled');
+    state.profilePostSortEl = panel.querySelector('#BetterX-profile-post-sort');
     state.autoExpandPostTextEl = panel.querySelector('#BetterX-auto-expand-post-text');
     state.menuEl = panel.querySelector('#BetterX-menu');
 
+    installUiLocalization(root);
     state.mediaSelectEl.innerHTML = buildMediaOptionsHtml();
     installHorizontalFilterScroller(state.filterBarEl);
     if (state.quickFilterDetailsEl) {
@@ -7399,6 +7856,12 @@
     state.profileDefaultViewEl.addEventListener('change', (e) => {
       setSettingsPartial({ profileDefaultView: e.target.value });
     });
+    state.profilePostSortEnabledEl.addEventListener('change', (e) => {
+      setSettingsPartial({ profilePostSortEnabled: !!e.target.checked });
+    });
+    state.profilePostSortEl.addEventListener('change', (e) => {
+      setSettingsPartial({ profilePostSort: e.target.value });
+    });
     state.autoExpandPostTextEl.addEventListener('change', (e) => {
       setSettingsPartial({ autoExpandPostText: !!e.target.checked });
     });
@@ -7470,10 +7933,11 @@
           break;
         }
         case 'refresh': scanArticles(document); refreshUI(); break;
+        case 'switch-language': showLanguageDialog(); break;
         case 'mark-all-read': {
           const unreadPosts = filterPosts(state.posts).filter((p) => !p.clicked);
-          if (!unreadPosts.length) { alert('当前列表没有未读的帖子喂～'); break; }
-          if (confirm('确定要把当前列表的 ' + unreadPosts.length + ' 条未读帖子全部标为已读吗？')) {
+          if (!unreadPosts.length) { uiAlert('当前列表没有未读的帖子喂～'); break; }
+          if (uiConfirm('确定要把当前列表的 ' + unreadPosts.length + ' 条未读帖子全部标为已读吗？')) {
             markPostsRead(unreadPosts.map((p) => p.id));
             showToast('✅ 已将当前列表全部标为已读');
           }
@@ -7604,8 +8068,8 @@
             try {
               (navigator.clipboard && navigator.clipboard.writeText)
                 ? navigator.clipboard.writeText(post.url).then(() => { actionEl.textContent = '已复制'; setTimeout(() => { actionEl.textContent = '复制链接'; }, 1200); })
-                : window.prompt('复制链接：', post.url);
-            } catch (err) { window.prompt('复制链接：', post.url); }
+                : window.prompt(uiText('复制链接：'), post.url);
+            } catch (err) { window.prompt(uiText('复制链接：'), post.url); }
           }
           break;
         }
@@ -7899,6 +8363,17 @@
       }
       .BetterX-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
       .BetterX-dialog-actions .BetterX-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; }
+      .BetterX-language-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .BetterX-language-option {
+        display: grid; grid-template-columns: 38px minmax(0, 1fr) 18px; align-items: center; gap: 9px;
+        min-height: 48px; padding: 8px 10px; border: 1px solid var(--xv-border); border-radius: 10px;
+        background: var(--xv-chip-bg); color: var(--xv-text); text-align: left; cursor: pointer;
+      }
+      .BetterX-language-option:hover, .BetterX-language-option:focus-visible { border-color: var(--xv-accent); outline: none; }
+      .BetterX-language-option.is-current { border-color: var(--xv-accent); box-shadow: inset 0 0 0 1px var(--xv-accent); }
+      .BetterX-language-code { color: var(--xv-muted); font-size: 11px; font-weight: 800; }
+      .BetterX-language-check { color: var(--xv-accent); font-size: 16px; font-weight: 900; text-align: right; }
+      .BetterX-language-note { margin: 12px 0 0 !important; color: var(--xv-muted); font-size: 12px; }
 
       #BetterX-panel * { box-sizing: border-box; }
       .BetterX-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 14px 14px 8px; }
@@ -8632,6 +9107,14 @@
       : DEFAULT_SETTINGS.profileDefaultView;
   }
 
+  function getConfiguredProfilePostSort() {
+    const settings = state.settingsLoaded ? state.settings : (readSettingsMirror() || DEFAULT_SETTINGS);
+    if (settings.profilePostSortEnabled === false) return 'recent';
+    return PROFILE_POST_SORT_OPTIONS.includes(settings.profilePostSort)
+      ? settings.profilePostSort
+      : DEFAULT_SETTINGS.profilePostSort;
+  }
+
   function readProfileDefaultViewRedirectGuard() {
     try {
       const raw = sessionStorage.getItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY);
@@ -8644,21 +9127,28 @@
         if (raw) sessionStorage.removeItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY);
         return null;
       }
-      return guard;
+      return {
+        ...guard,
+        sort: PROFILE_POST_SORT_OPTIONS.includes(guard.sort) ? guard.sort : DEFAULT_SETTINGS.profilePostSort,
+      };
     } catch (err) { return null; }
   }
 
-  function armProfileDefaultViewRedirectGuard(handle, view) {
+  function armProfileDefaultViewRedirectGuard(handle, view, sort) {
     try {
       sessionStorage.setItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY, JSON.stringify({
-        handle: String(handle || '').toLowerCase(), view, createdAt: now(),
+        handle: String(handle || '').toLowerCase(), view,
+        sort: PROFILE_POST_SORT_OPTIONS.includes(sort) ? sort : DEFAULT_SETTINGS.profilePostSort,
+        createdAt: now(),
       }));
     } catch (err) {}
   }
 
-  function consumeProfileDefaultViewRedirectGuard(handle, view) {
+  function consumeProfileDefaultViewRedirectGuard(handle, view, sort) {
     const guard = readProfileDefaultViewRedirectGuard();
-    if (!guard || guard.handle !== String(handle || '').toLowerCase() || guard.view !== view) return false;
+    const normalizedSort = PROFILE_POST_SORT_OPTIONS.includes(sort) ? sort : DEFAULT_SETTINGS.profilePostSort;
+    if (!guard || guard.handle !== String(handle || '').toLowerCase()
+        || guard.view !== view || guard.sort !== normalizedSort) return false;
     try { sessionStorage.removeItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY); } catch (err) {}
     return true;
   }
@@ -8676,13 +9166,16 @@
 
   function getPreferredProfileViewUrl(rawUrl) {
     const view = getConfiguredProfileDefaultView();
-    if (view === 'posts') return '';
+    const sort = getConfiguredProfilePostSort();
+    if (view === 'posts' && sort === 'recent') return '';
     let targetUrl;
     try { targetUrl = new URL(rawUrl, location.href); } catch (err) { return ''; }
     if (!/^(?:x|twitter)\.com$/i.test(targetUrl.hostname)) return '';
     const handle = getBareProfileHandle(targetUrl.pathname);
     if (!handle) return '';
-    targetUrl.pathname = `/${handle}/${view}`;
+    if (view !== 'posts') targetUrl.pathname = `/${handle}/${view}`;
+    if (sort === 'popular') targetUrl.searchParams.set('sort', 'popular');
+    else targetUrl.searchParams.delete('sort');
     return targetUrl.href;
   }
 
@@ -8710,6 +9203,28 @@
     return !!(link && (link.getAttribute('role') === 'tab' || link.closest('[role="tab"]')));
   }
 
+  function isProfileLinkRewriteExcludedTarget(target) {
+    return !!(target && target.closest && target.closest(PROFILE_LINK_REWRITE_EXCLUSION_SELECTOR));
+  }
+
+  function armProfileNavigationBypassGuard() {
+    try {
+      sessionStorage.setItem(
+        PROFILE_NAVIGATION_BYPASS_GUARD_KEY,
+        String(now() + PROFILE_NAVIGATION_BYPASS_GUARD_MS)
+      );
+    } catch (err) {}
+  }
+
+  function shouldBypassProfileNavigationRedirect() {
+    try {
+      const expiresAt = Number(sessionStorage.getItem(PROFILE_NAVIGATION_BYPASS_GUARD_KEY));
+      if (Number.isFinite(expiresAt) && expiresAt > now()) return true;
+      sessionStorage.removeItem(PROFILE_NAVIGATION_BYPASS_GUARD_KEY);
+    } catch (err) {}
+    return false;
+  }
+
   function getSearchResultProfileHandle(resultContainer) {
     if (!resultContainer || !resultContainer.querySelector) return '';
     const avatar = resultContainer.querySelector('[data-testid^="UserAvatar-Container-"]');
@@ -8727,6 +9242,7 @@
 
   function getProfileTargetFromClickTarget(target) {
     if (!target || !target.closest) return null;
+    if (isProfileLinkRewriteExcludedTarget(target)) return null;
     const directLink = target.closest('a[href]');
     const directHandle = directLink ? getBareProfileHandle(directLink.pathname) : '';
     if (directHandle) return { link: directLink, handle: directHandle, url: directLink.href };
@@ -8756,20 +9272,26 @@
 
   function redirectBareProfileToPreferredView() {
     const view = getConfiguredProfileDefaultView();
-    // “帖子”就是 X 的用户主页默认页，无需额外改写 URL。
-    if (view === 'posts') return false;
+    const sort = getConfiguredProfilePostSort();
+    // “帖子 + 最近”就是 X 的用户主页默认状态，无需额外改写 URL。
+    if (view === 'posts' && sort === 'recent') return false;
     const handle = getBareProfileHandle();
     if (!handle) return false;
+    // 账号切换可能先导航到目标账号的 /用户名，再由 X 完成登录态切换；即使中途整页重载，
+    // sessionStorage 中的短期标记也会阻止 BetterX 把该中间地址再次改写为 /all。
+    if (shouldBypassProfileNavigationRedirect()) return false;
 
     // X 在目标页签不可用时会自行回退到 /用户名；消费本次跳转的短期标记后停留在“帖子”，避免来回跳转。
-    if (consumeProfileDefaultViewRedirectGuard(handle, view)) return false;
+    if (consumeProfileDefaultViewRedirectGuard(handle, view, sort)) return false;
 
-    const targetPath = `/${handle}/${view}`;
-    if (location.pathname.replace(/\/+$/, '') === targetPath) return false;
+    const targetPath = view === 'posts' ? `/${handle}` : `/${handle}/${view}`;
     const targetUrl = new URL(location.href);
     targetUrl.pathname = targetPath;
+    if (sort === 'popular') targetUrl.searchParams.set('sort', 'popular');
+    else targetUrl.searchParams.delete('sort');
+    if (targetUrl.href === new URL(location.href).href) return false;
     // replaceState 不会把“纯主页”留在历史记录里，按返回键时也不会来回重定向。
-    armProfileDefaultViewRedirectGuard(handle, view);
+    armProfileDefaultViewRedirectGuard(handle, view, sort);
     navigateToPreferredProfileView(targetUrl.href, true);
     return true;
   }
@@ -8779,24 +9301,33 @@
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const target = event.target;
       if (!target || !target.closest) return;
+      if (isProfileLinkRewriteExcludedTarget(target)) {
+        armProfileNavigationBypassGuard();
+        return;
+      }
+      // 账号切换弹层实际使用 HoverCard + 无 href 的 UserCell，而不是 role="menu"。
+      // 点击左下角账号按钮时已经设置短期标记；这里必须在解析 UserCell 之前读取它，
+      // 否则会把“切换账号”误接管成 /目标账号/all 的普通主页导航。
+      if (shouldBypassProfileNavigationRedirect()) return;
       const profileTarget = getProfileTargetFromClickTarget(target);
       if (!profileTarget) return;
       const { link, handle } = profileTarget;
       if (link && link.hasAttribute('download')) return;
       const view = getConfiguredProfileDefaultView();
+      const sort = getConfiguredProfilePostSort();
       // 用户点击个人主页的“帖子”页签是明确选择，跳过一次默认页签重定向。
-      if (handle && view !== 'posts' && link && isExplicitProfileTabLink(link)) {
-        armProfileDefaultViewRedirectGuard(handle, view);
+      if (handle && (view !== 'posts' || sort !== 'recent') && link && isExplicitProfileTabLink(link)) {
+        armProfileDefaultViewRedirectGuard(handle, view, sort);
         return;
       }
       const preferredUrl = getPreferredProfileViewUrl(profileTarget.url);
       // 某些 X SPA 路由会在事件开始时缓存原 href，单纯改写属性可能仍打开“帖子”页。
       // 搜索联想的 UserCell 甚至没有 href；必须在 X 先初始化“帖子”页之前接管点击。
       if (preferredUrl && (!link || link.href !== preferredUrl)) {
-        if (!handle || view === 'posts') return;
+        if (!handle) return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        armProfileDefaultViewRedirectGuard(handle, view);
+        armProfileDefaultViewRedirectGuard(handle, view, sort);
         navigateToPreferredProfileView(preferredUrl, false);
       }
     }, true);
@@ -8888,7 +9419,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v3.1.2 started');
+    debugLog('v3.2.0 started');
   }
 
   function waitForPageReady() {
