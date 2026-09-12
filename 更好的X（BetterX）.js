@@ -5,13 +5,13 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      3.2.0
+// @version      3.3.0
 // @description  管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
 // @description:zh-CN 管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF（多媒体可自动压缩 ZIP）、取消年龄限制、记录与管理浏览过的帖子，并支持搜索、排序、关键词、备份、主题与 IndexedDB 持久化。
 // @description:zh-TW 管理 X 貼文通知訂閱狀態、自動隱藏成人引流帳號與廣告、簡化介面與寬螢幕、一鍵下載圖片/影片/GIF（多媒體可自動壓縮為 ZIP）、解除年齡限制、記錄與管理瀏覽過的貼文，並支援搜尋、排序、關鍵字、備份、主題與 IndexedDB 持久化。
 // @description:ja X のポスト通知購読を管理し、成人スパムや広告を自動非表示にします。UI の簡素化・ワイド表示、画像・動画・GIF の一括ダウンロード（ZIP 対応）、年齢制限の解除、閲覧ポストの記録・検索・並べ替え・キーワード・バックアップ・テーマ・IndexedDB 永続化に対応します。
 // @description:en Manage X post-notification subscriptions, hide adult spam and ads, simplify and widen the interface, download images/videos/GIFs with optional ZIP packaging, bypass age gates, and save browsed posts with search, sorting, keywords, backups, themes, and IndexedDB persistence.
-// @author       流萤可爱捏
+// @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://twitter.com/*
 // @grant        GM_addStyle
@@ -64,7 +64,7 @@
     ['更多', '更多', 'その他', 'More'], ['关闭', '關閉', '閉じる', 'Close'],
     ['帖子', '貼文', 'ポスト', 'Posts'], ['通知', '通知', '通知', 'Notifications'], ['设置', '設定', '設定', 'Settings'],
     ['导出筛选', '匯出篩選結果', '絞り込み結果をエクスポート', 'Export filtered'],
-    ['备份全部', '備份全部', 'すべてバックアップ', 'Back up all'], ['导入', '匯入', 'インポート', 'Import'],
+    ['备份全部', '備份全部', 'すべてバックアップ', 'Back up all'], ['导出备份', '匯出備份', 'バックアップをエクスポート', 'Export backup'], ['导入', '匯入', 'インポート', 'Import'],
     ['清空', '清空', '消去', 'Clear'], ['快速筛选', '快速篩選', 'クイックフィルター', 'Quick filters'],
     ['搜索', '搜尋', '検索', 'Search'], ['搜索帖子', '搜尋貼文', 'ポストを検索', 'Search posts'],
     ['搜索作者、正文或备注…', '搜尋作者、內文或備註…', '投稿者・本文・メモを検索…', 'Search author, text, or notes…'],
@@ -141,8 +141,11 @@
     ['进入用户主页默认查看', '進入使用者主頁時預設檢視', 'プロフィールの既定タブ', 'Default profile tab'], ['亮点', '亮點', 'ハイライト', 'Highlights'],
     ['用户主页帖子排序方式', '使用者主頁貼文排序方式', 'プロフィールのポスト並び順', 'Profile post sorting'],
     ['最近', '最近', '最新', 'Recent'], ['热门', '熱門', '人気', 'Popular'],
-    ['“热门”会在用户主页地址后添加 ?sort=popular；“最近”保持 X 原本的用户主页地址。', '「熱門」會在使用者主頁網址後加入 ?sort=popular；「最近」則保留 X 原本的使用者主頁網址。', '「人気」はプロフィール URL に ?sort=popular を追加し、「最新」は X 本来のプロフィール URL を維持します。', 'Popular adds ?sort=popular to profile URLs; Recent keeps X’s original profile URL.'],
+    ['“热门”会在帖子类用户主页地址后添加 ?sort=popular；视频与图片页不受此排序影响。', '「熱門」會在貼文類使用者主頁網址後加入 ?sort=popular；影片與圖片頁不受此排序影響。', '「人気」は投稿系プロフィール URL に ?sort=popular を追加します。動画・画像ページには適用されません。', 'Popular adds ?sort=popular to post-based profile URLs; video and photo pages are unaffected.'],
     ['其他功能', '其他功能', 'その他の機能', 'Other features'], ['兼容 Firefox（仅 Firefox）', '相容 Firefox（僅 Firefox）', 'Firefox 互換モード（Firefox のみ）', 'Firefox compatibility (Firefox only)'],
+    ['上限提示', '上限提示', '上限通知', 'Limit warning'],
+    ['控制帖子记录接近“最大条数”时的提醒；关闭后可在此重新开启。', '控制貼文記錄接近「最大筆數」時的提醒；關閉後可在此重新開啟。', 'ポスト記録が「最大件数」に近づいた時の通知を切り替えます。オフにしてもここから再度有効にできます。', 'Controls the warning shown when post history approaches the maximum. You can re-enable it here after turning it off.'],
+    ['已恢复上限提示', '已恢復上限提示', '上限通知を再開しました', 'Limit warning restored'], ['已关闭上限提示', '已關閉上限提示', '上限通知を無効にしました', 'Limit warning disabled'],
     ['隐藏应用徽标', '隱藏應用徽章', 'アプリバッジを非表示', 'Hide app badge'], ['切换为移动端徽标（仅 PC）', '切換為行動版徽章（僅 PC）', 'モバイル用バッジに切替（PC のみ）', 'Use mobile badge (PC only)'],
     ['切换为半透明蓝色条（仅移动端）', '切換為半透明藍色條（僅行動裝置）', '半透明の青いバーに切替（モバイルのみ）', 'Use translucent blue bar (mobile only)'],
     ['高级设置', '進階設定', '詳細設定', 'Advanced settings'], ['自动清理(天)', '自動清理（日）', '自動削除（日）', 'Auto-clean (days)'], ['最大条数', '最大筆數', '最大件数', 'Maximum posts'],
@@ -150,6 +153,10 @@
     ['跟随系统', '跟隨系統', 'システムに合わせる', 'Follow system'], ['深色', '深色', 'ダーク', 'Dark'], ['浅色', '淺色', 'ライト', 'Light'],
     ['下载超时(秒)', '下載逾時（秒）', 'タイムアウト（秒）', 'Download timeout (sec)'], ['下载并发', '下載並行數', '同時ダウンロード数', 'Concurrent downloads'],
     ['点帖子空白处算已读', '點貼文空白處視為已讀', 'ポストの空白クリックで既読', 'Mark read when clicking post whitespace'], ['应用', '套用', '適用', 'Apply'],
+    ['帖子记录即将达到上限', '貼文記錄即將達到上限', 'ポスト記録が上限に近づいています', 'Post history is nearing its limit'],
+    ['达到上限后，新帖子仍会继续记录；最旧的未收藏、未置顶帖子会被删除。收藏和置顶帖子不会被上限删除，因此总数有时可能超过设置值。', '達到上限後仍會繼續記錄新貼文；最舊且未收藏、未置頂的貼文會被刪除。收藏與置頂貼文不受上限刪除，因此總數有時可能超過設定值。', '上限に達しても新しいポストは記録され、古い未お気に入り・未固定のポストから削除されます。お気に入りと固定済みポストは削除されないため、合計が設定値を超える場合があります。', 'New posts will still be recorded at the limit; the oldest unfavorited and unpinned posts are removed. Favorited and pinned posts are protected, so the total may sometimes exceed the configured value.'],
+    ['你可以打开“高级设置”调大“最大条数”，或先导出备份。', '你可以開啟「進階設定」調高「最大筆數」，或先匯出備份。', '「詳細設定」で上限を増やすか、先にバックアップをエクスポートできます。', 'You can increase the maximum under Advanced settings or export a backup first.'],
+    ['打开高级设置', '開啟進階設定', '詳細設定を開く', 'Open advanced settings'], ['不再提示', '不再提示', '今後表示しない', "Don't remind me again"],
     ['不记录以下来源的帖子：', '不記錄以下來源的貼文：', '次のソースは記録しない：', 'Do not record posts from:'],
     ['下载任务', '下載工作', 'ダウンロードタスク', 'Download tasks'], ['暂无下载任务', '暫無下載工作', 'ダウンロードはありません', 'No download tasks'],
     ['下载', '下載', 'ダウンロード', 'Download'], ['下载中', '下載中', 'ダウンロード中', 'Downloading'],
@@ -187,7 +194,7 @@
     ['将 X 新版的多媒体正文轮播改为网格展示；两张并排，三张为左大右二，四张为 2×2 网格。', '將 X 新版多媒體輪播改為網格；兩張並排、三張左大右二、四張為 2×2。', 'X の新しいメディアカルーセルをグリッドに変更します。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Changes X’s media carousel to a grid: two side by side, three with one large left tile, and four in a 2×2 grid.'],
     ['不显示的话，请稍等或者重新开关按钮；仅本地操作，不改动账号设置。', '若未顯示，請稍候或重新切換；僅在本機處理，不修改帳號設定。', '表示されない場合は少し待つか、スイッチを入れ直してください。ローカル処理のみでアカウント設定は変更しません。', 'If it does not appear, wait or toggle the option again. This is local only and does not change account settings.'],
     ['自动展开时间线和帖子详情中的长文正文；只点击帖内的“显示更多 / Show more”，不会展开回复或侧栏内容。', '自動展開時間軸與貼文詳情中的長文；僅點擊貼文內「顯示更多 / Show more」，不展開回覆或側欄內容。', 'タイムラインと詳細ページの長文を自動展開します。ポスト内の「さらに表示 / Show more」だけを押し、返信やサイドバーは展開しません。', 'Expands long text in timelines and post details. Only the post’s “Show more” is clicked; replies and sidebar content are untouched.'],
-    ['开启后，仅在进入用户的主页时自动切换；帖子详情、媒体、回复、关注者等其他内容不受影响。', '開啟後僅在進入使用者主頁時自動切換；貼文詳情、媒體、回覆、追蹤者等不受影響。', '有効にするとプロフィールを開いた時だけ自動切替します。ポスト詳細、メディア、返信、フォロワーなどには影響しません。', 'When enabled, switching occurs only when entering a profile. Post details, media, replies, followers, and other pages are unaffected.'],
+    ['开启后，仅在进入用户主页时自动切换；帖子详情、回复、关注者等其他内容不受影响。', '開啟後僅在進入使用者主頁時自動切換；貼文詳情、回覆、追蹤者等其他內容不受影響。', '有効にするとプロフィールを開いた時だけ自動切替します。ポスト詳細、返信、フォロワーなどには影響しません。', 'When enabled, switching occurs only when entering a profile. Post details, replies, followers, and other pages are unaffected.'],
     ['遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。', '頁面一直卡在 X 圖示時開啟；會停用頁面網路 Hook，點擊開關可查看影響。', 'X ロゴだけで止まる場合に有効にします。ページのネットワーク Hook を停止します。切替時に影響を確認できます。', 'Enable if the page is stuck on the X logo. This disables page network hooks; click the toggle to review the impact.'],
     ['PC 端会隐藏徽标；移动端会收纳为屏幕右侧中部的半透明蓝色条，点按或从右边缘向内滑动即可恢复。也可通过油猴菜单恢复。', 'PC 端會隱藏徽章；行動端收納為螢幕右側中部的半透明藍色條，點按或從右側向內滑動即可復原，也可由使用者腳本選單復原。', 'PC ではバッジを非表示にし、モバイルでは右中央の半透明バーに収納します。タップ／右端からのスワイプ、またはユーザースクリプトメニューで復元できます。', 'Hides the badge on desktop; on mobile it collapses into a translucent bar at the right. Tap, swipe inward, or use the userscript menu to restore it.'],
     ['使用圆形脚本图标与未读角标，并继续支持桌面端拖拽。', '使用圓形腳本圖示與未讀角標，並繼續支援桌面拖曳。', '丸いスクリプトアイコンと未読バッジを使い、デスクトップでのドラッグにも対応します。', 'Uses the circular script icon and unread badge while retaining desktop dragging.'],
@@ -519,7 +526,7 @@
     { key: 'list', label: '列表页' },
   ];
 
-  const PROFILE_DEFAULT_VIEW_OPTIONS = ['posts', 'all', 'highlights'];
+  const PROFILE_DEFAULT_VIEW_OPTIONS = ['posts', 'all', 'highlights', 'video', 'photo'];
   const PROFILE_POST_SORT_OPTIONS = ['recent', 'popular'];
   const POST_SHOW_MORE_LABELS = new Set([
     '显示更多', '顯示更多', 'Show more', 'さらに表示', '더 보기',
@@ -544,7 +551,7 @@
   ]);
 
   const DEFAULT_SETTINGS = {
-    settingsRevision: 30,
+    settingsRevision: 31,
     keywords: [],
     excludeKeywords: [],
     keywordMode: 'plain',   // 'plain' | 'and'；正则由 /表达式/ 标签声明
@@ -555,6 +562,7 @@
     quickFilterOpen: false, // 记住帖子页“快速筛选”的展开 / 收起状态
     autoCleanDays: 0,
     maxPosts: 1000,
+    postLimitWarningDisabled: false, // 接近最大条数时是否永久关闭提醒
     flashMs: 8000,
     markReadOnClick: true,
     skipSources: [],
@@ -599,7 +607,7 @@
     useMobileBadgeHandle: false, // 移动端将圆形徽标切换为右侧小蓝条
     mobileBadgeHandleTop: null, // 移动端收纳半透明蓝色条距顶部位置（像素）
     profileDefaultViewEnabled: true, // 进入纯用户主页时，按所选页签打开
-    profileDefaultView: 'posts', // 'posts' | 'all' | 'highlights'
+    profileDefaultView: 'posts', // 'posts' | 'all' | 'highlights' | 'video' | 'photo'
     profilePostSortEnabled: true, // 是否按所选方式改写用户主页帖子排序
     profilePostSort: 'recent', // 'recent' | 'popular'；热门会给主页目标 URL 加 ?sort=popular
     autoExpandPostText: false, // 自动展开帖子正文“显示更多”
@@ -695,6 +703,7 @@
     restoreMediaGridEl: null,
     useMobileBadgeOnDesktopEl: null,
     hideAppBadgeEl: null,
+    postLimitWarningEl: null,
     useMobileBadgeHandleEl: null,
     profileDefaultViewEnabledEl: null,
     profileDefaultViewEl: null,
@@ -1824,6 +1833,76 @@
     }
   }
 
+  let postLimitWarningShownForMax = 0;
+  let postLimitWarningTimer = null;
+  let postLimitWarningReady = false;
+
+  function getPostLimitWarningThreshold(maxPosts) {
+    const maximum = clampInt(maxPosts, 50, 5000, DEFAULT_SETTINGS.maxPosts);
+    return Math.max(1, Math.ceil(maximum * 0.9));
+  }
+
+  function formatPostLimitWarningCount(count, maximum) {
+    if (UI_LANGUAGE === 'zh-TW') return `目前已記錄 ${count} 筆貼文；設定的「最大筆數」為 ${maximum} 筆。`;
+    if (UI_LANGUAGE === 'ja') return `現在 ${count} 件を記録しています。設定された上限は ${maximum} 件です。`;
+    if (UI_LANGUAGE === 'en') return `Currently recorded: ${count} posts; the configured maximum is ${maximum}.`;
+    return `当前已记录 ${count} 条帖子，设置的“最大条数”为 ${maximum} 条。`;
+  }
+
+  function openAdvancedSettingsFromPostLimitWarning() {
+    togglePanel(true);
+    setPanelView('settings');
+    setTimeout(() => {
+      const advanced = state.panelEl && state.panelEl.querySelector('#BetterX-advanced-settings');
+      if (!advanced) return;
+      advanced.open = true;
+      try { advanced.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (err) {}
+      if (state.maxPostsInputEl) {
+        try { state.maxPostsInputEl.focus({ preventScroll: true }); } catch (err) { state.maxPostsInputEl.focus(); }
+        state.maxPostsInputEl.select();
+      }
+    }, 0);
+  }
+
+  function maybeShowPostLimitWarning() {
+    if (!postLimitWarningReady || !state.settingsLoaded || state.settings.postLimitWarningDisabled || !state.rootEl) return false;
+    const maximum = clampInt(state.settings.maxPosts, 50, 5000, DEFAULT_SETTINGS.maxPosts);
+    const threshold = getPostLimitWarningThreshold(maximum);
+    const count = state.posts.length;
+    if (count < threshold) {
+      if (postLimitWarningShownForMax === maximum) postLimitWarningShownForMax = 0;
+      return false;
+    }
+    if (postLimitWarningShownForMax === maximum) return false;
+    // 不覆盖语言选择、Firefox 兼容询问等正在显示的对话框，稍后再提醒。
+    if (document.getElementById('BetterX-choice-dialog')) {
+      if (!postLimitWarningTimer) {
+        postLimitWarningTimer = setTimeout(() => {
+          postLimitWarningTimer = null;
+          maybeShowPostLimitWarning();
+        }, 1200);
+      }
+      return false;
+    }
+    postLimitWarningShownForMax = maximum;
+    showBetterXDialog({
+      title: '帖子记录即将达到上限',
+      bodyHtml: `
+        <p>${escapeHtml(formatPostLimitWarningCount(count, maximum))}</p>
+        <p>${escapeHtml(uiText('达到上限后，新帖子仍会继续记录；最旧的未收藏、未置顶帖子会被删除。收藏和置顶帖子不会被上限删除，因此总数有时可能超过设置值。'))}</p>
+        <p>${escapeHtml(uiText('你可以打开“高级设置”调大“最大条数”，或先导出备份。'))}</p>
+      `,
+      primaryText: '打开高级设置',
+      secondaryText: '导出备份',
+      tertiaryText: '不再提示',
+      showCloseIcon: true,
+      onPrimary: openAdvancedSettingsFromPostLimitWarning,
+      onSecondary: backupAll,
+      onTertiary: () => setSettingsPartial({ postLimitWarningDisabled: true }),
+    });
+    return true;
+  }
+
   // 超出上限时修剪，但永不删除收藏 / 置顶的帖子。
   function trimPostsToMax() {
     const max = state.settings.maxPosts || 500;
@@ -2260,6 +2339,9 @@
     if (state.hideAppBadgeEl) {
       state.hideAppBadgeEl.checked = !!state.settings.hideAppBadge;
     }
+    if (state.postLimitWarningEl) {
+      state.postLimitWarningEl.checked = !state.settings.postLimitWarningDisabled;
+    }
     if (state.useMobileBadgeHandleEl) {
       state.useMobileBadgeHandleEl.checked = !!state.settings.useMobileBadgeHandle;
     }
@@ -2336,6 +2418,7 @@
       quickFilterOpen: typeof input.quickFilterOpen === 'boolean' ? input.quickFilterOpen : DEFAULT_SETTINGS.quickFilterOpen,
       autoCleanDays: clampInt(input.autoCleanDays, 0, 3650, DEFAULT_SETTINGS.autoCleanDays),
       maxPosts: clampInt(input.maxPosts, 50, 5000, DEFAULT_SETTINGS.maxPosts),
+      postLimitWarningDisabled: input.postLimitWarningDisabled === true,
       flashMs: clampInt(input.flashMs, 1000, 60000, DEFAULT_SETTINGS.flashMs),
       downloadTimeout: clampInt(input.downloadTimeout, 5000, 600000, DEFAULT_SETTINGS.downloadTimeout),
       downloadConcurrency: clampInt(input.downloadConcurrency, DOWNLOAD_MIN_CONCURRENCY, DOWNLOAD_MAX_CONCURRENCY, DEFAULT_SETTINGS.downloadConcurrency),
@@ -2438,11 +2521,14 @@
       if (revision < 17 && input.profileDefaultView == null) input.profileDefaultView = DEFAULT_SETTINGS.profileDefaultView;
       // v2.7.0 新增自动展开长文；默认关闭，避免改变旧用户的阅读习惯。
       if (revision < 18 && input.autoExpandPostText == null) input.autoExpandPostText = DEFAULT_SETTINGS.autoExpandPostText;
-      // v3.2.0 新增用户主页帖子排序；旧用户保持 X 原本的“最近”顺序。
+      // v3.1.2 新增用户主页帖子排序；旧用户保持 X 原本的“最近”顺序。
       if (revision < 29 && input.profilePostSort == null) input.profilePostSort = DEFAULT_SETTINGS.profilePostSort;
       // 排序设置增加独立开关；已经使用该设置的用户保持启用。
       if (revision < 30 && input.profilePostSortEnabled == null) {
         input.profilePostSortEnabled = DEFAULT_SETTINGS.profilePostSortEnabled;
+      }
+      if (revision < 31 && input.postLimitWarningDisabled == null) {
+        input.postLimitWarningDisabled = DEFAULT_SETTINGS.postLimitWarningDisabled;
       }
       // v2.7.0 新增下载命名模板；沿用原“用户名_帖子 ID”的默认命名。
       if (revision < 19) {
@@ -2573,6 +2659,7 @@
         ...post,
       };
       state.posts.push(created);
+      maybeShowPostLimitWarning();
       queueDbWrite(async () => {
         await dbPutPost(created);
         await enforceMaxPosts();
@@ -4747,10 +4834,14 @@
     overlay.id = 'BetterX-choice-dialog';
     overlay.className = 'BetterX-dialog-overlay';
     overlay.innerHTML = `
-      <div class="BetterX-dialog" role="dialog" aria-modal="true" aria-labelledby="BetterX-dialog-title">
+      <div class="BetterX-dialog${options.showCloseIcon ? ' has-close-icon' : ''}" role="dialog" aria-modal="true" aria-labelledby="BetterX-dialog-title">
+        <button type="button" class="BetterX-dialog-close" data-dialog-close hidden aria-label="${escapeHtml(uiText(options.closeIconLabel || '关闭'))}" title="${escapeHtml(uiText(options.closeIconLabel || '关闭'))}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5.3 12 10.9l5.6-5.6 1.1 1.1-5.6 5.6 5.6 5.6-1.1 1.1-5.6-5.6-5.6 5.6-1.1-1.1 5.6-5.6-5.6-5.6z"/></svg>
+        </button>
         <div class="BetterX-dialog-title" id="BetterX-dialog-title"></div>
         <div class="BetterX-dialog-body"></div>
         <div class="BetterX-dialog-actions">
+          <button type="button" class="BetterX-btn" data-dialog-choice="tertiary" hidden></button>
           <button type="button" class="BetterX-btn" data-dialog-choice="secondary"></button>
           <button type="button" class="BetterX-btn primary" data-dialog-choice="primary"></button>
         </div>
@@ -4760,8 +4851,21 @@
     overlay.querySelector('.BetterX-dialog-body').innerHTML = options.bodyHtml || '';
     const primary = overlay.querySelector('[data-dialog-choice="primary"]');
     const secondary = overlay.querySelector('[data-dialog-choice="secondary"]');
+    const tertiary = overlay.querySelector('[data-dialog-choice="tertiary"]');
+    const closeIcon = overlay.querySelector('[data-dialog-close]');
+    if (closeIcon && options.showCloseIcon) {
+      closeIcon.hidden = false;
+      closeIcon.addEventListener('click', () => {
+        closeBetterXDialog();
+        if (typeof options.onCloseIcon === 'function') options.onCloseIcon();
+      });
+    }
     primary.textContent = uiText(options.primaryText || '确定');
     secondary.textContent = uiText(options.secondaryText || '取消');
+    if (options.tertiaryText) {
+      tertiary.hidden = false;
+      tertiary.textContent = uiText(options.tertiaryText);
+    }
     localizeBetterXTree(overlay);
     primary.addEventListener('click', () => {
       closeBetterXDialog();
@@ -4770,6 +4874,10 @@
     secondary.addEventListener('click', () => {
       closeBetterXDialog();
       if (typeof options.onSecondary === 'function') options.onSecondary();
+    });
+    tertiary.addEventListener('click', () => {
+      closeBetterXDialog();
+      if (typeof options.onTertiary === 'function') options.onTertiary();
     });
     state.rootEl.appendChild(overlay);
     setTimeout(() => primary.focus(), 0);
@@ -4918,7 +5026,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.2.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.1.0',
       userscriptManager: USERSCRIPT_MANAGER || 'unknown',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,
@@ -7544,9 +7652,11 @@
                 <option value="posts">帖子</option>
                 <option value="all">全部</option>
                 <option value="highlights">亮点</option>
+                <option value="video">视频</option>
+                <option value="photo">图片</option>
               </select>
             </div>
-            <div class="BetterX-adv-label">开启后，仅在进入用户的主页时自动切换；帖子详情、媒体、回复、关注者等其他内容不受影响。</div>
+            <div class="BetterX-adv-label">开启后，仅在进入用户主页时自动切换；帖子详情、回复、关注者等其他内容不受影响。</div>
             <div class="BetterX-row BetterX-profile-default-view-row">
               <label class="BetterX-field inline"><input type="checkbox" id="BetterX-profile-post-sort-enabled" /> 用户主页帖子排序方式</label>
               <select class="BetterX-select" id="BetterX-profile-post-sort" aria-label="用户主页帖子排序方式">
@@ -7554,7 +7664,7 @@
                 <option value="popular">热门</option>
               </select>
             </div>
-            <div class="BetterX-adv-label">“热门”会在用户主页地址后添加 ?sort=popular；“最近”保持 X 原本的用户主页地址。</div>
+            <div class="BetterX-adv-label">“热门”会在帖子类用户主页地址后添加 ?sort=popular；视频与图片页不受此排序影响。</div>
           </div>
         </details>
         <details class="BetterX-advanced BetterX-settings-card">
@@ -7562,6 +7672,8 @@
           <div class="BetterX-adv-body">
             <label class="BetterX-field inline BetterX-firefox-only-setting"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
             <div class="BetterX-adv-label BetterX-firefox-only-setting">遇到页面一直卡在只显示 X 图标时开启；会停用页面网络 Hook，点击开关可查看具体影响。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-post-limit-warning" /> 上限提示</label>
+            <div class="BetterX-adv-label">控制帖子记录接近“最大条数”时的提醒；关闭后可在此重新开启。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标</label>
             <div class="BetterX-adv-label">PC 端会隐藏徽标；移动端会收纳为屏幕右侧中部的半透明蓝色条，点按或从右边缘向内滑动即可恢复。也可通过油猴菜单恢复。</div>
             <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label>
@@ -7570,7 +7682,7 @@
             <div class="BetterX-adv-label BetterX-mobile-only-setting">把移动端圆形应用徽标切换为紧贴屏幕右侧的半透明蓝色条，点击可打开面板，长按可上下拖动。</div>
           </div>
         </details>
-        <details class="BetterX-advanced BetterX-settings-card">
+        <details class="BetterX-advanced BetterX-settings-card" id="BetterX-advanced-settings">
           <summary>高级设置</summary>
           <div class="BetterX-adv-body">
             <div class="BetterX-row">
@@ -7706,6 +7818,7 @@
     state.bypassAgeEl = panel.querySelector('#BetterX-bypassage');
     state.useMobileBadgeOnDesktopEl = panel.querySelector('#BetterX-desktop-mobile-badge');
     state.hideAppBadgeEl = panel.querySelector('#BetterX-hide-app-badge');
+    state.postLimitWarningEl = panel.querySelector('#BetterX-post-limit-warning');
     state.useMobileBadgeHandleEl = panel.querySelector('#BetterX-mobile-badge-handle');
     state.profileDefaultViewEnabledEl = panel.querySelector('#BetterX-profile-default-view-enabled');
     state.profileDefaultViewEl = panel.querySelector('#BetterX-profile-default-view');
@@ -7842,6 +7955,17 @@
           ? '点击屏幕右侧小蓝条可显示徽标'
           : '应用徽标已隐藏 · Alt+X 或油猴菜单可恢复');
       }
+    });
+    state.postLimitWarningEl.addEventListener('change', (e) => {
+      const enabled = !!e.target.checked;
+      postLimitWarningShownForMax = 0;
+      if (postLimitWarningTimer) {
+        clearTimeout(postLimitWarningTimer);
+        postLimitWarningTimer = null;
+      }
+      setSettingsPartial({ postLimitWarningDisabled: !enabled });
+      showToast(enabled ? '已恢复上限提示' : '已关闭上限提示');
+      if (enabled) setTimeout(() => maybeShowPostLimitWarning(), 120);
     });
     state.useMobileBadgeHandleEl.addEventListener('change', (e) => {
       setSettingsPartial({
@@ -8348,10 +8472,22 @@
         color: var(--xv-text);
       }
       .BetterX-dialog {
+        position: relative;
         width: min(92vw, 460px); max-height: min(82vh, 640px); overflow: auto;
         padding: 20px; border: 1px solid var(--xv-border); border-radius: 16px;
         background: var(--xv-panel-bg); box-shadow: 0 18px 64px rgba(0,0,0,.55);
       }
+      .BetterX-dialog.has-close-icon .BetterX-dialog-title { padding-right: 38px; }
+      .BetterX-dialog-close {
+        position: absolute; top: 12px; right: 12px; z-index: 1;
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 34px; height: 34px; padding: 0; border: 0; border-radius: 999px;
+        background: transparent; color: var(--xv-muted); cursor: pointer;
+      }
+      .BetterX-dialog-close[hidden] { display: none !important; }
+      .BetterX-dialog-close:hover { background: var(--xv-chip-bg); color: var(--xv-text); }
+      .BetterX-dialog-close:focus-visible { outline: 2px solid var(--xv-accent); outline-offset: 2px; }
+      .BetterX-dialog-close svg { width: 20px; height: 20px; fill: currentColor; }
       .BetterX-dialog-title { font-size: 18px; line-height: 1.35; font-weight: 800; margin-bottom: 12px; }
       .BetterX-dialog-body { font-size: 14px; line-height: 1.65; color: var(--xv-text); }
       .BetterX-dialog-body p { margin: 0 0 10px; }
@@ -8361,7 +8497,7 @@
         padding: 1px 5px; border-radius: 5px; background: var(--xv-chip-bg);
         font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .92em;
       }
-      .BetterX-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+      .BetterX-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 18px; }
       .BetterX-dialog-actions .BetterX-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; }
       .BetterX-language-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
       .BetterX-language-option {
@@ -9164,6 +9300,20 @@
     return handle;
   }
 
+  function applyPreferredProfileViewToUrl(targetUrl, handle, view, sort) {
+    const isMediaView = view === 'video' || view === 'photo';
+    if (isMediaView) targetUrl.pathname = `/${handle}/media`;
+    else targetUrl.pathname = view === 'posts' ? `/${handle}` : `/${handle}/${view}`;
+
+    // X 的视频与图片共用 /media；图片由 filter=photo 区分。
+    // 媒体页不支持主页帖子热门排序，避免拼出无效的 sort + filter 组合。
+    if (view === 'photo') targetUrl.searchParams.set('filter', 'photo');
+    else if (isMediaView) targetUrl.searchParams.delete('filter');
+    if (!isMediaView && sort === 'popular') targetUrl.searchParams.set('sort', 'popular');
+    else targetUrl.searchParams.delete('sort');
+    return targetUrl;
+  }
+
   function getPreferredProfileViewUrl(rawUrl) {
     const view = getConfiguredProfileDefaultView();
     const sort = getConfiguredProfilePostSort();
@@ -9173,9 +9323,7 @@
     if (!/^(?:x|twitter)\.com$/i.test(targetUrl.hostname)) return '';
     const handle = getBareProfileHandle(targetUrl.pathname);
     if (!handle) return '';
-    if (view !== 'posts') targetUrl.pathname = `/${handle}/${view}`;
-    if (sort === 'popular') targetUrl.searchParams.set('sort', 'popular');
-    else targetUrl.searchParams.delete('sort');
+    applyPreferredProfileViewToUrl(targetUrl, handle, view, sort);
     return targetUrl.href;
   }
 
@@ -9284,11 +9432,8 @@
     // X 在目标页签不可用时会自行回退到 /用户名；消费本次跳转的短期标记后停留在“帖子”，避免来回跳转。
     if (consumeProfileDefaultViewRedirectGuard(handle, view, sort)) return false;
 
-    const targetPath = view === 'posts' ? `/${handle}` : `/${handle}/${view}`;
     const targetUrl = new URL(location.href);
-    targetUrl.pathname = targetPath;
-    if (sort === 'popular') targetUrl.searchParams.set('sort', 'popular');
-    else targetUrl.searchParams.delete('sort');
+    applyPreferredProfileViewToUrl(targetUrl, handle, view, sort);
     if (targetUrl.href === new URL(location.href).href) return false;
     // replaceState 不会把“纯主页”留在历史记录里，按返回键时也不会来回重定向。
     armProfileDefaultViewRedirectGuard(handle, view, sort);
@@ -9397,6 +9542,11 @@
     installNavigationListener();
     await runAutoClean();
     setTimeout(maybePromptFirefoxCompatibility, 250);
+    // 先让首次 Firefox 兼容询问获得展示机会；若其仍打开，容量提醒会自行延后。
+    setTimeout(() => {
+      postLimitWarningReady = true;
+      maybeShowPostLimitWarning();
+    }, 600);
 
     const throttledReposition = throttle(repositionBadge, 500);
     const throttledLayoutResize = throttle(applyLayoutEnhancements, 250);
@@ -9419,7 +9569,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v3.2.0 started');
+    debugLog('v3.3.0 started');
   }
 
   function waitForPageReady() {
