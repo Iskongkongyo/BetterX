@@ -1,7 +1,7 @@
 # 更好的 X（BetterX）
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.3.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-3.4.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>

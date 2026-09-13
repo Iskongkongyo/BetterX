@@ -5,6 +5,7 @@
 !/.gitignore
 !/README.md
 !/package.json
+!/LICENSE
 
 # 可维护源码、构建脚本与测试
 !/src/
