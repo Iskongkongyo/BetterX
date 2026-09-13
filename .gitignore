@@ -1,0 +1,15 @@
+# 默认忽略根目录中的所有内容，仅放行项目源码与发布文件。
+/*
+
+# Git 规则与项目入口
+!/.gitignore
+!/README.md
+!/package.json
+
+# 可维护源码、构建脚本与测试
+!/src/
+!/scripts/
+!/tests/
+
+# 根目录编译完成的 userscript（兼容后续版本改名）
+!/*.js

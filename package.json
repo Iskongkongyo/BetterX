@@ -1,0 +1,8 @@
+{
+  "name": "betterx-userscript",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "npm run build && node --check \"更好的X（BetterX）v3.4.0.js\" && node tests/build-comments.test.mjs && node tests/style-build.test.mjs && node tests/panel-build.test.mjs && node tests/i18n-build.test.mjs && node tests/adult-spam-build.test.mjs && node tests/startup-access.test.mjs && node tests/adult-spam-compilation.test.mjs && node tests/adult-spam-hidden-count.test.mjs && node tests/adult-spam-refresh-scan.test.mjs && node tests/capture-hot-path.test.mjs && node tests/media-detection-dedup.test.mjs && node tests/settings-schema.test.mjs && node tests/tag-editor.test.mjs && node tests/i18n-rendering.test.mjs && node tests/layout-incremental.test.mjs && node tests/download-module-unchanged.test.mjs"
+  }
+}

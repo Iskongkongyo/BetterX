@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>BetterX startup smoke test</title>
+  <script>
+    window.__betterxErrors = [];
+    addEventListener('error', (event) => window.__betterxErrors.push(String(event.error || event.message)));
+    addEventListener('unhandledrejection', (event) => window.__betterxErrors.push(String(event.reason)));
+    window.GM_getValue = (_key, fallback) => fallback;
+    window.GM_setValue = () => {};
+    window.GM_registerMenuCommand = () => {};
+    window.GM_info = { script: {}, scriptHandler: 'Startup test' };
+    // 模拟 X 的 IndexedDB 升级被另一个标签页长期阻塞。
+    Object.defineProperty(window, 'indexedDB', { value: { open: () => ({}) } });
+  </script>
+  <script src="../更好的X（BetterX）v3.4.0.js"></script>
+</head>
+<body>
+  <main role="main"><div data-testid="primaryColumn"></div></main>
+  <script>
+    setTimeout(() => {
+      const badge = document.querySelector('#BetterX-badge');
+      document.body.dataset.betterxBadge = badge ? 'present' : 'missing';
+      document.body.dataset.betterxErrors = JSON.stringify(window.__betterxErrors);
+      if (badge) {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', altKey: true, bubbles: true }));
+        document.body.dataset.betterxPanelOpen = document.querySelector('#BetterX-panel')?.style.display || '';
+      }
+      const status = document.createElement('pre');
+      status.id = 'startup-result';
+      status.textContent = JSON.stringify(document.body.dataset, null, 2);
+      status.style.cssText = 'position:fixed;inset:20px auto auto 20px;z-index:2147483647;padding:12px;background:#fff;color:#000;border:2px solid red;font:16px monospace;white-space:pre-wrap';
+      document.body.appendChild(status);
+    }, 500);
+  </script>
+</body>
+</html>
