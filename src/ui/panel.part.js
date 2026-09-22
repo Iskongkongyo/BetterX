@@ -196,22 +196,35 @@
             <div class="BetterX-adv-label BetterX-download-zip-option">默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。</div>
             <label class="BetterX-field inline BetterX-download-history-option"><input type="checkbox" id="BetterX-track-downloaded-posts" /> 记录已经下载过的帖子</label>
             <div class="BetterX-adv-label BetterX-download-history-option">默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。</div>
-            <label class="BetterX-field">媒体文件名（不含扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="{用户ID}_{帖子ID}" /></label>
-            <label class="BetterX-field">ZIP 压缩包名（不含 .zip）<input class="BetterX-input" id="BetterX-download-zip-name-template" maxlength="180" spellcheck="false" placeholder="{用户ID}_{帖子ID}" /></label>
-            <div class="BetterX-adv-label">点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。</div>
-            <div class="BetterX-chip-row BetterX-download-name-tokens">
-              ${DOWNLOAD_NAME_TOKENS.map(({ token }) => `<button type="button" class="BetterX-chip" data-action="insert-download-name-token" data-token="${escapeHtml(token)}">${escapeHtml(token)}</button>`).join('')}
-            </div>
-            <label class="BetterX-field">正则替换（可选）<input class="BetterX-input" id="BetterX-download-name-regex" maxlength="180" spellcheck="false" placeholder="例如：[\\s_]+" /></label>
-            <label class="BetterX-field">替换为<input class="BetterX-input" id="BetterX-download-name-replacement" maxlength="180" spellcheck="false" placeholder="例如：_；支持 $1" /></label>
-            <div class="BetterX-adv-label">正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。</div>
-            <div class="BetterX-adv-label BetterX-download-name-preview" id="BetterX-download-name-preview"></div>
-            <div class="BetterX-row"><button class="BetterX-btn primary" data-action="save-download-naming">保存自定义命名设置</button></div>
+            <details class="BetterX-advanced BetterX-download-advanced" id="BetterX-download-advanced">
+              <summary>
+                <span class="BetterX-download-advanced-summary">
+                  <span class="BetterX-download-advanced-title">高级设置</span>
+                  <small class="BetterX-download-advanced-subtitle">自定义下载文件/压缩包名</small>
+                </span>
+                <span class="BetterX-download-advanced-state" id="BetterX-download-advanced-state" hidden>已自定义</span>
+              </summary>
+              <div class="BetterX-adv-body">
+                <label class="BetterX-field">媒体文件名（不含扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="{用户ID}_{帖子ID}" /></label>
+                <label class="BetterX-field">ZIP 压缩包名（不含 .zip）<input class="BetterX-input" id="BetterX-download-zip-name-template" maxlength="180" spellcheck="false" placeholder="{用户ID}_{帖子ID}" /></label>
+                <div class="BetterX-adv-label">点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。</div>
+                <div class="BetterX-chip-row BetterX-download-name-tokens">
+                  ${DOWNLOAD_NAME_TOKENS.map(({ token }) => `<button type="button" class="BetterX-chip" data-action="insert-download-name-token" data-token="${escapeHtml(token)}">${escapeHtml(token)}</button>`).join('')}
+                </div>
+                <label class="BetterX-field">正则替换（可选）<input class="BetterX-input" id="BetterX-download-name-regex" maxlength="180" spellcheck="false" placeholder="例如：[\\s_]+" /></label>
+                <label class="BetterX-field">替换为<input class="BetterX-input" id="BetterX-download-name-replacement" maxlength="180" spellcheck="false" placeholder="例如：_；支持 $1" /></label>
+                <div class="BetterX-adv-label">正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。</div>
+                <div class="BetterX-adv-label BetterX-download-name-preview" id="BetterX-download-name-preview"></div>
+                <div class="BetterX-row"><button class="BetterX-btn primary" data-action="save-download-naming">保存自定义命名设置</button></div>
+              </div>
+            </details>
           </div>
         </details>
         <details class="BetterX-advanced BetterX-settings-card">
           <summary>常用功能</summary>
           <div class="BetterX-adv-body">
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-nfl" /> 关闭NFL</label>
+            <div class="BetterX-adv-label">隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（含“订阅 Premium”）</label>
             <div class="BetterX-adv-label">隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label>
@@ -259,6 +272,8 @@
         <details class="BetterX-advanced BetterX-settings-card" id="BetterX-advanced-settings">
           <summary>高级设置</summary>
           <div class="BetterX-adv-body">
+            <div class="BetterX-adv-label">以下页面中的帖子不会保存到 BetterX：</div>
+            <div class="BetterX-chip-row" id="BetterX-skip-sources"></div>
             <div class="BetterX-row">
               <label class="BetterX-field">自动清理(天)
                 <input type="number" min="0" class="BetterX-input small" id="BetterX-autoclean" />
@@ -288,8 +303,6 @@
               <button class="BetterX-btn primary" data-action="save-advanced">应用</button>
             </div>
             <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。</div>
-            <div class="BetterX-adv-label">以下页面中的帖子不会保存到 BetterX：</div>
-            <div class="BetterX-chip-row" id="BetterX-skip-sources"></div>
           </div>
         </details>
       </div>
@@ -354,6 +367,15 @@
         const nextOpen = !!state.quickFilterDetailsEl.open;
         if (nextOpen === !!state.settings.quickFilterOpen) return;
         setSettingsPartial({ quickFilterOpen: nextOpen });
+      });
+    }
+    if (state.downloadAdvancedDetailsEl) {
+      state.downloadAdvancedDetailsEl.addEventListener('toggle', () => {
+        if (!state.settingsLoaded) return;
+        const nextOpen = !!state.downloadAdvancedDetailsEl.open;
+        if (nextOpen === !!state.settings.downloadAdvancedOpen) return;
+        state.settings.downloadAdvancedOpen = nextOpen;
+        queueSettingsPersist(['downloadAdvancedOpen']);
       });
     }
 
@@ -488,33 +510,6 @@
           showToast('✅ 已保存下载命名');
           break;
         }
-        case 'mark-all-read': {
-          const unreadPosts = filterPosts(state.posts).filter((p) => !p.clicked);
-          if (!unreadPosts.length) { uiAlert('当前列表没有未读的帖子喂～'); break; }
-          if (uiConfirm('确定要把当前列表的 ' + unreadPosts.length + ' 条未读帖子全部标为已读吗？')) {
-            markPostsRead(unreadPosts.map((p) => p.id));
-            showToast('✅ 已将当前列表全部标为已读');
-          }
-          break;
-        }
-        case 'preview-image': {
-          const rawUrl = actionEl.getAttribute('data-image-url') || '';
-          const postId = actionEl.getAttribute('data-post-id') || '';
-          const post = postId ? getPostById(postId) : null;
-          const imageUrls = post
-            ? uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4)
-            : [rawUrl];
-          const imageIndex = parseInt(actionEl.getAttribute('data-image-index') || '0', 10);
-          showImagePreview(rawUrl, imageUrls, imageIndex);
-          break;
-        }
-        case 'save-layout': {
-          const timelineWidth = readIntegerSetting(state.timelineWidthEl, 'timelineWidth');
-          const leftbarWidth = readIntegerSetting(state.leftbarWidthEl, 'leftbarWidth');
-          setSettingsPartial({ layoutAutoWidth: false, timelineWidth, leftbarWidth });
-          showToast('✓ 已切换为手动宽度并应用');
-          break;
-        }
         case 'save-advanced': {
           const maxPosts = readIntegerSetting(state.maxPostsInputEl, 'maxPosts');
           const flashMs = readIntegerSetting(state.flashMsInputEl, 'flashMs', 1000);
@@ -525,28 +520,9 @@
           );
           setSettingsPartial({ maxPosts, flashMs, autoCleanDays, downloadTimeout, downloadConcurrency });
           pumpDownloadTransferQueue();
-          queueDbWrite(async () => { await enforceMaxPosts(); });
+          queueDbWrite(enforceMaxPosts);
           runAutoClean();
           showToast('✅ 已应用高级设置');
-          break;
-        }
-        case 'edit-note':
-          state.editingNoteId = id;
-          refreshUI({ keepScroll: true });
-          setTimeout(() => {
-            const ta = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`);
-            if (ta) { ta.focus(); ta.selectionStart = ta.value.length; }
-          }, 20);
-          break;
-        case 'copy': {
-          const post = getPostById(id);
-          if (post && post.url) {
-            try {
-              (navigator.clipboard && navigator.clipboard.writeText)
-                ? navigator.clipboard.writeText(post.url).then(() => { actionEl.textContent = uiText('已复制'); setTimeout(() => { actionEl.textContent = uiText('复制链接'); }, 1200); })
-                : window.prompt(uiText('复制链接：'), post.url);
-            } catch (err) { window.prompt(uiText('复制链接：'), post.url); }
-          }
           break;
         }
         default: break;

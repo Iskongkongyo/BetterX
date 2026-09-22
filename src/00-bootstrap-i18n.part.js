@@ -5,7 +5,7 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      3.4.0
+// @version      3.6.0
 // @description  管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
 // @description:zh-CN 管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF（多媒体可自动压缩 ZIP）、取消年龄限制、记录与管理浏览过的帖子，并支持搜索、排序、关键词、备份、主题与 IndexedDB 持久化。
 // @description:zh-TW 管理 X 貼文通知訂閱狀態、自動隱藏成人引流帳號與廣告、簡化介面與寬螢幕、一鍵下載圖片/影片/GIF（多媒體可自動壓縮為 ZIP）、解除年齡限制、記錄與管理瀏覽過的貼文，並支援搜尋、排序、關鍵字、備份、主題與 IndexedDB 持久化。
@@ -128,6 +128,8 @@
     ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'],
     ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'],
     ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'],
+    ['自定义下载文件/压缩包名', '自訂下載檔案／壓縮檔名稱', 'ダウンロードファイル／ZIP 名をカスタマイズ', 'Customize downloaded file / ZIP names'],
+    ['已自定义', '已自訂', 'カスタマイズ済み', 'Customized'],
     ['下载多个媒体自动压缩 ZIP 包', '下載多個媒體時自動壓縮 ZIP', '複数メディアを ZIP にまとめる', 'Package multiple media files as ZIP'],
     ['记录已经下载过的帖子', '記錄已下載過的貼文', 'ダウンロード済みポストを記録', 'Track downloaded posts'],
     ['媒体文件名（不含扩展名）', '媒體檔名（不含副檔名）', 'メディア名（拡張子なし）', 'Media filename (without extension)'],
@@ -135,6 +137,7 @@
     ['正则替换（可选）', '正則取代（選填）', '正規表現置換（任意）', 'Regex replacement (optional)'], ['替换为', '取代為', '置換後', 'Replace with'],
     ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'],
     ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'],
+    ['关闭NFL', '關閉 NFL', 'NFL を非表示', 'Hide NFL'],
     ['帖子内媒体改为网格视图', '貼文內媒體改為網格檢視', 'ポスト内メディアをグリッド表示', 'Show post media in a grid'],
     ['取消年龄限制（用原图 / 视频进行替换）', '解除年齡限制（以原圖 / 影片取代）', '年齢制限を解除（元画像 / 動画に置換）', 'Bypass age gate (replace with original media)'],
     ['自动展开帖子里“显示更多”', '自動展開貼文中的「顯示更多」', 'ポストの「さらに表示」を自動展開', 'Automatically expand “Show more” in posts'],
@@ -191,6 +194,7 @@
     ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 {序号}，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 {序號}，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで {序号} がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If {序号} is omitted for multiple media files, a number is appended automatically.'],
     ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 $1）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 $1）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（$1 など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as $1 are supported; invalid or risky regexes are not saved.'],
     ['隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。', '隱藏時間軸廣告、廣告卡片和「訂閱 Premium」提示。廣告貼文不會儲存到 BetterX，關閉後會重新顯示。', 'タイムライン広告、広告カード、「Premium に登録」の案内を非表示にします。広告ポストは BetterX に保存されず、オフにすると再表示します。', 'Hides timeline ads, ad cards, and Subscribe to Premium prompts. Ad posts are not saved to BetterX and reappear when this is turned off.'],
+    ['隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。', '隱藏 X 右側欄中的 NFL 球隊、賽程和比賽入口；關閉此開關後會恢復顯示。', 'X の右サイドバーにある NFL のチーム、日程、試合への入口を非表示にします。オフにすると再表示します。', 'Hides NFL teams, schedules, and game links in X’s right sidebar. Turn it off to show them again.'],
     ['把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。', '把貼文裡的多個媒體改成網格：2 個並排，3 個左大右二，4 個按 2×2 排列。', 'ポスト内の複数メディアをグリッド表示にします。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Shows multiple media items in a grid: two side by side, three with one large item on the left, and four in a 2×2 layout.'],
     ['移除敏感内容遮罩并显示原图或视频；只影响当前页面，不会修改账号设置。若暂时没显示，请稍等或重新开关一次。', '移除敏感內容遮罩並顯示原圖或影片；只影響目前頁面，不會修改帳號設定。若暫時沒顯示，請稍候或重新開關一次。', 'センシティブな内容の覆いを外し、元の画像や動画を表示します。現在のページだけに作用し、アカウント設定は変更しません。表示されない時は少し待つか、スイッチを入れ直してください。', 'Removes the sensitive-content cover and shows the original image or video. It only affects the current page and does not change account settings. If nothing appears, wait briefly or toggle it again.'],
     ['自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。', '自動點開貼文內文裡的「顯示更多 / Show more」；不會展開回覆或側欄內容。', 'ポスト本文の「さらに表示 / Show more」を自動で開きます。返信やサイドバーの内容は展開しません。', 'Automatically opens “Show more” in post text. Replies and sidebar content are not expanded.'],

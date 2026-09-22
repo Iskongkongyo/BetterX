@@ -11,6 +11,7 @@
     } catch (err) {
       console.error('[BetterX] DB init failed:', err);
     }
+    installCrossTabSync();
     bumpKeywordCache();
     resetPaging();
     applyTheme();
@@ -21,6 +22,7 @@
     startObserver();
     scanArticles(document);
     applyAdHiding();
+    applyNflHiding();
     applyAdultSpamFiltering();
     applyMediaDownload();
     applyMediaGridLayout();
@@ -58,7 +60,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v3.4.0 started');
+    debugLog('v3.6.0 started');
   }
 
   function waitForPageReady() {

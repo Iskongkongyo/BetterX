@@ -184,7 +184,7 @@
       }
       #BetterX-root.BetterX-panel-right #BetterX-panel { left: auto; right: 0; }
       #BetterX-root.BetterX-mobile #BetterX-panel { position: fixed; right: 12px; left: auto; bottom: 84px; max-height: calc(100vh - 120px); }
-      .BetterX-ad-hidden { display: none !important; }
+      .BetterX-ad-hidden, .BetterX-nfl-hidden { display: none !important; }
       .BetterX-adult-spam-hidden { display: none !important; }
       .BetterX-download-controls {
         display: inline-flex; align-items: center; justify-content: center; gap: 1px; flex: 0 0 auto;
@@ -350,7 +350,7 @@
       .BetterX-light .BetterX-select option { color: #0f1419; }
 
       .BetterX-advanced { border: 1px solid var(--xv-border); border-radius: 8px; padding: 6px 10px; }
-      .BetterX-advanced summary { cursor: pointer; font-size: 13px; color: var(--xv-muted); }
+      .BetterX-advanced > summary { cursor: pointer; font-size: 13px; color: var(--xv-muted); }
       .BetterX-adv-body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
       .BetterX-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--xv-muted); }
       .BetterX-field.inline { flex-direction: row; align-items: center; gap: 6px; }
@@ -476,10 +476,10 @@
       /* 折叠区：箭头指示 */
       .BetterX-advanced { transition: border-color .15s; }
       .BetterX-advanced[open] { border-color: rgba(29,155,240,0.4); }
-      .BetterX-advanced summary { list-style: none; display: flex; align-items: center; gap: 6px; font-weight: 600; user-select: none; }
-      .BetterX-advanced summary::-webkit-details-marker { display: none; }
-      .BetterX-advanced summary::before { content: '▸'; font-size: 10px; color: var(--xv-muted); transition: transform .15s; }
-      .BetterX-advanced[open] summary::before { transform: rotate(90deg); }
+      .BetterX-advanced > summary { list-style: none; display: flex; align-items: center; gap: 6px; font-weight: 600; user-select: none; }
+      .BetterX-advanced > summary::-webkit-details-marker { display: none; }
+      .BetterX-advanced > summary::before { content: '▸'; font-size: 10px; color: var(--xv-muted); transition: transform .15s; }
+      .BetterX-advanced[open] > summary::before { transform: rotate(90deg); }
 
       /* ===== v1.7：双视图工作台 ===== */
       #BetterX-panel {
@@ -614,6 +614,14 @@
       .BetterX-download-name-tokens { gap: 6px; }
       .BetterX-download-name-tokens .BetterX-chip { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--xv-text); font-weight: 650; }
       .BetterX-download-name-preview { color: var(--xv-text); font-weight: 650; }
+      .BetterX-download-advanced { width: 100%; box-sizing: border-box; padding: 0; background: var(--xv-input-bg); }
+      .BetterX-download-advanced > summary { min-height: 48px; padding: 6px 10px; }
+      .BetterX-download-advanced[open] > summary { border-bottom: 1px solid var(--xv-border); }
+      .BetterX-download-advanced > .BetterX-adv-body { padding: 10px; }
+      .BetterX-download-advanced-summary { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 1px; }
+      .BetterX-download-advanced-title { color: var(--xv-text); font-size: 13px; }
+      .BetterX-download-advanced-subtitle { color: var(--xv-muted); font-size: 11px; font-weight: 500; line-height: 1.35; }
+      .BetterX-download-advanced-state { flex: 0 0 auto; padding: 2px 6px; border-radius: 999px; background: rgba(29,155,240,.12); color: var(--xv-accent); font-size: 10px; font-weight: 650; }
       .BetterX-settings-card .BetterX-content-status { font-size: 12px; line-height: 1.4; }
       .BetterX-dependent-options { display: flex; flex-direction: column; gap: 9px; }
       .BetterX-dependent-options.is-disabled { opacity: .5; }

@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import { compactAdultSpamRules } from '../scripts/strip-comments.mjs';
 
 const source = await readFile(new URL('../src/features/adult-spam.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v3.4.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.6.0.js', import.meta.url), 'utf8');
 const opening = 'const ADULT_SPAM_STRONG_TERMS = [';
 const boundary = 'function normalizeAdultSpamText';
 const extractRules = (text) => {
@@ -22,7 +22,7 @@ assert.equal(builtBlock, extractRules(compactAdultSpamRules(source)));
 const inspect = (block) => vm.runInNewContext(`(() => {
   ${block}
   return {
-    lengths: [ADULT_SPAM_STRONG_TERMS, ADULT_SPAM_SENSITIVE_TERMS,
+    lengths: [ADULT_SPAM_INSTANT_BLOCK_TERMS, ADULT_SPAM_STRONG_TERMS, ADULT_SPAM_SENSITIVE_TERMS,
       ADULT_SPAM_BOT_BAIT_TERMS, ADULT_SPAM_SUGGESTIVE_TERMS,
       ADULT_SPAM_MARKETING_TERMS, ADULT_SPAM_CONTACT_TERMS,
       ADULT_SPAM_CONTEXT_EXEMPTIONS].map((items) => items.length),

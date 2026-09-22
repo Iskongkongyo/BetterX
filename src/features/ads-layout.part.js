@@ -9,6 +9,7 @@
   const PREMIUM_UPSELL_ACTION_LABELS = new Set([
     '订阅', '訂閱', 'Subscribe', 'サブスクライブ', '구독하기',
   ]);
+  const NFL_SCORES_SELECTOR = '[data-testid="nfl_scores_sidebar"]';
   function isAdArticle(article) {
     if (!article || !article.querySelector) return false;
     const cell = article.closest('[data-testid="cellInnerDiv"]') || article;
@@ -103,6 +104,42 @@
   function applyAdHiding() {
     if (state.settings.hideAds) sweepAds();
     else unhideAds();
+  }
+
+  function getNflEntryContainer(element) {
+    if (!element) return null;
+    const marker = element.matches && element.matches(NFL_SCORES_SELECTOR)
+      ? element
+      : (element.closest ? element.closest(NFL_SCORES_SELECTOR) : null);
+    if (!marker) return null;
+    // nfl_scores_sidebar 是卡片内的追踪层；其父节点才包含标题、球队和比赛入口。
+    const container = marker.parentElement;
+    return container && !container.matches('body, main, [data-testid="sidebarColumn"]')
+      ? container
+      : marker;
+  }
+
+  function hideNflEntryElement(element) {
+    const container = getNflEntryContainer(element);
+    if (container && container.classList) container.classList.add('BetterX-nfl-hidden');
+  }
+
+  function sweepNflEntries(root = document) {
+    if (!state.settings.hideNfl) return;
+    const scope = root && root.querySelectorAll ? root : document;
+    if (scope.matches && scope.matches(NFL_SCORES_SELECTOR)) hideNflEntryElement(scope);
+    if (scope.closest) hideNflEntryElement(scope.closest(NFL_SCORES_SELECTOR));
+    scope.querySelectorAll(NFL_SCORES_SELECTOR).forEach(hideNflEntryElement);
+  }
+
+  function unhideNflEntries() {
+    document.querySelectorAll('.BetterX-nfl-hidden')
+      .forEach((element) => element.classList.remove('BetterX-nfl-hidden'));
+  }
+
+  function applyNflHiding() {
+    if (state.settings.hideNfl) sweepNflEntries();
+    else unhideNflEntries();
   }
   // ── 界面简化与宽屏 ─────────────────────────────────────────────────
   // 参考 X/Twitter Clean-up & Wide Layout Display；改用可逆 CSS 和现有批处理观察器，

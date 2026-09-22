@@ -11,7 +11,10 @@
       lastViewedAt: timestamp,
     };
     state.posts[index] = updated;
-    queueDbWrite(async () => { await dbPutPost(updated); });
+    queuePostPatch(id, {
+      firstViewedAt: updated.firstViewedAt,
+      lastViewedAt: updated.lastViewedAt,
+    });
     debouncedRefreshUI();
   }
 
@@ -25,6 +28,14 @@
     if (!root || !state.viewObserver || !(root instanceof HTMLElement)) return;
     if (root.matches('article')) state.viewObserver.unobserve(root);
     root.querySelectorAll('article').forEach((article) => state.viewObserver.unobserve(article));
+  }
+
+  function selectRicherPostText(existingText, candidateText) {
+    const existing = String(existingText || '');
+    const candidate = String(candidateText || '');
+    if (!candidate || candidate === existing) return existing;
+    if (!existing || candidate.length > existing.length) return candidate;
+    return existing;
   }
 
   function captureArticle(article) {
@@ -69,15 +80,18 @@
       if (info) { info.lastSeenInDomAt = now(); info.articleEl = article; }
       const existing = getPostById(id);
       if (existing) {
+        const richerText = selectRicherPostText(existing.text, text);
+        const hasImage = !!(existing.hasImage || media.hasImage);
+        const hasVideo = !!(existing.hasVideo || media.hasVideo);
         const needsPatch =
-          (!existing.text && text) ||
+          richerText !== (existing.text || '') ||
           (author.displayName && existing.displayName !== author.displayName) ||
           (author.username && existing.username !== author.username) ||
           (author.timeLabel && existing.timeLabel !== author.timeLabel) ||
           (!(existing.mediaThumbs || []).length && media.thumbs.length) ||
           (!existing.avatarUrl && avatarUrl) ||
-          existing.hasImage !== media.hasImage ||
-          existing.hasVideo !== media.hasVideo ||
+          existing.hasImage !== hasImage ||
+          existing.hasVideo !== hasVideo ||
           existing.sourceLabel !== sourceInfo.label ||
           existing.url !== url;
         if (needsPatch) {
@@ -87,9 +101,9 @@
             displayName: author.displayName || existing.displayName,
             username: author.username || existing.username,
             timeLabel: author.timeLabel || existing.timeLabel || '',
-            text: existing.text || text,
-            hasImage: media.hasImage,
-            hasVideo: media.hasVideo,
+            text: richerText,
+            hasImage,
+            hasVideo,
             mediaThumbs: (existing.mediaThumbs || []).length ? existing.mediaThumbs : media.thumbs,
             avatarUrl: existing.avatarUrl || avatarUrl,
             sourceType: sourceInfo.type,

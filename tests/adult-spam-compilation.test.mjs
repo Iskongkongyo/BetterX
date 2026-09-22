@@ -14,6 +14,7 @@ const api = vm.runInNewContext(`(() => {
 ${block}
   return {
     originals: {
+      instantBlock: ADULT_SPAM_INSTANT_BLOCK_TERMS,
       strong: ADULT_SPAM_STRONG_TERMS,
       sensitive: ADULT_SPAM_SENSITIVE_TERMS,
       botBait: ADULT_SPAM_BOT_BAIT_TERMS,
@@ -23,8 +24,11 @@ ${block}
       exemptions: ADULT_SPAM_CONTEXT_EXEMPTIONS,
     },
     compiled: COMPILED_ADULT_SPAM_TERMS,
+    compiledInstantBlock: COMPILED_ADULT_SPAM_INSTANT_BLOCK_TERMS,
     compactAdultSpamText,
+    normalizeAdultSpamText,
     countCompiledTerms,
+    findAdultSpamInstantBlockTerm,
     getCompiledAdultSpamCustomRules,
     updateCustomRules(rules) {
       state.settings.adultSpamKeywords = rules;
@@ -33,7 +37,20 @@ ${block}
   };
 })()`, { filename: 'adult-spam.part.js' });
 
-for (const [group, originals] of Object.entries(api.originals)) {
+const expectedInstantBlockTerms = [
+  '没她骚', '福不黑', '我的福', '顶不住', '爱几把', '瓜', '线下', '同城',
+  '妈妈', '儿子', '一夜', '进入身', 'sao', '全国牵', 't.cn', '👆', '👉',
+  '联系', '主页', '快手', '抖音', '免费', '我好看', '寻',
+];
+assert.deepEqual(Array.from(api.originals.instantBlock), expectedInstantBlockTerms);
+for (const raw of expectedInstantBlockTerms) {
+  const normalized = api.normalizeAdultSpamText(`前缀 ${raw} 后缀`);
+  const compact = api.compactAdultSpamText(normalized);
+  assert.equal(api.findAdultSpamInstantBlockTerm(normalized, compact)?.raw, raw, `${raw} 应直接命中高风险屏蔽词`);
+}
+assert.equal(api.compiledInstantBlock.find((term) => term.raw === '👆')?.compact, '', '表情符号应通过标准文本匹配');
+
+for (const [group, originals] of Object.entries(api.originals).filter(([group]) => group !== 'instantBlock')) {
   const expected = Array.from(originals, api.compactAdultSpamText);
   assert.deepEqual(Array.from(api.compiled[group]), expected, `${group} 预编译结果不一致`);
   for (const term of expected) {

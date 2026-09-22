@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v3.4.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v3.6.0.js', import.meta.url);
 let source = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(source, startupPattern, '找不到脚本启动标记');
@@ -114,11 +114,13 @@ api.state.settings = {
   ...api.DEFAULT_SETTINGS,
   theme: 'dark',
   hideAds: false,
+  hideNfl: false,
   profileDefaultView: 'video',
 };
 api.syncSettingsControls();
 assert.equal(controls.get('#BetterX-theme').value, 'dark');
 assert.equal(controls.get('#BetterX-hideads').checked, false);
+assert.equal(controls.get('#BetterX-hide-nfl').checked, false);
 assert.equal(controls.get('#BetterX-profile-default-view').value, 'video');
 
 assert.equal(api.readIntegerSetting({ value: '99999' }, 'maxPosts'), 5000);
@@ -159,7 +161,8 @@ const mappedActions = [
   'menu-toggle', 'close', 'refresh', 'switch-language', 'export', 'backup', 'import',
   'clear-non-fav', 'set-filter', 'toggle-skip', 'save-keywords', 'save-exclude',
   'save-adultspam-keywords', 'save-adultspam-whitelist', 'load-more', 'toggle-expand',
-  'save-note', 'cancel-note', 'open', 'pin', 'fav', 'delete',
+  'save-note', 'cancel-note', 'open', 'pin', 'fav', 'delete', 'mark-all-read',
+  'preview-image', 'save-layout', 'edit-note', 'copy',
 ];
 for (const action of mappedActions) {
   assert.equal(typeof api.PANEL_ACTION_HANDLERS[action], 'function', `${action} 未进入通用动作表`);
@@ -168,6 +171,10 @@ assert.deepEqual(
   Object.keys(api.SETTING_REMOVE_ACTIONS).sort(),
   ['remove-adultspam-keyword', 'remove-adultspam-whitelist', 'remove-exclude-keyword', 'remove-keyword']
 );
+assert.match(source, /applySettingsSnapshot\(importedSettings,\s*\{ preserveFirefoxCompatibility: true \}\)/,
+  '备份设置必须通过统一副作用入口恢复');
+assert.match(source, /followedHandles\.clear\(\)/, '恢复设置时不能保留备份外的旧关注账号');
+assert.match(source, /notificationSubscriptions\.clear\(\)/, '恢复设置时必须重建通知订阅运行时状态');
 for (const action of ['download-cancel', 'download-retry', 'insert-download-name-token', 'save-download-naming']) {
   assert.equal(api.PANEL_ACTION_HANDLERS[action], undefined, `${action} 必须继续留在下载专用逻辑`);
 }

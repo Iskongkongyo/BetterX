@@ -70,4 +70,47 @@ assert.match(observerSource, /if \(layoutNeedsFullRefresh\) throttledLayoutRefre
 assert.doesNotMatch(observerSource, /if \(state\.settings\.layoutEnabled\) throttledLayoutRefresh\(\)/,
   '普通新增节点不应再触发完整页面布局扫描');
 
+assert.match(layoutSource, /const NFL_SCORES_SELECTOR = '\[data-testid="nfl_scores_sidebar"\]'/,
+  'NFL 过滤应使用 X 提供的稳定 data-testid');
+assert.match(layoutSource, /const container = marker\.parentElement/,
+  'NFL 过滤应隐藏包含球队和赛程内容的完整父卡片');
+assert.match(observerSource, /if \(state\.settings\.hideNfl\) sweepNflEntries\(node\)/,
+  '动态加入的 NFL 卡片应被增量过滤');
+assert.match(layoutSource, /classList\.remove\('BetterX-nfl-hidden'\)/,
+  '关闭 NFL 过滤后应恢复原卡片');
+
+const nflStart = layoutSource.indexOf('  const NFL_SCORES_SELECTOR');
+const nflEnd = layoutSource.indexOf('  // ── 界面简化与宽屏', nflStart);
+assert.ok(nflStart >= 0 && nflEnd > nflStart, '找不到 NFL 过滤实现');
+const nflClasses = new Set();
+const nflCard = {
+  matches: () => false,
+  classList: {
+    add(className) { nflClasses.add(className); },
+    remove(className) { nflClasses.delete(className); },
+  },
+};
+const nflMarker = {
+  parentElement: nflCard,
+  matches: (selector) => selector === '[data-testid="nfl_scores_sidebar"]',
+  closest: () => null,
+};
+const nflDocument = {
+  querySelectorAll(selector) {
+    if (selector === '[data-testid="nfl_scores_sidebar"]') return [nflMarker];
+    if (selector === '.BetterX-nfl-hidden') return nflClasses.has('BetterX-nfl-hidden') ? [nflCard] : [];
+    return [];
+  },
+};
+const nflState = { settings: { hideNfl: true } };
+const nflApi = vm.runInNewContext(`(() => {
+${layoutSource.slice(nflStart, nflEnd)}
+  return { applyNflHiding };
+})()`, { document: nflDocument, state: nflState });
+nflApi.applyNflHiding();
+assert.ok(nflClasses.has('BetterX-nfl-hidden'), '开启时应隐藏完整 NFL 卡片');
+nflState.settings.hideNfl = false;
+nflApi.applyNflHiding();
+assert.ok(!nflClasses.has('BetterX-nfl-hidden'), '关闭时应恢复 NFL 卡片');
+
 console.log('Layout cleanup is incremental while structural replacements retain full refreshes.');

@@ -489,7 +489,7 @@
       const langNode = article.querySelector('div[lang]');
       merged = (langNode?.innerText || '').trim();
     }
-    return (merged || '').slice(0, 2000);
+    return (merged || '').slice(0, MAX_CAPTURED_POST_TEXT_LENGTH);
   }
 
   const VIDEO_CONTAINER_SELECTORS = [

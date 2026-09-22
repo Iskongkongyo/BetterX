@@ -61,10 +61,26 @@
       let hadRemoval = false;
       const immediateAdultArticles = new Set();
       for (const mutation of mutations) {
+        const mutationElement = mutation.target instanceof HTMLElement
+          ? mutation.target
+          : mutation.target && mutation.target.parentElement;
+        let hasTextUpdate = mutation.type === 'characterData';
+        if (!hasTextUpdate) {
+          for (const node of mutation.addedNodes) {
+            if (node && node.nodeType === 3) { hasTextUpdate = true; break; }
+          }
+        }
+        if (hasTextUpdate && mutationElement
+            && mutationElement.id !== 'BetterX-root'
+            && !mutationElement.closest('#BetterX-root')) {
+          // X 会先插入帖子骨架，再通过 Text 节点补全或展开正文；也要进入普通抓帖批处理。
+          pendingRoots.add(mutationElement);
+        }
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
           if (node.id === 'BetterX-root' || node.closest && node.closest('#BetterX-root')) continue;
           if (state.settings.hideAds) sweepStandaloneAds(node);
+          if (state.settings.hideNfl) sweepNflEntries(node);
           harvestFollowingControlsFromRoot(node);
           pendingRoots.add(node);
           if (adultSpamFilteringEnabled()) collectArticlesFromRoot(node, immediateAdultArticles);
@@ -98,7 +114,7 @@
       if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) scheduleMobileBadgeSync();
     });
     // X 是 SPA，主时间线容器会被整体替换；保留 body 作为稳定根节点，但把重活批量延后并按 article 去重。
-    state.observer.observe(document.body, { childList: true, subtree: true });
+    state.observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
   function stopCleanupTimer() {
@@ -193,5 +209,6 @@
       .sort((a, b) => (b.lastCapturedAt || 0) - (a.lastCapturedAt || 0));
     if (all.length !== rawPosts.length) debugLog('已忽略', rawPosts.length - all.length, '条无效本地记录');
     state.posts = all;
+    rebuildPostIndex();
     await enforceMaxPosts();
   }

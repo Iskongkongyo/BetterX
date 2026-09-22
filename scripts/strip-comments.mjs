@@ -112,6 +112,18 @@ export function compactAdultSpamRules(source) {
     + source.slice(boundary);
 }
 
+export function compactStaticBlocks(source, blocks) {
+  return blocks.reduce((output, [opening, boundary]) => {
+    const start = output.indexOf(opening);
+    const end = output.indexOf(boundary, start + opening.length);
+    if (start < 0 || end < 0) return output;
+    return output.slice(0, start)
+      + compactMarkupWhitespace(output.slice(start, end))
+      + '\n\n  '
+      + output.slice(end);
+  }, source);
+}
+
 export function stripStandaloneSourceComments(source) {
   const stack = [{ type: 'code', templateExpression: false, braceDepth: 0 }];
   let metadata = source.startsWith('// ==UserScript==');

@@ -157,7 +157,7 @@
       if (!p.clicked && targetIds.has(String(p.id))) {
         changed = true;
         const updated = { ...p, clicked: true, lastClickedAt: now() };
-        queueDbWrite(async () => { await dbPutPost(updated); });
+        queuePostPatch(updated.id, { clicked: true, lastClickedAt: updated.lastClickedAt });
         return updated;
       }
       return p;
@@ -267,6 +267,7 @@
   }
 
   async function importPosts(file) {
+    const initialDbWriteFailureVersion = state.dbWriteFailureVersion || 0;
     try {
       if (!file || file.size > MAX_IMPORT_FILE_BYTES) {
         uiAlert('导入失败：备份文件不能超过 25 MB。');
@@ -308,6 +309,11 @@
             capturedCount: Math.max(existing.capturedCount || 1, imported.capturedCount),
             firstCapturedAt: Math.min(existing.firstCapturedAt || now(), imported.firstCapturedAt),
             lastCapturedAt: Math.max(existing.lastCapturedAt || 0, imported.lastCapturedAt),
+            firstViewedAt: existing.firstViewedAt && imported.firstViewedAt
+              ? Math.min(existing.firstViewedAt, imported.firstViewedAt)
+              : Math.max(existing.firstViewedAt || 0, imported.firstViewedAt || 0),
+            lastViewedAt: Math.max(existing.lastViewedAt || 0, imported.lastViewedAt || 0),
+            lastClickedAt: Math.max(existing.lastClickedAt || 0, imported.lastClickedAt || 0),
           };
           state.posts[existingIndex] = combined;
           postsToPersist.set(combined.id, combined);
@@ -319,40 +325,27 @@
           added++;
         }
       }
+      rebuildPostIndex();
 
       if (importedSettings && uiConfirm('是否同时恢复备份中的设置？')) {
-        const localFirefoxCompatibility = {
-          enabled: state.settings.firefoxCompatibility,
-          prompted: state.settings.firefoxCompatibilityPrompted,
-        };
-        state.settings = sanitizeSettings(importedSettings);
         // Firefox 兼容模式与当前浏览器环境绑定，不随备份迁移到其他浏览器。
-        if (IS_FIREFOX) {
-          state.settings.firefoxCompatibility = !!localFirefoxCompatibility.enabled;
-          state.settings.firefoxCompatibilityPrompted = !!localFirefoxCompatibility.prompted;
-          if (state.settings.firefoxCompatibilityPrompted) {
-            writeFirefoxCompatibilityMode(state.settings.firefoxCompatibility ? 'compat' : 'normal');
-          }
-        }
-        (state.settings.knownFollowedHandles || []).forEach((handle) => followedHandles.add(handle));
-        trimFollowedHandlesToMax();
-        state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, MAX_FOLLOWED_HANDLES);
-        applyTheme();
-        applyAdHiding();
-        applyMediaDownload();
-        applyMediaGridLayout();
-        applyAgeBypass();
-        repositionBadge();
-        queueDbWrite(async () => { await persistSettings(); });
+        applySettingsSnapshot(importedSettings, { preserveFirefoxCompatibility: true });
+        queueSettingsPersist();
       }
       const trimmedIds = trimPostsToMax();
       const liveIds = new Set(state.posts.map((post) => post.id));
       const survivingPosts = [...postsToPersist.values()].filter((post) => liveIds.has(post.id));
       queueDbWrite(async () => {
-        await dbPutPosts(survivingPosts);
-        await dbDeleteMany(trimmedIds);
+        await dbPutPosts(survivingPosts, { mergeUserState: true });
+        await dbDeleteMany(trimmedIds, { preserveProtected: true });
       });
       await state.dbWriteQueue;
+      if ((state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion) {
+        throw state.lastDbWriteError || new Error('IndexedDB write failed');
+      }
+      state.posts = (await dbGetAllPosts()).map(sanitizeImportedPost).filter(Boolean)
+        .sort((a, b) => (b.lastCapturedAt || 0) - (a.lastCapturedAt || 0));
+      rebuildPostIndex();
       bumpKeywordCache();
       resetPaging();
       refreshUI();
@@ -360,7 +353,9 @@
       uiAlert(`导入完成：新增 ${added} 条，合并 ${merged} 条，跳过 ${skipped} 条无效记录${trimmedMessage}。`);
     } catch (err) {
       console.error('[BetterX] import failed:', err);
-      uiAlert('导入失败：文件解析出错。');
+      uiAlert((state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion
+        ? '导入失败：数据未能写入浏览器存储，请检查可用空间后重试。'
+        : '导入失败：文件解析出错。');
     }
   }
 
@@ -371,8 +366,9 @@
     const toDelete = state.posts.filter((p) => !protectedPost(p) && (p.lastCapturedAt || 0) < cutoff);
     if (!toDelete.length) return;
     state.posts = state.posts.filter((p) => protectedPost(p) || (p.lastCapturedAt || 0) >= cutoff);
+    rebuildPostIndex();
     prunePostRuntimeCaches(toDelete.map((p) => p.id));
-    await dbDeleteMany(toDelete.map((p) => p.id));
+    await dbDeleteMany(toDelete.map((p) => p.id), { preserveProtected: true });
     debugLog(`自动清理 ${toDelete.length} 条超过 ${days} 天的帖子`);
     refreshUI();
   }
@@ -654,7 +650,7 @@
         clearMobileLongPress();
         if (mobileDragging) {
           state.settings.mobileBadgeHandleTop = getMobileBadgeHandleTop(parseFloat(state.rootEl.style.top));
-          queueDbWrite(async () => { await persistSettings(); });
+          queueSettingsPersist(['mobileBadgeHandleTop']);
         }
         if (mobileCaptured) {
           try { badge.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -671,7 +667,7 @@
       if (moved) {
         const rect = state.rootEl.getBoundingClientRect();
         state.settings.badgePos = { left: rect.left, bottom: window.innerHeight - rect.bottom };
-        queueDbWrite(async () => { await persistSettings(); });
+        queueSettingsPersist(['badgePos']);
         badge.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); ev.preventDefault(); }, { once: true, capture: true });
       }
     };
@@ -770,6 +766,50 @@
     'cancel-note': () => { state.editingNoteId = null; refreshUI({ keepScroll: true }); },
     open: ({ id }) => openRecordedPost(getPostById(id)),
     pin: ({ id }) => togglePin(id), fav: ({ id }) => toggleFavorite(id), delete: ({ id }) => deletePost(id),
+    'mark-all-read': () => {
+      const unreadPosts = filterPosts(state.posts).filter((post) => !post.clicked);
+      if (!unreadPosts.length) { uiAlert('当前列表没有未读的帖子喂～'); return; }
+      if (!uiConfirm('确定要把当前列表的 ' + unreadPosts.length + ' 条未读帖子全部标为已读吗？')) return;
+      markPostsRead(unreadPosts.map((post) => post.id));
+      showToast('✅ 已将当前列表全部标为已读');
+    },
+    'preview-image': ({ el }) => {
+      const rawUrl = el.getAttribute('data-image-url') || '';
+      const postId = el.getAttribute('data-post-id') || '';
+      const post = postId ? getPostById(postId) : null;
+      const imageUrls = post
+        ? uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4)
+        : [rawUrl];
+      const imageIndex = parseInt(el.getAttribute('data-image-index') || '0', 10);
+      showImagePreview(rawUrl, imageUrls, imageIndex);
+    },
+    'save-layout': () => {
+      const timelineWidth = readIntegerSetting(state.timelineWidthEl, 'timelineWidth');
+      const leftbarWidth = readIntegerSetting(state.leftbarWidthEl, 'leftbarWidth');
+      setSettingsPartial({ layoutAutoWidth: false, timelineWidth, leftbarWidth });
+      showToast('✓ 已切换为手动宽度并应用');
+    },
+    'edit-note': ({ id }) => {
+      state.editingNoteId = id;
+      refreshUI({ keepScroll: true });
+      setTimeout(() => {
+        const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`);
+        if (input) { input.focus(); input.selectionStart = input.value.length; }
+      }, 20);
+    },
+    copy: ({ el, id }) => {
+      const post = getPostById(id);
+      if (!post || !post.url) return;
+      const manualCopy = () => window.prompt(uiText('复制链接：'), post.url);
+      try {
+        (navigator.clipboard && navigator.clipboard.writeText)
+          ? navigator.clipboard.writeText(post.url).then(() => {
+            el.textContent = uiText('已复制');
+            setTimeout(() => { el.textContent = uiText('复制链接'); }, 1200);
+          }).catch(manualCopy)
+          : manualCopy();
+      } catch (err) { manualCopy(); }
+    },
   });
   function dispatchPanelAction(action, actionEl, id) {
     if (dispatchSettingRemoveAction(action, actionEl)) return true;
@@ -793,6 +833,7 @@
     leftbarWidthEl: 'leftbar-width', firefoxCompatibilityEl: 'firefox-compat',
     hideAppBadgeEl: 'hide-app-badge', postLimitWarningEl: 'post-limit-warning',
     useMobileBadgeHandleEl: 'mobile-badge-handle', menuEl: 'menu',
+    downloadAdvancedDetailsEl: 'download-advanced', downloadAdvancedStateEl: 'download-advanced-state',
   });
   function bindPanelElements(panel) {
     for (const [stateKey, id] of Object.entries(PANEL_ELEMENT_IDS)) {

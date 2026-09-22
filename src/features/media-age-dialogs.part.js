@@ -396,14 +396,14 @@
     if (!state.settingsLoaded) { reload(); return; }
     state.settings.firefoxCompatibility = !!enabled;
     state.settings.firefoxCompatibilityPrompted = true;
-    queueDbWrite(async () => { await persistSettings(); });
+    queueSettingsPersist(['firefoxCompatibility', 'firefoxCompatibilityPrompted']);
     Promise.resolve(state.dbWriteQueue).then(reload).catch(reload);
   }
 
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.1.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.6.0',
       userscriptManager: USERSCRIPT_MANAGER || 'unknown',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,

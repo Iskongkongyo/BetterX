@@ -28,6 +28,9 @@
   const CLASSIC_ZIP_MAX_FILES = 0xFFFF;
   const MAX_IMPORT_FILE_BYTES = 25 * 1024 * 1024;
   const MAX_IMPORT_POSTS = 20000;
+  const MAX_CAPTURED_POST_TEXT_LENGTH = 100000;
+  const DB_OPEN_BLOCKED_TIMEOUT_MS = 5000;
+  const CROSS_TAB_CHANNEL_NAME = 'betterx_state_sync_v1';
   const MAX_REGEX_SOURCE_LENGTH = 180;
   const MAX_REGEX_HAYSTACK_LENGTH = 20000;
   const MAX_REGEX_BOUNDED_REPETITION = 1000;
@@ -179,7 +182,7 @@
   });
   const bool = (defaultValue, control, effects) => setting(defaultValue, ['boolean'], control, effects);
   const SETTINGS_SCHEMA = Object.freeze({
-    settingsRevision: setting(31, ['revision']),
+    settingsRevision: setting(32, ['revision']),
     keywords: setting([], ['keywordRules', 50, 500], null, ['keywords']),
     excludeKeywords: setting([], ['keywordRules', 50, 500], null, ['keywords']),
     keywordMode: setting('plain', ['enum', ['plain', 'and']], bind('keywordModeEl', '#BetterX-keyword-mode', 'value'), ['keywords']),
@@ -192,6 +195,7 @@
     theme: setting('auto', ['enum', ['auto', 'dark', 'light']], bind('themeSelectEl', '#BetterX-theme', 'value'), ['theme']),
     pageSize: setting(60, ['int', 20, 200]), badgePos: setting(null, ['badgePos']),
     hideAds: bool(true, bind('hideAdsEl', '#BetterX-hideads'), ['ads']),
+    hideNfl: bool(true, bind('hideNflEl', '#BetterX-hide-nfl'), ['nfl']),
     hideAdultSpam: bool(false, bind('hideAdultSpamEl', '#BetterX-hide-adult-spam'), ['adultSpam']),
     adultSpamCustomRulesEnabled: bool(true, bind('adultSpamCustomRulesEl', '#BetterX-adultspam-custom-enabled'), ['adultSpam']),
     adultSpamLevel: setting('balanced', ['enum', ['conservative', 'balanced']], bind('adultSpamLevelEl', '#BetterX-adultspam-level', 'value'), ['adultSpam']),
@@ -210,7 +214,7 @@
     layoutCleanNavigation: bool(true, bind('layoutCleanNavigationEl', '#BetterX-layout-clean-nav'), ['layout']),
     layoutHideMessageGrok: bool(true, bind('layoutHideMessageGrokEl', '#BetterX-layout-hide-message'), ['layout']),
     layoutHideShowMore: bool(false, bind('layoutHideShowMoreEl', '#BetterX-layout-hide-showmore'), ['layout']),
-    mediaDownload: bool(true, null, ['mediaDownload']), downloadZip: bool(true),
+    mediaDownload: bool(true, null, ['mediaDownload']), downloadZip: bool(true), downloadAdvancedOpen: bool(false),
     downloadFileNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]),
     downloadZipNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]),
     downloadNameRegex: setting('', ['safeRegex']), downloadNameReplacement: setting('', ['string', 180]),
@@ -238,6 +242,7 @@
     dbPromise: null,
     dbWriteQueue: Promise.resolve(),
     posts: [],
+    postIndexById: new Map(),
     settings: { ...DEFAULT_SETTINGS },
     searchQuery: '',
     expandedPosts: new Set(),
@@ -263,7 +268,16 @@
     suppressNextBadgeClick: false,
     notificationSyncInProgress: false,
     notificationMutationUsers: new Set(),
+    dbWriteFailureVersion: 0,
+    lastDbWriteError: null,
   };
+
+  let crossTabChannel = null;
+  let crossTabReloadTimer = null;
+  let crossTabReloadAllPosts = false;
+  let crossTabReloadSettings = false;
+  const crossTabReloadPostIds = new Set();
+  const settingsWriteGenerations = new Map();
 
   // 关键词匹配缓存（避免每次渲染都重算）
   let matchCache = new Map();
@@ -299,7 +313,7 @@
   const scheduleFollowedHandlesPersist = debounce(() => {
     if (!state.settingsLoaded) return;
     state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, MAX_FOLLOWED_HANDLES);
-    queueDbWrite(async () => { await persistSettings(); });
+    queueSettingsPersist(['knownFollowedHandles']);
   }, 750);
   const scheduleNotificationSubscriptionsPersist = debounce(() => {
     if (!state.settingsLoaded) return;
@@ -307,7 +321,7 @@
       .sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true)
         || Number(b.enabled) - Number(a.enabled) || (b.updatedAt || 0) - (a.updatedAt || 0))
       .slice(0, MAX_NOTIFICATION_SUBSCRIPTIONS);
-    queueDbWrite(async () => { await persistSettings(); });
+    queueSettingsPersist(['notificationSubscriptions', 'notificationSubscriptionsSyncedAt']);
     renderNotificationSubscriptions();
   }, 500);
 

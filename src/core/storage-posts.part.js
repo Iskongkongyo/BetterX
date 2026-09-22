@@ -2,14 +2,54 @@
   function queueDbWrite(task) {
     state.dbWriteQueue = state.dbWriteQueue
       .then(() => task())
-      .catch((err) => console.error('[BetterX] IndexedDB write failed:', err));
+      .catch((err) => {
+        state.dbWriteFailureVersion = (state.dbWriteFailureVersion || 0) + 1;
+        state.lastDbWriteError = err || new Error('IndexedDB write failed');
+        console.error('[BetterX] IndexedDB write failed:', err);
+      });
     return state.dbWriteQueue;
   }
 
+  function queueSettingsPersist(changedKeys) {
+    // 无参数的队列调用表示“恢复整份设置”；旧下载模块直接调用 persistSettings() 时只更新下载记录。
+    const selection = changedKeys === undefined ? null : changedKeys;
+    const snapshot = sanitizeSettings(state.settings);
+    const keys = selection === null ? Object.keys(SETTINGS_SCHEMA) : (Array.isArray(selection) ? selection : []);
+    const generations = new Map(keys.map((key) => {
+      const generation = (settingsWriteGenerations.get(key) || 0) + 1;
+      settingsWriteGenerations.set(key, generation);
+      return [key, generation];
+    }));
+    return queueDbWrite(async () => {
+      await persistSettings(selection, snapshot);
+      const restore = {};
+      for (const [key, generation] of generations) {
+        if (settingsWriteGenerations.get(key) === generation
+            && settingsValueChanged(state.settings[key], snapshot[key])) restore[key] = snapshot[key];
+      }
+      if (Object.keys(restore).length) {
+        state.settings = { ...state.settings, ...restore };
+        runSettingsEffects(restore);
+        resetPaging();
+        refreshUI({ keepScroll: true });
+      }
+    });
+  }
+  function queuePostPut(post, options) { return queueDbWrite(() => dbPutPost(post, options)); }
+  function queuePostPatch(id, changes) { return queueDbWrite(() => dbPatchPost(id, changes)); }
+
   function openDb() {
     if (state.dbPromise) return state.dbPromise;
-    state.dbPromise = new Promise((resolve, reject) => {
+    const openPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
+      let settled = false;
+      let blockedTimer = null;
+      const rejectOpen = (error) => {
+        if (settled) return;
+        settled = true;
+        if (blockedTimer) clearTimeout(blockedTimer);
+        reject(error);
+      };
       request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(POSTS_STORE)) {
@@ -22,94 +62,355 @@
           db.createObjectStore(SETTINGS_STORE, { keyPath: 'key' });
         }
       };
+      request.onblocked = () => {
+        console.warn('[BetterX] IndexedDB upgrade is blocked by another X tab.');
+        if (state.rootEl) showToast('⚠️ 数据库升级被其他 X 标签页阻塞；请关闭旧标签页后刷新', 7000);
+        if (!blockedTimer) {
+          blockedTimer = setTimeout(() => {
+            const error = new Error('IndexedDB upgrade blocked by another tab');
+            error.code = 'DB_OPEN_BLOCKED';
+            rejectOpen(error);
+          }, DB_OPEN_BLOCKED_TIMEOUT_MS);
+        }
+      };
+      request.onsuccess = () => {
+        const db = request.result;
+        if (settled) {
+          try { db.close(); } catch (err) {}
+          return;
+        }
+        settled = true;
+        if (blockedTimer) clearTimeout(blockedTimer);
+        db.onversionchange = () => {
+          try { db.close(); } catch (err) {}
+          if (state.dbPromise === openPromise) state.dbPromise = null;
+        };
+        resolve(db);
+      };
+      request.onerror = () => rejectOpen(request.error || new Error('IndexedDB open failed'));
+    });
+    state.dbPromise = openPromise;
+    openPromise.catch(() => {
+      if (state.dbPromise === openPromise) state.dbPromise = null;
+    });
+    return openPromise;
+  }
+
+  async function dbRead(storeName, requestFactory) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const store = db.transaction(storeName, 'readonly').objectStore(storeName);
+      const request = requestFactory(store);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
-    return state.dbPromise;
+  }
+
+  async function dbWrite(storeName, mutate) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      mutate(tx.objectStore(storeName));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
   }
 
   async function dbGetAllPosts() {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(POSTS_STORE, 'readonly');
-      const request = tx.objectStore(POSTS_STORE).getAll();
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(request.error);
-    });
+    return (await dbRead(POSTS_STORE, (store) => store.getAll())) || [];
   }
 
-  async function dbPutPost(post) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(POSTS_STORE, 'readwrite');
-      tx.objectStore(POSTS_STORE).put(post);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
-    });
+  async function dbGetPost(id) {
+    return await dbRead(POSTS_STORE, (store) => store.get(id));
   }
 
-  async function dbPutPosts(posts) {
-    if (!posts || !posts.length) return;
+  async function dbPutPost(post, options) {
+    const opts = options || {};
+    let storedPost = post;
+    if (opts.preserveUserState === true) {
+      const db = await openDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(POSTS_STORE, 'readwrite');
+        const store = tx.objectStore(POSTS_STORE);
+        const request = store.get(post.id);
+        request.onsuccess = () => {
+          const current = request.result;
+          if (!current) { store.put(post); return; }
+          storedPost = {
+            ...current,
+            ...post,
+            favorite: !!current.favorite,
+            pinned: !!current.pinned,
+            clicked: !!current.clicked,
+            flashLost: !!(current.flashLost || post.flashLost),
+            note: typeof current.note === 'string' ? current.note : (post.note || ''),
+            firstViewedAt: current.firstViewedAt || post.firstViewedAt || 0,
+            lastViewedAt: Math.max(current.lastViewedAt || 0, post.lastViewedAt || 0),
+            lastClickedAt: Math.max(current.lastClickedAt || 0, post.lastClickedAt || 0),
+          };
+          store.put(storedPost);
+        };
+        request.onerror = () => reject(request.error);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    } else {
+      await dbWrite(POSTS_STORE, (store) => store.put(post));
+    }
+    if (storedPost !== post) {
+      const index = getPostIndexById(storedPost.id);
+      if (index >= 0) {
+        state.posts[index] = { ...state.posts[index], ...storedPost };
+        debouncedRefreshUI();
+      }
+    }
+    publishCrossTabChange('post-changed', { id: String(post && post.id || '') });
+    return storedPost;
+  }
+
+  async function dbPatchPost(id, changes) {
     const db = await openDb();
-    return new Promise((resolve, reject) => {
+    let storedPost = null;
+    await new Promise((resolve, reject) => {
       const tx = db.transaction(POSTS_STORE, 'readwrite');
       const store = tx.objectStore(POSTS_STORE);
-      for (const post of posts) store.put(post);
+      const request = store.get(id);
+      request.onsuccess = () => {
+        const current = request.result || getPostById(id);
+        if (current) {
+          storedPost = { ...current, ...(changes || {}), id: current.id };
+          store.put(storedPost);
+        }
+      };
+      request.onerror = () => reject(request.error);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);
     });
+    if (storedPost) {
+      const index = getPostIndexById(storedPost.id);
+      if (index >= 0) state.posts[index] = storedPost;
+      else {
+        state.posts.push(storedPost);
+        state.postIndexById.set(String(storedPost.id), state.posts.length - 1);
+      }
+      debouncedRefreshUI();
+    }
+    publishCrossTabChange('post-changed', { id: String(id || '') });
+  }
+
+  async function dbPutPosts(posts, options) {
+    if (!posts || !posts.length) return;
+    const opts = options || {};
+    if (opts.mergeUserState === true) {
+      const db = await openDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(POSTS_STORE, 'readwrite');
+        const store = tx.objectStore(POSTS_STORE);
+        for (const post of posts) {
+          const request = store.get(post.id);
+          request.onsuccess = () => {
+            const current = request.result;
+            if (!current) { store.put(post); return; }
+            store.put({
+              ...current,
+              ...post,
+              favorite: !!(current.favorite || post.favorite),
+              pinned: !!(current.pinned || post.pinned),
+              clicked: !!(current.clicked || post.clicked),
+              flashLost: !!(current.flashLost || post.flashLost),
+              note: current.note || post.note || '',
+              firstViewedAt: current.firstViewedAt && post.firstViewedAt
+                ? Math.min(current.firstViewedAt, post.firstViewedAt)
+                : Math.max(current.firstViewedAt || 0, post.firstViewedAt || 0),
+              lastViewedAt: Math.max(current.lastViewedAt || 0, post.lastViewedAt || 0),
+              lastClickedAt: Math.max(current.lastClickedAt || 0, post.lastClickedAt || 0),
+            });
+          };
+          request.onerror = () => reject(request.error);
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    } else {
+      await dbWrite(POSTS_STORE, (store) => posts.forEach((post) => store.put(post)));
+    }
+    publishCrossTabChange('posts-reload');
   }
 
   async function dbDeletePost(id) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(POSTS_STORE, 'readwrite');
-      tx.objectStore(POSTS_STORE).delete(id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
-    });
+    await dbWrite(POSTS_STORE, (store) => store.delete(id));
+    publishCrossTabChange('post-changed', { id: String(id || '') });
   }
 
-  async function dbDeleteMany(ids) {
+  async function dbDeleteMany(ids, options) {
     if (!ids || !ids.length) return;
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(POSTS_STORE, 'readwrite');
-      const store = tx.objectStore(POSTS_STORE);
-      for (const id of ids) store.delete(id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
-    });
+    const opts = options || {};
+    const preservedPosts = [];
+    if (opts.preserveProtected === true) {
+      const db = await openDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(POSTS_STORE, 'readwrite');
+        const store = tx.objectStore(POSTS_STORE);
+        for (const id of ids) {
+          const request = store.get(id);
+          request.onsuccess = () => {
+            const current = request.result;
+            if (current && (current.favorite || current.pinned)) preservedPosts.push(current);
+            else store.delete(id);
+          };
+          request.onerror = () => reject(request.error);
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    } else {
+      await dbWrite(POSTS_STORE, (store) => ids.forEach((id) => store.delete(id)));
+    }
+    if (preservedPosts.length) {
+      const byId = new Map(state.posts.map((post) => [String(post.id), post]));
+      preservedPosts.map(sanitizeImportedPost).filter(Boolean)
+        .forEach((post) => byId.set(String(post.id), post));
+      state.posts = [...byId.values()];
+      rebuildPostIndex();
+      debouncedRefreshUI();
+    }
+    publishCrossTabChange('posts-reload');
   }
 
   async function dbGetSetting(key) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(SETTINGS_STORE, 'readonly');
-      const request = tx.objectStore(SETTINGS_STORE).get(key);
-      request.onsuccess = () => resolve(request.result?.value);
-      request.onerror = () => reject(request.error);
-    });
+    return (await dbRead(SETTINGS_STORE, (store) => store.get(key)))?.value;
   }
 
   async function dbPutSetting(key, value) {
+    await dbWrite(SETTINGS_STORE, (store) => store.put({ key, value }));
+    if (key === 'settings') publishCrossTabChange('settings-reload');
+  }
+
+  async function dbMergeSettings(partial, fallback) {
     const db = await openDb();
-    return new Promise((resolve, reject) => {
+    let merged = fallback;
+    await new Promise((resolve, reject) => {
       const tx = db.transaction(SETTINGS_STORE, 'readwrite');
-      tx.objectStore(SETTINGS_STORE).put({ key, value });
+      const store = tx.objectStore(SETTINGS_STORE);
+      const request = store.get('settings');
+      request.onsuccess = () => {
+        const current = request.result && request.result.value;
+        const base = current && typeof current === 'object' && !Array.isArray(current)
+          ? sanitizeSettings(migrateSettingsDefaults(current))
+          : fallback;
+        merged = sanitizeSettings({ ...base, ...(partial || {}) });
+        store.put({ key: 'settings', value: merged });
+      };
+      request.onerror = () => reject(request.error);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);
     });
+    publishCrossTabChange('settings-reload');
+    return merged;
+  }
+
+  function publishCrossTabChange(type, payload) {
+    if (!crossTabChannel) return;
+    try { crossTabChannel.postMessage({ type, ...(payload || {}) }); }
+    catch (err) { debugLog('cross-tab publish failed:', err); }
+  }
+
+  function scheduleCrossTabReload(type, id) {
+    if (type === 'posts-reload') {
+      crossTabReloadAllPosts = true;
+      crossTabReloadPostIds.clear();
+    } else if (type === 'post-changed' && id && !crossTabReloadAllPosts) {
+      crossTabReloadPostIds.add(String(id));
+    } else if (type === 'settings-reload') {
+      crossTabReloadSettings = true;
+    }
+    if (crossTabReloadTimer) return;
+    crossTabReloadTimer = setTimeout(flushCrossTabReload, 60);
+  }
+
+  async function flushCrossTabReload() {
+    crossTabReloadTimer = null;
+    const reloadAllPosts = crossTabReloadAllPosts;
+    const reloadSettings = crossTabReloadSettings;
+    const postIds = [...crossTabReloadPostIds];
+    crossTabReloadAllPosts = false;
+    crossTabReloadSettings = false;
+    crossTabReloadPostIds.clear();
+    let postsChanged = false;
+    try {
+      if (reloadAllPosts) {
+        state.posts = (await dbGetAllPosts()).map(sanitizeImportedPost).filter(Boolean)
+          .sort((a, b) => (b.lastCapturedAt || 0) - (a.lastCapturedAt || 0));
+        rebuildPostIndex();
+        postsChanged = true;
+      } else if (postIds.length) {
+        const records = await Promise.all(postIds.map(async (id) => [id, await dbGetPost(id)]));
+        const byId = new Map(state.posts.map((post) => [String(post.id), post]));
+        for (const [id, rawPost] of records) {
+          const post = sanitizeImportedPost(rawPost);
+          if (post) byId.set(String(id), post);
+          else byId.delete(String(id));
+        }
+        state.posts = [...byId.values()];
+        rebuildPostIndex();
+        postsChanged = true;
+      }
+      if (reloadSettings) {
+        const savedSettings = await dbGetSetting('settings');
+        if (savedSettings && typeof savedSettings === 'object') applySettingsSnapshot(savedSettings);
+      }
+      if (postsChanged) {
+        bumpKeywordCache();
+        resetPaging();
+        refreshUI({ keepScroll: true });
+      }
+    } catch (err) {
+      console.error('[BetterX] cross-tab reload failed:', err);
+    }
+  }
+
+  function installCrossTabSync() {
+    if (crossTabChannel || typeof BroadcastChannel !== 'function') return;
+    try {
+      crossTabChannel = new BroadcastChannel(CROSS_TAB_CHANNEL_NAME);
+      crossTabChannel.addEventListener('message', (event) => {
+        const message = event && event.data;
+        if (!message || typeof message !== 'object') return;
+        if (message.type === 'post-changed') scheduleCrossTabReload(message.type, message.id);
+        else if (message.type === 'posts-reload' || message.type === 'settings-reload') {
+          scheduleCrossTabReload(message.type);
+        }
+      });
+    } catch (err) {
+      crossTabChannel = null;
+      debugLog('cross-tab sync unavailable:', err);
+    }
   }
 
   // ── 数据操作 ─────────────────────────────────────────────────────
-  function getPostIndexById(id) { return state.posts.findIndex((p) => p.id === id); }
-  function getPostById(id) { return state.posts.find((p) => p.id === id); }
+  function rebuildPostIndex() {
+    state.postIndexById = new Map(state.posts.map((post, index) => [String(post.id), index]));
+  }
+
+  function getPostIndexById(id) {
+    const key = String(id);
+    const cached = state.postIndexById.get(key);
+    if (cached != null && state.posts[cached] && String(state.posts[cached].id) === key) return cached;
+    const index = state.posts.findIndex((post) => String(post.id) === key);
+    if (index >= 0) state.postIndexById.set(key, index);
+    else state.postIndexById.delete(key);
+    return index;
+  }
+  function getPostById(id) {
+    const index = getPostIndexById(id);
+    return index >= 0 ? state.posts[index] : undefined;
+  }
   function protectedPost(p) { return !!(p.favorite || p.pinned); }
 
   function prunePostRuntimeCaches(ids) {
@@ -205,6 +506,7 @@
     const toDelete = others.slice(allowOthers);
     const keepOthers = others.slice(0, allowOthers);
     state.posts = [...kept, ...keepOthers];
+    rebuildPostIndex();
     const ids = toDelete.map((p) => p.id);
     prunePostRuntimeCaches(ids);
     return ids;
@@ -213,7 +515,7 @@
   async function enforceMaxPosts() {
     const ids = trimPostsToMax();
     if (!ids.length) return;
-    await dbDeleteMany(ids);
+    await dbDeleteMany(ids, { preserveProtected: true });
   }
 
   // ── 统计 / 筛选栏 ───────────────────────────────────────────────
@@ -321,6 +623,20 @@
       state.quickFilterStateEl.textContent = uiText(text);
       state.quickFilterStateEl.title = uiText(text);
     }
+  }
+
+  function updateDownloadAdvancedHeader() {
+    if (state.downloadAdvancedDetailsEl) {
+      const shouldOpen = !!state.settings.downloadAdvancedOpen;
+      if (state.downloadAdvancedDetailsEl.open !== shouldOpen) state.downloadAdvancedDetailsEl.open = shouldOpen;
+    }
+    if (!state.downloadAdvancedStateEl) return;
+    const customized = (state.settings.downloadFileNameTemplate || DEFAULT_SETTINGS.downloadFileNameTemplate) !== DEFAULT_SETTINGS.downloadFileNameTemplate
+      || (state.settings.downloadZipNameTemplate || DEFAULT_SETTINGS.downloadZipNameTemplate) !== DEFAULT_SETTINGS.downloadZipNameTemplate
+      || !!state.settings.downloadNameRegex
+      || !!state.settings.downloadNameReplacement;
+    state.downloadAdvancedStateEl.hidden = !customized;
+    state.downloadAdvancedStateEl.textContent = customized ? uiText('已自定义') : '';
   }
 
   function buildSkipSourcesHtml() {
@@ -531,6 +847,7 @@
     syncSettingsControls();
     updateSortHint();
     updateQuickFilterHeader();
+    updateDownloadAdvancedHeader();
     syncInactiveInput(state.autoCleanInputEl, state.settings.autoCleanDays || 0);
     syncInactiveInput(state.maxPostsInputEl, state.settings.maxPosts || DEFAULT_SETTINGS.maxPosts);
     syncInactiveInput(state.flashMsInputEl, Math.round((state.settings.flashMs || 8000) / 1000));
@@ -700,6 +1017,8 @@
       if (revision < 31 && input.postLimitWarningDisabled == null) {
         input.postLimitWarningDisabled = DEFAULT_SETTINGS.postLimitWarningDisabled;
       }
+      // v3.6.0 新增 NFL 入口过滤；默认隐藏 X 右侧栏中的球队与赛程卡片。
+      if (revision < 32 && input.hideNfl == null) input.hideNfl = DEFAULT_SETTINGS.hideNfl;
       // v2.7.0 新增下载命名模板；沿用原“用户名_帖子 ID”的默认命名。
       if (revision < 19) {
         if (input.downloadFileNameTemplate == null) input.downloadFileNameTemplate = DEFAULT_SETTINGS.downloadFileNameTemplate;
@@ -744,17 +1063,30 @@
     return input;
   }
 
-  async function persistSettings() {
-    const sanitized = sanitizeSettings(state.settings);
-    // 设置同时镜像到油猴存储：即使浏览器/清理扩展清掉 x.com 的 IndexedDB，仍可自动恢复。
+  async function persistSettings(changedKeys, settingsSnapshot) {
+    const sanitized = sanitizeSettings(settingsSnapshot || state.settings);
+    // IndexedDB 暂时不可用时也先保留一份恢复镜像。
     writeSettingsMirror(sanitized);
-    await dbPutSetting('settings', sanitized);
+    const replaceAll = changedKeys === null;
+    const requestedKeys = changedKeys === undefined ? ['downloadedPostIds'] : changedKeys;
+    const keys = Array.isArray(requestedKeys)
+      ? uniqueStrings(requestedKeys.filter((key) => Object.prototype.hasOwnProperty.call(SETTINGS_SCHEMA, key)))
+      : [];
+    let persisted = sanitized;
+    if (!replaceAll && keys.length) {
+      const partial = Object.fromEntries(keys.map((key) => [key, sanitized[key]]));
+      persisted = await dbMergeSettings(partial, sanitized);
+    } else {
+      await dbPutSetting('settings', sanitized);
+    }
+    // 部分字段写入会与数据库中的跨标签页最新值合并，镜像以合并结果为准。
+    if (persisted !== sanitized) writeSettingsMirror(persisted);
   }
 
   function resetPaging() { state.renderLimit = state.settings.pageSize || 60; }
 
   const SETTINGS_EFFECT_ORDER = [
-    'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'mediaDownload',
+    'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'mediaDownload',
     'ageBypass', 'mediaGrid', 'autoExpand', 'firefoxCompatibility', 'badge',
   ];
   const SETTINGS_EFFECT_HANDLERS = {
@@ -774,6 +1106,9 @@
     },
     ads() {
       applyAdHiding();
+    },
+    nfl() {
+      applyNflHiding();
     },
     mediaDownload() {
       applyMediaDownload();
@@ -807,11 +1142,58 @@
     }
   }
 
+  function settingsValueChanged(left, right) {
+    if (left === right) return false;
+    if (!left || !right || typeof left !== 'object' || typeof right !== 'object') return true;
+    try { return JSON.stringify(left) !== JSON.stringify(right); }
+    catch (err) { return true; }
+  }
+
+  function applySettingsSnapshot(rawSettings, options) {
+    const opts = options || {};
+    const previous = state.settings || { ...DEFAULT_SETTINGS };
+    const next = sanitizeSettings(migrateSettingsDefaults(rawSettings));
+    if (opts.preserveFirefoxCompatibility) {
+      next.firefoxCompatibility = !!previous.firefoxCompatibility;
+      next.firefoxCompatibilityPrompted = !!previous.firefoxCompatibilityPrompted;
+    }
+    const changed = {};
+    for (const key of Object.keys(SETTINGS_SCHEMA)) {
+      if (settingsValueChanged(previous[key], next[key])) changed[key] = next[key];
+    }
+    state.settings = next;
+
+    const followedChanged = settingsValueChanged(previous.knownFollowedHandles, next.knownFollowedHandles);
+    followedHandles.clear();
+    for (const handle of next.knownFollowedHandles || []) followedHandles.add(handle);
+    trimFollowedHandlesToMax();
+
+    notificationSubscriptions.clear();
+    for (const rawItem of next.notificationSubscriptions || []) {
+      const item = sanitizeNotificationSubscription(rawItem);
+      if (item) notificationSubscriptions.set(item.username.toLowerCase(), item);
+    }
+
+    runSettingsEffects(changed);
+    if (followedChanged) {
+      adultSpamRulesVersion++;
+      adultSpamCache = new WeakMap();
+      if (document.body && state.settings.hideAdultSpam && state.settings.adultSpamSkipFollowing) {
+        applyAdultSpamFiltering();
+      }
+    }
+    resetPaging();
+    refreshUI({ keepScroll: true });
+    renderNotificationSubscriptions();
+    scheduleDownloadUiRefresh();
+    return next;
+  }
+
   function setSettingsPartial(nextPartial) {
     state.settings = { ...state.settings, ...nextPartial };
     runSettingsEffects(nextPartial);
     resetPaging();
-    queueDbWrite(async () => { await persistSettings(); });
+    queueSettingsPersist(Object.keys(nextPartial));
     refreshUI();
   }
 
@@ -840,7 +1222,7 @@
         avatarUrl: existing.avatarUrl || post.avatarUrl || '',
       };
       state.posts[index] = merged;
-      queueDbWrite(async () => { await dbPutPost(merged); });
+      queuePostPut(merged, { preserveUserState: true });
     } else {
       const created = {
         favorite: false,
@@ -857,23 +1239,25 @@
         ...post,
       };
       state.posts.push(created);
+      state.postIndexById.set(String(created.id), state.posts.length - 1);
       maybeShowPostLimitWarning();
       queueDbWrite(async () => {
-        await dbPutPost(created);
+        await dbPutPost(created, { preserveUserState: true });
         await enforceMaxPosts();
       });
     }
 
     if (state.posts.length > (state.settings.maxPosts || 500) + 50) {
-      queueDbWrite(async () => { await enforceMaxPosts(); });
+      queueDbWrite(enforceMaxPosts);
     }
     debouncedRefreshUI();
   }
 
   function deletePost(id) {
     state.posts = state.posts.filter((p) => p.id !== id);
+    rebuildPostIndex();
     prunePostRuntimeCaches([id]);
-    queueDbWrite(async () => { await dbDeletePost(id); });
+    queueDbWrite(() => dbDeletePost(id));
     refreshUI({ keepScroll: true });
   }
 
@@ -883,59 +1267,46 @@
     if (!uiConfirm(`确定要清空 ${targets.length} 条未收藏/未置顶的帖子吗？此操作不可撤销。`)) return;
     const ids = targets.map((p) => p.id);
     state.posts = state.posts.filter(protectedPost);
+    rebuildPostIndex();
     prunePostRuntimeCaches(ids);
-    queueDbWrite(async () => { await dbDeleteMany(ids); });
+    queueDbWrite(() => dbDeleteMany(ids, { preserveProtected: true }));
     refreshUI();
   }
 
-  function markClicked(id) {
+  function updateStoredPost(id, updater, refresh = () => refreshUI({ keepScroll: true })) {
     const index = getPostIndexById(id);
-    if (index < 0) return;
+    if (index < 0) return null;
     const post = state.posts[index];
-    if (post.clicked) return;
-    const updated = { ...post, clicked: true, lastClickedAt: now() };
+    const changes = updater(post);
+    if (!changes) return null;
+    const updated = { ...post, ...changes };
     state.posts[index] = updated;
-    queueDbWrite(async () => { await dbPutPost(updated); });
-    refreshUI({ keepScroll: true });
+    queuePostPatch(id, changes);
+    if (refresh) refresh();
+    return updated;
+  }
+
+  function markClicked(id) {
+    updateStoredPost(id, (post) => post.clicked ? null : { clicked: true, lastClickedAt: now() });
   }
 
   function toggleFavorite(id) {
-    const index = getPostIndexById(id);
-    if (index < 0) return;
-    const updated = { ...state.posts[index], favorite: !state.posts[index].favorite };
-    state.posts[index] = updated;
-    queueDbWrite(async () => { await dbPutPost(updated); });
-    refreshUI({ keepScroll: true });
+    updateStoredPost(id, (post) => ({ favorite: !post.favorite }));
   }
 
   function togglePin(id) {
-    const index = getPostIndexById(id);
-    if (index < 0) return;
-    const updated = { ...state.posts[index], pinned: !state.posts[index].pinned };
-    state.posts[index] = updated;
-    queueDbWrite(async () => { await dbPutPost(updated); });
-    refreshUI({ keepScroll: true });
+    updateStoredPost(id, (post) => ({ pinned: !post.pinned }));
   }
 
   function markFlashLost(id) {
-    const index = getPostIndexById(id);
-    if (index < 0) return;
-    const post = state.posts[index];
-    if (post.clicked || post.flashLost) return;
-    const updated = { ...post, flashLost: true, flashLostAt: now() };
-    state.posts[index] = updated;
-    queueDbWrite(async () => { await dbPutPost(updated); });
-    debouncedRefreshUI();
+    updateStoredPost(id, (post) => post.clicked || post.flashLost
+      ? null : { flashLost: true, flashLostAt: now() }, debouncedRefreshUI);
   }
 
   function updatePostNote(id, note) {
-    const idx = getPostIndexById(id);
-    if (idx < 0) return;
-    const updated = { ...state.posts[idx], note };
-    state.posts[idx] = updated;
+    if (!updateStoredPost(id, () => ({ note }), null)) return;
     state.editingNoteId = null;
     matchCache.delete(id);
-    queueDbWrite(async () => { await dbPutPost(updated); });
     refreshUI({ keepScroll: true });
   }
   // ── 媒体下载（图片 / 视频 / GIF）─────────────────────────────────────

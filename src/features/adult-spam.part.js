@@ -11,6 +11,11 @@
     'G点','91','糖心','麻豆','50度灰','足交','乳交','烧姬','约爱','字母圈','淫窝','车震',
     'TS','约p','戴套','阴唇','秒射','飞机杯','屁穴','幹','性爱','鸡鸡','磨豆腐','双头龙',
   ];
+  const ADULT_SPAM_INSTANT_BLOCK_TERMS = [
+    '没她骚', '福不黑', '我的福', '顶不住', '爱几把', '瓜', '线下', '同城',
+    '妈妈', '儿子', '一夜', '进入身', 'sao', '全国牵', 't.cn', '👆', '👉',
+    '联系', '主页', '快手', '抖音', '免费', '我好看', '寻',
+  ];
   const ADULT_SPAM_SENSITIVE_TERMS = [
     '一发入魂', '调教', '高潮', '翘臀', '奶子', '反差', '巨乳', '嫩妹', '尿尿',
     '痴女', '黑丝', '白丝', '玉足', '喷了', '涩涩', '私房', '纯欲', '蜜桃臀',
@@ -88,7 +93,19 @@
     return normalizeAdultSpamText(value).replace(/[\s\p{P}\p{S}_]+/gu, '');
   }
 
+  function compileAdultSpamInstantBlockTerm(raw) {
+    return { raw, normalized: normalizeAdultSpamText(raw), compact: compactAdultSpamText(raw) };
+  }
+
+  function findAdultSpamInstantBlockTerm(normalized, compact) {
+    return COMPILED_ADULT_SPAM_INSTANT_BLOCK_TERMS.find((term) => (
+      (term.normalized && normalized.includes(term.normalized))
+      || (term.compact && compact.includes(term.compact))
+    ));
+  }
+
   // 内置词表在启动时只标准化一次，避免每评分一条帖子就重复处理全部固定词。
+  const COMPILED_ADULT_SPAM_INSTANT_BLOCK_TERMS = ADULT_SPAM_INSTANT_BLOCK_TERMS.map(compileAdultSpamInstantBlockTerm);
   const COMPILED_ADULT_SPAM_TERMS = {
     strong: ADULT_SPAM_STRONG_TERMS.map(compactAdultSpamText),
     sensitive: ADULT_SPAM_SENSITIVE_TERMS.map(compactAdultSpamText),
@@ -196,6 +213,11 @@
           ? '已关注账号的转发内容'
           : (contentAuthorFollowed ? '正文原作者已关注' : '正在关注时间线的原创帖')],
       };
+    }
+
+    const instantBlockTerm = findAdultSpamInstantBlockTerm(normalized, compact);
+    if (instantBlockTerm) {
+      return { hidden: true, score: 99, reasons: [`高风险屏蔽词：${instantBlockTerm.raw}`] };
     }
 
     const reasons = [];

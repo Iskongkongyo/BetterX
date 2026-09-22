@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import { compactI18nEntries } from '../scripts/strip-comments.mjs';
 
 const source = await readFile(new URL('../src/00-bootstrap-i18n.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v3.4.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.6.0.js', import.meta.url), 'utf8');
 const opening = 'const UI_TEXT_ENTRIES = [';
 const boundary = 'function readUiLanguageOverride';
 const extractEntries = (text) => {
