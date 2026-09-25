@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v3.6.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url);
 const originalSource = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(originalSource, startupPattern, '找不到脚本启动标记');
@@ -56,6 +56,10 @@ assert.equal(
   english.uiText('普通文字可直接输入；正则表达式请写成 <code>/表达式/</code>，例如 <code>/猫|狗/</code>。两种写法可以混用。'),
   'Enter plain text directly. Write regex as <code>/expression/</code>, for example <code>/cat|dog/</code>. Both forms can be mixed.',
   '带代码样式的设置说明也应完整翻译'
+);
+assert.equal(
+  english.uiText('如果您没有勾选的话，麻烦您勾选上“显示可能含有敏感内容的媒体内容”，大部分成人内容会自动显示'),
+  'If it is not already enabled, please enable “Display media that may contain sensitive content”. Most adult content will then appear automatically.'
 );
 
 const uiNode = {

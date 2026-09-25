@@ -183,6 +183,63 @@
     else removeUnlockedMedia();
   }
 
+  const LOGGED_OUT_POST_DIALOG_SELECTOR = '[role="dialog"][aria-modal="true"][data-interaction="app-store-obstruction"]';
+  const LOGGED_OUT_POST_PANEL_SELECTOR = '[data-interaction="app-store-obstruction-panel"]';
+  const LOGGED_OUT_POST_DISMISS_MAX_ATTEMPTS = 8;
+  const loggedOutPostDialogAttempts = new WeakMap();
+
+  function getLoggedOutPostDialogs(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    const dialogs = new Set(scope.querySelectorAll(LOGGED_OUT_POST_DIALOG_SELECTOR));
+    if (scope.matches && scope.matches(LOGGED_OUT_POST_DIALOG_SELECTOR)) dialogs.add(scope);
+    const ancestor = scope.closest && scope.closest(LOGGED_OUT_POST_DIALOG_SELECTOR);
+    if (ancestor) dialogs.add(ancestor);
+    return dialogs;
+  }
+
+  function dismissLoggedOutPostObstructions(root = document) {
+    let dismissed = 0;
+    for (const dialog of getLoggedOutPostDialogs(root)) {
+      if ((dialog.getAttribute && dialog.getAttribute('data-state') === 'closed')
+          || dialog.isConnected === false
+          || !dialog.querySelector(LOGGED_OUT_POST_PANEL_SELECTOR)) continue;
+      const current = loggedOutPostDialogAttempts.get(dialog) || { attempts: 0, timer: null };
+      if (current.timer || current.attempts >= LOGGED_OUT_POST_DISMISS_MAX_ATTEMPTS) continue;
+      let button = dialog.querySelector('button[data-slot="xds-button"][aria-label="Dismiss"]');
+      if (!button) {
+        const closeIcon = dialog.querySelector('button[data-slot="xds-button"] svg[data-icon="icon-close-md"]');
+        button = closeIcon && closeIcon.closest ? closeIcon.closest('button') : null;
+      }
+      if (!button || button.disabled || button.getAttribute('aria-disabled') === 'true') continue;
+      current.attempts++;
+      loggedOutPostDialogAttempts.set(dialog, current);
+      try {
+        // 首次扫描可能早于 React 水合；先补齐常见按压事件，再调用原生 click，随后验证并重试。
+        if (typeof button.dispatchEvent === 'function') {
+          for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup']) {
+            const EventConstructor = type.startsWith('pointer')
+              ? globalThis.PointerEvent : globalThis.MouseEvent;
+            if (typeof EventConstructor !== 'function') continue;
+            button.dispatchEvent(new EventConstructor(type, {
+              bubbles: true, cancelable: true, composed: true, button: 0,
+            }));
+          }
+        }
+        button.click();
+        dismissed++;
+      } catch (err) {
+        console.error('[BetterX] logged-out post dialog dismissal failed:', err);
+      }
+      current.timer = setTimeout(() => {
+        current.timer = null;
+        if (dialog.isConnected === false
+            || (dialog.getAttribute && dialog.getAttribute('data-state') === 'closed')) return;
+        dismissLoggedOutPostObstructions(dialog);
+      }, Math.min(250 + current.attempts * 100, 700));
+    }
+    return dismissed;
+  }
+
   let xvToastTimer = null;
   function showToast(msg, duration) {
     let t = document.getElementById('BetterX-toast');
@@ -258,6 +315,48 @@
     });
     state.rootEl.appendChild(overlay);
     setTimeout(() => primary.focus(), 0);
+  }
+
+  const SENSITIVE_CONTENT_SETTINGS_URL = 'https://x.com/settings/content_you_see';
+  const SENSITIVE_CONTENT_NOTICE_SESSION_KEY = 'betterx_sensitive_content_notice_v1';
+
+  function showAgeBypassEnableNotice() {
+    showBetterXDialog({
+      bodyHtml: `<p>${escapeHtml(uiText('如果您没有勾选的话，麻烦您勾选上“显示可能含有敏感内容的媒体内容”，大部分成人内容会自动显示'))}</p>`,
+      primaryText: '确定',
+    });
+    const overlay = document.getElementById('BetterX-choice-dialog');
+    const secondary = overlay && overlay.querySelector('[data-dialog-choice="secondary"]');
+    if (secondary) secondary.hidden = true;
+  }
+
+  function navigateToSensitiveContentSettings() {
+    try { sessionStorage.setItem(SENSITIVE_CONTENT_NOTICE_SESSION_KEY, '1'); }
+    catch (err) { console.error('[BetterX] sensitive content notice state failed:', err); }
+    const navigate = () => {
+      try {
+        if (typeof location.assign === 'function') location.assign(SENSITIVE_CONTENT_SETTINGS_URL);
+        else location.href = SENSITIVE_CONTENT_SETTINGS_URL;
+      } catch (err) {
+        console.error('[BetterX] sensitive content settings navigation failed:', err);
+      }
+    };
+    // 等待设置落盘后再在当前标签页导航，避免切页中断刚开启的开关写入。
+    Promise.resolve(state.dbWriteQueue).then(navigate, navigate);
+  }
+
+  function maybeShowAgeBypassEnableNotice() {
+    if (location.pathname !== '/settings/content_you_see') return false;
+    let pending = false;
+    try {
+      pending = sessionStorage.getItem(SENSITIVE_CONTENT_NOTICE_SESSION_KEY) === '1';
+      if (pending) sessionStorage.removeItem(SENSITIVE_CONTENT_NOTICE_SESSION_KEY);
+    } catch (err) {
+      console.error('[BetterX] sensitive content notice read failed:', err);
+    }
+    if (!pending) return false;
+    showAgeBypassEnableNotice();
+    return true;
   }
 
   function chooseUiLanguage(language) {
@@ -403,7 +502,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.6.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.7.0',
       userscriptManager: USERSCRIPT_MANAGER || 'unknown',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,

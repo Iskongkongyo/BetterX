@@ -182,7 +182,7 @@
   });
   const bool = (defaultValue, control, effects) => setting(defaultValue, ['boolean'], control, effects);
   const SETTINGS_SCHEMA = Object.freeze({
-    settingsRevision: setting(32, ['revision']),
+    settingsRevision: setting(34, ['revision']),
     keywords: setting([], ['keywordRules', 50, 500], null, ['keywords']),
     excludeKeywords: setting([], ['keywordRules', 50, 500], null, ['keywords']),
     keywordMode: setting('plain', ['enum', ['plain', 'and']], bind('keywordModeEl', '#BetterX-keyword-mode', 'value'), ['keywords']),
@@ -214,7 +214,10 @@
     layoutCleanNavigation: bool(true, bind('layoutCleanNavigationEl', '#BetterX-layout-clean-nav'), ['layout']),
     layoutHideMessageGrok: bool(true, bind('layoutHideMessageGrokEl', '#BetterX-layout-hide-message'), ['layout']),
     layoutHideShowMore: bool(false, bind('layoutHideShowMoreEl', '#BetterX-layout-hide-showmore'), ['layout']),
-    mediaDownload: bool(true, null, ['mediaDownload']), downloadZip: bool(true), downloadAdvancedOpen: bool(false),
+    mediaDownload: bool(true, null, ['mediaDownload']),
+    gifDownloadFormatEnabled: bool(true, bind('gifDownloadFormatEnabledEl', '#BetterX-gif-download-format-enabled')),
+    gifDownloadFormat: setting('mp4', ['enum', ['mp4', 'gif']], bind('gifDownloadFormatEl', '#BetterX-gif-download-format', 'value')),
+    downloadZip: bool(true), downloadAdvancedOpen: bool(false),
     downloadFileNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]),
     downloadZipNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]),
     downloadNameRegex: setting('', ['safeRegex']), downloadNameReplacement: setting('', ['string', 180]),

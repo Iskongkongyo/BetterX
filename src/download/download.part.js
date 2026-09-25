@@ -340,6 +340,204 @@
     });
   }
 
+  const GIF_CONVERSION_MAX_DIMENSION = 480;
+  const GIF_CONVERSION_TARGET_FPS = 10;
+  const GIF_CONVERSION_MAX_FRAMES = 180;
+  const GIF_CONVERSION_TIMEOUT_MS = 30000;
+  const GIF_DITHER_MATRIX = [
+    0, 8, 2, 10,
+    12, 4, 14, 6,
+    3, 11, 1, 9,
+    15, 7, 13, 5,
+  ];
+
+  function buildGifPalette332() {
+    const palette = new Uint8Array(256 * 3);
+    for (let index = 0; index < 256; index++) {
+      palette[index * 3] = Math.round(((index >> 5) & 7) * 255 / 7);
+      palette[index * 3 + 1] = Math.round(((index >> 2) & 7) * 255 / 7);
+      palette[index * 3 + 2] = Math.round((index & 3) * 255 / 3);
+    }
+    return palette;
+  }
+
+  const GIF_PALETTE_332 = buildGifPalette332();
+
+  function quantizeRgbaToGif332(rgba, width) {
+    const pixels = new Uint8Array(Math.floor(rgba.length / 4));
+    for (let index = 0; index < pixels.length; index++) {
+      const x = index % width;
+      const y = Math.floor(index / width);
+      const adjustment = (GIF_DITHER_MATRIX[(y & 3) * 4 + (x & 3)] - 7.5) * 2;
+      const offset = index * 4;
+      const red = Math.max(0, Math.min(255, rgba[offset] + adjustment));
+      const green = Math.max(0, Math.min(255, rgba[offset + 1] + adjustment));
+      const blue = Math.max(0, Math.min(255, rgba[offset + 2] + adjustment));
+      pixels[index] = ((red >> 5) << 5) | ((green >> 5) << 2) | (blue >> 6);
+    }
+    return pixels;
+  }
+
+  function gifLzwEncode(indices) {
+    const clearCode = 256;
+    const endCode = 257;
+    let codeSize = 9;
+    let nextCode = 258;
+    let dictionary = new Map();
+    const bytes = [];
+    let bitBuffer = 0;
+    let bitCount = 0;
+    const writeCode = (code) => {
+      bitBuffer |= code << bitCount;
+      bitCount += codeSize;
+      while (bitCount >= 8) {
+        bytes.push(bitBuffer & 0xFF);
+        bitBuffer >>>= 8;
+        bitCount -= 8;
+      }
+    };
+    const resetDictionary = () => {
+      dictionary = new Map();
+      codeSize = 9;
+      nextCode = 258;
+    };
+
+    writeCode(clearCode);
+    if (indices.length) {
+      let prefix = indices[0];
+      for (let index = 1; index < indices.length; index++) {
+        const suffix = indices[index];
+        const key = prefix * 256 + suffix;
+        const combined = dictionary.get(key);
+        if (combined !== undefined) {
+          prefix = combined;
+          continue;
+        }
+        writeCode(prefix);
+        if (nextCode < 4096) {
+          dictionary.set(key, nextCode++);
+          // GIF 解码器在读取下一个码时才补入同一词条，编码端需延后一格扩展位宽。
+          if (nextCode > (1 << codeSize) && codeSize < 12) codeSize++;
+        } else {
+          writeCode(clearCode);
+          resetDictionary();
+        }
+        prefix = suffix;
+      }
+      writeCode(prefix);
+    }
+    writeCode(endCode);
+    if (bitCount > 0) bytes.push(bitBuffer & 0xFF);
+    return new Uint8Array(bytes);
+  }
+
+  function createAnimatedGifEncoder(width, height) {
+    const chunks = [];
+    const pushBytes = (...values) => chunks.push(Uint8Array.from(values));
+    const pushWord = (value) => pushBytes(value & 0xFF, (value >>> 8) & 0xFF);
+    chunks.push(new TextEncoder().encode('GIF89a'));
+    pushWord(width); pushWord(height);
+    pushBytes(0xF7, 0x00, 0x00);
+    chunks.push(GIF_PALETTE_332);
+    chunks.push(Uint8Array.from([
+      0x21, 0xFF, 0x0B, 0x4E, 0x45, 0x54, 0x53, 0x43, 0x41, 0x50, 0x45, 0x32, 0x2E, 0x30,
+      0x03, 0x01, 0x00, 0x00, 0x00,
+    ]));
+    return {
+      addFrame(indices, delayCentiseconds) {
+        const delay = Math.max(1, Math.min(65535, Math.round(delayCentiseconds) || 1));
+        pushBytes(0x21, 0xF9, 0x04, 0x04, delay & 0xFF, (delay >>> 8) & 0xFF, 0x00, 0x00);
+        pushBytes(0x2C, 0x00, 0x00, 0x00, 0x00);
+        pushWord(width); pushWord(height); pushBytes(0x00, 0x08);
+        const encoded = gifLzwEncode(indices);
+        for (let offset = 0; offset < encoded.length; offset += 255) {
+          const block = encoded.subarray(offset, Math.min(offset + 255, encoded.length));
+          pushBytes(block.length);
+          chunks.push(block);
+        }
+        pushBytes(0x00);
+      },
+      finish() {
+        pushBytes(0x3B);
+        return new Blob(chunks, { type: 'image/gif' });
+      },
+    };
+  }
+
+  function waitForVideoEvent(video, eventName, signal, timeoutMs = GIF_CONVERSION_TIMEOUT_MS) {
+    return new Promise((resolve, reject) => {
+      let timer = null;
+      const cleanup = () => {
+        video.removeEventListener(eventName, onReady);
+        video.removeEventListener('error', onError);
+        if (signal) signal.removeEventListener('abort', onAbort);
+        if (timer) clearTimeout(timer);
+      };
+      const finish = (callback, value) => { cleanup(); callback(value); };
+      const onReady = () => finish(resolve);
+      const onError = () => finish(reject, new Error('GIF 视频解码失败'));
+      const onAbort = () => finish(reject, makeDownloadCancelledError());
+      video.addEventListener(eventName, onReady, { once: true });
+      video.addEventListener('error', onError, { once: true });
+      if (signal) signal.addEventListener('abort', onAbort, { once: true });
+      timer = setTimeout(() => finish(reject, new Error('GIF 转换超时')), timeoutMs);
+      if (signal && signal.aborted) onAbort();
+    });
+  }
+
+  async function seekGifVideo(video, time, signal) {
+    if (signal && signal.aborted) throw makeDownloadCancelledError();
+    if (Math.abs(video.currentTime - time) < 0.002 && video.readyState >= 2) return;
+    const ready = waitForVideoEvent(video, 'seeked', signal);
+    video.currentTime = time;
+    await ready;
+  }
+
+  async function convertMp4BlobToGif(blob, options) {
+    const opts = options || {};
+    const video = document.createElement('video');
+    const objectUrl = URL.createObjectURL(blob);
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.src = objectUrl;
+    try {
+      if (video.readyState < 1) { const metadata = waitForVideoEvent(video, 'loadedmetadata', opts.signal); video.load(); await metadata; }
+      if (video.readyState < 2) await waitForVideoEvent(video, 'loadeddata', opts.signal);
+      const duration = Number(video.duration);
+      const sourceWidth = Number(video.videoWidth);
+      const sourceHeight = Number(video.videoHeight);
+      if (!Number.isFinite(duration) || duration <= 0 || !sourceWidth || !sourceHeight) {
+        throw new Error('无法读取 GIF 视频尺寸或时长');
+      }
+      const scale = Math.min(1, GIF_CONVERSION_MAX_DIMENSION / Math.max(sourceWidth, sourceHeight));
+      const width = Math.max(1, Math.round(sourceWidth * scale));
+      const height = Math.max(1, Math.round(sourceHeight * scale));
+      const targetFrames = Math.max(1, Math.ceil(duration * GIF_CONVERSION_TARGET_FPS));
+      const frameCount = Math.min(GIF_CONVERSION_MAX_FRAMES, targetFrames);
+      const frameDuration = duration / frameCount;
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const context = canvas.getContext('2d', { alpha: false, willReadFrequently: true });
+      if (!context) throw new Error('浏览器不支持 GIF 画布转换');
+      const encoder = createAnimatedGifEncoder(width, height);
+      for (let frame = 0; frame < frameCount; frame++) {
+        if (opts.signal && opts.signal.aborted) throw makeDownloadCancelledError();
+        const time = Math.min(Math.max(0, duration - 0.001), (frame + 0.5) * frameDuration);
+        await seekGifVideo(video, time, opts.signal);
+        context.drawImage(video, 0, 0, width, height);
+        const rgba = context.getImageData(0, 0, width, height).data;
+        encoder.addFrame(quantizeRgbaToGif332(rgba, width), frameDuration * 100);
+        if (typeof opts.onProgress === 'function') opts.onProgress(frame + 1, frameCount);
+      }
+      return encoder.finish();
+    } finally {
+      video.removeAttribute('src');
+      try { video.load(); } catch (err) {}
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
   function saveBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -471,6 +669,7 @@
   }
 
   const downloadJobs = new Map();
+  const pendingDownloadStarts = new Set();
   const downloadTransferQueue = [];
   let activeDownloadTransfers = 0;
   let downloadUiRaf = 0;
@@ -494,15 +693,23 @@
   function collectDownloadItems(article, statusId) {
     const media = collectMedia(article, statusId);
     const items = [];
+    const convertGifs = state.settings.gifDownloadFormatEnabled !== false
+      && state.settings.gifDownloadFormat === 'gif';
+    const addGif = (url) => items.push({
+      url,
+      ext: convertGifs ? 'gif' : 'mp4',
+      mediaType: 'gif',
+      convertToGif: convertGifs,
+    });
     media.photos.forEach((u) => items.push({ url: u, ext: extOfUrl(u, 'jpg'), mediaType: 'image' }));
-    media.gifs.forEach((u) => items.push({ url: u, ext: 'mp4', mediaType: 'gif' }));
+    media.gifs.forEach(addGif);
     media.videos.forEach((u) => items.push({ url: u, ext: 'mp4', mediaType: 'video' }));
     if (!items.length) {
       // 第三方引用卡片（内嵌视频 / 缩略图）：标准媒体为空时回退到卡片注册表
       const card = statusId ? getRegistryEntry(cardRegistry, String(statusId)) : null;
       if (card) {
         card.photos.forEach((u) => items.push({ url: u, ext: extOfUrl(u, 'jpg'), mediaType: 'image' }));
-        card.gifs.forEach((u) => items.push({ url: u, ext: 'mp4', mediaType: 'gif' }));
+        card.gifs.forEach(addGif);
         card.videos.forEach((u) => items.push({ url: u, ext: 'mp4', mediaType: 'video' }));
       }
     }
@@ -563,6 +770,9 @@
   function describeDownloadJob(job, compact) {
     const progress = getDownloadJobProgress(job);
     if (job.status === 'queued') return compact ? '排队' : '排队中';
+    if (job.itemProgress.some((item) => item.status === 'converting-gif')) {
+      return compact ? '转 GIF' : '正在转换 GIF';
+    }
     if (job.status === 'packing') return compact ? '打包' : `正在打包 ${job.packCompleted || 0}/${job.packTotal || job.items.length}`;
     if (job.status === 'saving') return compact ? '保存' : '正在保存';
     if (job.status === 'cancelling') return compact ? '取消中' : '正在取消下载';
@@ -578,6 +788,18 @@
     if (downloadUiRaf) return;
     const run = () => { downloadUiRaf = 0; refreshDownloadUi(); };
     downloadUiRaf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(run) : setTimeout(run, 16);
+  }
+
+  function renderDownloadButtonContent(button, label, downloadedBefore) {
+    const renderKey = downloadedBefore ? 'downloaded' : `text:${label}`;
+    if (button.dataset.renderKey === renderKey) return;
+    // 按下与松开之间替换 SVG 会让浏览器丢掉这次 click；进度刷新只更新变化的内容。
+    if (downloadedBefore) {
+      button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v9.17l3.59-3.59L18 10l-6 6-6-6 1.41-1.42L11 12.17V3zM4 14v4a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-4h-2v4a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4z"/></svg>';
+    } else {
+      button.textContent = label;
+    }
+    button.dataset.renderKey = renderKey;
   }
 
   function renderDownloadTaskPopover() {
@@ -630,25 +852,23 @@
   function refreshDownloadUi() {
     const controls = document.querySelectorAll('.BetterX-download-controls[data-status-id]');
     controls.forEach((control) => {
-      const job = downloadJobs.get(control.dataset.statusId || '');
+      const statusId = control.dataset.statusId || '';
+      const job = downloadJobs.get(statusId);
       const button = control.querySelector('.BetterX-dl-btn');
       const cancel = control.querySelector('.BetterX-dl-cancel');
       if (!button) return;
       const active = isActiveDownloadJob(job);
-      const downloadedBefore = !active && isDownloadedPostRecorded(control.dataset.statusId || '');
+      const lookingUp = pendingDownloadStarts.has(statusId);
+      const downloadedBefore = !active && !lookingUp && isDownloadedPostRecorded(statusId);
       const progress = getDownloadJobProgress(job);
-      control.dataset.downloadState = job ? job.status : 'idle';
-      button.classList.toggle('is-progress', active);
+      control.dataset.downloadState = job ? job.status : lookingUp ? 'looking-up' : 'idle';
+      button.classList.toggle('is-progress', active || lookingUp);
       button.classList.toggle('is-downloaded', downloadedBefore);
       button.style.setProperty('--xv-download-progress', `${progress.percent * 3.6}deg`);
-      if (job && !downloadedBefore) {
-        button.textContent = describeDownloadJob(job, true);
-      } else if (downloadedBefore) {
-        button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v9.17l3.59-3.59L18 10l-6 6-6-6 1.41-1.42L11 12.17V3zM4 14v4a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-4h-2v4a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4z"/></svg>';
-      } else {
-        button.textContent = '⬇';
-      }
-      button.title = job && !downloadedBefore
+      renderDownloadButtonContent(button,
+        lookingUp ? uiText('获取中') : job && !downloadedBefore ? uiText(describeDownloadJob(job, true)) : '⬇',
+        downloadedBefore);
+      button.title = lookingUp ? uiText('正在获取视频地址…') : job && !downloadedBefore
         ? uiText(describeDownloadJob(job, false))
         : uiText(downloadedBefore ? '已下载过媒体；点击可再次下载' : '下载图片/视频/GIF');
       button.setAttribute('aria-label', button.title);
@@ -809,7 +1029,7 @@
       if (controller) job.controllers.add(controller);
       job.itemProgress[index].status = 'downloading';
       try {
-        const blob = await fetchBlobWithRetry(item.url, {
+        let blob = await fetchBlobWithRetry(item.url, {
           signal: controller ? controller.signal : null,
           onRequestHandle: (request, active) => {
             if (!request || !job.requests) return;
@@ -840,6 +1060,20 @@
           },
         });
         const progress = job.itemProgress[index];
+        if (item.convertToGif) {
+          progress.status = 'converting-gif';
+          job.updatedAt = now();
+          scheduleDownloadUiRefresh();
+          blob = await convertMp4BlobToGif(blob, {
+            signal: controller ? controller.signal : null,
+            onProgress: (completed, total) => {
+              progress.gifFramesCompleted = completed;
+              progress.gifFramesTotal = total;
+              job.updatedAt = now();
+              scheduleDownloadUiRefresh();
+            },
+          });
+        }
         progress.loaded = blob.size;
         progress.total = blob.size;
         progress.totalKnown = true;
@@ -988,21 +1222,32 @@
   }
 
   async function handleDownloadClick(article, author, statusId) {
-    const existing = downloadJobs.get(String(statusId || ''));
+    const id = String(statusId || '');
+    if (pendingDownloadStarts.has(id)) { showToast('正在获取视频地址…'); return; }
+    const existing = downloadJobs.get(id);
     if (isActiveDownloadJob(existing)) { toggleDownloadPopover(true); return; }
     if (isDownloadedPostRecorded(statusId)
       && !uiConfirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
     let items = collectDownloadItems(article, statusId);
     if (needsOnDemandVideoLookup(article, statusId)) {
+      pendingDownloadStarts.add(id);
+      scheduleDownloadUiRefresh();
       showToast('正在获取视频地址…');
-      const found = await requestTweetDetailMedia(statusId);
-      if (found) items = collectDownloadItems(article, statusId);
+      try {
+        const found = await requestTweetDetailMedia(statusId);
+        if (found) items = collectDownloadItems(article, statusId);
+      } catch (error) {
+        debugLog('download media lookup failed:', error);
+      } finally {
+        pendingDownloadStarts.delete(id);
+        scheduleDownloadUiRefresh();
+      }
     }
     if (!items.length) {
       showToast(getMissingMediaMessage(article), IS_VIOLENTMONKEY ? 7000 : undefined);
       return;
     }
-    const activeAfterLookup = downloadJobs.get(String(statusId || ''));
+    const activeAfterLookup = downloadJobs.get(id);
     if (isActiveDownloadJob(activeAfterLookup)) { toggleDownloadPopover(true); return; }
     const postDate = article.querySelector('time')?.getAttribute('datetime') || '';
     startDownloadJob(items, author, statusId, extractText(article), postDate);
@@ -1015,6 +1260,50 @@
     return !!(article.closest && article.closest('[data-testid="notification"]'));
   }
 
+  function findTopLevelArticleElement(article, selector) {
+    return [...article.querySelectorAll(selector)].find((element) => (
+      !element.closest || element.closest('article') === article
+    )) || null;
+  }
+
+  function findGuestDownloadActionPlacement(article) {
+    const reply = findTopLevelArticleElement(article, '[data-engagement-action="reply"]');
+    const repost = findTopLevelArticleElement(article, '[data-engagement-action="retweet"]');
+    const like = findTopLevelArticleElement(article, '[data-engagement-action="like"]');
+    const share = findTopLevelArticleElement(article, '[data-engagement-action="share"]');
+    const row = reply && reply.parentElement;
+    if (!row || repost?.parentElement !== row || like?.parentElement !== row || !share) return null;
+    let trailing = share;
+    for (let depth = 0; depth < 4 && trailing.parentElement && trailing.parentElement !== row; depth++) {
+      trailing = trailing.parentElement;
+    }
+    if (trailing.parentElement !== row) return null;
+    return { host: row, before: trailing };
+  }
+
+  function placeDownloadControls(article, controls) {
+    const group = findTopLevelArticleElement(article, '[role="group"]');
+    if (group) {
+      controls.classList.remove('guest-actions', 'floating');
+      controls.classList.add('in-group');
+      if (controls.parentElement !== group) group.appendChild(controls);
+      return;
+    }
+    const guestPlacement = findGuestDownloadActionPlacement(article);
+    if (guestPlacement) {
+      controls.classList.remove('floating');
+      controls.classList.add('in-group', 'guest-actions');
+      if (controls.parentElement !== guestPlacement.host || controls.nextSibling !== guestPlacement.before) {
+        guestPlacement.host.insertBefore(controls, guestPlacement.before);
+      }
+      return;
+    }
+    controls.classList.remove('in-group', 'guest-actions');
+    controls.classList.add('floating');
+    if (!article.style.position) article.style.position = 'relative';
+    if (controls.parentElement !== article) article.appendChild(controls);
+  }
+
   function injectDownloadButtons(scope) {
     if (!state.settings.mediaDownload) return;
     const root = (scope && scope.querySelectorAll) ? scope : document;
@@ -1025,7 +1314,11 @@
         article.querySelectorAll('.BetterX-download-controls').forEach((control) => control.remove());
         return;
       }
-      if (article.querySelector('.BetterX-download-controls')) return;
+      const existingControls = article.querySelector('.BetterX-download-controls');
+      if (existingControls) {
+        placeDownloadControls(article, existingControls);
+        return;
+      }
       const statusId = extractStatusIdFromUrl(getStatusLink(article));
       // 没有帖子 ID 的通知/推荐卡片无法稳定命名和隔离任务，不注入下载控件。
       if (!statusId) return;
@@ -1033,7 +1326,6 @@
       const hasReg = statusId && (mediaRegistry.has(String(statusId)) || cardRegistry.has(String(statusId)));
       if (!hasDomMedia && !hasReg) return;
       const author = extractAuthor(article);
-      const group = article.querySelector('[role="group"]');
       const controls = document.createElement('span');
       controls.className = 'BetterX-download-controls';
       controls.dataset.statusId = String(statusId || '');
@@ -1056,12 +1348,7 @@
       }, true);
       controls.append(btn, cancel);
       localizeBetterXTree(controls);
-      if (group) { controls.classList.add('in-group'); group.appendChild(controls); }
-      else {
-        controls.classList.add('floating');
-        if (!article.style.position) article.style.position = 'relative';
-        article.appendChild(controls);
-      }
+      placeDownloadControls(article, controls);
     });
     scheduleDownloadUiRefresh();
   }

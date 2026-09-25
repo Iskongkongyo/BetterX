@@ -79,6 +79,7 @@
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
           if (node.id === 'BetterX-root' || node.closest && node.closest('#BetterX-root')) continue;
+          dismissLoggedOutPostObstructions(node);
           if (state.settings.hideAds) sweepStandaloneAds(node);
           if (state.settings.hideNfl) sweepNflEntries(node);
           harvestFollowingControlsFromRoot(node);

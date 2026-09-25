@@ -1,7 +1,7 @@
 # 更好的 X（BetterX）
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.6.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-3.7.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
@@ -91,7 +91,7 @@
 | 关键词与排除词 | 在“设置 → 关键词与排除词”中添加 |
 | 内容净化 | 在“设置 → 内容净化”中调整黄推过滤、白名单等 |
 | 界面与宽屏 | 在“设置 → 界面净化与宽屏”中调整 |
-| 下载功能 | 在“设置 → 下载功能”中管理下载、ZIP 与命名规则 |
+| 下载功能 | 在“设置 → 下载功能”中管理下载、GIF下载格式、ZIP 与命名规则 |
 | 主页增强 | 在“设置 → 常用功能”中设置默认页签、帖子排序和长文展开 |
 | 其他设置 | Firefox 兼容、徽标、记录上限、主题等可在对应设置项中调整 |
 

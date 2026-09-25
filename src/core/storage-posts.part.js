@@ -1019,6 +1019,12 @@
       }
       // v3.6.0 新增 NFL 入口过滤；默认隐藏 X 右侧栏中的球队与赛程卡片。
       if (revision < 32 && input.hideNfl == null) input.hideNfl = DEFAULT_SETTINGS.hideNfl;
+      if (revision < 33 && input.gifDownloadFormat == null) {
+        input.gifDownloadFormat = DEFAULT_SETTINGS.gifDownloadFormat;
+      }
+      if (revision < 34 && input.gifDownloadFormatEnabled == null) {
+        input.gifDownloadFormatEnabled = DEFAULT_SETTINGS.gifDownloadFormatEnabled;
+      }
       // v2.7.0 新增下载命名模板；沿用原“用户名_帖子 ID”的默认命名。
       if (revision < 19) {
         if (input.downloadFileNameTemplate == null) input.downloadFileNameTemplate = DEFAULT_SETTINGS.downloadFileNameTemplate;

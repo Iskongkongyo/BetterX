@@ -15,7 +15,7 @@ assert.equal(
 );
 
 const panelSource = await readFile(new URL('../src/ui/panel.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v3.6.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url), 'utf8');
 const compactedSource = compactPanelTemplate(panelSource);
 const opening = 'panel.innerHTML = uiHtml`';
 const boundary = 'const fileInput';
@@ -35,9 +35,26 @@ assert.match(builtHtml, /<section class="BetterX-view BetterX-settings-view"/);
 assert.match(builtHtml, /id="BetterX-download-advanced"/);
 assert.match(builtHtml, /id="BetterX-hide-nfl"[\s\S]*id="BetterX-hideads"/,
   '关闭 NFL 开关应位于关闭广告上方');
+assert.match(builtHtml, /在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”/,
+  '取消年龄限制说明应提示用户检查 X 的敏感内容设置');
 const downloadHistoryIndex = builtHtml.indexOf('id="BetterX-track-downloaded-posts"');
 const downloadAdvancedIndex = builtHtml.indexOf('id="BetterX-download-advanced"');
 const saveDownloadNamingIndex = builtHtml.indexOf('data-action="save-download-naming"');
+const mediaDownloadIndex = builtHtml.indexOf('id="BetterX-mediadl"');
+const gifFormatIndex = builtHtml.indexOf('id="BetterX-gif-download-format"');
+const gifFormatEnabledIndex = builtHtml.indexOf('id="BetterX-gif-download-format-enabled"');
+const downloadZipIndex = builtHtml.indexOf('id="BetterX-dlzip"');
+assert.ok(mediaDownloadIndex < gifFormatEnabledIndex && gifFormatEnabledIndex < gifFormatIndex && gifFormatIndex < downloadZipIndex,
+  'GIF 格式开关与选择应位于一键下载开关下方、ZIP 设置上方');
+assert.match(builtHtml, /id="BetterX-gif-download-format-enabled" \/> GIF内容下载格式/,
+  'GIF 内容下载格式应带独立勾选框');
+assert.match(builtHtml, /id="BetterX-gif-download-format" aria-label="GIF内容下载格式"/,
+  'GIF 格式选择应使用新名称');
+assert.match(builtHtml, /id="BetterX-gif-download-format"[\s\S]*?<option value="mp4">MP4<\/option>[\s\S]*?<option value="gif">GIF<\/option>/,
+  'GIF 格式选择应提供 MP4 和 GIF 两项，并将 MP4 放在默认位置');
+const stylesSource = await readFile(new URL('../src/ui/styles.part.js', import.meta.url), 'utf8');
+assert.match(stylesSource, /\.BetterX-profile-default-view-row, \.BetterX-gif-format-row \{ flex-wrap: nowrap; justify-content: space-between; \}/,
+  'GIF 格式选择应与用户主页默认页签使用相同的横向布局');
 assert.ok(downloadHistoryIndex < downloadAdvancedIndex, '下载记录开关应位于下载高级设置折叠区外');
 assert.ok(downloadAdvancedIndex < saveDownloadNamingIndex, '自定义命名设置应位于下载高级设置折叠区内');
 assert.match(

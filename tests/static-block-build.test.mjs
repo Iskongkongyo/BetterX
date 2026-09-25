@@ -17,7 +17,7 @@ assert.match(compactedFixture, /const FIXTURE[^\r\n]+\}\);/);
 assert.match(compactedFixture, /keep  two spaces/);
 assert.match(compactedFixture, /\n\n  function afterFixture/);
 
-const release = await readFile(new URL('../更好的X（BetterX）v3.6.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url), 'utf8');
 const cases = [
   ['../src/00-bootstrap-i18n.part.js', 'const UI_LANGUAGE = detectUiLanguage();', 'function uiText'],
   ['../src/core/config-state.part.js', 'const FILTERS = [', 'const PROFILE_DEFAULT_VIEW_OPTIONS ='],

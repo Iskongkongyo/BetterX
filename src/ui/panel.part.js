@@ -192,6 +192,14 @@
           <div class="BetterX-adv-body">
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF</label>
             <div class="BetterX-adv-label">开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。</div>
+            <div class="BetterX-row BetterX-gif-format-row">
+              <label class="BetterX-field inline"><input type="checkbox" id="BetterX-gif-download-format-enabled" /> GIF内容下载格式</label>
+              <select class="BetterX-select" id="BetterX-gif-download-format" aria-label="GIF内容下载格式">
+                <option value="mp4">MP4</option>
+                <option value="gif">GIF</option>
+              </select>
+            </div>
+            <div class="BetterX-adv-label">默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。</div>
             <label class="BetterX-field inline BetterX-download-zip-option"><input type="checkbox" id="BetterX-dlzip" /> 下载多个媒体自动压缩 ZIP 包</label>
             <div class="BetterX-adv-label BetterX-download-zip-option">默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。</div>
             <label class="BetterX-field inline BetterX-download-history-option"><input type="checkbox" id="BetterX-track-downloaded-posts" /> 记录已经下载过的帖子</label>
@@ -230,7 +238,7 @@
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label>
             <div class="BetterX-adv-label">把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label>
-            <div class="BetterX-adv-label">移除敏感内容遮罩并显示原图或视频；只影响当前页面，不会修改账号设置。若暂时没显示，请稍等或重新开关一次。</div>
+            <div class="BetterX-adv-label">移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-auto-expand-post-text" /> 自动展开帖子里“显示更多”</label>
             <div class="BetterX-adv-label">自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。</div>
             <div class="BetterX-row BetterX-profile-default-view-row">

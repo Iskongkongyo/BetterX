@@ -20,6 +20,7 @@
     redirectBareProfileToPreferredView();
     harvestFollowingControlsFromRoot(document);
     startObserver();
+    dismissLoggedOutPostObstructions(document);
     scanArticles(document);
     applyAdHiding();
     applyNflHiding();
@@ -28,6 +29,7 @@
     applyMediaGridLayout();
     applyAgeBypass();
     applyLayoutEnhancements();
+    maybeShowAgeBypassEnableNotice();
     installCleanupTimer();
     installNetworkHookTimer();
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -60,7 +62,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v3.6.0 started');
+    debugLog('v3.7.0 started');
   }
 
   function waitForPageReady() {

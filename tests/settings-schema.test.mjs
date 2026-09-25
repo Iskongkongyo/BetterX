@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v3.6.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url);
 let source = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(source, startupPattern, '找不到脚本启动标记');
@@ -76,6 +76,7 @@ const sanitized = JSON.parse(JSON.stringify(api.sanitizeSettings({
   useMobileBadgeHandle: true,
   mobileBadgeHandleTop: 12.6,
   profileDefaultView: 'invalid',
+  gifDownloadFormat: 'invalid',
 })));
 assert.equal(sanitized.keywordMode, api.DEFAULT_SETTINGS.keywordMode);
 assert.equal(sanitized.maxPosts, 5000);
@@ -90,6 +91,9 @@ assert.equal(sanitized.hideAppBadge, true);
 assert.equal(sanitized.useMobileBadgeHandle, false);
 assert.equal(sanitized.mobileBadgeHandleTop, 13);
 assert.equal(sanitized.profileDefaultView, api.DEFAULT_SETTINGS.profileDefaultView);
+assert.equal(sanitized.gifDownloadFormat, 'mp4');
+assert.equal(sanitized.gifDownloadFormatEnabled, true);
+assert.equal(api.sanitizeSettings({ gifDownloadFormatEnabled: false }).gifDownloadFormatEnabled, false);
 
 const controls = new Map();
 const panel = {
@@ -116,12 +120,16 @@ api.state.settings = {
   hideAds: false,
   hideNfl: false,
   profileDefaultView: 'video',
+  gifDownloadFormatEnabled: false,
+  gifDownloadFormat: 'gif',
 };
 api.syncSettingsControls();
 assert.equal(controls.get('#BetterX-theme').value, 'dark');
 assert.equal(controls.get('#BetterX-hideads').checked, false);
 assert.equal(controls.get('#BetterX-hide-nfl').checked, false);
 assert.equal(controls.get('#BetterX-profile-default-view').value, 'video');
+assert.equal(controls.get('#BetterX-gif-download-format-enabled').checked, false);
+assert.equal(controls.get('#BetterX-gif-download-format').value, 'gif');
 
 assert.equal(api.readIntegerSetting({ value: '99999' }, 'maxPosts'), 5000);
 assert.equal(api.readIntegerSetting({ value: '7' }, 'flashMs', 1000), 7000);
@@ -154,6 +162,12 @@ assert.equal(api.SOURCE_EXACT_LABELS.Notifications, '通知');
 
 assert.equal(api.SETTINGS_SCHEMA.mediaDownload.control, undefined, '下载控件仍应使用原专用逻辑');
 assert.equal(api.SETTINGS_SCHEMA.downloadZip.control, undefined, '下载 UI 不应纳入本次通用绑定');
+assert.match(source, /settingKey === 'bypassAgeRestriction'[\s\S]*navigateToSensitiveContentSettings\(\)/,
+  '仅在用户手动开启取消年龄限制时跳转到设置页');
+assert.match(source, /location\.assign\(SENSITIVE_CONTENT_SETTINGS_URL\)/,
+  '敏感内容设置应在当前标签页打开');
+assert.match(source, /sessionStorage\.setItem\(SENSITIVE_CONTENT_NOTICE_SESSION_KEY, '1'\)/,
+  '设置提示应传递到目标页面后再显示');
 
 const mappedActions = [
   'set-panel-view', 'sync-notification-users', 'search-notification-users',

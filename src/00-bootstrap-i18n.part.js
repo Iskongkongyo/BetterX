@@ -5,7 +5,7 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      3.6.0
+// @version      3.7.0
 // @description  管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
 // @description:zh-CN 管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF（多媒体可自动压缩 ZIP）、取消年龄限制、记录与管理浏览过的帖子，并支持搜索、排序、关键词、备份、主题与 IndexedDB 持久化。
 // @description:zh-TW 管理 X 貼文通知訂閱狀態、自動隱藏成人引流帳號與廣告、簡化介面與寬螢幕、一鍵下載圖片/影片/GIF（多媒體可自動壓縮為 ZIP）、解除年齡限制、記錄與管理瀏覽過的貼文，並支援搜尋、排序、關鍵字、備份、主題與 IndexedDB 持久化。
@@ -13,6 +13,7 @@
 // @description:en Manage X post-notification subscriptions, hide adult spam and ads, simplify and widen the interface, download images/videos/GIFs with optional ZIP packaging, bypass age gates, and save browsed posts with search, sorting, keywords, backups, themes, and IndexedDB persistence.
 // @author        流萤可爱捏
 // @match        https://x.com/*
+// @match        https://m.x.com/*
 // @match        https://twitter.com/*
 // @grant        GM_addStyle
 // @grant        GM_getValue
@@ -128,6 +129,8 @@
     ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'],
     ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'],
     ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'],
+    ['GIF内容下载格式', 'GIF 內容下載格式', 'GIF コンテンツの保存形式', 'GIF content download format'],
+    ['默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。', '預設開啟；關閉時 GIF 內容會以原始 MP4 下載。選擇 GIF 時會在瀏覽器內轉換，耗時更長、檔案更大。', '既定で有効です。オフにすると GIF コンテンツは元の MP4 形式で保存されます。GIF を選ぶとブラウザー内で変換するため、時間がかかりファイルも大きくなります。', 'Enabled by default. When off, GIF content is saved as the original MP4. Selecting GIF converts it in the browser, which takes longer and produces larger files.'],
     ['自定义下载文件/压缩包名', '自訂下載檔案／壓縮檔名稱', 'ダウンロードファイル／ZIP 名をカスタマイズ', 'Customize downloaded file / ZIP names'],
     ['已自定义', '已自訂', 'カスタマイズ済み', 'Customized'],
     ['下载多个媒体自动压缩 ZIP 包', '下載多個媒體時自動壓縮 ZIP', '複数メディアを ZIP にまとめる', 'Package multiple media files as ZIP'],
@@ -163,11 +166,12 @@
     ['以下页面中的帖子不会保存到 BetterX：', '以下頁面中的貼文不會儲存到 BetterX：', '次のページにあるポストは BetterX に保存しません：', 'Posts from these pages are not saved to BetterX:'],
     ['下载任务', '下載工作', 'ダウンロードタスク', 'Download tasks'], ['暂无下载任务', '暫無下載工作', 'ダウンロードはありません', 'No download tasks'],
     ['下载', '下載', 'ダウンロード', 'Download'], ['下载中', '下載中', 'ダウンロード中', 'Downloading'],
+    ['转 GIF', '轉 GIF', 'GIF 変換', 'GIF'], ['正在转换 GIF', '正在轉換 GIF', 'GIF に変換中', 'Converting to GIF'],
     ['排队中', '排隊中', '待機中', 'Queued'], ['排队', '排隊', '待機', 'Queued'], ['正在打包', '正在打包', '圧縮中', 'Packing'], ['打包', '打包', '圧縮', 'Packing'],
     ['正在保存', '正在儲存', '保存中', 'Saving'], ['正在取消下载', '正在取消下載', 'キャンセル中', 'Cancelling download'], ['取消中', '取消中', 'キャンセル中', 'Cancelling'],
     ['下载完成', '下載完成', 'ダウンロード完了', 'Download complete'], ['已取消', '已取消', 'キャンセル済み', 'Cancelled'], ['失败：', '失敗：', '失敗：', 'Failed: '],
     ['重试', '重試', '再試行', 'Retry'], ['查看下载任务', '查看下載工作', 'ダウンロードを表示', 'View downloads'], ['取消下载', '取消下載', 'ダウンロードをキャンセル', 'Cancel download'],
-    ['下载图片/视频/GIF', '下載圖片/影片/GIF', '画像/動画/GIFを保存', 'Download images/videos/GIFs'], ['正在获取视频地址…', '正在取得影片網址…', '動画 URL を取得中…', 'Getting video URL…'],
+    ['下载图片/视频/GIF', '下載圖片/影片/GIF', '画像/動画/GIFを保存', 'Download images/videos/GIFs'], ['正在获取视频地址…', '正在取得影片網址…', '動画 URL を取得中…', 'Getting video URL…'], ['获取中', '取得中', '取得中', 'Looking up'],
     ['已下载过媒体；点击可再次下载', '已下載過媒體；點擊可再次下載', 'ダウンロード済みです。クリックすると再保存できます', 'Downloaded before; click to download again'],
     ['个任务', '個工作', '件のタスク', ' tasks'], ['查看下载任务：', '查看下載工作：', 'ダウンロードを表示：', 'View downloads: '],
     ['命名效果预览：', '命名效果預覽：', 'ファイル名プレビュー：', 'Filename preview: '],
@@ -196,7 +200,8 @@
     ['隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。', '隱藏時間軸廣告、廣告卡片和「訂閱 Premium」提示。廣告貼文不會儲存到 BetterX，關閉後會重新顯示。', 'タイムライン広告、広告カード、「Premium に登録」の案内を非表示にします。広告ポストは BetterX に保存されず、オフにすると再表示します。', 'Hides timeline ads, ad cards, and Subscribe to Premium prompts. Ad posts are not saved to BetterX and reappear when this is turned off.'],
     ['隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。', '隱藏 X 右側欄中的 NFL 球隊、賽程和比賽入口；關閉此開關後會恢復顯示。', 'X の右サイドバーにある NFL のチーム、日程、試合への入口を非表示にします。オフにすると再表示します。', 'Hides NFL teams, schedules, and game links in X’s right sidebar. Turn it off to show them again.'],
     ['把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。', '把貼文裡的多個媒體改成網格：2 個並排，3 個左大右二，4 個按 2×2 排列。', 'ポスト内の複数メディアをグリッド表示にします。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Shows multiple media items in a grid: two side by side, three with one large item on the left, and four in a 2×2 layout.'],
-    ['移除敏感内容遮罩并显示原图或视频；只影响当前页面，不会修改账号设置。若暂时没显示，请稍等或重新开关一次。', '移除敏感內容遮罩並顯示原圖或影片；只影響目前頁面，不會修改帳號設定。若暫時沒顯示，請稍候或重新開關一次。', 'センシティブな内容の覆いを外し、元の画像や動画を表示します。現在のページだけに作用し、アカウント設定は変更しません。表示されない時は少し待つか、スイッチを入れ直してください。', 'Removes the sensitive-content cover and shows the original image or video. It only affects the current page and does not change account settings. If nothing appears, wait briefly or toggle it again.'],
+    ['移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”', '移除敏感內容遮罩並顯示原圖或影片；建議在新開啟的視窗中勾選「顯示可能含有敏感內容的媒體內容」', 'センシティブな内容の覆いを外して元の画像や動画を表示します。新しく開いたウィンドウで「センシティブな内容を含む可能性のあるメディアを表示する」を有効にすることをおすすめします。', 'Removes sensitive-content covers and shows original images or videos. In the newly opened window, we recommend enabling “Display media that may contain sensitive content”.'],
+    ['如果您没有勾选的话，麻烦您勾选上“显示可能含有敏感内容的媒体内容”，大部分成人内容会自动显示', '如果尚未勾選，請勾選「顯示可能含有敏感內容的媒體內容」，大部分成人內容便會自動顯示', 'まだ有効にしていない場合は、「センシティブな内容を含む可能性のあるメディアを表示する」を有効にしてください。ほとんどの成人向けコンテンツが自動的に表示されます。', 'If it is not already enabled, please enable “Display media that may contain sensitive content”. Most adult content will then appear automatically.'],
     ['自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。', '自動點開貼文內文裡的「顯示更多 / Show more」；不會展開回覆或側欄內容。', 'ポスト本文の「さらに表示 / Show more」を自動で開きます。返信やサイドバーの内容は展開しません。', 'Automatically opens “Show more” in post text. Replies and sidebar content are not expanded.'],
     ['进入用户主页时自动切换到所选页签；帖子详情、回复和关注者页面不受影响。', '進入使用者主頁時自動切換到所選分頁；貼文詳情、回覆和追蹤者頁面不受影響。', 'プロフィールを開くと選んだタブへ自動で切り替えます。ポスト詳細、返信、フォロワーページには影響しません。', 'Automatically switches to the selected tab when you open a profile. Post details, replies, and follower pages are unaffected.'],
     ['如果 X 一直停在启动图标，可尝试开启。开启后会停用部分网络数据读取；点击开关可先查看影响。', '如果 X 一直停在啟動圖示，可嘗試開啟。開啟後會停用部分網路資料讀取；點擊開關可先查看影響。', 'X が起動ロゴのまま止まる場合にお試しください。有効にすると一部のネットワークデータ読み取りを停止します。切り替える前に影響を確認できます。', 'Try this if X remains stuck on its startup logo. It disables some network-data reading; click the switch to review the impact first.'],

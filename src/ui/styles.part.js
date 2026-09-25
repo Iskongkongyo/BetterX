@@ -212,6 +212,9 @@
       .BetterX-dl-cancel { min-width: 24px; width: 24px; padding: 0; color: rgb(244,33,46); font-size: 17px; }
       .BetterX-dl-cancel:hover { background: rgba(244,33,46,.12); }
       .BetterX-download-controls.in-group { align-self: center; }
+      .BetterX-download-controls.guest-actions { min-width: 0; flex: 1 1 0%; align-self: center; }
+      .BetterX-download-controls.guest-actions .BetterX-dl-btn,
+      .BetterX-download-controls.guest-actions .BetterX-dl-cancel { transform: none !important; animation: none !important; }
       .BetterX-download-controls.floating .BetterX-dl-btn,
       .BetterX-download-controls.floating .BetterX-dl-cancel { color: #fff; }
       .BetterX-download-controls.floating .BetterX-dl-btn.is-downloaded { color: rgb(29,155,240); }
@@ -629,9 +632,9 @@
       .BetterX-adultspam-master-row { flex-wrap: nowrap; justify-content: space-between; }
       .BetterX-adultspam-master-row > .BetterX-field { flex: 1 1 auto; min-width: 0; }
       .BetterX-adultspam-master-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; }
-      .BetterX-profile-default-view-row { flex-wrap: nowrap; justify-content: space-between; }
-      .BetterX-profile-default-view-row > .BetterX-field { flex: 1 1 auto; min-width: 0; }
-      .BetterX-profile-default-view-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; }
+      .BetterX-profile-default-view-row, .BetterX-gif-format-row { flex-wrap: nowrap; justify-content: space-between; }
+      .BetterX-profile-default-view-row > .BetterX-field, .BetterX-gif-format-row > .BetterX-field { flex: 1 1 auto; min-width: 0; }
+      .BetterX-profile-default-view-row > .BetterX-select, .BetterX-gif-format-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; }
       .BetterX-tag-editor {
         display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 8px;
         border: 1px solid var(--xv-border); border-radius: 10px; background: var(--xv-input-bg);

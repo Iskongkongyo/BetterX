@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const downloadModule = await readFile(new URL('../src/download/download.part.js', import.meta.url));
 const actual = createHash('sha256').update(downloadModule).digest('hex').toUpperCase();
-const expected = '5508DA68D5409B5DD00AB3C217616F457580B0B732F6E5FC7845B5A0B64784B8';
+const expected = '89FF1482A6AA5AF4057B66312C4872B25985440A84579C64E2A8F98A8881F601';
 assert.equal(actual, expected, '下载模块已变更；若是有意修改，请在完成回归后更新基准哈希');
 
-console.log('Download module matches the untouched v3.3.0 baseline.');
+console.log('Download module matches the reviewed v3.7.0 click-stable GIF and guest-layout baseline.');

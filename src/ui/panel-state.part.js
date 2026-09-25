@@ -38,11 +38,18 @@
     }
     const downloadControlsDisabled = !state.settings.mediaDownload;
     [
-      state.downloadZipEl, state.downloadFileNameTemplateEl, state.downloadZipNameTemplateEl,
+      state.gifDownloadFormatEnabledEl, state.downloadZipEl, state.downloadFileNameTemplateEl, state.downloadZipNameTemplateEl,
       state.downloadNameRegexEl, state.downloadNameReplacementEl, state.trackDownloadedPostsEl,
     ].forEach((control) => {
       if (control) control.disabled = downloadControlsDisabled;
     });
+    if (state.gifDownloadFormatEl) {
+      state.gifDownloadFormatEl.disabled = downloadControlsDisabled || state.settings.gifDownloadFormatEnabled === false;
+    }
+    if (state.gifDownloadFormatEnabledEl) {
+      const label = state.gifDownloadFormatEnabledEl.closest('label');
+      if (label) label.classList.toggle('is-disabled', downloadControlsDisabled);
+    }
     if (state.downloadZipEl) {
       const label = state.downloadZipEl.closest('label');
       if (label) label.classList.toggle('is-disabled', downloadControlsDisabled);
@@ -850,7 +857,10 @@
       if (!control) continue;
       control.addEventListener('change', () => {
         const value = property === 'checked' ? !!control.checked : control.value;
+        const manuallyEnabledAgeBypass = settingKey === 'bypassAgeRestriction'
+          && value === true && state.settings.bypassAgeRestriction !== true;
         setSettingsPartial({ [settingKey]: value });
+        if (manuallyEnabledAgeBypass) navigateToSensitiveContentSettings();
       });
     }
   }

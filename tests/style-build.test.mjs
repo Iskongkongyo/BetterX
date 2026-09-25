@@ -16,7 +16,7 @@ assert.equal(
 );
 
 const styleSource = await readFile(new URL('../src/ui/styles.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v3.6.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url), 'utf8');
 const compactedSource = compactStyleTemplate(styleSource);
 const opening = 'addStyle(`';
 const closing = '`);';
