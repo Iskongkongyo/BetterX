@@ -15,7 +15,7 @@ assert.equal(
 );
 
 const panelSource = await readFile(new URL('../src/ui/panel.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.8.0.js', import.meta.url), 'utf8');
 const compactedSource = compactPanelTemplate(panelSource);
 const opening = 'panel.innerHTML = uiHtml`';
 const boundary = 'const fileInput';
@@ -35,6 +35,12 @@ assert.match(builtHtml, /<section class="BetterX-view BetterX-settings-view"/);
 assert.match(builtHtml, /id="BetterX-download-advanced"/);
 assert.match(builtHtml, /id="BetterX-hide-nfl"[\s\S]*id="BetterX-hideads"/,
   '关闭 NFL 开关应位于关闭广告上方');
+assert.doesNotMatch(builtHtml, /BetterX-markread|点帖子空白处算已读/,
+  '高级设置不再提供点击帖子空白处算已读的开关');
+assert.match(builtHtml, /id="BetterX-post-limit-warning" \/> 帖子上限提示/,
+  '其他功能应使用帖子上限提示名称');
+assert.match(builtHtml, /data-resize-edge="left"[\s\S]*data-resize-edge="right"/,
+  'PC 面板应提供左右两侧的宽度拖动边缘');
 assert.match(builtHtml, /在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”/,
   '取消年龄限制说明应提示用户检查 X 的敏感内容设置');
 const downloadHistoryIndex = builtHtml.indexOf('id="BetterX-track-downloaded-posts"');

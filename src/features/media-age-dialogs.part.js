@@ -185,6 +185,8 @@
 
   const LOGGED_OUT_POST_DIALOG_SELECTOR = '[role="dialog"][aria-modal="true"][data-interaction="app-store-obstruction"]';
   const LOGGED_OUT_POST_PANEL_SELECTOR = '[data-interaction="app-store-obstruction-panel"]';
+  const LOGGED_OUT_POST_FOOTER_SELECTOR = 'aside.fixed.bottom-0.isolate.z-40';
+  const LOGGED_OUT_POST_FOOTER_LINK_SELECTOR = 'a[href*="launch_app_store=true"][href*="ct=post-timeline"]';
   const LOGGED_OUT_POST_DISMISS_MAX_ATTEMPTS = 8;
   const loggedOutPostDialogAttempts = new WeakMap();
 
@@ -197,8 +199,23 @@
     return dialogs;
   }
 
+  function removeLoggedOutPostFooterPanels(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    const panels = new Set(scope.querySelectorAll(LOGGED_OUT_POST_FOOTER_SELECTOR));
+    if (scope.matches && scope.matches(LOGGED_OUT_POST_FOOTER_SELECTOR)) panels.add(scope);
+    const ancestor = scope.closest && scope.closest(LOGGED_OUT_POST_FOOTER_SELECTOR);
+    if (ancestor) panels.add(ancestor);
+    let removed = 0;
+    for (const panel of panels) {
+      if (panel.isConnected === false || !panel.querySelector(LOGGED_OUT_POST_FOOTER_LINK_SELECTOR)) continue;
+      panel.remove();
+      removed++;
+    }
+    return removed;
+  }
+
   function dismissLoggedOutPostObstructions(root = document) {
-    let dismissed = 0;
+    let dismissed = removeLoggedOutPostFooterPanels(root);
     for (const dialog of getLoggedOutPostDialogs(root)) {
       if ((dialog.getAttribute && dialog.getAttribute('data-state') === 'closed')
           || dialog.isConnected === false
@@ -502,7 +519,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.7.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.8.0',
       userscriptManager: USERSCRIPT_MANAGER || 'unknown',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,

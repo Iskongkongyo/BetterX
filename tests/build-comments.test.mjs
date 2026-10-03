@@ -41,7 +41,7 @@ assert.match(stripped, /const tricky = \/\["`\]\//);
 assert.match(stripped, /"\/\/ string text"; \/\/ inline comment/);
 assert.doesNotMatch(stripped, /inline comment remains conservative\n\n$/, '代码区空行应从发布物移除');
 
-const release = await readFile(new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.8.0.js', import.meta.url), 'utf8');
 assert.ok(release.startsWith('// ==UserScript=='));
 const body = release.slice(release.indexOf('// ==/UserScript==') + '// ==/UserScript=='.length);
 assert.doesNotMatch(body, /^\s*\/\/ pinned 是 BetterX/m, '普通源码注释应从发布物移除');

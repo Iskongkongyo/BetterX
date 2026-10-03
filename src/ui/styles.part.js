@@ -73,6 +73,7 @@
       #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge {
         width: 15px; height: 76px; min-height: 76px; padding: 0; border-radius: 999px 0 0 999px;
         background: #1d9bf0; box-shadow: -1px 2px 8px rgba(0,0,0,.2); opacity: .56 !important;
+        position: relative; z-index: 2;
       }
       #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge::after {
         content: '‹'; display: block; color: rgba(255,255,255,.92); font-size: 16px; font-weight: 400; line-height: 1;
@@ -493,6 +494,17 @@
         height: auto;
         max-height: none;
       }
+      #BetterX-root:not(.BetterX-mobile) #BetterX-panel {
+        min-width: min(420px, calc(100vw - 24px)); max-width: calc(100vw - 24px);
+      }
+      .BetterX-panel-resize-handle {
+        position: absolute; top: 0; bottom: 0; width: 7px; z-index: 8;
+        cursor: ew-resize; touch-action: none; user-select: none;
+      }
+      .BetterX-panel-resize-left { left: 0; }
+      .BetterX-panel-resize-right { right: 0; }
+      .BetterX-panel-resize-handle:hover { background: rgba(29,155,240,.25); }
+      #BetterX-root.BetterX-mobile .BetterX-panel-resize-handle { display: none; }
       .BetterX-header {
         flex: 0 0 auto; align-items: center; min-height: 58px; padding: 11px 14px;
         border-bottom: none; background: var(--xv-panel-bg);
@@ -726,7 +738,7 @@
           position: absolute; left: auto; right: 0; bottom: calc(200% + 20px);
           width: min(360px, calc(100vw - 16px)); max-width: calc(100vw - 16px); max-height: min(52dvh, 420px);
         }
-        #BetterX-root.BetterX-mobile.is-open #BetterX-badge,
+        #BetterX-root.BetterX-mobile.is-open:not(.BetterX-mobile-badge-collapsed) #BetterX-badge,
         #BetterX-root.BetterX-mobile.is-open #BetterX-download-pill { opacity: 0; pointer-events: none; }
         .BetterX-header { min-height: 54px; padding: 9px 11px; }
         .BetterX-title-icon { display: none; }

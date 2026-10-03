@@ -402,14 +402,12 @@
       if (id) { markClicked(id); return; }
     }
 
-    if (state.settings.markReadOnClick !== false) {
-      const interactive = target.closest('a, button, [role="button"], [role="link"], [role="menuitem"], [data-testid="caret"]');
-      if (!interactive) {
-        const article = target.closest('article');
-        if (article) {
-          const id = extractStatusIdFromUrl(getStatusLink(article));
-          if (id) markClicked(id);
-        }
+    const interactive = target.closest('a, button, [role="button"], [role="link"], [role="menuitem"], [data-testid="caret"]');
+    if (!interactive) {
+      const article = target.closest('article');
+      if (article) {
+        const id = extractStatusIdFromUrl(getStatusLink(article));
+        if (id) markClicked(id);
       }
     }
   }
@@ -420,4 +418,3 @@
       togglePanel();
     }
   }
-

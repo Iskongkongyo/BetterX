@@ -1025,6 +1025,7 @@
       if (revision < 34 && input.gifDownloadFormatEnabled == null) {
         input.gifDownloadFormatEnabled = DEFAULT_SETTINGS.gifDownloadFormatEnabled;
       }
+      if (revision < 35 && input.panelWidth == null) input.panelWidth = DEFAULT_SETTINGS.panelWidth;
       // v2.7.0 新增下载命名模板；沿用原“用户名_帖子 ID”的默认命名。
       if (revision < 19) {
         if (input.downloadFileNameTemplate == null) input.downloadFileNameTemplate = DEFAULT_SETTINGS.downloadFileNameTemplate;
@@ -1093,7 +1094,7 @@
 
   const SETTINGS_EFFECT_ORDER = [
     'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'mediaDownload',
-    'ageBypass', 'mediaGrid', 'autoExpand', 'firefoxCompatibility', 'badge',
+    'ageBypass', 'mediaGrid', 'autoExpand', 'firefoxCompatibility', 'badge', 'panelWidth',
   ];
   const SETTINGS_EFFECT_HANDLERS = {
     keywords() {
@@ -1135,6 +1136,9 @@
     },
     badge() {
       repositionBadge();
+    },
+    panelWidth() {
+      updatePanelPlacement();
     },
   };
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v3.8.0.js', import.meta.url);
 let source = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(source, startupPattern, '找不到脚本启动标记');
@@ -81,7 +81,10 @@ const sanitized = JSON.parse(JSON.stringify(api.sanitizeSettings({
 assert.equal(sanitized.keywordMode, api.DEFAULT_SETTINGS.keywordMode);
 assert.equal(sanitized.maxPosts, 5000);
 assert.equal(sanitized.downloadConcurrency, 1);
-assert.equal(sanitized.markReadOnClick, api.DEFAULT_SETTINGS.markReadOnClick);
+assert.ok(!Object.hasOwn(sanitized, 'markReadOnClick'), '点击帖子空白处算已读不再是可关闭设置');
+assert.equal(api.DEFAULT_SETTINGS.panelWidth, 520);
+assert.equal(api.sanitizeSettings({ panelWidth: 100 }).panelWidth, 420);
+assert.equal(api.sanitizeSettings({ panelWidth: 5000 }).panelWidth, 1200);
 assert.equal(sanitized.sourceFilter, api.DEFAULT_SETTINGS.sourceFilter);
 assert.deepEqual(sanitized.knownFollowedHandles, ['alice']);
 assert.equal(sanitized.notificationSubscriptionsSyncedAt, 123);

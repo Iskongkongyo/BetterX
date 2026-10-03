@@ -152,7 +152,18 @@
     if (next) updatePanelPlacement();
     if (state.panelEl) state.panelEl.style.display = next ? 'flex' : 'none';
     if (state.rootEl) state.rootEl.classList.toggle('is-open', next);
+    updateBadgeToggleLabel();
     if (next) { resetPaging(); refreshUI(); }
+  }
+
+  function updateBadgeToggleLabel() {
+    if (!state.badgeEl || !state.rootEl) return;
+    const revealOnly = state.rootEl.classList.contains('BetterX-mobile-badge-collapsed')
+      && !!state.settings.hideAppBadge;
+    const label = revealOnly ? '显示 BetterX 应用徽标'
+      : state.panelOpen ? '关闭 BetterX 面板' : '打开 BetterX 面板';
+    state.badgeEl.setAttribute('aria-label', uiText(label));
+    state.badgeEl.title = uiText(revealOnly ? '点按显示 BetterX 徽标' : label);
   }
 
   // ── 附加功能 ─────────────────────────────────────────────────────
@@ -498,6 +509,7 @@
     if (!state.rootEl || !state.badgeEl || !state.panelEl) return;
     if (state.rootEl.classList.contains('BetterX-mobile')) {
       state.rootEl.classList.remove('BetterX-panel-right');
+      state.panelEl.style.width = '';
       state.panelEl.style.left = '';
       state.panelEl.style.right = '';
       state.panelEl.style.top = '';
@@ -505,7 +517,8 @@
       return;
     }
     const rect = state.badgeEl.getBoundingClientRect();
-    const panelWidth = Math.min(window.innerWidth * 0.94, 520);
+    const panelWidth = Math.min(window.innerWidth - 24,
+      clampInt(state.settings.panelWidth, 420, 1200, DEFAULT_SETTINGS.panelWidth));
     const safeDistance = 12;
     const maxLeft = Math.max(safeDistance, window.innerWidth - panelWidth - safeDistance);
     const preferredLeft = rect.left + panelWidth > window.innerWidth - safeDistance
@@ -514,10 +527,57 @@
     const panelLeft = Math.max(safeDistance, Math.min(maxLeft, preferredLeft));
     const alignRight = preferredLeft < rect.left;
     state.rootEl.classList.toggle('BetterX-panel-right', alignRight);
+    state.panelEl.style.width = panelWidth + 'px';
     state.panelEl.style.left = panelLeft + 'px';
     state.panelEl.style.right = 'auto';
     state.panelEl.style.top = safeDistance + 'px';
     state.panelEl.style.bottom = safeDistance + 'px';
+  }
+
+  function makePanelResizable() {
+    const panel = state.panelEl;
+    if (!panel) return;
+    panel.querySelectorAll('[data-resize-edge]').forEach((handle) => {
+      const edge = handle.getAttribute('data-resize-edge');
+      let pointerId = null;
+      let startX = 0, startLeft = 0, startWidth = 0, currentWidth = 0, maxWidth = 0;
+      handle.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0 || isMobileBadgeViewport() || !state.panelOpen) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const rect = panel.getBoundingClientRect();
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startLeft = rect.left;
+        startWidth = rect.width;
+        currentWidth = startWidth;
+        maxWidth = Math.max(420, Math.min(1200, edge === 'left'
+          ? rect.right - 12 : window.innerWidth - rect.left - 12));
+        try { handle.setPointerCapture(pointerId); } catch (err) {}
+      });
+      handle.addEventListener('pointermove', (event) => {
+        if (pointerId !== event.pointerId) return;
+        event.preventDefault();
+        const delta = edge === 'left' ? startX - event.clientX : event.clientX - startX;
+        currentWidth = Math.round(Math.max(420, Math.min(maxWidth, startWidth + delta)));
+        panel.style.width = currentWidth + 'px';
+        if (edge === 'left') panel.style.left = Math.round(startLeft + startWidth - currentWidth) + 'px';
+      });
+      const endResize = (event) => {
+        if (pointerId !== event.pointerId) return;
+        if (event.type === 'pointercancel') {
+          panel.style.width = Math.round(startWidth) + 'px';
+          panel.style.left = Math.round(startLeft) + 'px';
+        } else if (currentWidth !== startWidth) {
+          state.settings.panelWidth = currentWidth;
+          queueSettingsPersist(['panelWidth']);
+        }
+        try { handle.releasePointerCapture(pointerId); } catch (err) {}
+        pointerId = null;
+      };
+      handle.addEventListener('pointerup', endResize);
+      handle.addEventListener('pointercancel', endResize);
+    });
   }
 
   function getMobileBadgeHandleTop(preferredTop) {
@@ -545,8 +605,6 @@
     const useIconBadge = isMobile || !!state.settings.useMobileBadgeOnDesktop;
     state.badgeEl.classList.toggle('mobile-mode', useIconBadge);
     state.badgeEl.classList.toggle('desktop-icon-mode', !isMobile && useIconBadge);
-    state.badgeEl.setAttribute('aria-label', uiText(collapseMobileBadge ? '显示 BetterX 应用徽标' : '打开 BetterX 面板'));
-    state.badgeEl.title = uiText(collapseMobileBadge ? '点按显示 BetterX 徽标' : '打开 BetterX 面板');
     if (isMobile) {
       state.rootEl.classList.add('BetterX-mobile');
       if (collapseMobileBadge) {
@@ -573,6 +631,7 @@
       state.rootEl.style.bottom = '';
       applyBadgePos();
     }
+    updateBadgeToggleLabel();
     updatePanelPlacement();
     refreshBadge();
     scheduleDownloadUiRefresh();

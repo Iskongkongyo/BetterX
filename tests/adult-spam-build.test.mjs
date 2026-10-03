@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import { compactAdultSpamRules } from '../scripts/strip-comments.mjs';
 
 const source = await readFile(new URL('../src/features/adult-spam.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v3.7.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.8.0.js', import.meta.url), 'utf8');
 const opening = 'const ADULT_SPAM_STRONG_TERMS = [';
 const boundary = 'function normalizeAdultSpamText';
 const extractRules = (text) => {

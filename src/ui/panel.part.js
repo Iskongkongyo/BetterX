@@ -11,6 +11,8 @@
     panel.id = 'BetterX-panel';
     panel.style.display = 'none';
     panel.innerHTML = uiHtml`
+      <div class="BetterX-panel-resize-handle BetterX-panel-resize-left" data-resize-edge="left" aria-hidden="true"></div>
+      <div class="BetterX-panel-resize-handle BetterX-panel-resize-right" data-resize-edge="right" aria-hidden="true"></div>
       <div class="BetterX-header">
         <div class="BetterX-title">
           <div class="BetterX-title-main">
@@ -267,7 +269,7 @@
           <div class="BetterX-adv-body">
             <label class="BetterX-field inline BetterX-firefox-only-setting"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label>
             <div class="BetterX-adv-label BetterX-firefox-only-setting">如果 X 一直停在启动图标，可尝试开启。开启后会停用部分网络数据读取；点击开关可先查看影响。</div>
-            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-post-limit-warning" /> 上限提示</label>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-post-limit-warning" /> 帖子上限提示</label>
             <div class="BetterX-adv-label">帖子记录接近“最大条数”时提醒你。关闭提醒后，也可以随时在这里重新开启。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标</label>
             <div class="BetterX-adv-label">在电脑上会隐藏徽标；在手机上会收成屏幕右侧的蓝色小条。点击小条、从屏幕右边缘向内滑动，或使用油猴菜单都能恢复。</div>
@@ -307,7 +309,6 @@
               <label class="BetterX-field">下载并发
                 <input type="number" min="1" max="6" step="1" class="BetterX-input small" id="BetterX-dlconcurrency" />
               </label>
-              <label class="BetterX-field inline"><input type="checkbox" id="BetterX-markread" /> 点帖子空白处算已读</label>
               <button class="BetterX-btn primary" data-action="save-advanced">应用</button>
             </div>
             <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。</div>
@@ -404,6 +405,7 @@
     downloadPopover.addEventListener('pointerdown', (event) => handleDownloadPopoverAction(event, downloadPopover), true);
     downloadPopover.addEventListener('click', (event) => handleDownloadPopoverAction(event, downloadPopover), true);
     makeBadgeDraggable();
+    makePanelResizable();
     installMobileBadgeRevealGesture();
 
     // 搜索

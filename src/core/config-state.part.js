@@ -182,7 +182,7 @@
   });
   const bool = (defaultValue, control, effects) => setting(defaultValue, ['boolean'], control, effects);
   const SETTINGS_SCHEMA = Object.freeze({
-    settingsRevision: setting(34, ['revision']),
+    settingsRevision: setting(35, ['revision']),
     keywords: setting([], ['keywordRules', 50, 500], null, ['keywords']),
     excludeKeywords: setting([], ['keywordRules', 50, 500], null, ['keywords']),
     keywordMode: setting('plain', ['enum', ['plain', 'and']], bind('keywordModeEl', '#BetterX-keyword-mode', 'value'), ['keywords']),
@@ -191,9 +191,10 @@
     sortBy: setting('smart', ['enum', ['smart', 'recent_viewed', 'recent_captured', 'first_captured', 'time_asc', 'captures', 'author', 'source']], bind('sortEl', '#BetterX-sort', 'value')),
     quickFilterOpen: bool(false), autoCleanDays: setting(0, ['int', 0, 3650]), maxPosts: setting(1000, ['int', 50, 5000]),
     postLimitWarningDisabled: bool(false), flashMs: setting(8000, ['int', 1000, 60000]),
-    markReadOnClick: bool(true, bind('markReadEl', '#BetterX-markread')), skipSources: setting([], ['skipSources']),
+    skipSources: setting([], ['skipSources']),
     theme: setting('auto', ['enum', ['auto', 'dark', 'light']], bind('themeSelectEl', '#BetterX-theme', 'value'), ['theme']),
     pageSize: setting(60, ['int', 20, 200]), badgePos: setting(null, ['badgePos']),
+    panelWidth: setting(520, ['int', 420, 1200], null, ['panelWidth']),
     hideAds: bool(true, bind('hideAdsEl', '#BetterX-hideads'), ['ads']),
     hideNfl: bool(true, bind('hideNflEl', '#BetterX-hide-nfl'), ['nfl']),
     hideAdultSpam: bool(false, bind('hideAdultSpamEl', '#BetterX-hide-adult-spam'), ['adultSpam']),
