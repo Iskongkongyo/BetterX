@@ -1,9 +1,9 @@
 # 默认忽略根目录中的所有内容，仅放行项目源码与发布文件。
 /*
 
-# Git 规则与项目入口
+# 项目入口与各语言 README（如 README.en.md）
 !/.gitignore
-!/README.md
+!/README*.md
 !/package.json
 !/LICENSE
 
