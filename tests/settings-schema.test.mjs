@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v3.8.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v3.9.0.js', import.meta.url);
 let source = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(source, startupPattern, '找不到脚本启动标记');
@@ -14,6 +14,13 @@ source = source.replace(startupPattern, `
     SETTINGS_EFFECT_HANDLERS,
     state,
     sanitizeSettings,
+    migrateSettingsDefaults,
+    sanitizeImportedPost,
+    getCurrentSourceInfo,
+    filterPosts,
+    buildSkipSourcesHtml,
+    upsertPost,
+    renderPostItem,
     bindSettingsControls,
     syncSettingsControls,
     syncInactiveInput,
@@ -62,6 +69,24 @@ for (const [key, definition] of Object.entries(api.SETTINGS_SCHEMA)) {
 
 const defaultsAfterSanitize = JSON.parse(JSON.stringify(api.sanitizeSettings({})));
 assert.deepEqual(defaultsAfterSanitize, JSON.parse(JSON.stringify(api.DEFAULT_SETTINGS)));
+assert.equal(api.DEFAULT_SETTINGS.flashMs, 3000);
+assert.equal(api.DEFAULT_SETTINGS.downloadTimeout, 360000);
+assert.deepEqual(Array.from(api.DEFAULT_SETTINGS.skipSources), ['thread']);
+const migratedDefaults = api.sanitizeSettings(api.migrateSettingsDefaults({
+  settingsRevision: 38, flashMs: 8000, downloadTimeout: 360000, skipSources: [],
+}));
+assert.equal(migratedDefaults.flashMs, 3000);
+assert.equal(migratedDefaults.downloadTimeout, 360000);
+assert.deepEqual(Array.from(migratedDefaults.skipSources), ['thread']);
+const migratedCustom = api.sanitizeSettings(api.migrateSettingsDefaults({
+  settingsRevision: 38, flashMs: 5000, downloadTimeout: 120000, skipSources: ['likes'],
+}));
+assert.equal(migratedCustom.flashMs, 5000);
+assert.equal(migratedCustom.downloadTimeout, 120000);
+assert.deepEqual(Array.from(migratedCustom.skipSources), ['likes']);
+assert.deepEqual(Array.from(api.sanitizeSettings(api.migrateSettingsDefaults({
+  settingsRevision: api.DEFAULT_SETTINGS.settingsRevision, skipSources: [],
+})).skipSources), [], '升级后手动关闭帖子详情排除时应保留选择');
 const sanitized = JSON.parse(JSON.stringify(api.sanitizeSettings({
   keywordMode: 'invalid',
   maxPosts: 99999,
@@ -151,17 +176,108 @@ const panelIds = Array.from(Object.values(api.PANEL_ELEMENT_IDS));
 assert.equal(new Set(panelIds).size, panelIds.length, '面板引用 ID 不应重复');
 for (const id of panelIds) assert.match(source, new RegExp(`id=["']BetterX-${id}["']`));
 
-assert.equal(api.localizeSourceLabel('Home'), '主页');
+assert.equal(api.localizeSourceLabel('Likes'), '喜欢');
 assert.equal(api.localizeSourceLabel('Thread @alice'), '帖子详情 @alice');
 api.state.posts = [
   { sourceLabel: 'Profile @alice' }, { sourceLabel: 'Home' }, { sourceLabel: 'Other' },
   { sourceLabel: 'Search' }, { sourceLabel: 'Bookmarks' }, { sourceLabel: 'For You' },
+  { sourceLabel: 'Following' },
+  { sourceLabel: '/compose/post' }, { sourceLabel: '/i/history' }, { sourceLabel: '/i/history/likes' },
+  { sourceLabel: '/i/premium_sign_up' }, { sourceLabel: 'Unknown' },
 ];
 assert.deepEqual(Array.from(api.getAvailableSources()), [
-  'Search', 'Bookmarks', 'Home', 'For You', 'Other', 'Profile @alice',
+  'Search', 'Bookmarks', 'Likes', 'For You', 'Following', 'Profile @alice',
 ]);
-assert.equal(api.SOURCE_SORT_RANK.size, 4);
+assert.equal(api.SOURCE_SORT_RANK.size, 5);
 assert.equal(api.SOURCE_EXACT_LABELS.Notifications, '通知');
+
+for (const [sourceFilter, expected] of [
+  ['Home', 'all'], ['主页', 'all'], ['/compose/post', 'all'],
+  ['/i/history', 'Bookmarks'], ['/i/history/likes', 'Likes'],
+  ['/i/premium_sign_up', 'all'], ['Unknown', 'all'], ['Other', 'all'],
+]) assert.equal(api.sanitizeSettings({ sourceFilter }).sourceFilter, expected);
+
+for (const [path, type, label] of [
+  ['/i/history', 'bookmarks', 'Bookmarks'], ['/i/history/', 'bookmarks', 'Bookmarks'],
+  ['/i/history/likes', 'likes', 'Likes'], ['/i/history/likes/', 'likes', 'Likes'],
+  ['/i/bookmarks', 'page', ''], ['/compose/post', 'compose', ''],
+  ['/i/lists/123456789', 'list', 'List'], ['/i/lists', 'page', ''],
+  ['/i/history/likes-extra', 'page', ''], ['/i/premium_sign_up', 'page', ''],
+  ['/settings/unknown', 'page', ''],
+]) {
+  context.location.pathname = path;
+  assert.equal(api.getCurrentSourceInfo().type, type, path);
+  assert.equal(api.getCurrentSourceInfo().label, label, path);
+}
+context.location.pathname = '/home';
+let activeTab = '';
+context.document.querySelectorAll = () => [
+  { innerText: '正在关注', closest: () => ({ id: 'BetterX-root' }) },
+  { innerText: activeTab, closest: () => null },
+];
+for (const tab of ['Following', '正在关注', '正在關注', '關注中', 'フォロー中']) {
+  activeTab = tab;
+  assert.equal(api.getCurrentSourceInfo().label, 'Following', tab);
+}
+for (const tab of ['For you', '为你推荐', '為你推薦', 'おすすめ']) {
+  activeTab = tab;
+  assert.equal(api.getCurrentSourceInfo().label, 'For You', tab);
+}
+activeTab = '';
+assert.equal(api.getCurrentSourceInfo().label, '', '未加载的页签不能生成主页来源');
+
+const skipSources = api.sanitizeSettings({ skipSources: ['bookmarks', 'notifications', 'likes', 'list'] }).skipSources;
+assert.deepEqual(Array.from(skipSources), ['bookmarks', 'likes', 'list'], '旧通知页排除设置应移除，喜欢页应可保存设置');
+api.state.settings.skipSources = [...api.DEFAULT_SETTINGS.skipSources];
+assert.match(api.buildSkipSourcesHtml(), /BetterX-chip active[^>]*data-skip="thread"[^>]*>帖子详情</,
+  '帖子详情按钮默认应点亮');
+api.state.settings.skipSources = ['likes'];
+const skipHtml = api.buildSkipSourcesHtml();
+assert.match(skipHtml, /BetterX-chip active[^>]*data-skip="likes"[^>]*>喜欢页</);
+assert.match(skipHtml, /data-skip="bookmarks"[^>]*>书签页</);
+assert.doesNotMatch(skipHtml, /data-skip="notifications"|通知页/);
+api.state.settings.skipSources = [];
+
+const legacyPost = { id: '123', text: '保留正文', favorite: true, note: '保留备注' };
+const migratedLikes = api.sanitizeImportedPost({
+  ...legacyPost, sourceLabel: 'Bookmarks', capturedPath: '/i/history/likes?test=1',
+  sourceHistory: ['Home', '/compose/post', '/i/history/likes'],
+});
+assert.equal(migratedLikes.sourceLabel, 'Likes');
+assert.equal(migratedLikes.sourceType, 'likes');
+assert.deepEqual(Array.from(migratedLikes.sourceHistory), ['Likes']);
+assert.equal(migratedLikes.text, legacyPost.text);
+assert.equal(migratedLikes.note, legacyPost.note);
+assert.equal(migratedLikes.favorite, true);
+api.state.settings.sourceFilter = 'Likes';
+assert.equal(api.filterPosts([migratedLikes]).length, 1, '喜欢来源应能筛出迁移后的记录');
+api.state.settings.sourceFilter = 'all';
+assert.equal(api.sanitizeImportedPost({ ...legacyPost, sourceLabel: '/i/history' }).sourceLabel, 'Bookmarks');
+assert.equal(api.sanitizeImportedPost({ ...legacyPost, sourceLabel: 'Home' }).sourceLabel, '');
+assert.equal(api.sanitizeImportedPost({
+  ...legacyPost, sourceLabel: '/compose/post', sourceHistory: ['Following', '/compose/post'],
+}).sourceLabel, 'Following', '移除发帖来源时应恢复之前的有效来源');
+const unknownPost = api.sanitizeImportedPost({
+  ...legacyPost, sourceType: 'page', sourceLabel: '/i/premium_sign_up',
+  capturedPath: '/i/premium_sign_up', sourceHistory: ['Search', '/i/premium_sign_up'],
+});
+assert.equal(unknownPost.sourceLabel, '', '未知路径只能归入全部来源，不能回退成历史来源');
+assert.deepEqual(Array.from(unknownPost.sourceHistory), ['Search'], '已知历史来源应保留，未知路径应移除');
+assert.equal(unknownPost.text, legacyPost.text);
+assert.match(api.renderPostItem(unknownPost), /当前来源: 全部来源/, '未知路径帖子应显示当前来源为全部来源');
+
+api.state.posts = [{ ...legacyPost, sourceLabel: 'Search', sourceType: 'search' }];
+api.state.dbWriteQueue = new Promise(() => {});
+api.upsertPost({ ...api.state.posts[0], sourceLabel: '', sourceType: 'page', capturedPath: '/i/premium_sign_up' },
+  { countCapture: false });
+assert.equal(api.state.posts[0].sourceLabel, '', '未知页面再次抓取时也应清除旧的当前来源');
+assert.equal(api.state.posts[0].favorite, true);
+assert.equal(api.state.posts[0].note, legacyPost.note);
+assert.deepEqual(Array.from(api.getAvailableSources()), [], '未知页面不能生成独立来源选项');
+assert.equal(api.filterPosts(api.state.posts).length, 1, '未知来源帖子仍应出现在全部来源中');
+api.state.settings.sourceFilter = 'Search';
+assert.equal(api.filterPosts(api.state.posts).length, 0, '未知来源帖子不应混入已知来源筛选');
+api.state.settings.sourceFilter = 'all';
 
 assert.equal(api.SETTINGS_SCHEMA.mediaDownload.control, undefined, '下载控件仍应使用原专用逻辑');
 assert.equal(api.SETTINGS_SCHEMA.downloadZip.control, undefined, '下载 UI 不应纳入本次通用绑定');

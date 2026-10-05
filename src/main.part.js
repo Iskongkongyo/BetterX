@@ -62,7 +62,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v3.8.0 started');
+    debugLog('v3.9.0 started');
   }
 
   function waitForPageReady() {

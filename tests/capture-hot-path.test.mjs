@@ -33,7 +33,8 @@ const api = vm.runInNewContext(`(() => {
   const getStatusLink = () => { statusLinkReads++; return 'https://x.com/cached/status/123'; };
   const extractStatusIdFromUrl = () => '123';
   const observeArticleView = () => {};
-  const getCurrentSourceInfo = () => ({ type: 'home', label: 'Home' });
+  let sourceInfo = { type: 'for_you', label: 'For You' };
+  const getCurrentSourceInfo = () => sourceInfo;
   const extractAuthor = () => { authorReads++; return {}; };
   const extractText = () => { textReads++; return ''; };
   const detectMedia = () => ({ hasImage: false, hasVideo: false, thumbs: [] });
@@ -43,10 +44,12 @@ const api = vm.runInNewContext(`(() => {
   const location = { pathname: '/home', search: '' };
   const isAdArticle = () => false;
   const hideAdElement = () => {};
-  const getPostById = () => null;
+  const getPostById = () => savedPost;
 ${source.slice(start, end)}
   captureArticle(article);
-  return { statusLinkReads, authorReads, textReads, savedPost, selectRicherPostText };
+  return { statusLinkReads, authorReads, textReads, savedPost, selectRicherPostText,
+    captureArticle, article, setSourceInfo: (next) => { sourceInfo = next; }, getSavedPost: () => savedPost,
+    setSkipSources: (next) => { state.settings.skipSources = next; state.visibleMap.clear(); } };
 })()`, { filename: 'capture.part.js' });
 
 assert.equal(api.statusLinkReads, 1, '每次抓取只应查询一次状态链接');
@@ -54,6 +57,28 @@ assert.equal(api.authorReads, 0, '应复用内容净化已经提取的作者');
 assert.equal(api.textReads, 0, '应复用内容净化已经提取的正文');
 assert.equal(api.savedPost.displayName, 'Cached');
 assert.equal(api.savedPost.text, 'cached text');
+api.setSourceInfo({ type: 'compose', label: '' });
+api.captureArticle(api.article);
+assert.equal(api.getSavedPost(), api.savedPost, '发帖弹层不应再次抓取并覆盖背景帖来源');
+api.setSourceInfo({ type: 'likes', label: 'Likes' });
+api.setSkipSources(['likes']);
+api.captureArticle(api.article);
+assert.equal(api.getSavedPost(), api.savedPost, '喜欢页排除按钮点亮时不应保存喜欢页帖子');
+api.setSkipSources(['bookmarks']);
+api.captureArticle(api.article);
+assert.equal(api.getSavedPost().sourceLabel, 'Likes', '只排除书签页时仍应保存喜欢页帖子');
+const savedLikes = api.getSavedPost();
+api.setSourceInfo({ type: 'bookmarks', label: 'Bookmarks' });
+api.setSkipSources(['bookmarks']);
+api.captureArticle(api.article);
+assert.equal(api.getSavedPost(), savedLikes, '书签页排除按钮点亮时不应保存书签页帖子');
+api.setSkipSources([]);
+api.setSourceInfo({ type: 'for_you', label: 'For You' });
+api.captureArticle(api.article);
+api.setSourceInfo({ type: 'page', label: '' });
+api.captureArticle(api.article);
+assert.equal(api.getSavedPost().sourceLabel, '', '可见帖子在未知页面重新扫描时应更新为空来源');
+assert.equal(api.getSavedPost().sourceType, 'page');
 assert.equal(api.selectRicherPostText('short', 'short and complete'), 'short and complete');
 assert.equal(api.selectRicherPostText('already complete', 'short'), 'already complete');
 assert.match(observerSource, /characterData:\s*true/, '正文字符更新必须被观察');

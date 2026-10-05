@@ -49,6 +49,7 @@
     observeArticleView(article, id);
 
     const sourceInfo = getCurrentSourceInfo();
+    if (sourceInfo.type === 'compose') return;
     if ((state.settings.skipSources || []).includes(sourceInfo.type)) return;
 
     const isFirstVisibleCapture = !state.visibleMap.has(id);
@@ -92,7 +93,9 @@
           (!existing.avatarUrl && avatarUrl) ||
           existing.hasImage !== hasImage ||
           existing.hasVideo !== hasVideo ||
-          existing.sourceLabel !== sourceInfo.label ||
+          (sourceInfo.type === 'page'
+            ? existing.sourceLabel !== '' || existing.sourceType !== 'page'
+            : sourceInfo.label && existing.sourceLabel !== sourceInfo.label) ||
           existing.url !== url;
         if (needsPatch) {
           upsertPost({
@@ -152,7 +155,7 @@
   function checkDisappearedPosts() {
     if (document.hidden) return;
     const ts = now();
-    const flashMs = state.settings.flashMs || 8000;
+    const flashMs = state.settings.flashMs || DEFAULT_SETTINGS.flashMs;
 
     const currentId = extractStatusIdFromUrl(location.href);
     if (currentId) {

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 for (const path of [
   '../src/main.part.js',
-  '../更好的X（BetterX）v3.8.0.js',
+  '../更好的X（BetterX）v3.9.0.js',
 ]) {
   const source = await readFile(new URL(path, import.meta.url), 'utf8');
   const bootStart = source.indexOf('async function boot()');

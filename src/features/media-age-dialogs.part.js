@@ -519,7 +519,7 @@
   function buildFirefoxCompatibilityDiagnostic() {
     const diagnostic = {
       generatedAt: new Date().toISOString(),
-      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.8.0',
+      scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.9.0',
       userscriptManager: USERSCRIPT_MANAGER || 'unknown',
       userAgent: navigator.userAgent || '',
       page: `${location.origin || ''}${location.pathname || ''}`,

@@ -5,7 +5,7 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      3.8.0
+// @version      3.9.0
 // @description  管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
 // @description:zh-CN 管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF（多媒体可自动压缩 ZIP）、取消年龄限制、记录与管理浏览过的帖子，并支持搜索、排序、关键词、备份、主题与 IndexedDB 持久化。
 // @description:zh-TW 管理 X 貼文通知訂閱狀態、自動隱藏成人引流帳號與廣告、簡化介面與寬螢幕、一鍵下載圖片/影片/GIF（多媒體可自動壓縮為 ZIP）、解除年齡限制、記錄與管理瀏覽過的貼文，並支援搜尋、排序、關鍵字、備份、主題與 IndexedDB 持久化。
@@ -82,10 +82,10 @@
     ['含视频', '含影片', '動画あり', 'With video'], ['纯文字', '純文字', 'テキストのみ', 'Text only'],
     ['全部来源', '全部來源', 'すべてのソース', 'All sources'], ['主页', '首頁', 'ホーム', 'Home'],
     ['正在关注', '正在關注', 'フォロー中', 'Following'], ['为你推荐', '為你推薦', 'おすすめ', 'For You'],
-    ['列表', '列表', 'リスト', 'List'], ['书签', '書籤', 'ブックマーク', 'Bookmarks'], ['未知页面', '未知頁面', '不明なページ', 'Unknown page'],
+    ['列表', '列表', 'リスト', 'List'], ['书签', '書籤', 'ブックマーク', 'Bookmarks'], ['喜欢', '喜歡', 'いいね', 'Likes'], ['未知页面', '未知頁面', '不明なページ', 'Unknown page'],
     ['个人主页', '個人主頁', 'プロフィール', 'Profile'], ['帖子详情', '貼文詳情', 'ポスト詳細', 'Post details'],
     ['搜索页', '搜尋頁', '検索ページ', 'Search page'], ['书签页', '書籤頁', 'ブックマークページ', 'Bookmarks page'],
-    ['通知页', '通知頁', '通知ページ', 'Notifications page'], ['列表页', '列表頁', 'リストページ', 'List page'],
+    ['喜欢页', '喜歡頁', 'いいねページ', 'Likes page'], ['列表页', '列表頁', 'リストページ', 'List page'],
     ['总数', '總數', '合計', 'Total'], ['未读', '未讀', '未読', 'Unread'], ['图片', '圖片', '画像', 'Image'], ['视频', '影片', '動画', 'Video'],
     ['来源:', '來源：', 'ソース：', 'Source:'], ['历史来源:', '歷史來源：', '過去のソース：', 'Source history:'],
     ['抓取:', '擷取：', '取得：', 'Captured:'], ['浏览:', '瀏覽：', '表示：', 'Viewed:'], ['出现:', '出現：', '表示：', 'Seen:'],
@@ -138,6 +138,7 @@
     ['媒体文件名（不含扩展名）', '媒體檔名（不含副檔名）', 'メディア名（拡張子なし）', 'Media filename (without extension)'],
     ['ZIP 压缩包名（不含 .zip）', 'ZIP 壓縮檔名（不含 .zip）', 'ZIP 名（.zip なし）', 'ZIP filename (without .zip)'],
     ['正则替换（可选）', '正則取代（選填）', '正規表現置換（任意）', 'Regex replacement (optional)'], ['替换为', '取代為', '置換後', 'Replace with'],
+    ['例如：', '例如：', '例：', 'Example: '], ['；支持 $1', '；支援 $1', '（$1 に対応）', '; supports $1'],
     ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'],
     ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'],
     ['关闭NFL', '關閉 NFL', 'NFL を非表示', 'Hide NFL'],
@@ -163,7 +164,7 @@
     ['达到上限后，新帖子仍会继续记录；最旧的未收藏、未置顶帖子会被删除。收藏和置顶帖子不会被上限删除，因此总数有时可能超过设置值。', '達到上限後仍會繼續記錄新貼文；最舊且未收藏、未置頂的貼文會被刪除。收藏與置頂貼文不受上限刪除，因此總數有時可能超過設定值。', '上限に達しても新しいポストは記録され、古い未お気に入り・未固定のポストから削除されます。お気に入りと固定済みポストは削除されないため、合計が設定値を超える場合があります。', 'New posts will still be recorded at the limit; the oldest unfavorited and unpinned posts are removed. Favorited and pinned posts are protected, so the total may sometimes exceed the configured value.'],
     ['你可以打开“高级设置”调大“最大条数”，或先导出备份。', '你可以開啟「進階設定」調高「最大筆數」，或先匯出備份。', '「詳細設定」で上限を増やすか、先にバックアップをエクスポートできます。', 'You can increase the maximum under Advanced settings or export a backup first.'],
     ['打开高级设置', '開啟進階設定', '詳細設定を開く', 'Open advanced settings'], ['不再提示', '不再提示', '今後表示しない', "Don't remind me again"],
-    ['以下页面中的帖子不会保存到 BetterX：', '以下頁面中的貼文不會儲存到 BetterX：', '次のページにあるポストは BetterX に保存しません：', 'Posts from these pages are not saved to BetterX:'],
+    ['点亮按钮即不保存对应页面的帖子', '點亮按鈕即不儲存對應頁面的貼文', 'ボタンをオンにすると、そのページのポストを保存しません', 'Turn on a button to stop saving posts from that page'],
     ['下载任务', '下載工作', 'ダウンロードタスク', 'Download tasks'], ['暂无下载任务', '暫無下載工作', 'ダウンロードはありません', 'No download tasks'],
     ['下载', '下載', 'ダウンロード', 'Download'], ['下载中', '下載中', 'ダウンロード中', 'Downloading'],
     ['转 GIF', '轉 GIF', 'GIF 変換', 'GIF'], ['正在转换 GIF', '正在轉換 GIF', 'GIF に変換中', 'Converting to GIF'],
@@ -195,8 +196,8 @@
     ['开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。', '開啟後貼文操作列會顯示下載進度與取消按鈕；桌面版顯示下載工作膠囊，行動版顯示帶工作數量的藍色下載按鈕。', '有効にするとポスト操作欄に進捗とキャンセルボタンを表示します。デスクトップではタスクピル、モバイルでは件数付きの青いボタンを表示します。', 'Shows download progress and cancel controls in post actions. Desktop gets a task pill; mobile gets a blue button with a task count.'],
     ['默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。', '預設開啟；ZIP 內檔案使用下方「媒體檔名」範本。關閉後會同時下載多個媒體。', '既定でオンです。ZIP 内のファイル名には下のメディア名テンプレートを使います。オフの場合は複数ファイルを個別保存します。', 'Enabled by default. Files inside ZIP use the media filename template below. When disabled, media files download separately.'],
     ['默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設關閉；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオフです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Disabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'],
-    ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 {序号}，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 {序號}，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで {序号} がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If {序号} is omitted for multiple media files, a number is appended automatically.'],
-    ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 $1）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 $1）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（$1 など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as $1 are supported; invalid or risky regexes are not saved.'],
+    ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 <code>{序號}</code>，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで <code>{連番}</code> がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If <code>{index}</code> is omitted for multiple media files, a number is appended automatically.'],
+    ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 <code>$1</code>）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（<code>$1</code> など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as <code>$1</code> are supported; invalid or risky regexes are not saved.'],
     ['隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。', '隱藏時間軸廣告、廣告卡片和「訂閱 Premium」提示。廣告貼文不會儲存到 BetterX，關閉後會重新顯示。', 'タイムライン広告、広告カード、「Premium に登録」の案内を非表示にします。広告ポストは BetterX に保存されず、オフにすると再表示します。', 'Hides timeline ads, ad cards, and Subscribe to Premium prompts. Ad posts are not saved to BetterX and reappear when this is turned off.'],
     ['隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。', '隱藏 X 右側欄中的 NFL 球隊、賽程和比賽入口；關閉此開關後會恢復顯示。', 'X の右サイドバーにある NFL のチーム、日程、試合への入口を非表示にします。オフにすると再表示します。', 'Hides NFL teams, schedules, and game links in X’s right sidebar. Turn it off to show them again.'],
     ['把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。', '把貼文裡的多個媒體改成網格：2 個並排，3 個左大右二，4 個按 2×2 排列。', 'ポスト内の複数メディアをグリッド表示にします。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Shows multiple media items in a grid: two side by side, three with one large item on the left, and four in a 2×2 layout.'],
@@ -208,7 +209,7 @@
     ['在电脑上会隐藏徽标；在手机上会收成屏幕右侧的蓝色小条。点击小条、从屏幕右边缘向内滑动，或使用油猴菜单都能恢复。', '在電腦上會隱藏徽章；在手機上會收成螢幕右側的藍色小條。點擊小條、從螢幕右邊緣向內滑動，或使用腳本管理器選單都能恢復。', 'パソコンではバッジを隠し、スマートフォンでは画面右側の青いバーに収納します。バーをタップする、右端から内側へスワイプする、またはユーザースクリプトメニューから復元できます。', 'Hides the badge on desktop and collapses it into a blue bar on mobile. Tap the bar, swipe inward from the right edge, or use the userscript menu to restore it.'],
     ['在电脑上使用圆形图标和未读角标，仍可拖动位置。', '在電腦上使用圓形圖示和未讀角標，仍可拖曳位置。', 'パソコンで丸いアイコンと未読バッジを使います。位置は引き続きドラッグできます。', 'Uses a circular icon and unread badge on desktop; you can still drag it to a new position.'],
     ['把手机上的圆形徽标收成右侧蓝色小条；点击打开面板，长按后可上下移动。', '把手機上的圓形徽章收成右側藍色小條；點擊開啟面板，長按後可上下移動。', 'スマートフォンの丸いバッジを右側の青いバーに収納します。タップでパネルを開き、長押し後に上下へ動かせます。', 'Collapses the circular mobile badge into a blue bar on the right. Tap to open the panel; long-press to move it up or down.'],
-    ['下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。', '下載並行數可設為 1～6，預設 2；提高可加速多媒體工作，但也會增加頻寬與記憶體使用。', '同時数は1～6（既定2）。増やすと速くなりますが、帯域とメモリ使用量も増えます。', 'Concurrency can be 1–6 (default 2). Higher values speed up multi-media jobs but use more bandwidth and memory.'],
+    ['下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。自动清理(天)为0则不自动清理。', '下載並行數可設為 1～6，預設 2；提高可加速多媒體工作，但也會增加頻寬與記憶體使用。自動清理（日）設為0則不自動清理。', '同時数は1～6（既定2）。増やすと速くなりますが、帯域とメモリ使用量も増えます。自動削除（日）を0にすると自動削除しません。', 'Concurrency can be 1–6 (default 2). Higher values speed up multi-media jobs but use more bandwidth and memory. Set Auto-clean (days) to 0 to disable automatic cleaning.'],
     ['当前筛选条件下没有帖子。可以刷新页面、切换 X 标签页，或把筛选改回“全部”。', '目前篩選條件下沒有貼文。可重新整理頁面、切換 X 分頁，或將篩選改回「全部」。', '現在の条件に一致するポストはありません。ページや X のタブを更新するか、フィルターを「すべて」に戻してください。', 'No posts match the current filters. Refresh the page, switch X tabs, or reset the filter to All.'],
     ['还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。', '尚未讀取貼文通知訂閱。請點擊「同步訂閱使用者」，或瀏覽已開啟鈴鐺的使用者主頁後再查看。', 'ポスト通知の購読情報がありません。「購読ユーザーを同期」を押すか、ベルを有効にしたプロフィールを開いてください。', 'No post-notification subscriptions have been read. Click “Sync subscribed users” or visit a profile with its bell enabled.'],
     ['智能排序：置顶、收藏和快消失的帖子先显示，其他的按抓到的顺序排。', '智慧排序：置頂、收藏和快速消失的貼文優先，其餘依擷取順序排列。', 'スマート順：固定・お気に入り・すぐ消えたポストを優先し、残りは取得順に表示します。', 'Smart sort: pinned, favorited, and quickly disappeared posts first; others follow capture order.'],
@@ -216,7 +217,7 @@
     ['最近抓取：按脚本发现帖子的时间排。X 会提前加载，顺序不一定等于你看到的顺序。', '最近擷取：依腳本發現貼文的時間排列。X 會預先載入，因此不一定等於實際看到的順序。', '最近取得：スクリプトが見つけた時刻順です。X の先読みのため、実際に見た順とは限りません。', 'Recently captured: orders by discovery time. X preloads posts, so this may differ from viewing order.'],
     ['出现次数：反复刷到的帖子排在前面。', '出現次數：反覆看到的貼文排在前面。', '表示回数：繰り返し表示されたポストを先にします。', 'Appearances: repeatedly seen posts come first.'],
     ['按作者：把同一个作者的帖子排在一起。', '依作者：將同一作者的貼文排在一起。', '投稿者順：同じ投稿者のポストをまとめます。', 'By author: groups posts from the same author.'],
-    ['按来源：按主页、为你推荐、搜索、书签等页面分类排。', '依來源：依首頁、為你推薦、搜尋、書籤等頁面分類。', 'ソース順：ホーム、おすすめ、検索、ブックマークなどで分類します。', 'By source: groups posts by Home, For You, Search, Bookmarks, and other pages.'],
+    ['按来源：按为你推荐、正在关注、搜索、书签、喜欢等页面分类排。', '依來源：依為你推薦、正在關注、搜尋、書籤、喜歡等頁面分類。', 'ソース順：おすすめ、フォロー中、検索、ブックマーク、いいねなどで分類します。', 'By source: groups posts by For You, Following, Search, Bookmarks, Likes, and other pages.'],
     ['BetterX：显示 / 隐藏应用徽标', 'BetterX：顯示 / 隱藏應用徽章', 'BetterX：アプリバッジを表示 / 非表示', 'BetterX: Show / hide app badge'],
     ['BetterX：强制开启 Firefox 兼容模式并刷新', 'BetterX：強制開啟 Firefox 相容模式並重新整理', 'BetterX：Firefox 互換モードを強制して更新', 'BetterX: Force Firefox compatibility and reload'],
     ['BetterX：恢复 Firefox 完整模式并刷新', 'BetterX：恢復 Firefox 完整模式並重新整理', 'BetterX：Firefox フルモードに戻して更新', 'BetterX: Restore full Firefox mode and reload'],

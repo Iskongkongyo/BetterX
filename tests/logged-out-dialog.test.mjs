@@ -63,7 +63,7 @@ const unrelatedDialog = {
 const unrelatedRoot = { ...root, querySelectorAll: () => [unrelatedDialog] };
 assert.equal(api.dismissLoggedOutPostObstructions(unrelatedRoot), 0, '不应关闭缺少专用内容层的其他弹窗');
 
-const secondPanelSample = await readFile(new URL('../未登录帖子第二条弹窗.txt', import.meta.url), 'utf8');
+const secondPanelSample = await readFile(new URL('./fixtures/logged-out-post-footer.html', import.meta.url), 'utf8');
 assert.match(secondPanelSample, /^<aside class="fixed bottom-0 isolate z-40 /,
   '第二层弹窗样本应包含底部 aside 容器');
 assert.match(secondPanelSample, /launch_app_store=true&amp;ct=post-timeline/,

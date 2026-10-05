@@ -215,11 +215,14 @@
                 <span class="BetterX-download-advanced-state" id="BetterX-download-advanced-state" hidden>已自定义</span>
               </summary>
               <div class="BetterX-adv-body">
-                <label class="BetterX-field">媒体文件名（不含扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="{用户ID}_{帖子ID}" /></label>
-                <label class="BetterX-field">ZIP 压缩包名（不含 .zip）<input class="BetterX-input" id="BetterX-download-zip-name-template" maxlength="180" spellcheck="false" placeholder="{用户ID}_{帖子ID}" /></label>
+                <label class="BetterX-field">媒体文件名（不含扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadFileNameTemplate))}" /></label>
+                <label class="BetterX-field">ZIP 压缩包名（不含 .zip）<input class="BetterX-input" id="BetterX-download-zip-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadZipNameTemplate))}" /></label>
                 <div class="BetterX-adv-label">点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。</div>
                 <div class="BetterX-chip-row BetterX-download-name-tokens">
-                  ${DOWNLOAD_NAME_TOKENS.map(({ token }) => `<button type="button" class="BetterX-chip" data-action="insert-download-name-token" data-token="${escapeHtml(token)}">${escapeHtml(token)}</button>`).join('')}
+                  ${DOWNLOAD_NAME_TOKENS.map(({ token, key }) => {
+                    const label = escapeHtml(localizeDownloadNameToken(token, key));
+                    return `<button type="button" class="BetterX-chip" data-action="insert-download-name-token" data-token="${label}">${label}</button>`;
+                  }).join('')}
                 </div>
                 <label class="BetterX-field">正则替换（可选）<input class="BetterX-input" id="BetterX-download-name-regex" maxlength="180" spellcheck="false" placeholder="例如：[\\s_]+" /></label>
                 <label class="BetterX-field">替换为<input class="BetterX-input" id="BetterX-download-name-replacement" maxlength="180" spellcheck="false" placeholder="例如：_；支持 $1" /></label>
@@ -282,7 +285,7 @@
         <details class="BetterX-advanced BetterX-settings-card" id="BetterX-advanced-settings">
           <summary>高级设置</summary>
           <div class="BetterX-adv-body">
-            <div class="BetterX-adv-label">以下页面中的帖子不会保存到 BetterX：</div>
+            <div class="BetterX-adv-label">点亮按钮即不保存对应页面的帖子</div>
             <div class="BetterX-chip-row" id="BetterX-skip-sources"></div>
             <div class="BetterX-row">
               <label class="BetterX-field">自动清理(天)
@@ -311,7 +314,7 @@
               </label>
               <button class="BetterX-btn primary" data-action="save-advanced">应用</button>
             </div>
-            <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。</div>
+            <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。自动清理(天)为0则不自动清理。</div>
           </div>
         </details>
       </div>
@@ -504,8 +507,8 @@
           insertDownloadNameToken(actionEl.getAttribute('data-token') || '');
           break;
         case 'save-download-naming': {
-          const fileNameTemplate = safeString(state.downloadFileNameTemplateEl.value, 180).trim() || DEFAULT_SETTINGS.downloadFileNameTemplate;
-          const zipNameTemplate = safeString(state.downloadZipNameTemplateEl.value, 180).trim() || DEFAULT_SETTINGS.downloadZipNameTemplate;
+          const fileNameTemplate = normalizeDownloadNameTemplate(safeString(state.downloadFileNameTemplateEl.value, 180).trim()) || DEFAULT_SETTINGS.downloadFileNameTemplate;
+          const zipNameTemplate = normalizeDownloadNameTemplate(safeString(state.downloadZipNameTemplateEl.value, 180).trim()) || DEFAULT_SETTINGS.downloadZipNameTemplate;
           const regex = safeString(state.downloadNameRegexEl.value, MAX_REGEX_SOURCE_LENGTH).trim();
           if (regex && !isSafeRegexSource(regex)) {
             showToast('⚠️ 正则无效或风险过高，未保存');

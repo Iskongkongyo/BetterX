@@ -120,7 +120,7 @@
     time_asc: '首次抓取（旧→新）：最早发现的帖子排在前，适合从头慢慢翻。',
     captures: '出现次数：反复刷到的帖子排在前面。',
     author: '按作者：把同一个作者的帖子排在一起。',
-    source: '按来源：按主页、为你推荐、搜索、书签等页面分类排。',
+    source: '按来源：按为你推荐、正在关注、搜索、书签、喜欢等页面分类排。',
   };
 
   const SORT_LABELS = {
@@ -135,11 +135,11 @@
   };
 
   const SOURCE_SORT_RANK = new Map([
-    ['Search', 0], ['Bookmarks', 1], ['Home', 2], ['For You', 3],
+    ['Search', 0], ['Bookmarks', 1], ['Likes', 2], ['For You', 3], ['Following', 4],
   ]);
   const SOURCE_EXACT_LABELS = Object.freeze({
-    Home: '主页', Following: '正在关注', 'For You': '为你推荐', Search: '搜索',
-    List: '列表', Bookmarks: '书签', Notifications: '通知', Unknown: '未知页面',
+    Following: '正在关注', 'For You': '为你推荐', Search: '搜索',
+    List: '列表', Bookmarks: '书签', Likes: '喜欢', Notifications: '通知', Unknown: '未知页面',
   });
 
   const SKIP_SOURCE_OPTIONS = [
@@ -147,7 +147,7 @@
     { key: 'thread', label: '帖子详情' },
     { key: 'search', label: '搜索页' },
     { key: 'bookmarks', label: '书签页' },
-    { key: 'notifications', label: '通知页' },
+    { key: 'likes', label: '喜欢页' },
     { key: 'list', label: '列表页' },
   ];
 
@@ -182,16 +182,16 @@
   });
   const bool = (defaultValue, control, effects) => setting(defaultValue, ['boolean'], control, effects);
   const SETTINGS_SCHEMA = Object.freeze({
-    settingsRevision: setting(35, ['revision']),
+    settingsRevision: setting(39, ['revision']),
     keywords: setting([], ['keywordRules', 50, 500], null, ['keywords']),
     excludeKeywords: setting([], ['keywordRules', 50, 500], null, ['keywords']),
     keywordMode: setting('plain', ['enum', ['plain', 'and']], bind('keywordModeEl', '#BetterX-keyword-mode', 'value'), ['keywords']),
-    filter: setting('all', ['filter']), sourceFilter: setting('all', ['stringDefault', 100], bind('sourceSelectEl', '#BetterX-source', 'value')),
+    filter: setting('all', ['filter']), sourceFilter: setting('all', ['sourceFilter'], bind('sourceSelectEl', '#BetterX-source', 'value')),
     mediaFilter: setting('all', ['mediaFilter'], bind('mediaSelectEl', '#BetterX-media', 'value')),
     sortBy: setting('smart', ['enum', ['smart', 'recent_viewed', 'recent_captured', 'first_captured', 'time_asc', 'captures', 'author', 'source']], bind('sortEl', '#BetterX-sort', 'value')),
     quickFilterOpen: bool(false), autoCleanDays: setting(0, ['int', 0, 3650]), maxPosts: setting(1000, ['int', 50, 5000]),
-    postLimitWarningDisabled: bool(false), flashMs: setting(8000, ['int', 1000, 60000]),
-    skipSources: setting([], ['skipSources']),
+    postLimitWarningDisabled: bool(false), flashMs: setting(3000, ['int', 1000, 60000]),
+    skipSources: setting(['thread'], ['skipSources']),
     theme: setting('auto', ['enum', ['auto', 'dark', 'light']], bind('themeSelectEl', '#BetterX-theme', 'value'), ['theme']),
     pageSize: setting(60, ['int', 20, 200]), badgePos: setting(null, ['badgePos']),
     panelWidth: setting(520, ['int', 420, 1200], null, ['panelWidth']),

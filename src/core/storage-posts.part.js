@@ -181,6 +181,9 @@
         const current = request.result || getPostById(id);
         if (current) {
           storedPost = { ...current, ...(changes || {}), id: current.id };
+          if ('sourceLabel' in storedPost || 'sourceHistory' in storedPost || storedPost.capturedPath) {
+            Object.assign(storedPost, normalizePostSourceFields(storedPost));
+          }
           store.put(storedPost);
         }
       };
@@ -566,7 +569,7 @@
   }
 
   function getAvailableSources() {
-    return uniqueStrings(state.posts.map((p) => p.sourceLabel).filter(Boolean))
+    return uniqueStrings(state.posts.map((p) => normalizeSourceLabel(p.sourceLabel)).filter(Boolean))
       .sort((a, b) => {
         const rank = (source) => SOURCE_SORT_RANK.get(source)
           ?? (/^Profile\s+@/i.test(source) ? 100 : 10);
@@ -631,8 +634,8 @@
       if (state.downloadAdvancedDetailsEl.open !== shouldOpen) state.downloadAdvancedDetailsEl.open = shouldOpen;
     }
     if (!state.downloadAdvancedStateEl) return;
-    const customized = (state.settings.downloadFileNameTemplate || DEFAULT_SETTINGS.downloadFileNameTemplate) !== DEFAULT_SETTINGS.downloadFileNameTemplate
-      || (state.settings.downloadZipNameTemplate || DEFAULT_SETTINGS.downloadZipNameTemplate) !== DEFAULT_SETTINGS.downloadZipNameTemplate
+    const customized = normalizeDownloadNameTemplate(state.settings.downloadFileNameTemplate || DEFAULT_SETTINGS.downloadFileNameTemplate) !== DEFAULT_SETTINGS.downloadFileNameTemplate
+      || normalizeDownloadNameTemplate(state.settings.downloadZipNameTemplate || DEFAULT_SETTINGS.downloadZipNameTemplate) !== DEFAULT_SETTINGS.downloadZipNameTemplate
       || !!state.settings.downloadNameRegex
       || !!state.settings.downloadNameReplacement;
     state.downloadAdvancedStateEl.hidden = !customized;
@@ -821,7 +824,7 @@
         <div class="BetterX-note-area">${noteHtml}</div>
 
         <div class="BetterX-bottom-meta">
-          <span>当前来源: ${escapeHtml(uiText(localizeSourceLabel(post.sourceLabel) || '-'))}</span>
+          <span>当前来源: ${escapeHtml(uiText(localizeSourceLabel(post.sourceLabel) || '全部来源'))}</span>
           <span>${escapeHtml(historyText)}</span>
         </div>
       </div>
@@ -850,7 +853,7 @@
     updateDownloadAdvancedHeader();
     syncInactiveInput(state.autoCleanInputEl, state.settings.autoCleanDays || 0);
     syncInactiveInput(state.maxPostsInputEl, state.settings.maxPosts || DEFAULT_SETTINGS.maxPosts);
-    syncInactiveInput(state.flashMsInputEl, Math.round((state.settings.flashMs || 8000) / 1000));
+    syncInactiveInput(state.flashMsInputEl, Math.round((state.settings.flashMs || DEFAULT_SETTINGS.flashMs) / 1000));
     if (state.dlTimeoutInputEl && document.activeElement !== state.dlTimeoutInputEl) {
       state.dlTimeoutInputEl.value = String(Math.round((state.settings.downloadTimeout || DEFAULT_SETTINGS.downloadTimeout) / 1000));
     }
@@ -869,10 +872,10 @@
     if (state.mediaDownloadEl) state.mediaDownloadEl.checked = !!state.settings.mediaDownload;
     if (state.downloadZipEl) state.downloadZipEl.checked = state.settings.downloadZip !== false;
     if (state.downloadFileNameTemplateEl && document.activeElement !== state.downloadFileNameTemplateEl) {
-      state.downloadFileNameTemplateEl.value = state.settings.downloadFileNameTemplate || DEFAULT_SETTINGS.downloadFileNameTemplate;
+      state.downloadFileNameTemplateEl.value = localizeDownloadNameTemplate(state.settings.downloadFileNameTemplate || DEFAULT_SETTINGS.downloadFileNameTemplate);
     }
     if (state.downloadZipNameTemplateEl && document.activeElement !== state.downloadZipNameTemplateEl) {
-      state.downloadZipNameTemplateEl.value = state.settings.downloadZipNameTemplate || DEFAULT_SETTINGS.downloadZipNameTemplate;
+      state.downloadZipNameTemplateEl.value = localizeDownloadNameTemplate(state.settings.downloadZipNameTemplate || DEFAULT_SETTINGS.downloadZipNameTemplate);
     }
     if (state.downloadNameRegexEl && document.activeElement !== state.downloadNameRegexEl) {
       state.downloadNameRegexEl.value = state.settings.downloadNameRegex || '';
@@ -892,7 +895,6 @@
     ]);
     updateSettingsDependencyUI();
     renderNotificationSubscriptions();
-    localizeBetterXTree(state.downloadNamePreviewEl);
 
     if (!state.listEl) return;
     const scrollTop = keepListScroll ? state.listEl.scrollTop : 0;
@@ -946,10 +948,11 @@
         case 'mediaFilter': return MEDIA_FILTERS.some((item) => item.key === value) ? value : fallback;
         case 'string': return safeString(value, first);
         case 'stringDefault': return safeString(value, first) || fallback;
+        case 'sourceFilter': return normalizeSourceLabel(value) || fallback;
         case 'trimmedStringDefault': return safeString(value, first).trim() || fallback;
         case 'stringList': return stringList(value, first, second);
         case 'keywordRules': return stringList(value, first, second).filter(isSafeKeywordRule);
-        case 'skipSources': return stringList(value, SKIP_SOURCE_OPTIONS.length, 30)
+        case 'skipSources': return stringList(Array.isArray(value) ? value : fallback, SKIP_SOURCE_OPTIONS.length, 30)
           .filter((candidate) => SKIP_SOURCE_OPTIONS.some((item) => item.key === candidate));
         case 'handles': return uniqueStrings(stringList(value, first, 30)
           .map((item) => item.replace(/^@+/, '').toLowerCase())
@@ -986,6 +989,12 @@
     const revision = clampInt(input.settingsRevision, 0, 999, 0);
     if (revision < DEFAULT_SETTINGS.settingsRevision) {
       // 仅把旧版默认值迁移到新默认；其他自定义值原样保留。
+      if (revision < 39) {
+        if (input.flashMs == null || Number(input.flashMs) === 8000) input.flashMs = DEFAULT_SETTINGS.flashMs;
+        if (input.skipSources == null || (Array.isArray(input.skipSources) && input.skipSources.length === 0)) {
+          input.skipSources = [...DEFAULT_SETTINGS.skipSources];
+        }
+      }
       if (input.maxPosts == null || Number(input.maxPosts) === 500) input.maxPosts = DEFAULT_SETTINGS.maxPosts;
       if (input.downloadTimeout == null || Number(input.downloadTimeout) === 60000) {
         input.downloadTimeout = DEFAULT_SETTINGS.downloadTimeout;
@@ -1208,6 +1217,7 @@
   }
 
   function upsertPost(post, opts) {
+    post = { ...post, sourceLabel: normalizeSourceLabel(post.sourceLabel) };
     const countCapture = !opts || opts.countCapture !== false;
     const index = getPostIndexById(post.id);
     const timestamp = now();
@@ -1218,6 +1228,8 @@
       const merged = {
         ...existing,
         ...post,
+        sourceLabel: post.sourceType === 'page' ? '' : (post.sourceLabel || normalizeSourceLabel(existing.sourceLabel)),
+        sourceType: post.sourceLabel || post.sourceType === 'page' ? post.sourceType : (existing.sourceType || post.sourceType),
         id: existing.id,
         favorite: !!existing.favorite,
         pinned: !!existing.pinned,

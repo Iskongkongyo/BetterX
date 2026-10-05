@@ -8,7 +8,7 @@
     { token: '{原文件名}', key: 'file-name' },
     { token: '{序号}', key: 'index' },
   ];
-  // 英文变量仅用于兼容已保存的旧模板；设置面板只展示中文变量。
+  // 各语言变量都映射到同一组字段，已保存的中文与旧英文模板继续可用。
   const DOWNLOAD_NAME_LEGACY_TOKENS = {
     'user-name': 'user-name', 'user-id': 'user-id', 'status-id': 'status-id', 'date-time': 'date-time',
     'full-text': 'full-text', 'file-type': 'file-type', 'file-name': 'file-name', index: 'index',
@@ -17,6 +17,40 @@
     用户名: 'user-name', 用户ID: 'user-id', 帖子ID: 'status-id', 发布时间: 'date-time',
     帖子正文: 'full-text', 文件类型: 'file-type', 原文件名: 'file-name', 序号: 'index',
   };
+  const DOWNLOAD_NAME_LOCALIZED_TOKENS = {
+    'zh-TW': {
+      'user-name': '使用者名稱', 'user-id': '使用者ID', 'status-id': '貼文ID', 'date-time': '發布時間',
+      'full-text': '貼文內文', 'file-type': '檔案類型', 'file-name': '原檔名', index: '序號',
+    },
+    ja: {
+      'user-name': 'ユーザー名', 'user-id': 'ユーザーID', 'status-id': 'ポストID', 'date-time': '投稿日時',
+      'full-text': 'ポスト本文', 'file-type': 'ファイル種別', 'file-name': '元ファイル名', index: '連番',
+    },
+    en: Object.fromEntries(Object.keys(DOWNLOAD_NAME_LEGACY_TOKENS).map((key) => [key, key])),
+  };
+  const DOWNLOAD_NAME_TOKEN_KEYS = new Map([
+    ...Object.entries(DOWNLOAD_NAME_CHINESE_TOKENS), ...Object.entries(DOWNLOAD_NAME_LEGACY_TOKENS),
+    ...Object.values(DOWNLOAD_NAME_LOCALIZED_TOKENS).flatMap((labels) => (
+      Object.entries(labels).map(([key, label]) => [label, key])
+    )),
+  ]);
+  const DOWNLOAD_NAME_CANONICAL_TOKENS = new Map(DOWNLOAD_NAME_TOKENS.map(({ token, key }) => [key, token]));
+
+  function localizeDownloadNameToken(token, key) {
+    const label = DOWNLOAD_NAME_LOCALIZED_TOKENS[UI_LANGUAGE]?.[key];
+    return label ? `{${label}}` : token;
+  }
+
+  function rewriteDownloadNameTemplateTokens(template, localized) {
+    return String(template || '').replace(/\{([^{}]+)\}/g, (all, rawKey) => {
+      const key = DOWNLOAD_NAME_TOKEN_KEYS.get(rawKey);
+      const token = key && DOWNLOAD_NAME_CANONICAL_TOKENS.get(key);
+      return token ? (localized ? localizeDownloadNameToken(token, key) : token) : all;
+    });
+  }
+
+  function localizeDownloadNameTemplate(template) { return rewriteDownloadNameTemplateTokens(template, true); }
+  function normalizeDownloadNameTemplate(template) { return rewriteDownloadNameTemplateTokens(template, false); }
 
   function formatDownloadNameDate(value) {
     const date = new Date(value || Date.now());
@@ -46,13 +80,13 @@
 
   function renderDownloadNameTemplate(template, values) {
     return String(template || '').replace(/\{([^{}]+)\}/g, (all, rawKey) => {
-      const key = DOWNLOAD_NAME_CHINESE_TOKENS[rawKey] || DOWNLOAD_NAME_LEGACY_TOKENS[rawKey];
+      const key = DOWNLOAD_NAME_TOKEN_KEYS.get(rawKey);
       return key && values[key] != null ? String(values[key]) : all;
     });
   }
 
   function downloadTemplateIncludesIndex(template) {
-    return /\{(?:序号|index)\}/.test(String(template || ''));
+    return /\{序号\}/.test(normalizeDownloadNameTemplate(template));
   }
 
   function applyDownloadNameRegex(name, regexSource, replacement) {
@@ -113,14 +147,14 @@
     const regex = state.downloadNameRegexEl ? state.downloadNameRegexEl.value : state.settings.downloadNameRegex;
     const replacement = state.downloadNameReplacementEl ? state.downloadNameReplacementEl.value : state.settings.downloadNameReplacement;
     const demoJob = {
-      username: 'BetterX', displayName: '示例用户', statusId: '1234567890',
-      postText: '这是用于预览下载文件名的帖子正文', postDate: new Date(2026, 0, 2, 3, 4, 5), createdAt: Date.now(),
+      username: 'BetterX', displayName: uiText('示例用户'), statusId: '1234567890',
+      postText: uiText('这是用于预览下载文件名的帖子正文'), postDate: new Date(2026, 0, 2, 3, 4, 5), createdAt: Date.now(),
       fileNameTemplate: fileTemplate, zipNameTemplate: zipTemplate,
       downloadNameRegex: isSafeRegexSource(regex) ? regex : '', downloadNameReplacement: replacement,
       items: [{ url: 'https://pbs.twimg.com/media/example.jpg', ext: 'jpg', mediaType: 'image', index: 0 }],
     };
     const item = demoJob.items[0];
-    state.downloadNamePreviewEl.textContent = `命名效果预览：${getDownloadItemFilename(demoJob, item)} · ${getDownloadZipFilename(demoJob)}`;
+    state.downloadNamePreviewEl.textContent = `${uiText('命名效果预览：')}${getDownloadItemFilename(demoJob, item)} · ${getDownloadZipFilename(demoJob)}`;
   }
 
   function insertDownloadNameToken(token) {

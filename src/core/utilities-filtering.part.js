@@ -355,20 +355,55 @@
     return (selectedTab?.innerText || selectedTab?.textContent || '').trim();
   }
 
+  function getHistorySourceInfo(path) {
+    const route = String(path || '').split(/[?#]/)[0].replace(/\/+$/, '').toLowerCase();
+    if (route === '/i/history/likes') return { type: 'likes', label: 'Likes' };
+    if (route === '/i/history') return { type: 'bookmarks', label: 'Bookmarks' };
+    return null;
+  }
+
+  function normalizeSourceLabel(value) {
+    const label = safeString(value, 100).trim();
+    if (/^(?:home|主页)$/i.test(label) || /^\/compose\/post(?:[/?#]|$)/i.test(label)) return '';
+    const historySource = getHistorySourceInfo(label);
+    if (historySource) return historySource.label;
+    if (label !== 'Unknown' && Object.prototype.hasOwnProperty.call(SOURCE_EXACT_LABELS, label)) return label;
+    if (/^(?:Profile|Thread)\s+@[A-Za-z0-9_]{1,15}$/i.test(label)) return label;
+    return '';
+  }
+
+  function normalizePostSourceFields(raw) {
+    const historySource = getHistorySourceInfo(raw.capturedPath) || getHistorySourceInfo(raw.sourceLabel);
+    const sourceHistory = uniqueStrings(
+      (Array.isArray(raw.sourceHistory) ? raw.sourceHistory : []).map(normalizeSourceLabel).filter(Boolean)
+    ).slice(-8);
+    const previousLabel = safeString(raw.sourceLabel, 100).trim();
+    const restorePrevious = /^(?:home|主页)$/i.test(previousLabel) || /^\/compose\/post(?:[/?#]|$)/i.test(previousLabel);
+    const sourceLabel = historySource?.label || normalizeSourceLabel(previousLabel)
+      || (restorePrevious ? sourceHistory.at(-1) : '') || '';
+    return {
+      sourceType: historySource?.type || safeString(raw.sourceType, 50),
+      sourceLabel,
+      sourceHistory: uniqueStrings([...sourceHistory, sourceLabel].filter(Boolean)).slice(-8),
+    };
+  }
+
   function getCurrentSourceInfo() {
     const path = location.pathname || '/';
-    const lower = path.toLowerCase();
+    const lower = path.toLowerCase().replace(/\/+$/, '') || '/';
     const search = location.search || '';
 
+    if (lower === '/compose/post') return { type: 'compose', label: '' };
+    const historySource = getHistorySourceInfo(path);
+    if (historySource) return historySource;
     if (lower === '/' || lower === '/home') {
       const activeTabText = getActiveTabText().toLowerCase();
-      if (/following|正在关注|關注中|关注中/.test(activeTabText)) return { type: 'following', label: 'Following' };
-      if (/for you|为你推荐|推薦|為你/.test(activeTabText)) return { type: 'for_you', label: 'For You' };
-      return { type: 'home', label: 'Home' };
+      if (/following|正在关注|正在關注|關注中|关注中|フォロー中/.test(activeTabText)) return { type: 'following', label: 'Following' };
+      if (/for you|为你推荐|推薦|為你|おすすめ/.test(activeTabText)) return { type: 'for_you', label: 'For You' };
+      return { type: 'home', label: '' };
     }
     if (lower.startsWith('/search') || lower.startsWith('/explore') || /[?&]q=/.test(search)) return { type: 'search', label: 'Search' };
     if (lower.includes('/i/lists/')) return { type: 'list', label: 'List' };
-    if (lower.includes('/bookmarks')) return { type: 'bookmarks', label: 'Bookmarks' };
     if (lower.includes('/notifications')) return { type: 'notifications', label: 'Notifications' };
     if (/^\/[^/]+\/status\/\d+/i.test(path)) {
       const user = path.split('/').filter(Boolean)[0];
@@ -376,7 +411,7 @@
     }
     const firstSeg = path.split('/').filter(Boolean)[0];
     if (firstSeg && !RESERVED_TOP_PATHS.has(firstSeg.toLowerCase())) return { type: 'profile', label: `Profile @${firstSeg}` };
-    return { type: 'page', label: path || 'Unknown' };
+    return { type: 'page', label: '' };
   }
 
   // ── 帖子内容提取 ──────────────────────────────────────────────────

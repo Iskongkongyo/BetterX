@@ -259,8 +259,7 @@
       hasVideo: raw.hasVideo === true,
       mediaThumbs,
       avatarUrl: safeImportedAssetUrl(raw.avatarUrl),
-      sourceType: safeString(raw.sourceType, 50),
-      sourceLabel: safeString(raw.sourceLabel, 100),
+      ...normalizePostSourceFields(raw),
       capturedPath: typeof raw.capturedPath === 'string' && raw.capturedPath.startsWith('/')
         ? raw.capturedPath.slice(0, 2000)
         : '',
@@ -269,10 +268,6 @@
       clicked: raw.clicked === true,
       flashLost: raw.flashLost === true,
       note: safeString(raw.note, 20000),
-      sourceHistory: uniqueStrings(
-        (Array.isArray(raw.sourceHistory) ? raw.sourceHistory : [])
-          .map((item) => safeString(item, 100)).filter(Boolean)
-      ).slice(-8),
       capturedCount: finiteInt(raw.capturedCount, 1, 1000000, 1),
       firstCapturedAt,
       lastCapturedAt: Math.max(firstCapturedAt, lastCapturedAt),

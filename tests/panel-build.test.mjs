@@ -15,7 +15,7 @@ assert.equal(
 );
 
 const panelSource = await readFile(new URL('../src/ui/panel.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v3.8.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v3.9.0.js', import.meta.url), 'utf8');
 const compactedSource = compactPanelTemplate(panelSource);
 const opening = 'panel.innerHTML = uiHtml`';
 const boundary = 'const fileInput';
@@ -41,6 +41,8 @@ assert.match(builtHtml, /id="BetterX-post-limit-warning" \/> 帖子上限提示/
   '其他功能应使用帖子上限提示名称');
 assert.match(builtHtml, /data-resize-edge="left"[\s\S]*data-resize-edge="right"/,
   'PC 面板应提供左右两侧的宽度拖动边缘');
+assert.match(builtHtml, /自动清理\(天\)为0则不自动清理/,
+  '高级设置说明应解释关闭自动清理的方法');
 assert.match(builtHtml, /在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”/,
   '取消年龄限制说明应提示用户检查 X 的敏感内容设置');
 const downloadHistoryIndex = builtHtml.indexOf('id="BetterX-track-downloaded-posts"');
@@ -65,7 +67,7 @@ assert.ok(downloadHistoryIndex < downloadAdvancedIndex, '下载记录开关应�
 assert.ok(downloadAdvancedIndex < saveDownloadNamingIndex, '自定义命名设置应位于下载高级设置折叠区内');
 assert.match(
   builtHtml,
-  /id="BetterX-advanced-settings"[\s\S]*?<div class="BetterX-adv-body"> <div class="BetterX-adv-label">以下页面中的帖子不会保存到 BetterX：<\/div> <div class="BetterX-chip-row" id="BetterX-skip-sources"><\/div> <div class="BetterX-row">/,
+  /id="BetterX-advanced-settings"[\s\S]*?<div class="BetterX-adv-body"> <div class="BetterX-adv-label">点亮按钮即不保存对应页面的帖子<\/div> <div class="BetterX-chip-row" id="BetterX-skip-sources"><\/div> <div class="BetterX-row">/,
   '页面排除标签应位于总高级设置的最上方'
 );
 

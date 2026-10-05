@@ -1,12 +1,12 @@
 # BetterX
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.8.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-3.9.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
 
-> A userscript that makes browsing X (formerly Twitter) a much better experience: it automatically records every post you scroll past in your timeline, supports search / sorting / notes / favoriting / keyword highlighting, and ships with a range of practical enhancements — post notification subscription management, hiding adult content, interface cleanup and wide-screen layouts, ad blocking, one-click media downloads, default profile tabs and post sorting, automatic long-post expansion, an in-post media grid view, bypassing the age restriction, and a four-language interface.
+> A userscript that improves browsing X (formerly Twitter): save posts loaded on the page according to your settings, search and sort your local history, add notes and favorites, and highlight keywords. BetterX also provides post notification management, adult spam filtering, layout controls, ad hiding, media downloads, default profile tabs and sorting, automatic post expansion, media grids, age-gate handling, and an interface in four languages.
 
 English | [简体中文](README.md)
 
@@ -22,10 +22,10 @@ Have you run into any of these annoyances while browsing X?
 - Replies and the "For You" feed are full of porn and adult-traffic bots;
 - Saving images / videos means right-clicking each one individually;
 - When you open someone's profile, it always lands on the Posts tab, and you have to manually switch to "Media / Videos" every time;
-- To view someone's posts sorted by "Latest" or "Top", you have to fiddle around every time.
-- Sensitive content is masked by the age restriction, and clicking "Show more" only pops up a QR code.
+- To view someone's posts sorted by *Recent* or *Popular*, you have to select the sort order each time;
+- An age-restriction mask covers sensitive media, and selecting the display option may bring up an app QR code.
 
-**BetterX** solves all of these pain points in one go. It also records the posts you scroll past in the background (everything is stored locally and never uploaded to any server), and provides a draggable side panel so you can easily look back, search, and manage them.
+**BetterX** provides controls for these common browsing problems. It records eligible posts in the background and stores that history locally, so you can look back, search, and manage posts in its side panel.
 
 ---
 
@@ -33,37 +33,37 @@ Have you run into any of these annoyances while browsing X?
 
 ### 📝 Post Recording & Recall
 
-- **Automatic timeline bookmarking**: Automatically captures posts that appear in your timeline (author, text, media, time, link).
+- **Automatic post history**: Captures posts loaded on the page, including author, text, media, time, and link, and saves them as local browsing records.
 - **Full-text search**: Search by author, text, or notes.
 - **Sort orders**: *Smart sort* shows pinned, favorited, and quickly-disappeared posts first, then orders the rest by when they were captured. You can also sort by *Recently viewed*, *Recently captured*, *First captured (new→old)*, *First captured (old→new)*, *Appearances*, *By author*, or *By source*. Once a post scrolls into view, its viewed time is recorded so you can find what you just saw.
 - **Filters**: *All* / *Unopened* / *Disappeared quickly* / *Favorited* / *Pinned* / *Opened* / *Keyword matches*.
 - **Media filters**: *All media* / *With images* / *With video* / *Text only*.
-- **Source detection**: Distinguishes *Profile* / *Post details* / *Search page* / *Bookmarks page* / *Notifications page* / *List page*. The panel labels each post with its source, and you can choose to ignore specific sources.
+- **Source detection**: Distinguishes *For You* / *Following* / *Profile* / *Post details* / *Search* / *Bookmarks* / *Likes* / *Notifications* / *List*. `/i/history` is recognized as Bookmarks, and `/i/history/likes` as Likes. Posts from unrecognized paths appear under *All sources*, without a separate path option. *Home* and `/compose/post` are excluded from the source dropdown.
 
 ### 🏷️ Organization & Marking
 
 - **Pin / Favorite / Note**: Pin important posts, favorite content you like, and jot down your own notes.
 - **Text collapsing**: Long posts are collapsed automatically to keep the panel tidy.
-- **Flash alerts**: Posts that are deleted shortly after being posted (*Disappeared quickly*) are specially flagged, and the threshold is configurable.
-- **Keyword highlighting & filtering**: Supports plain, **AND multi-word**, and **regex** modes, plus **exclusion terms** (a match hides the post).
+- **Flash alerts**: A post that appears briefly and then disappears from the page is marked *Disappeared quickly*. The default threshold is 3 seconds. Deletion, navigation, or X removing page elements can all trigger this marker.
+- **Keyword highlighting & filtering**: Choose *Match any* or *Match all* (AND). Both accept plain terms mixed with `/expression/` regex rules. Exclusion terms hide matching records in the panel.
 
 ### 🛠️ Experience Enhancements
 
-- **Content filtering**: Hides porn, adult-traffic bots, and ads, with intensity levels, a whitelist, and custom block terms.
+- **Content filtering**: Hides suspected adult spam and promotional bot accounts, with intensity levels, an allowlist, and custom block terms. Ad hiding is also available.
 - **Simplified and wide layout**: Hide the sidebar, promotions, the Messages bar / Grok, and adjust the timeline width.
-- **Media download**: One-click download of images, videos, and GIFs; multiple media files can be bundled into a ZIP automatically, with custom file names.
+- **Media download**: Download images, videos, and GIF content, with optional ZIP packaging and custom file names. GIF content is saved as MP4 by default; select GIF to convert it in the browser. Naming variables follow the interface language, and existing templates remain supported.
 - **Media display optimization**: Shows multiple media items in a grid, and can locally bypass the age-restriction mask.
-- **Profile & post enhancements**: Default profile tabs, *Latest / Top* post sorting, and automatic long-post expansion.
+- **Profile & post enhancements**: Default profile tabs, *Recent / Popular* post sorting, and automatic expansion of post text.
 - **Notification subscription management**: View, sync, and toggle a user's post notifications directly.
 
 ### ⚙️ Interface & Data
 
 - **Four-language interface**: Simplified Chinese, Traditional Chinese, Japanese, and English — either follow the page language automatically or switch manually.
-- **Three-view panel**: *Posts*, *Notifications*, and *Settings* are independent; frequently used filters and sorting are grouped on the Posts tab.
-- **Flexible badge**: Supports dragging, hiding, a mobile wake handle, and a desktop round badge.
+- **Three-view panel**: *Posts*, *Notifications*, and *Settings* are independent; frequently used filters and sorting are grouped on the Posts tab. On desktop, drag a panel edge to resize it, with a minimum width of 420 px. The width is remembered.
+- **Flexible badge**: Supports dragging, hiding, a mobile wake handle, and a desktop round badge. In mobile blue-bar mode, tap the bar to open or close the panel, or hold it to move it vertically.
 - **Firefox compatibility mode**: One-click switch to compatibility mode when X fails to start properly.
 - **Themes & shortcuts**: *Follow system* / *Dark* / *Light*, and `Alt + X` to toggle the panel.
-- **Data management**: Import / export backups, auto-clean, and a maximum post count.
+- **Data management**: Import / export backups, auto-clean, and a maximum post count. Setting *Auto-clean (days)* to 0 disables automatic cleaning.
 - **Local storage**: Posts and settings are stored in your browser locally and are never uploaded to any server.
 
 ---
@@ -79,7 +79,7 @@ Have you run into any of these annoyances while browsing X?
 
 2. Open [x.com](https://x.com). The app badge appears in the bottom-left/bottom-right corner of the page — click it or press `Alt + X` to expand the panel.
 
-> Supported domains: `x.com` and `twitter.com`.
+> Supported domains: `x.com`, `m.x.com`, and `twitter.com`.
 
 ---
 
@@ -92,7 +92,7 @@ Have you run into any of these annoyances while browsing X?
 | Keywords and exclusions | Add them under *Settings → Keywords and exclusions* |
 | Content filtering | Adjust adult-content filtering, the whitelist, etc. under *Settings → Content filtering* |
 | Simplified and wide layout | Adjust under *Settings → Simplified and wide layout* |
-| Downloads | Manage downloads, the GIF download format, ZIP, and naming rules under *Settings → Downloads* |
+| Downloads | Manage *GIF content download format*, ZIP, and naming rules under *Settings → Downloads* |
 | Profile enhancements | Set the default tab, post sorting, and long-post expansion under *Settings → Common features* |
 | Other settings | Firefox compatibility, badge, post limit, theme, etc. can be adjusted in their respective settings |
 
@@ -101,8 +101,8 @@ Have you run into any of these annoyances while browsing X?
 ## 🔒 Privacy
 
 - Post records, notes, and settings are stored in your browser locally and are **never uploaded to any server**.
-- The script only runs on `x.com` / `twitter.com`; network requests are used only for official X features, such as notification management and media downloads.
-- "Bypass age restriction" and content filtering only modify the local page display; they **never change account settings, auto-block, or report users**.
+- The script runs on `x.com` / `m.x.com` / `twitter.com`; network requests support X features such as notification management and media downloads.
+- Content filtering and media-mask replacement work locally and do not automatically block or report accounts. Manually enabling the age-gate feature opens X's content settings page, where you choose whether to enable sensitive media. Post notification toggles update your X account's notification subscriptions.
 - Clearing your browser data may wipe local records, so exporting backups regularly is recommended.
 
 ---
@@ -110,7 +110,7 @@ Have you run into any of these annoyances while browsing X?
 ## ❓ FAQ
 
 **Q: Why weren't some posts recorded?**
-A: BetterX can only record posts that have actually loaded on the page. If a post is missing, also check whether the corresponding source is ignored under *Advanced settings*.
+A: BetterX records only posts that have loaded on the page and are not excluded by your settings. *Post details* is excluded by default. Under *Advanced settings*, turn off the corresponding button beneath *Turn on a button to stop saving posts from that page*. Posts filtered by enabled ad hiding or content filtering are not saved.
 
 **Q: What should I do if a video download fails or no media can be found?**
 A: First make sure you're logged in to X, then try opening or playing the video and retry. If you still can't get the video URL on Android Firefox + Violentmonkey, consider switching to Tampermonkey.
@@ -124,14 +124,14 @@ A: Images usually appear immediately; videos require fetching the real media URL
 **Q: Firefox gets stuck on the X icon — what should I do?**
 A: Turn on *Firefox compatibility (Firefox only)* under *Settings → Other features*. If the panel won't even open, you can force compatibility mode from the userscript manager's menu and refresh the page.
 
-**Q: Do the default profile tab and Top sorting affect account switching?**
-A: No. They only apply to regular user profiles; *Top* only applies to post-based profiles and does not affect video, photo, or account-switching pages.
+**Q: Do the default profile tab and Popular sorting affect account switching?**
+A: No. They only apply to regular user profiles; *Popular* applies to post-based profiles and does not affect video, photo, or account-switching pages.
 
 **Q: Why doesn't the wide layout work on the Messages or Settings pages?**
 A: Those pages have a different structure from the timeline, so BetterX automatically disables layout adjustments to avoid breaking the page.
 
 **Q: What should I do if content filtering wrongly hides a normal post?**
-A: Switch to *Conservative* mode, enable "don't moderate accounts you follow", or add the account to the whitelist.
+A: Switch to *Conservative* mode, enable *Skip followed accounts (except reposts)*, or add the account to the allowlist.
 
 **Q: Can my data be lost?**
 A: Data is stored locally in your browser and may be deleted when you clear browser data, so exporting JSON backups regularly is recommended.

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v3.8.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v3.9.0.js', import.meta.url);
 let source = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(source, startupPattern, '找不到脚本启动标记');
@@ -94,10 +94,15 @@ assert.deepEqual(
   },
   'background capture must preserve newer user-controlled state from another tab'
 );
+Object.assign(records.posts.get('5'), {
+  sourceLabel: '/i/history/likes', capturedPath: '/i/history/likes', sourceHistory: ['Home', '/compose/post'],
+});
 await api.dbPatchPost('5', { text: 'patched' });
 assert.equal(records.posts.get('5').favorite, true);
 assert.equal(records.posts.get('5').note, 'remote note');
 assert.equal(records.posts.get('5').text, 'patched');
+assert.equal(records.posts.get('5').sourceLabel, 'Likes', '局部写入不应恢复旧路径来源');
+assert.deepEqual(Array.from(records.posts.get('5').sourceHistory), ['Likes']);
 
 await api.dbPutSetting('settings', { ...api.DEFAULT_SETTINGS, theme: 'dark', hideAds: true });
 api.state.settings = { ...api.DEFAULT_SETTINGS, theme: 'light', hideAds: false };
