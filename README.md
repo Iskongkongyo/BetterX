@@ -6,6 +6,8 @@
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
 
+[English](README.en.md) | 简体中文
+
 
 > 一个让 X（原 Twitter）浏览体验更好的油猴脚本：自动记录时间线里划过的每一条帖子，支持搜索 / 排序 / 备注 / 收藏 / 关键词高亮，并附带帖子通知订阅管理、隐藏黄推、界面净化与宽屏、关闭广告、一键下载媒体、主页默认页签与帖子排序、自动展开长文、帖子内媒体网格视图、取消年龄限制及四语言界面等实用增强。
 
