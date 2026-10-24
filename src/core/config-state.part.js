@@ -251,6 +251,8 @@
     searchQuery: '',
     expandedPosts: new Set(),
     editingNoteId: null,
+    noteDrafts: new Map(),
+    importInProgress: false,
     renderLimit: DEFAULT_SETTINGS.pageSize,
     lastFilteredCount: 0,
 
@@ -276,6 +278,8 @@
     lastDbWriteError: null,
   };
 
+  let indexedPosts = state.posts;
+  let indexedPostLength = 0;
   let crossTabChannel = null;
   let crossTabReloadTimer = null;
   let crossTabReloadAllPosts = false;

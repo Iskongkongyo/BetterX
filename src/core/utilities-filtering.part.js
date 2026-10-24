@@ -309,7 +309,7 @@
   // 后台扫描时用防抖刷新；正在编辑备注时不重绘列表，避免打断输入
   const debouncedRefreshUI = debounce(() => {
     if (!state.panelOpen) { refreshBadge(); return; }
-    if (state.editingNoteId) { refreshBadge(); return; }
+    if (state.panelView === 'vault' && state.editingNoteId) { refreshBadge(); return; }
     refreshUI({ keepScroll: true });
   }, 120);
 
@@ -677,7 +677,7 @@
 
   function regexAtomsDefinitelyDisjoint(left, right) {
     if (!left || !right) return false;
-    if (left.kind === 'literal' && right.kind === 'literal') return left.value !== right.value;
+    if (left.kind === 'literal' && right.kind === 'literal') return left.value.toLowerCase() !== right.value.toLowerCase();
     if (left.kind === 'literal' && right.kind === 'category') {
       return !literalMatchesRegexCategory(left.value, right.value);
     }
@@ -707,7 +707,7 @@
   // 同层的可重叠可变量词同样会产生多项式/指数级回溯，例如 a*a*a*b 或 a?a?a?b。
   // 旧检查只防住 (a+)+ 一类嵌套结构，这里额外追踪可能消费同一字符的量词链。
   function hasRiskyAdjacentRegexQuantifiers(source) {
-    const contexts = [{ variableAtoms: [], groupStart: -1 }];
+    const contexts = [{ variableAtoms: [], inheritedAtoms: [], branchAtoms: [], groupStart: -1 }];
     const currentContext = () => contexts[contexts.length - 1];
     let inClass = false;
     let classStart = -1;
@@ -745,18 +745,35 @@
         } else if (escaped === 'u' && /^[0-9a-f]{4}/i.test(source.slice(i + 1, i + 5))) {
           atom = { kind: 'escape', value: source.slice(i - 1, i + 5) };
           i += 4;
+        } else if (escaped === 'c' && /^[a-z]$/i.test(source[i + 1] || '')) {
+          atom = { kind: 'escape', value: source.slice(i - 1, i + 2) };
+          i++;
         } else {
           atom = { kind: 'literal', value: escaped };
         }
       } else if (ch === '(') {
-        contexts.push({ variableAtoms: [], groupStart: i });
+        const inheritedAtoms = [...currentContext().variableAtoms];
+        const prefix = source.slice(i + 1).match(/^\?(?::|=|!|<=|<!|<[A-Za-z_$][\w$]*>)/)?.[0] || '';
+        if (source[i + 1] === '?' && !prefix) return true;
+        contexts.push({
+          variableAtoms: [...inheritedAtoms], inheritedAtoms, branchAtoms: [], groupStart: i,
+          zeroWidth: /^\?(?:[=!]|<[=!])/.test(prefix),
+        });
+        i += prefix.length;
         continue;
       } else if (ch === ')') {
         if (contexts.length <= 1) continue;
         const closed = contexts.pop();
+        const quantified = readRegexQuantifier(source, i + 1);
+        currentContext().variableAtoms = [...new Set([
+          ...(quantified || closed.zeroWidth ? closed.inheritedAtoms : []),
+          ...closed.branchAtoms, ...closed.variableAtoms,
+        ])];
         atom = { kind: 'group', value: source.slice(closed.groupStart, i + 1) };
       } else if (ch === '|') {
-        currentContext().variableAtoms = [];
+        const context = currentContext();
+        context.branchAtoms.push(...context.variableAtoms);
+        context.variableAtoms = [...context.inheritedAtoms];
         continue;
       } else if (ch === '^' || ch === '$') {
         continue;
@@ -799,7 +816,7 @@
   function isSafeRegexSource(src) {
     const text = String(src || '');
     if (!text || text.length > MAX_REGEX_SOURCE_LENGTH) return false;
-    if (/\\(?:[1-9][0-9]*|k<)/.test(text)) return false;
+    if (/\\(?:[1-9][0-9]*|0[0-9]|k<)/.test(text)) return false;
     if (hasRiskyAdjacentRegexQuantifiers(text)) return false;
 
     const stack = [{ hasRepeat: false, hasAlternation: false }];
@@ -824,7 +841,10 @@
         const group = stack.pop();
         const repeated = quantifierAt(i + 1);
         if (repeated && (group.hasRepeat || group.hasAlternation)) return false;
-        if (repeated) stack[stack.length - 1].hasRepeat = true;
+        // 中间的普通分组不能隐藏内部重复/分支，否则 ((a+))+$ 会绕过检查。
+        const parent = stack[stack.length - 1];
+        parent.hasRepeat ||= repeated || group.hasRepeat;
+        parent.hasAlternation ||= group.hasAlternation;
         continue;
       }
       // (?:...)、(?=...)、(?!...)、(?<=...)、(?<!...) 中开头的 ? 不是量词。
@@ -856,13 +876,27 @@
     return source === null || isSafeRegexSource(source);
   }
 
+  const keywordRuleCache = new Map();
+
+  function getCompiledKeywordRule(rule) {
+    const key = String(rule || '');
+    const cached = keywordRuleCache.get(key);
+    if (cached) return cached;
+    const source = getDelimitedRegexSource(key);
+    const compiled = source === null
+      ? { literal: key.toLowerCase(), regex: null }
+      : { literal: null, regex: safeRegex(source, 'i') };
+    keywordRuleCache.set(key, compiled);
+    // 设置允许关键词与排除词各 50 条；额外留出编辑余量，同时限制旧规则驻留。
+    if (keywordRuleCache.size > 200) keywordRuleCache.delete(keywordRuleCache.keys().next().value);
+    return compiled;
+  }
+
   function keywordRuleMatches(rule, haystack, lowerHaystack) {
-    const source = getDelimitedRegexSource(rule);
-    if (source !== null) {
-      const regex = safeRegex(source, 'i');
-      return !!(regex && regex.test(haystack));
-    }
-    return lowerHaystack.includes(String(rule || '').toLowerCase());
+    const compiled = getCompiledKeywordRule(rule);
+    return compiled.literal !== null
+      ? lowerHaystack.includes(compiled.literal)
+      : !!(compiled.regex && compiled.regex.test(haystack));
   }
 
   function computeMatchedKeywords(post) {

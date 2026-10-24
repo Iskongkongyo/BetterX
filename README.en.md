@@ -1,12 +1,17 @@
-# BetterX
+<p align="center">
+  <img src="assets/firefly.jpg" width="120" height="120" alt="BetterX icon">
+</p>
+
+
+<h1 align="center">BetterX</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.9.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.0.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
 
-> A userscript that improves browsing X (formerly Twitter): save posts loaded on the page according to your settings, search and sort your local history, add notes and favorites, and highlight keywords. BetterX also provides post notification management, adult spam filtering, layout controls, ad hiding, media downloads, default profile tabs and sorting, automatic post expansion, media grids, age-gate handling, and an interface in four languages.
+> BetterX is a userscript for X (formerly Twitter) with local post history, search, favorites, and notes, plus ad and adult spam filtering, media downloads, post notification management, and interface improvements.
 
 English | [简体中文](README.md)
 
@@ -49,7 +54,7 @@ Have you run into any of these annoyances while browsing X?
 
 ### 🛠️ Experience Enhancements
 
-- **Content filtering**: Hides suspected adult spam and promotional bot accounts, with intensity levels, an allowlist, and custom block terms. Ad hiding is also available.
+- **Content filtering**: Hides suspected adult spam and promotional bot accounts, with intensity levels, an allowlist, and custom block terms. Short English terms, numbers, and generic promotional cues require independent adult-content evidence. Custom block terms still apply directly, and the account allowlist takes precedence. Ad hiding is also available.
 - **Simplified and wide layout**: Hide the sidebar, promotions, the Messages bar / Grok, and adjust the timeline width.
 - **Media download**: Download images, videos, and GIF content, with optional ZIP packaging and custom file names. GIF content is saved as MP4 by default; select GIF to convert it in the browser. Naming variables follow the interface language, and existing templates remain supported.
 - **Media display optimization**: Shows multiple media items in a grid, and can locally bypass the age-restriction mask.
@@ -63,7 +68,7 @@ Have you run into any of these annoyances while browsing X?
 - **Flexible badge**: Supports dragging, hiding, a mobile wake handle, and a desktop round badge. In mobile blue-bar mode, tap the bar to open or close the panel, or hold it to move it vertically.
 - **Firefox compatibility mode**: One-click switch to compatibility mode when X fails to start properly.
 - **Themes & shortcuts**: *Follow system* / *Dark* / *Light*, and `Alt + X` to toggle the panel.
-- **Data management**: Import / export backups, auto-clean, and a maximum post count. Setting *Auto-clean (days)* to 0 disables automatic cleaning.
+- **Data management**: Import / export backups, auto-clean, and a maximum post count. Large backups are split into JSON parts of at most 25 MiB and 20,000 records each; save every part and select them together to restore. Setting *Auto-clean (days)* to 0 disables automatic cleaning.
 - **Local storage**: Posts and settings are stored in your browser locally and are never uploaded to any server.
 
 ---

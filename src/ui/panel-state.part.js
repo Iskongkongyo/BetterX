@@ -70,8 +70,8 @@
     try { return `上次同步：${new Date(timestamp).toLocaleString()}`; } catch (err) { return '已同步'; }
   }
 
-  function renderNotificationSubscriptions() {
-    if (!state.notificationListEl) return;
+  function renderNotificationSubscriptions(force = false) {
+    if (!state.notificationListEl || state.panelView !== 'notifications' || (!state.panelOpen && !force)) return;
     const syncButton = state.panelEl && state.panelEl.querySelector('[data-action="sync-notification-users"]');
     if (syncButton) {
       syncButton.disabled = state.notificationSyncInProgress;
@@ -142,8 +142,7 @@
       tabEl.setAttribute('aria-selected', active ? 'true' : 'false');
       tabEl.tabIndex = active ? 0 : -1;
     });
-    updateSettingsDependencyUI();
-    if (nextView === 'notifications') renderNotificationSubscriptions();
+    if (state.panelOpen) refreshUI({ keepScroll: true });
   }
 
   function togglePanel(force) {
@@ -198,7 +197,68 @@
   function exportPosts() {
     const data = filterPosts(state.posts);
     if (!data.length) { uiAlert('当前筛选结果为空，没有可导出的内容。'); return; }
-    download(`BetterX-filtered-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
+    savePostExport(data, null, `BetterX-filtered-${new Date().toISOString().slice(0, 10)}`);
+  }
+
+  function buildPostExportBlob(posts, metadata, backupPart) {
+    const header = metadata ? { ...metadata, ...(backupPart ? { backupPart } : {}) } : null;
+    const chunks = [header ? JSON.stringify({ ...header, posts: [] }).slice(0, -2) : '['];
+    posts.forEach((post, index) => {
+      if (index) chunks.push(',');
+      chunks.push(JSON.stringify(post));
+    });
+    chunks.push(header ? ']}' : ']');
+    return new Blob(chunks, { type: 'application/json' });
+  }
+
+  function partitionPostExport(posts, metadata, maxBytes = MAX_IMPORT_FILE_BYTES, maxPosts = MAX_IMPORT_POSTS) {
+    // 为实际分卷编号预留最大位数；每卷都能由现有 JSON 导入器独立读取。
+    const placeholder = { index: Number.MAX_SAFE_INTEGER, total: Number.MAX_SAFE_INTEGER };
+    const overhead = buildPostExportBlob([], metadata, placeholder).size;
+    if (overhead > maxBytes) throw new Error('EXPORT_RECORD_TOO_LARGE');
+    const encoder = new TextEncoder();
+    const groups = [];
+    let group = [];
+    let bytes = overhead;
+    for (const post of posts) {
+      const recordBytes = encoder.encode(JSON.stringify(post)).byteLength;
+      if (overhead + recordBytes > maxBytes) throw new Error('EXPORT_RECORD_TOO_LARGE');
+      if (group.length && (bytes + 1 + recordBytes > maxBytes || group.length >= maxPosts)) {
+        groups.push(group);
+        group = [];
+        bytes = overhead;
+      }
+      bytes += (group.length ? 1 : 0) + recordBytes;
+      group.push(post);
+    }
+    if (group.length || !groups.length) groups.push(group);
+    return groups;
+  }
+
+  function savePostExport(posts, metadata, baseName) {
+    let groups;
+    try { groups = partitionPostExport(posts, metadata); }
+    catch (err) { uiAlert('无法导出：单条记录或设置超过备份容量限制。'); return; }
+    const savePart = (index) => {
+      const suffix = groups.length > 1 ? `-part-${index + 1}-of-${groups.length}` : '';
+      const part = groups.length > 1 ? { index: index + 1, total: groups.length } : null;
+      download(`${baseName}${suffix}.json`, buildPostExportBlob(groups[index], metadata, part));
+    };
+    if (groups.length === 1) { savePart(0); return; }
+    // 各卷按点击生成，避免同时持有所有序列化文件，也避免浏览器拦截连续自动下载。
+    showBetterXDialog({
+      title: '备份已分卷',
+      bodyHtml: uiHtml`<p>数据较大，请保存全部分卷；恢复时可同时选择这些 JSON 文件。</p>
+        ${groups.map((group, index) => uiHtml`<p><button type="button" class="BetterX-btn" data-backup-part="${index}">下载分卷 ${index + 1} / ${groups.length}</button></p>`).join('')}`,
+      primaryText: '完成', secondaryText: '关闭',
+    });
+    const dialog = document.getElementById('BetterX-choice-dialog');
+    dialog.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-backup-part]');
+      if (!button) return;
+      const index = Number(button.getAttribute('data-backup-part'));
+      if (Number.isInteger(index) && index >= 0 && index < groups.length) savePart(index);
+    });
   }
 
   function backupAll() {
@@ -211,9 +271,8 @@
       version: '1.2.0',
       exportedAt: new Date().toISOString(),
       settings: portableSettings,
-      posts: state.posts,
     };
-    download(`BetterX-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(payload, null, 2));
+    savePostExport([...state.posts], payload, `BetterX-backup-${new Date().toISOString().slice(0, 10)}`);
   }
 
   function sanitizeImportedPost(raw) {
@@ -279,82 +338,26 @@
     };
   }
 
-  async function importPosts(file) {
+  async function importPosts(fileOrFiles) {
+    if (state.importInProgress) return;
+    const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
+    if (!files.length) return;
+    if (files.some((file) => !file || file.size > MAX_IMPORT_FILE_BYTES)) {
+      uiAlert('导入失败：备份文件不能超过 25 MB。');
+      return;
+    }
+    state.importInProgress = true;
     const initialDbWriteFailureVersion = state.dbWriteFailureVersion || 0;
+    const session = { settingsHandled: false, added: 0, merged: 0, skipped: 0, trimmed: 0, completed: 0 };
     try {
-      if (!file || file.size > MAX_IMPORT_FILE_BYTES) {
-        uiAlert('导入失败：备份文件不能超过 25 MB。');
-        return;
-      }
-      const text = await file.text();
-      const parsed = JSON.parse(text);
-      let posts = [];
-      let importedSettings = null;
-      if (Array.isArray(parsed)) posts = parsed;
-      else if (parsed && Array.isArray(parsed.posts)) { posts = parsed.posts; importedSettings = parsed.settings || null; }
-      else { uiAlert('无法识别的备份文件格式。'); return; }
-      if (posts.length > MAX_IMPORT_POSTS) {
-        uiAlert(`导入失败：单次最多允许 ${MAX_IMPORT_POSTS} 条帖子。`);
-        return;
-      }
-
-      let added = 0, merged = 0, skipped = 0;
-      const postIndexById = new Map(state.posts.map((post, index) => [post.id, index]));
-      const postsToPersist = new Map();
-      for (const raw of posts) {
-        const imported = sanitizeImportedPost(raw);
-        if (!imported) { skipped++; continue; }
-        const existingIndex = postIndexById.get(imported.id);
-        const existing = existingIndex == null ? null : state.posts[existingIndex];
-        if (existing) {
-          const combined = {
-            ...existing,
-            ...imported,
-            id: existing.id,
-            favorite: existing.favorite || imported.favorite,
-            pinned: existing.pinned || imported.pinned,
-            clicked: existing.clicked || imported.clicked,
-            flashLost: existing.flashLost || imported.flashLost,
-            note: existing.note || imported.note,
-            sourceHistory: uniqueStrings([...(existing.sourceHistory || []), ...imported.sourceHistory]).slice(-8),
-            mediaThumbs: imported.mediaThumbs.length ? imported.mediaThumbs : (existing.mediaThumbs || []),
-            avatarUrl: existing.avatarUrl || imported.avatarUrl,
-            capturedCount: Math.max(existing.capturedCount || 1, imported.capturedCount),
-            firstCapturedAt: Math.min(existing.firstCapturedAt || now(), imported.firstCapturedAt),
-            lastCapturedAt: Math.max(existing.lastCapturedAt || 0, imported.lastCapturedAt),
-            firstViewedAt: existing.firstViewedAt && imported.firstViewedAt
-              ? Math.min(existing.firstViewedAt, imported.firstViewedAt)
-              : Math.max(existing.firstViewedAt || 0, imported.firstViewedAt || 0),
-            lastViewedAt: Math.max(existing.lastViewedAt || 0, imported.lastViewedAt || 0),
-            lastClickedAt: Math.max(existing.lastClickedAt || 0, imported.lastClickedAt || 0),
-          };
-          state.posts[existingIndex] = combined;
-          postsToPersist.set(combined.id, combined);
-          merged++;
-        } else {
-          state.posts.push(imported);
-          postIndexById.set(imported.id, state.posts.length - 1);
-          postsToPersist.set(imported.id, imported);
-          added++;
+      // 每次只解析和写入一卷，避免把全部文件同时展开到内存。
+      for (const file of files) {
+        const result = await importPostFile(file, session);
+        if ((state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion) {
+          throw state.lastDbWriteError || new Error('IndexedDB write failed');
         }
-      }
-      rebuildPostIndex();
-
-      if (importedSettings && uiConfirm('是否同时恢复备份中的设置？')) {
-        // Firefox 兼容模式与当前浏览器环境绑定，不随备份迁移到其他浏览器。
-        applySettingsSnapshot(importedSettings, { preserveFirefoxCompatibility: true });
-        queueSettingsPersist();
-      }
-      const trimmedIds = trimPostsToMax();
-      const liveIds = new Set(state.posts.map((post) => post.id));
-      const survivingPosts = [...postsToPersist.values()].filter((post) => liveIds.has(post.id));
-      queueDbWrite(async () => {
-        await dbPutPosts(survivingPosts, { mergeUserState: true });
-        await dbDeleteMany(trimmedIds, { preserveProtected: true });
-      });
-      await state.dbWriteQueue;
-      if ((state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion) {
-        throw state.lastDbWriteError || new Error('IndexedDB write failed');
+        for (const key of ['added', 'merged', 'skipped', 'trimmed']) session[key] += result[key];
+        session.completed++;
       }
       state.posts = (await dbGetAllPosts()).map(sanitizeImportedPost).filter(Boolean)
         .sort((a, b) => (b.lastCapturedAt || 0) - (a.lastCapturedAt || 0));
@@ -362,14 +365,91 @@
       bumpKeywordCache();
       resetPaging();
       refreshUI();
-      const trimmedMessage = trimmedIds.length ? `，按最大条数清理 ${trimmedIds.length} 条` : '';
-      uiAlert(`导入完成：新增 ${added} 条，合并 ${merged} 条，跳过 ${skipped} 条无效记录${trimmedMessage}。`);
+      const trimmedMessage = session.trimmed ? `，按最大条数清理 ${session.trimmed} 条` : '';
+      uiAlert(`导入完成：新增 ${session.added} 条，合并 ${session.merged} 条，跳过 ${session.skipped} 条无效记录${trimmedMessage}。`);
+      return true;
     } catch (err) {
       console.error('[BetterX] import failed:', err);
-      uiAlert((state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion
+      const message = (state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion
         ? '导入失败：数据未能写入浏览器存储，请检查可用空间后重试。'
-        : '导入失败：文件解析出错。');
+        : err.message === 'IMPORT_POST_LIMIT'
+          ? `导入失败：单次最多允许 ${MAX_IMPORT_POSTS} 条帖子。`
+          : '导入失败：文件解析出错。';
+      uiAlert(session.completed ? `${uiText(message)}\n${uiText('此前已导入的分卷会保留，可重新选择文件继续恢复。')}` : message);
+      return false;
+    } finally {
+      state.importInProgress = false;
     }
+  }
+
+  async function importPostFile(file, session) {
+    const parsed = JSON.parse(await file.text());
+    let posts = [];
+    let importedSettings = null;
+    if (Array.isArray(parsed)) posts = parsed;
+    else if (parsed && Array.isArray(parsed.posts)) { posts = parsed.posts; importedSettings = parsed.settings || null; }
+    else throw new Error('IMPORT_FORMAT');
+    if (posts.length > MAX_IMPORT_POSTS) throw new Error('IMPORT_POST_LIMIT');
+
+    let added = 0, merged = 0, skipped = 0;
+    const postIndexById = new Map(state.posts.map((post, index) => [post.id, index]));
+    const postsToPersist = new Map();
+    for (const raw of posts) {
+      const imported = sanitizeImportedPost(raw);
+      if (!imported) { skipped++; continue; }
+      const existingIndex = postIndexById.get(imported.id);
+      const existing = existingIndex == null ? null : state.posts[existingIndex];
+      if (existing) {
+        const combined = {
+          ...existing,
+          ...imported,
+          id: existing.id,
+          favorite: existing.favorite || imported.favorite,
+          pinned: existing.pinned || imported.pinned,
+          clicked: existing.clicked || imported.clicked,
+          flashLost: existing.flashLost || imported.flashLost,
+          note: existing.note || imported.note,
+          sourceHistory: uniqueStrings([...(existing.sourceHistory || []), ...imported.sourceHistory]).slice(-8),
+          mediaThumbs: imported.mediaThumbs.length ? imported.mediaThumbs : (existing.mediaThumbs || []),
+          avatarUrl: existing.avatarUrl || imported.avatarUrl,
+          capturedCount: Math.max(existing.capturedCount || 1, imported.capturedCount),
+          firstCapturedAt: Math.min(existing.firstCapturedAt || now(), imported.firstCapturedAt),
+          lastCapturedAt: Math.max(existing.lastCapturedAt || 0, imported.lastCapturedAt),
+          firstViewedAt: existing.firstViewedAt && imported.firstViewedAt
+            ? Math.min(existing.firstViewedAt, imported.firstViewedAt)
+            : Math.max(existing.firstViewedAt || 0, imported.firstViewedAt || 0),
+          lastViewedAt: Math.max(existing.lastViewedAt || 0, imported.lastViewedAt || 0),
+          lastClickedAt: Math.max(existing.lastClickedAt || 0, imported.lastClickedAt || 0),
+        };
+        state.posts[existingIndex] = combined;
+        postsToPersist.set(combined.id, combined);
+        merged++;
+      } else {
+        state.posts.push(imported);
+        postIndexById.set(imported.id, state.posts.length - 1);
+        postsToPersist.set(imported.id, imported);
+        added++;
+      }
+    }
+    rebuildPostIndex();
+
+    if (importedSettings && !session.settingsHandled) {
+      session.settingsHandled = true;
+      if (uiConfirm('是否同时恢复备份中的设置？')) {
+        // 多卷只恢复一次设置；Firefox 兼容模式仍与当前浏览器绑定。
+        applySettingsSnapshot(importedSettings, { preserveFirefoxCompatibility: true, force: true });
+        queueSettingsPersist();
+      }
+    }
+    const trimmedIds = trimPostsToMax();
+    const liveIds = new Set(state.posts.map((post) => post.id));
+    const survivingPosts = [...postsToPersist.values()].filter((post) => liveIds.has(post.id));
+    queueDbWrite(async () => {
+      await dbPutPosts(survivingPosts, { mergeUserState: true });
+      await dbDeleteMany(trimmedIds, { preserveProtected: true });
+    });
+    await state.dbWriteQueue;
+    return { added, merged, skipped, trimmed: trimmedIds.length };
   }
 
   async function runAutoClean() {
@@ -824,7 +904,11 @@
       const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`);
       updatePostNote(id, input ? input.value.trim() : '');
     },
-    'cancel-note': () => { state.editingNoteId = null; refreshUI({ keepScroll: true }); },
+    'cancel-note': () => {
+      state.noteDrafts.delete(state.editingNoteId);
+      state.editingNoteId = null;
+      refreshUI({ keepScroll: true });
+    },
     open: ({ id }) => openRecordedPost(getPostById(id)),
     pin: ({ id }) => togglePin(id), fav: ({ id }) => toggleFavorite(id), delete: ({ id }) => deletePost(id),
     'mark-all-read': () => {
@@ -903,12 +987,15 @@
   }
 
   function bindSettingsControls(panel) {
+    state.settingsControlBindings = [];
     for (const [settingKey, definition] of Object.entries(SETTINGS_SCHEMA)) {
       const [stateKey, selector, property] = definition.control || [];
       if (!stateKey || !selector || !property) continue;
       const control = panel.querySelector(selector);
       state[stateKey] = control;
       if (!control) continue;
+      const view = control.closest?.('[data-view-panel]')?.getAttribute('data-view-panel') || 'settings';
+      state.settingsControlBindings.push({ settingKey, definition, property, control, view });
       control.addEventListener('change', () => {
         const value = property === 'checked' ? !!control.checked : control.value;
         const manuallyEnabledAgeBypass = settingKey === 'bypassAgeRestriction'
@@ -919,12 +1006,9 @@
     }
   }
 
-  function syncSettingsControls() {
-    for (const [settingKey, definition] of Object.entries(SETTINGS_SCHEMA)) {
-      const [stateKey, , property] = definition.control || [];
-      if (!stateKey || !property) continue;
-      const control = state[stateKey];
-      if (!control) continue;
+  function syncSettingsControls(view) {
+    for (const { settingKey, definition, property, control, view: controlView } of state.settingsControlBindings || []) {
+      if (view && controlView !== view) continue;
       const value = state.settings[settingKey] ?? definition.default;
       control[property] = property === 'checked' ? !!value : String(value);
     }

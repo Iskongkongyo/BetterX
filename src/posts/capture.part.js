@@ -54,7 +54,7 @@
 
     const isFirstVisibleCapture = !state.visibleMap.has(id);
     const author = adultSpamResult?.input?.author || extractAuthor(article);
-    const text = adultSpamResult?.input?.text ?? extractText(article);
+    const text = adultSpamResult?.input?.fullText ?? extractText(article);
     const media = detectMedia(article, id);
     const avatarUrl = extractAvatar(article);
 
@@ -64,7 +64,7 @@
         displayName: author.displayName,
         username: author.username,
         timeLabel: author.timeLabel,
-        text,
+        text: selectRicherPostText(getPostById(id)?.text, text),
         hasImage: media.hasImage,
         hasVideo: media.hasVideo,
         mediaThumbs: media.thumbs,

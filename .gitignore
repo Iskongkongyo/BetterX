@@ -1,9 +1,10 @@
 # 默认忽略根目录中的所有内容，仅放行项目源码与发布文件。
 /*
 
-# 项目入口与各语言 README（如 README.en.md）
+# 项目入口、各语言 README 与更新日志
 !/.gitignore
 !/README*.md
+!/更新日志.txt
 !/package.json
 !/LICENSE
 
@@ -11,6 +12,9 @@
 !/src/
 !/scripts/
 !/tests/
+
+# README 图标等静态资源
+!/assets/
 
 # 根目录编译完成的 userscript（兼容后续版本改名）
 !/*.js

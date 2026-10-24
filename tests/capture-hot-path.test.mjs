@@ -24,7 +24,7 @@ const api = vm.runInNewContext(`(() => {
   const evaluateAndApplyAdultSpam = (_article, outcome) => {
     statusLinkReads++;
     Object.assign(outcome, {
-      input: { author: { displayName: 'Cached', username: '@cached', timeLabel: 'now' }, text: 'cached text' },
+      input: { author: { displayName: 'Cached', username: '@cached', timeLabel: 'now' }, text: 'cached text', fullText: 'cached text' },
       url: 'https://x.com/cached/status/123',
       id: '123',
     });

@@ -1,18 +1,23 @@
+  // 多义短词、数字和通用引流用语归入 WEAK_TERMS，只能辅助评分，不能充当成人内容依据。
   const ADULT_SPAM_STRONG_TERMS = [
     '抽插', '淫叫', '母狗', '肉便器', '母猪', '反差婊', '小穴', '穴穴', '性奴', '蜜穴',
-    '爆菊', '性交', '爆操', '福利姬', '里番', '裸照', '裸体', '阴茎', '做愛','嫩穴','ntr',
-    '做爱', '自慰', '精液', '打飞机', '性欲', '果照', '肏', '约炮', '裸聊','美鲍', '子宫',
-    '援交', '外围', '包夜', '无套', '全套服务', '上门约', '成人视频', '成人影片','发情',
+    '爆菊', '性交', '爆操', '福利姬', '里番', '裸照', '裸体', '阴茎', '做愛','嫩穴',
+    '做爱', '自慰', '精液', '打飞机', '果照', '约炮', '裸聊','美鲍',
+    '援交', '包夜', '成人视频', '成人影片',
     '黄片', '黄网', '色情网站', '看片网站', 'porn', 'nudes', 'onlyfans leak','网黄',
-    'sex video', 'wataa', 'Wataa', '私处', '尤物', '人妻', '口交', '内射', 'ts','NTR',
-    '阴道', '偷拍', '手冲', '淫趴', 'p眼', '屁眼', '皮炎', '迷奸', '小烧货', '骚货', 'sao货',
-    '破处', '陪睡', '后入', '肛交', '催情','约啪','艹','跳蛋','晨勃','Chudai','chudai',
-    '露B','潮喷','龟头','射精','肉棒','鸡巴','3p','4i','被操','榨精','撸管','深喉','69',
-    'G点','91','糖心','麻豆','50度灰','足交','乳交','烧姬','约爱','字母圈','淫窝','车震',
-    'TS','约p','戴套','阴唇','秒射','飞机杯','屁穴','幹','性爱','鸡鸡','磨豆腐','双头龙',
+    'sex video', 'sex videos', 'wataa', 'Wataa', '私处', '尤物', '人妻', '口交', '内射',
+    '阴道', '淫趴', '屁眼', '迷奸', '小烧货', '骚货', 'sao货',
+    '破处', '陪睡', '后入', '肛交', '催情','约啪','跳蛋','Chudai','chudai',
+    '露B','潮喷','龟头','射精','肉棒','鸡巴','被操','榨精','撸管','深喉',
+    '足交','乳交','烧姬','淫窝','车震',
+    '约p','阴唇','秒射','飞机杯','屁穴','性爱','鸡鸡','磨豆腐','双头龙','没她骚','爱几把',
   ];
-  const ADULT_SPAM_INSTANT_BLOCK_TERMS = [
-    '没她骚', '福不黑', '我的福', '顶不住', '爱几把', '瓜', '线下', '同城',
+  const ADULT_SPAM_WEAK_TERMS = [
+    'ts', 'TS', 'ntr', 'NTR', '91', '69', '3p', '4i', 'p眼', 'G点',
+    '皮炎', '子宫', '手冲', '外围', '无套', '全套服务', '发情', '性欲', '晨勃',
+    '糖心', '麻豆', '50度灰', '字母圈', '戴套', '偷拍', '艹', '幹',
+    '同城可约', '附近可约', '私密视频', '大尺度视频', '成人直播', '上门约', '约爱',
+    '福不黑', '我的福', '顶不住', '瓜', '线下', '同城',
     '妈妈', '儿子', '一夜', '进入身', 'sao', '全国牵', 't.cn', '👆', '👉',
     '联系', '主页', '快手', '抖音', '免费', '我好看', '寻',
   ];
@@ -30,8 +35,8 @@
     '体制内老师', '体制内护士', '体制内医生', '在线等哥哥', '在线等弟弟',
   ];
   const ADULT_SPAM_SUGGESTIVE_TERMS = [
-    '同城可约', '附近可约', '私密视频', '福利视频', '大尺度视频', '成人直播',
-    '萝莉资源', '少女资源', '嫩模资源', '看片入口', '成人视频资源',
+    '福利视频',
+    '萝莉资源', '少女资源', '嫩模资源', '看片入口', '成人视频资源', '可瑟瑟', '推特第一骚',
   ];
   const ADULT_SPAM_MARKETING_TERMS = [
     '免费领取', '点击领取', '立即加入', '频道入口', '群组入口', '资源合集',
@@ -45,7 +50,7 @@
     '黄推机器人', '举报黄推', '屏蔽黄推', '黄推太多', '垃圾黄推', '清理黄推',
     '色情诈骗', '反诈', '曝光骗子',
   ];
-  const ADULT_SPAM_NAME_RE = /(?:福利姬|约炮|裸聊|外围|看片|成人视频|黄网|反差婊|巨乳|痴女|porn|nudes|onlyfans|sex(?:y|cam)?|xxx)/i;
+  const ADULT_SPAM_NAME_RE = /(?:福利姬|约炮|裸聊|看片|成人视频|黄网|反差婊|巨乳|痴女|(?:^|[^a-z0-9])(?:porn|nudes|onlyfans|sex(?:y|cam)?|xxx)(?![a-z0-9]))/i;
   const ADULT_SPAM_EXACT_AMBIGUOUS_RE = /^(?:骚|逼|肏|doi|spa|全套|处女|chu男|cchu男|c男)$/i;
   const ADULT_SPAM_AMBIGUOUS_RES = [
     /(?<!离)骚(?!操作|扰|包|话|客|气)/,
@@ -93,28 +98,70 @@
     return normalizeAdultSpamText(value).replace(/[\s\p{P}\p{S}_]+/gu, '');
   }
 
-  function compileAdultSpamInstantBlockTerm(raw) {
-    return { raw, normalized: normalizeAdultSpamText(raw), compact: compactAdultSpamText(raw) };
-  }
-
-  function findAdultSpamInstantBlockTerm(normalized, compact) {
-    return COMPILED_ADULT_SPAM_INSTANT_BLOCK_TERMS.find((term) => (
-      (term.normalized && normalized.includes(term.normalized))
-      || (term.compact && compact.includes(term.compact))
-    ));
+  function compileAdultSpamTerms(terms, allowObfuscation = true) {
+    const compiled = new Map();
+    for (const raw of terms) {
+      const normalized = normalizeAdultSpamText(raw);
+      if (!normalized) continue;
+      const compact = compactAdultSpamText(normalized);
+      const key = compact || normalized;
+      let patternSource = '';
+      if (/^[\x00-\x7F]+$/.test(normalized) && /[a-z0-9]/.test(normalized)) {
+        const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let literal = escape(normalized);
+        if (allowObfuscation && compact.length >= 4 && /^[a-z0-9 ]+$/.test(normalized) && /[a-z]/.test(normalized)) {
+          // 明确的较长英文词允许插入标点，但单词内部不跨空格拼接。
+          literal = normalized.split(' ').map((word) => [...word].map(escape).join('[\\p{P}\\p{S}_]*'))
+            .join('[\\s\\p{P}\\p{S}_]*');
+        }
+        patternSource = `(?:^|[^a-z0-9_])${literal}(?![a-z0-9_])`;
+      }
+      const variantKey = patternSource || compact || normalized;
+      if (!compiled.has(key)) compiled.set(key, new Map());
+      const variants = compiled.get(key);
+      if (!variants.has(variantKey)) variants.set(variantKey, {
+        normalized, compact, pattern: patternSource ? new RegExp(patternSource, 'u') : null,
+      });
+    }
+    // 不同大小写、全角或插符形式归为一个词条，任一形式命中都只计一次。
+    return [...compiled].map(([key, variants]) => ({ key, variants: [...variants.values()] }));
   }
 
   // 内置词表在启动时只标准化一次，避免每评分一条帖子就重复处理全部固定词。
-  const COMPILED_ADULT_SPAM_INSTANT_BLOCK_TERMS = ADULT_SPAM_INSTANT_BLOCK_TERMS.map(compileAdultSpamInstantBlockTerm);
-  const COMPILED_ADULT_SPAM_TERMS = {
-    strong: ADULT_SPAM_STRONG_TERMS.map(compactAdultSpamText),
-    sensitive: ADULT_SPAM_SENSITIVE_TERMS.map(compactAdultSpamText),
-    botBait: ADULT_SPAM_BOT_BAIT_TERMS.map(compactAdultSpamText),
-    suggestive: ADULT_SPAM_SUGGESTIVE_TERMS.map(compactAdultSpamText),
-    marketing: ADULT_SPAM_MARKETING_TERMS.map(compactAdultSpamText),
-    contact: ADULT_SPAM_CONTACT_TERMS.map(compactAdultSpamText),
-    exemptions: ADULT_SPAM_CONTEXT_EXEMPTIONS.map(compactAdultSpamText),
-  };
+  const ADULT_SPAM_WEAK_KEYS = new Set(ADULT_SPAM_WEAK_TERMS.map((term) => compactAdultSpamText(term) || normalizeAdultSpamText(term)));
+  const withoutWeakTerms = (terms) => terms.filter((term) => !ADULT_SPAM_WEAK_KEYS.has(compactAdultSpamText(term)));
+  const COMPILED_ADULT_SPAM_TERMS = (() => {
+    const groups = {
+      strong: compileAdultSpamTerms(withoutWeakTerms(ADULT_SPAM_STRONG_TERMS)),
+      sensitive: compileAdultSpamTerms(withoutWeakTerms(ADULT_SPAM_SENSITIVE_TERMS)),
+      botBait: compileAdultSpamTerms(ADULT_SPAM_BOT_BAIT_TERMS),
+      suggestive: compileAdultSpamTerms(ADULT_SPAM_SUGGESTIVE_TERMS),
+      marketing: compileAdultSpamTerms(ADULT_SPAM_MARKETING_TERMS),
+      contact: compileAdultSpamTerms(ADULT_SPAM_CONTACT_TERMS),
+      exemptions: compileAdultSpamTerms(ADULT_SPAM_CONTEXT_EXEMPTIONS),
+      weak: compileAdultSpamTerms(ADULT_SPAM_WEAK_TERMS, false),
+    };
+    const claimed = new Map();
+    const variantKey = (variant) => variant.pattern?.source || variant.compact || variant.normalized;
+    for (const group of ['strong', 'suggestive', 'sensitive', 'botBait', 'marketing', 'contact', 'weak']) {
+      groups[group] = groups[group].filter((term) => {
+        const existing = claimed.get(term.key);
+        if (existing) {
+          const variants = new Set(existing.variants.map(variantKey));
+          for (const variant of term.variants) {
+            if (!variants.has(variantKey(variant))) {
+              existing.variants.push(variant);
+              variants.add(variantKey(variant));
+            }
+          }
+          return false;
+        }
+        claimed.set(term.key, term);
+        return true;
+      });
+    }
+    return groups;
+  })();
   let compiledAdultSpamCustomRulesVersion = -1;
   let compiledAdultSpamCustomRules = [];
 
@@ -131,10 +178,12 @@
     return compiledAdultSpamCustomRules;
   }
 
-  function countCompiledTerms(haystack, terms) {
+  function countCompiledTerms(normalized, compact, terms) {
     let count = 0;
     for (const term of terms) {
-      if (term && haystack.includes(term)) count++;
+      if (term.variants.some((variant) => variant.pattern
+        ? variant.pattern.test(normalized)
+        : variant.compact ? compact.includes(variant.compact) : normalized.includes(variant.normalized))) count++;
     }
     return count;
   }
@@ -142,7 +191,8 @@
   function getAdultSpamInput(article) {
     const author = extractAuthor(article);
     // 合并原创正文与引用正文；只取第一个 tweetText 会漏掉引用卡片中的敏感内容。
-    const text = (extractText(article) || '').trim().slice(0, 2500);
+    const fullText = (extractText(article) || '').trim();
+    const text = fullText.slice(0, 2500);
     const socialContextEl = article.querySelector('[data-testid="socialContext"]');
     const repostContext = (socialContextEl?.innerText || '').trim().slice(0, 300);
     const isRepost = ADULT_SPAM_REPOST_CONTEXT_RE.test(repostContext);
@@ -173,7 +223,7 @@
       else if (!isRepost && username) rememberFollowingRelation(username, true);
     }
     return {
-      author, text, displayName: author.displayName || '', username, rawUsername,
+      author, text, fullText, displayName: author.displayName || '', username, rawUsername,
       repostContext, isRepost, reposterUsername, externalLinkCount, mentionCount, hasMedia, isFollowingTimeline,
     };
   }
@@ -215,20 +265,15 @@
       };
     }
 
-    const instantBlockTerm = findAdultSpamInstantBlockTerm(normalized, compact);
-    if (instantBlockTerm) {
-      return { hidden: true, score: 99, reasons: [`高风险屏蔽词：${instantBlockTerm.raw}`] };
-    }
-
     const reasons = [];
     let score = 0;
-    let signalGroups = 0;
-    const strongCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.strong);
-    const sensitiveCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.sensitive);
-    const botBaitCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.botBait);
-    const suggestiveCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.suggestive);
-    const marketingCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.marketing);
-    const contactCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.contact);
+    const strongCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.strong);
+    const sensitiveCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.sensitive);
+    const botBaitCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.botBait);
+    const suggestiveCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.suggestive);
+    const marketingCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.marketing);
+    const contactCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.contact);
+    const weakCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.weak);
     const comboCount = ADULT_SPAM_COMBO_RES.filter((re) => re.test(compact)).length;
     const templateCount = ADULT_SPAM_TEMPLATE_RES.filter((re) => re.test(normalized) || re.test(compact)).length;
     const exactAmbiguous = ADULT_SPAM_EXACT_AMBIGUOUS_RE.test(compactAdultSpamText(input.text));
@@ -236,40 +281,40 @@
     const riskyName = ADULT_SPAM_NAME_RE.test(input.displayName) || ADULT_SPAM_NAME_RE.test(usernameText);
     const syntheticHandle = ADULT_SPAM_BOT_HANDLE_RES.some((re) => re.test(input.rawUsername || input.username || ''));
 
-    if (strongCount) { score += Math.min(14, strongCount * 10); signalGroups++; reasons.push('强成人内容词'); }
-    if (sensitiveCount) { score += Math.min(10, sensitiveCount * 4); signalGroups++; reasons.push('敏感暗示词'); }
-    if (botBaitCount) { score += Math.min(6, botBaitCount * 3); signalGroups++; reasons.push('机器人诱导短句'); }
-    if (suggestiveCount) { score += Math.min(6, suggestiveCount * 3); signalGroups++; reasons.push('成人引流短语'); }
-    if (comboCount) { score += Math.min(8, comboCount * 4); signalGroups++; reasons.push('高风险组合话术'); }
-    if (templateCount) { score += Math.min(10, templateCount * 8); signalGroups++; reasons.push('黄推模板话术'); }
-    if (exactAmbiguous) { score += 10; signalGroups++; reasons.push('单字露骨内容'); }
-    if (ambiguousCount) { score += Math.min(6, ambiguousCount * 4); signalGroups++; reasons.push('语境敏感词'); }
-    if (marketingCount) { score += Math.min(4, marketingCount * 2); signalGroups++; reasons.push('营销引导'); }
-    if (contactCount) { score += Math.min(4, contactCount * 2); signalGroups++; reasons.push('站外联系引导'); }
+    if (strongCount) { score += Math.min(14, strongCount * 10); reasons.push('强成人内容词'); }
+    if (sensitiveCount) { score += Math.min(10, sensitiveCount * 4); reasons.push('敏感暗示词'); }
+    if (botBaitCount) { score += Math.min(6, botBaitCount * 3); reasons.push('机器人诱导短句'); }
+    if (suggestiveCount) { score += Math.min(6, suggestiveCount * 3); reasons.push('成人引流短语'); }
+    if (comboCount) { score += Math.min(8, comboCount * 4); reasons.push('高风险组合话术'); }
+    if (templateCount) { score += Math.min(10, templateCount * 8); reasons.push('黄推模板话术'); }
+    if (exactAmbiguous) { score += 2; reasons.push('多义词（需语境）'); }
+    if (ambiguousCount) { score += Math.min(6, ambiguousCount * 4); reasons.push('语境敏感词'); }
+    if (weakCount) { score += Math.min(2, weakCount); reasons.push('多义词/引流辅助词'); }
+    if (marketingCount) { score += Math.min(4, marketingCount * 2); reasons.push('营销引导'); }
+    if (contactCount) { score += Math.min(4, contactCount * 2); reasons.push('站外联系引导'); }
     if (riskyName) {
       score += 3;
-      signalGroups++;
       reasons.push('账号名特征');
     }
-    if (syntheticHandle) { score += 3; signalGroups++; reasons.push('机器用户名结构'); }
-    if (input.externalLinkCount > 0) { score += 2; signalGroups++; reasons.push('外部链接'); }
+    if (syntheticHandle) { score += 3; reasons.push('机器用户名结构'); }
+    if (input.externalLinkCount > 0) { score += 2; reasons.push('外部链接'); }
     if ((input.mentionCount || 0) > 0 && (contactCount || templateCount)) {
       score += 3;
-      signalGroups++;
       reasons.push('@账号引流');
     }
     const riskEmojiCount = (normalized.match(/[✈️🔞💦🈲👅🍑👙🙇❣️❤️🍓🎀💋🥵]/gu) || []).length;
-    if (riskEmojiCount >= 2 || normalized.includes('🔞')) { score += 3; signalGroups++; reasons.push('高风险表情组合'); }
-    const hasContentRisk = strongCount || sensitiveCount || botBaitCount || suggestiveCount || comboCount || templateCount || exactAmbiguous || ambiguousCount || riskyName;
-    if (input.hasMedia && hasContentRisk) { score += 2; signalGroups++; reasons.push('敏感媒体组合'); }
-    if (input.text && input.text.length <= 120 && hasContentRisk) score += 1;
+    if (riskEmojiCount >= 2 || normalized.includes('🔞')) { score += 3; reasons.push('高风险表情组合'); }
+    const hasPromotionContext = contactCount || marketingCount || comboCount || templateCount;
+    const hasAdultContext = strongCount > 0 || suggestiveCount > 0
+      || ((sensitiveCount >= 2 || riskyName) && hasPromotionContext);
+    if (input.hasMedia && hasAdultContext) { score += 2; reasons.push('敏感媒体组合'); }
+    if (input.text && input.text.length <= 120 && hasAdultContext) score += 1;
 
-    const exemptionCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.exemptions);
+    const exemptionCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.exemptions);
     if (exemptionCount) { score = Math.max(0, score - 6); reasons.push('讨论/反诈语境降权'); }
     const threshold = state.settings.adultSpamLevel === 'balanced' ? 6 : 9;
-    const hasStrongAnchor = strongCount > 0 || templateCount > 0 || comboCount > 0 || exactAmbiguous;
-    const qualified = hasStrongAnchor || (hasContentRisk && signalGroups >= 2);
-    return { hidden: qualified && score >= threshold, score, reasons };
+    // 辅助词、普通导流模板、图片、链接或机器式用户名不能代替成人内容证据。
+    return { hidden: !!hasAdultContext && score >= threshold, score, reasons };
   }
 
   function captureAdultSpamScrollAnchors(articles = document.querySelectorAll('article')) {

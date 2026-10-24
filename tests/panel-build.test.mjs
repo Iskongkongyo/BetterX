@@ -15,7 +15,7 @@ assert.equal(
 );
 
 const panelSource = await readFile(new URL('../src/ui/panel.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v3.9.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v4.0.0.js', import.meta.url), 'utf8');
 const compactedSource = compactPanelTemplate(panelSource);
 const opening = 'panel.innerHTML = uiHtml`';
 const boundary = 'const fileInput';

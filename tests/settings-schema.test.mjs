@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v3.9.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v4.0.0.js', import.meta.url);
 let source = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(source, startupPattern, '找不到脚本启动标记');
@@ -304,7 +304,7 @@ assert.deepEqual(
   Object.keys(api.SETTING_REMOVE_ACTIONS).sort(),
   ['remove-adultspam-keyword', 'remove-adultspam-whitelist', 'remove-exclude-keyword', 'remove-keyword']
 );
-assert.match(source, /applySettingsSnapshot\(importedSettings,\s*\{ preserveFirefoxCompatibility: true \}\)/,
+assert.match(source, /applySettingsSnapshot\(importedSettings,\s*\{ preserveFirefoxCompatibility: true, force: true \}\)/,
   '备份设置必须通过统一副作用入口恢复');
 assert.match(source, /followedHandles\.clear\(\)/, '恢复设置时不能保留备份外的旧关注账号');
 assert.match(source, /notificationSubscriptions\.clear\(\)/, '恢复设置时必须重建通知订阅运行时状态');

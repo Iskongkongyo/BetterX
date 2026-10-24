@@ -196,8 +196,7 @@
       const index = getPostIndexById(storedPost.id);
       if (index >= 0) state.posts[index] = storedPost;
       else {
-        state.posts.push(storedPost);
-        state.postIndexById.set(String(storedPost.id), state.posts.length - 1);
+        appendPost(storedPost);
       }
       debouncedRefreshUI();
     }
@@ -399,16 +398,30 @@
   // ── 数据操作 ─────────────────────────────────────────────────────
   function rebuildPostIndex() {
     state.postIndexById = new Map(state.posts.map((post, index) => [String(post.id), index]));
+    indexedPosts = state.posts;
+    indexedPostLength = state.posts.length;
+  }
+
+  function ensurePostIndex() {
+    if (indexedPosts !== state.posts || indexedPostLength !== state.posts.length) rebuildPostIndex();
+  }
+
+  function appendPost(post) {
+    ensurePostIndex();
+    state.posts.push(post);
+    state.postIndexById.set(String(post.id), state.posts.length - 1);
+    indexedPostLength = state.posts.length;
   }
 
   function getPostIndexById(id) {
+    ensurePostIndex();
     const key = String(id);
     const cached = state.postIndexById.get(key);
-    if (cached != null && state.posts[cached] && String(state.posts[cached].id) === key) return cached;
-    const index = state.posts.findIndex((post) => String(post.id) === key);
-    if (index >= 0) state.postIndexById.set(key, index);
-    else state.postIndexById.delete(key);
-    return index;
+    if (cached == null) return -1;
+    if (state.posts[cached] && String(state.posts[cached].id) === key) return cached;
+    // 仅在发现已有条目的位置失效时恢复索引，缺失 ID 不触发全表查询。
+    rebuildPostIndex();
+    return state.postIndexById.get(key) ?? -1;
   }
   function getPostById(id) {
     const index = getPostIndexById(id);
@@ -422,6 +435,7 @@
       matchCache.delete(id);
       state.visibleMap.delete(id);
       state.expandedPosts.delete(id);
+      state.noteDrafts.delete(id);
       mediaRegistry.delete(id);
       cardRegistry.delete(id);
     }
@@ -779,7 +793,7 @@
       : '';
     const noteHtml = isEditingNote
       ? uiHtml`<div class="BetterX-note-edit">
-           <textarea class="BetterX-note-input" data-id="${escapeHtml(post.id)}" placeholder="在这里写备注…">${escapeHtml(post.note || '')}</textarea>
+           <textarea class="BetterX-note-input" data-id="${escapeHtml(post.id)}" placeholder="在这里写备注…">${escapeHtml(state.noteDrafts.get(post.id) ?? post.note ?? '')}</textarea>
            <div class="BetterX-note-actions">
              <button class="BetterX-btn primary" data-action="save-note" data-id="${escapeHtml(post.id)}">保存备注</button>
              <button class="BetterX-btn" data-action="cancel-note">取消</button>
@@ -831,25 +845,59 @@
     `;
   }
 
-  function refreshUI(opts) {
-    opts = opts || {};
-    if (!state.panelEl) return;
-    refreshBadge();
-    // 面板关闭时只维护轻量徽标；筛选、排序和富 HTML 渲染延后到真正打开面板时。
-    if (!state.panelOpen && opts.force !== true) return;
-    const keepListScroll = !!opts.keepScroll || state.panelView === 'settings';
+  function snapshotNoteEditor() {
+    const input = state.listEl?.querySelector('.BetterX-note-input');
+    const id = input?.getAttribute('data-id');
+    if (!id || id !== state.editingNoteId) return null;
+    state.noteDrafts.set(id, input.value);
+    return {
+      id, element: input.closest('.BetterX-note-edit'), focused: document.activeElement === input,
+      scrollTop: input.scrollTop,
+    };
+  }
 
-    if (state.summaryEl) state.summaryEl.innerHTML = buildSummaryHtml();
-    if (state.filterBarEl) state.filterBarEl.innerHTML = buildFilterHtml();
-    if (state.sourceSelectEl) {
-      state.sourceSelectEl.innerHTML = buildSourceOptionsHtml();
+  function renderPostList(html, snapshot) {
+    const editingCard = snapshot?.element.closest('.BetterX-item');
+    if (!editingCard || snapshot.id !== state.editingNoteId) {
+      state.listEl.innerHTML = html;
+      return;
     }
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const nextCard = template.content.querySelector('.BetterX-note-edit')?.closest('.BetterX-item');
+    if (!nextCard) { state.listEl.innerHTML = html; return; }
+
+    // 编辑区域始终保持连接；仅复用一个已移除的 textarea 仍会清空浏览器撤销栈。
+    const noteArea = snapshot.element.closest('.BetterX-note-area');
+    editingCard.className = nextCard.className;
+    for (const child of [...editingCard.children]) {
+      if (child !== noteArea) child.remove();
+    }
+    let afterNote = false;
+    for (const child of [...nextCard.children]) {
+      if (child.classList.contains('BetterX-note-area')) { afterNote = true; continue; }
+      if (afterNote) editingCard.appendChild(child);
+      else editingCard.insertBefore(child, noteArea);
+    }
+    for (const child of [...state.listEl.childNodes]) {
+      if (child !== editingCard) child.remove();
+    }
+    let afterCard = false;
+    for (const child of [...template.content.childNodes]) {
+      if (child === nextCard) { afterCard = true; continue; }
+      if (afterCard) state.listEl.appendChild(child);
+      else state.listEl.insertBefore(child, editingCard);
+    }
+    const input = snapshot.element.querySelector('.BetterX-note-input');
+    if (snapshot.focused && document.activeElement !== input) input.focus({ preventScroll: true });
+    input.scrollTop = snapshot.scrollTop;
+  }
+
+  function refreshSettingsUI() {
     if (state.skipSourcesEl) state.skipSourcesEl.innerHTML = buildSkipSourcesHtml();
     renderSavedKeywordTags();
     renderSavedExcludeKeywordTags();
-    syncSettingsControls();
-    updateSortHint();
-    updateQuickFilterHeader();
+    syncSettingsControls('settings');
     updateDownloadAdvancedHeader();
     syncInactiveInput(state.autoCleanInputEl, state.settings.autoCleanDays || 0);
     syncInactiveInput(state.maxPostsInputEl, state.settings.maxPosts || DEFAULT_SETTINGS.maxPosts);
@@ -894,7 +942,17 @@
       [state.profilePostSortEl, 'disabled', state.settings.profilePostSortEnabled === false],
     ]);
     updateSettingsDependencyUI();
-    renderNotificationSubscriptions();
+  }
+
+  function refreshVaultUI(opts) {
+    const noteEditor = snapshotNoteEditor();
+    const keepListScroll = !!opts.keepScroll;
+    if (state.summaryEl) state.summaryEl.innerHTML = buildSummaryHtml();
+    if (state.filterBarEl) state.filterBarEl.innerHTML = buildFilterHtml();
+    if (state.sourceSelectEl) state.sourceSelectEl.innerHTML = buildSourceOptionsHtml();
+    syncSettingsControls('vault');
+    updateSortHint();
+    updateQuickFilterHeader();
 
     if (!state.listEl) return;
     const scrollTop = keepListScroll ? state.listEl.scrollTop : 0;
@@ -913,8 +971,19 @@
     if (filtered.length > shown.length) {
       html += uiHtml`<button class="BetterX-loadmore" data-action="load-more">加载更多（还有 ${filtered.length - shown.length} 条）</button>`;
     }
-    state.listEl.innerHTML = html;
+    renderPostList(html, noteEditor);
     if (keepListScroll) state.listEl.scrollTop = scrollTop;
+  }
+
+  function refreshUI(opts) {
+    opts = opts || {};
+    if (!state.panelEl) return;
+    refreshBadge();
+    // 隐藏页签延迟到进入时刷新，避免后台抓帖反复生成不可见的卡片和设置控件。
+    if (!state.panelOpen && opts.force !== true) return;
+    if (state.panelView === 'settings') refreshSettingsUI();
+    else if (state.panelView === 'notifications') renderNotificationSubscriptions(opts.force === true);
+    else refreshVaultUI(opts);
   }
 
   function sanitizeSettings(raw) {
@@ -1181,6 +1250,7 @@
       if (settingsValueChanged(previous[key], next[key])) changed[key] = next[key];
     }
     state.settings = next;
+    if (!Object.keys(changed).length && opts.force !== true) return next;
 
     const followedChanged = settingsValueChanged(previous.knownFollowedHandles, next.knownFollowedHandles);
     followedHandles.clear();
@@ -1203,7 +1273,6 @@
     }
     resetPaging();
     refreshUI({ keepScroll: true });
-    renderNotificationSubscriptions();
     scheduleDownloadUiRefresh();
     return next;
   }
@@ -1260,8 +1329,7 @@
         avatarUrl: '',
         ...post,
       };
-      state.posts.push(created);
-      state.postIndexById.set(String(created.id), state.posts.length - 1);
+      appendPost(created);
       maybeShowPostLimitWarning();
       queueDbWrite(async () => {
         await dbPutPost(created, { preserveUserState: true });
@@ -1328,6 +1396,7 @@
   function updatePostNote(id, note) {
     if (!updateStoredPost(id, () => ({ note }), null)) return;
     state.editingNoteId = null;
+    state.noteDrafts.delete(id);
     matchCache.delete(id);
     refreshUI({ keepScroll: true });
   }

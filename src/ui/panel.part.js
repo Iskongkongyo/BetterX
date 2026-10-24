@@ -325,6 +325,7 @@
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'application/json,.json';
+    fileInput.multiple = true;
     fileInput.style.display = 'none';
 
     const downloadPill = document.createElement('button');
@@ -411,6 +412,11 @@
     makePanelResizable();
     installMobileBadgeRevealGesture();
 
+    root.addEventListener('input', (event) => {
+      if (!event.target.matches('.BetterX-note-input[data-id]')) return;
+      state.noteDrafts.set(event.target.getAttribute('data-id'), event.target.value);
+    });
+
     // 搜索
     state.searchEl.addEventListener('input', debounce((e) => {
       state.searchQuery = e.target.value || '';
@@ -481,8 +487,8 @@
       if (e.target.checked) showToast('已切换为屏幕右侧小蓝条');
     });
     state.importInputEl.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (file) importPosts(file);
+      const files = [...(e.target.files || [])];
+      if (files.length) importPosts(files);
       e.target.value = '';
     });
 

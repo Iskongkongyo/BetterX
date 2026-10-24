@@ -5,12 +5,12 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      3.9.0
-// @description  管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
-// @description:zh-CN 管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF（多媒体可自动压缩 ZIP）、取消年龄限制、记录与管理浏览过的帖子，并支持搜索、排序、关键词、备份、主题与 IndexedDB 持久化。
-// @description:zh-TW 管理 X 貼文通知訂閱狀態、自動隱藏成人引流帳號與廣告、簡化介面與寬螢幕、一鍵下載圖片/影片/GIF（多媒體可自動壓縮為 ZIP）、解除年齡限制、記錄與管理瀏覽過的貼文，並支援搜尋、排序、關鍵字、備份、主題與 IndexedDB 持久化。
-// @description:ja X のポスト通知購読を管理し、成人スパムや広告を自動非表示にします。UI の簡素化・ワイド表示、画像・動画・GIF の一括ダウンロード（ZIP 対応）、年齢制限の解除、閲覧ポストの記録・検索・並べ替え・キーワード・バックアップ・テーマ・IndexedDB 永続化に対応します。
-// @description:en Manage X post-notification subscriptions, hide adult spam and ads, simplify and widen the interface, download images/videos/GIFs with optional ZIP packaging, bypass age gates, and save browsed posts with search, sorting, keywords, backups, themes, and IndexedDB persistence.
+// @version      4.0.0
+// @description  BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
+// @description:zh-CN BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
+// @description:zh-TW BetterX 是一款 X（原 Twitter）增強腳本，支援本機貼文記錄、搜尋、收藏與備註，並整合廣告與成人引流內容過濾、媒體下載、貼文通知管理及介面最佳化。
+// @description:ja BetterX は、X（旧 Twitter）向けの機能拡張ユーザースクリプトです。ポストのローカル記録・検索・お気に入り・メモに加え、広告や成人向けスパムの非表示、メディア保存、ポスト通知の管理、UI の改善に対応します。
+// @description:en BetterX is a userscript for X (formerly Twitter) with local post history, search, favorites, and notes, plus ad and adult spam filtering, media downloads, post notification management, and interface improvements.
 // @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://m.x.com/*
@@ -47,7 +47,7 @@ const APP_ICON_URL = (() => {
 })();
 const UI_LANGUAGE_OVERRIDE_KEY = 'betterx_ui_language_v1';
 const SUPPORTED_UI_LANGUAGES = new Set(['zh-CN', 'zh-TW', 'ja', 'en']);
-const UI_TEXT_ENTRIES = [ ['更好的 X', '更好的 X', 'もっと便利な X', 'Better X'], ['Alt+X 开关', 'Alt+X 開關', 'Alt+X で開閉', 'Toggle with Alt+X'], ['刷新', '重新整理', '更新', 'Refresh'], ['全部已读', '全部已讀', 'すべて既読', 'Mark all read'], ['重新扫描当前页面', '重新掃描目前頁面', '現在のページを再スキャン', 'Rescan the current page'], ['把当前列表全部标为已读', '將目前列表全部標為已讀', '現在の一覧をすべて既読にする', 'Mark the current list as read'], ['切换语言', '切換語言', '言語を切替', 'Switch language'], ['切换 BetterX 界面语言', '切換 BetterX 介面語言', 'BetterX の表示言語を切り替える', 'Switch BetterX interface language'], ['选择界面语言', '選擇介面語言', '表示言語を選択', 'Choose interface language'], ['选择后页面会刷新，帖子与设置数据不会受到影响。', '選擇後頁面會重新整理，貼文與設定資料不受影響。', '選択後にページを更新します。ポストや設定データには影響しません。', 'The page will reload after selection. Your posts and settings will not be affected.'], ['正在切换语言并刷新…', '正在切換語言並重新整理…', '言語を切り替えて更新中…', 'Switching language and reloading…'], ['无法保存语言设置', '無法儲存語言設定', '言語設定を保存できませんでした', 'Could not save the language setting'], ['更多', '更多', 'その他', 'More'], ['关闭', '關閉', '閉じる', 'Close'], ['帖子', '貼文', 'ポスト', 'Posts'], ['通知', '通知', '通知', 'Notifications'], ['设置', '設定', '設定', 'Settings'], ['导出筛选', '匯出篩選結果', '絞り込み結果をエクスポート', 'Export filtered'], ['备份全部', '備份全部', 'すべてバックアップ', 'Back up all'], ['导出备份', '匯出備份', 'バックアップをエクスポート', 'Export backup'], ['导入', '匯入', 'インポート', 'Import'], ['清空', '清空', '消去', 'Clear'], ['快速筛选', '快速篩選', 'クイックフィルター', 'Quick filters'], ['搜索', '搜尋', '検索', 'Search'], ['搜索帖子', '搜尋貼文', 'ポストを検索', 'Search posts'], ['搜索作者、正文或备注…', '搜尋作者、內文或備註…', '投稿者・本文・メモを検索…', 'Search author, text, or notes…'], ['来源筛选', '來源篩選', 'ソースで絞り込む', 'Filter by source'], ['媒体筛选', '媒體篩選', 'メディアで絞り込む', 'Filter by media'], ['排序方式', '排序方式', '並べ替え', 'Sort order'], ['智能排序', '智慧排序', 'スマート順', 'Smart sort'], ['最近浏览', '最近瀏覽', '最近表示', 'Recently viewed'], ['最近抓取', '最近擷取', '最近取得', 'Recently captured'], ['首次抓取（新→旧）', '首次擷取（新→舊）', '初回取得（新→古）', 'First captured (new→old)'], ['首次抓取（旧→新）', '首次擷取（舊→新）', '初回取得（古→新）', 'First captured (old→new)'], ['出现次数', '出現次數', '表示回数', 'Appearances'], ['按作者', '依作者', '投稿者順', 'By author'], ['按来源', '依來源', 'ソース順', 'By source'], ['全部', '全部', 'すべて', 'All'], ['未打开', '未開啟', '未表示', 'Unopened'], ['已打开', '已開啟', '表示済み', 'Opened'], ['快速消失', '快速消失', 'すぐ消えた', 'Disappeared quickly'], ['已收藏', '已收藏', 'お気に入り済み', 'Favorited'], ['已置顶', '已置頂', '固定済み', 'Pinned'], ['命中关键词', '符合關鍵字', 'キーワード一致', 'Keyword matches'], ['全部媒体', '全部媒體', 'すべてのメディア', 'All media'], ['含图片', '含圖片', '画像あり', 'With images'], ['含视频', '含影片', '動画あり', 'With video'], ['纯文字', '純文字', 'テキストのみ', 'Text only'], ['全部来源', '全部來源', 'すべてのソース', 'All sources'], ['主页', '首頁', 'ホーム', 'Home'], ['正在关注', '正在關注', 'フォロー中', 'Following'], ['为你推荐', '為你推薦', 'おすすめ', 'For You'], ['列表', '列表', 'リスト', 'List'], ['书签', '書籤', 'ブックマーク', 'Bookmarks'], ['喜欢', '喜歡', 'いいね', 'Likes'], ['未知页面', '未知頁面', '不明なページ', 'Unknown page'], ['个人主页', '個人主頁', 'プロフィール', 'Profile'], ['帖子详情', '貼文詳情', 'ポスト詳細', 'Post details'], ['搜索页', '搜尋頁', '検索ページ', 'Search page'], ['书签页', '書籤頁', 'ブックマークページ', 'Bookmarks page'], ['喜欢页', '喜歡頁', 'いいねページ', 'Likes page'], ['列表页', '列表頁', 'リストページ', 'List page'], ['总数', '總數', '合計', 'Total'], ['未读', '未讀', '未読', 'Unread'], ['图片', '圖片', '画像', 'Image'], ['视频', '影片', '動画', 'Video'], ['来源:', '來源：', 'ソース：', 'Source:'], ['历史来源:', '歷史來源：', '過去のソース：', 'Source history:'], ['抓取:', '擷取：', '取得：', 'Captured:'], ['浏览:', '瀏覽：', '表示：', 'Viewed:'], ['出现:', '出現：', '表示：', 'Seen:'], ['当前来源:', '目前來源：', '現在のソース：', 'Current source:'], ['当前选择：', '目前選擇：', '現在の選択：', 'Current:'], ['打开', '開啟', '開く', 'Open'], ['复制链接', '複製連結', 'リンクをコピー', 'Copy link'], [' 的个人主页', ' 的個人主頁', ' のプロフィール', ' profile'], ['复制链接：', '複製連結：', 'リンクをコピー：', 'Copy link: '], ['已复制', '已複製', 'コピー済み', 'Copied'], ['取消置顶', '取消置頂', '固定解除', 'Unpin'], ['置顶', '置頂', '固定', 'Pin'], ['取消收藏', '取消收藏', 'お気に入り解除', 'Unfavorite'], ['收藏', '收藏', 'お気に入り', 'Favorite'], ['删', '刪除', '削除', 'Delete'], ['展开全文', '展開全文', '全文を表示', 'Show full text'], ['收起', '收合', '折りたたむ', 'Collapse'], ['备注', '備註', 'メモ', 'Note'], ['保存备注', '儲存備註', 'メモを保存', 'Save note'], ['取消', '取消', 'キャンセル', 'Cancel'], ['在这里写备注…', '在這裡寫備註…', 'ここにメモを入力…', 'Write a note here…'], ['无正文', '無內文', '本文なし', 'No text'], ['加载更多', '載入更多', 'さらに読み込む', 'Load more'], ['帖子通知管理', '貼文通知管理', 'ポスト通知の管理', 'Post notification management'], ['搜索用户名或 @用户名…', '搜尋使用者名稱或 @使用者名稱…', 'ユーザー名または @ユーザー名を検索…', 'Search name or @username…'], ['搜索帖子通知用户', '搜尋貼文通知使用者', '通知ユーザーを検索', 'Search notification users'], ['同步订阅用户', '同步訂閱使用者', '購読ユーザーを同期', 'Sync subscribed users'], ['正在同步…', '正在同步…', '同期中…', 'Syncing…'], ['尚未读取订阅用户', '尚未讀取訂閱使用者', '購読ユーザー未取得', 'Subscribed users not loaded'], ['正在读取关注列表…', '正在讀取關注列表…', 'フォロー一覧を取得中…', 'Reading following list…'], ['已订阅', '已訂閱', '購読中', 'Subscribed'], ['本地保留', '本機保留', 'ローカル保存', 'Stored locally'], ['筛选到', '篩選到', '絞り込み', 'Filtered'], ['上次同步：', '上次同步：', '最終同期：', 'Last sync: '], ['尚未完整同步', '尚未完整同步', '完全同期前', 'Not fully synced'], ['已同步', '已同步', '同期済み', 'Synced'], ['处理中…', '處理中…', '処理中…', 'Processing…'], ['关闭通知', '關閉通知', '通知をオフ', 'Disable notifications'], ['重新开启', '重新開啟', '再度オン', 'Re-enable'], ['移除记录', '移除記錄', '記録を削除', 'Remove record'], ['设置', '設定', '設定', 'Settings'], ['大多数设置会立即生效；带“保存”或“应用”按钮的设置需要手动确认。', '大多數設定會立即生效；帶「儲存」或「套用」按鈕的設定需要手動確認。', 'ほとんどの設定はすぐ反映されます。「保存」または「適用」ボタンがある設定は手動で確定してください。', 'Most settings apply immediately. Settings with a Save or Apply button require confirmation.'], ['关键词与排除词', '關鍵字與排除詞', 'キーワードと除外語', 'Keywords and exclusions'], ['任意匹配', '任意符合', 'いずれか一致', 'Match any'], ['全部匹配', '全部符合', 'すべて一致', 'Match all'], ['保存', '儲存', '保存', 'Save'], ['输入关键词，支持正则，按回车添加', '輸入關鍵字，支援正則，按 Enter 新增', 'キーワードを入力（正規表現対応）、Enter で追加', 'Enter keywords (regex supported), press Enter to add'], ['输入排除词，支持正则，按回车添加', '輸入排除詞，支援正則，按 Enter 新增', '除外語を入力（正規表現対応）、Enter で追加', 'Enter exclusions (regex supported), press Enter to add'], ['内容净化', '內容淨化', 'コンテンツフィルター', 'Content filtering'], ['隐藏黄推 / 成人引流机器人', '隱藏成人內容／引流機器人', '成人スパムを非表示', 'Hide adult spam accounts'], ['检测强度', '偵測強度', '検出強度', 'Detection strength'], ['均衡', '均衡', '標準', 'Balanced'], ['保守', '保守', '控えめ', 'Conservative'], ['不审查已关注账号（转发内容除外）', '不審查已關注帳號（轉發內容除外）', 'フォロー中のアカウントを除外（リポストは対象）', 'Skip followed accounts (except reposts)'], ['不审查已关注账号的转发内容', '不審查已關注帳號的轉發內容', 'フォロー中アカウントのリポストも除外', 'Also skip reposts by followed accounts'], ['启用自定义规则（屏蔽词与账号白名单）', '啟用自訂規則（封鎖詞與帳號白名單）', 'カスタムルールを有効化（ブロック語・許可リスト）', 'Enable custom rules (blocked words and allowlist)'], ['输入自定义屏蔽词，按回车添加', '輸入自訂封鎖詞，按 Enter 新增', 'ブロック語を入力し Enter で追加', 'Enter a blocked word and press Enter'], ['输入账号白名单（如 @example），按回车添加', '輸入帳號白名單（如 @example），按 Enter 新增', '許可するアカウント（例 @example）を入力し Enter', 'Enter an allowed account (e.g. @example) and press Enter'], ['当前隐藏', '目前隱藏', '現在非表示', 'Currently hidden'], ['本次累计', '本次累計', '今回の累計', 'This session'], ['已扫描', '已掃描', 'スキャン済み', 'Scanned'], ['已识别关注', '已識別關注', '認識済みフォロー', 'Known following'], ['界面简化与宽屏', '介面簡化與寬螢幕', 'UI 簡素化とワイド表示', 'Simplified and wide layout'], ['启用界面简化与宽屏', '啟用介面簡化與寬螢幕', 'UI 簡素化とワイド表示を有効化', 'Enable simplified and wide layout'], ['时间线宽度(px)', '時間軸寬度(px)', 'タイムライン幅 (px)', 'Timeline width (px)'], ['左侧栏宽度(px)', '左側欄寬度(px)', '左サイドバー幅 (px)', 'Left sidebar width (px)'], ['应用宽度', '套用寬度', '幅を適用', 'Apply widths'], ['隐藏左侧栏', '隱藏左側欄', '左サイドバーを非表示', 'Hide left sidebar'], ['隐藏右侧栏', '隱藏右側欄', '右サイドバーを非表示', 'Hide right sidebar'], ['中间栏填满（启用时同时隐藏左右栏）', '中間欄填滿（啟用時同時隱藏左右欄）', '中央列を全幅表示（左右列も非表示）', 'Fill center column (also hides sidebars)'], ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'], ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'], ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'], ['GIF内容下载格式', 'GIF 內容下載格式', 'GIF コンテンツの保存形式', 'GIF content download format'], ['默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。', '預設開啟；關閉時 GIF 內容會以原始 MP4 下載。選擇 GIF 時會在瀏覽器內轉換，耗時更長、檔案更大。', '既定で有効です。オフにすると GIF コンテンツは元の MP4 形式で保存されます。GIF を選ぶとブラウザー内で変換するため、時間がかかりファイルも大きくなります。', 'Enabled by default. When off, GIF content is saved as the original MP4. Selecting GIF converts it in the browser, which takes longer and produces larger files.'], ['自定义下载文件/压缩包名', '自訂下載檔案／壓縮檔名稱', 'ダウンロードファイル／ZIP 名をカスタマイズ', 'Customize downloaded file / ZIP names'], ['已自定义', '已自訂', 'カスタマイズ済み', 'Customized'], ['下载多个媒体自动压缩 ZIP 包', '下載多個媒體時自動壓縮 ZIP', '複数メディアを ZIP にまとめる', 'Package multiple media files as ZIP'], ['记录已经下载过的帖子', '記錄已下載過的貼文', 'ダウンロード済みポストを記録', 'Track downloaded posts'], ['媒体文件名（不含扩展名）', '媒體檔名（不含副檔名）', 'メディア名（拡張子なし）', 'Media filename (without extension)'], ['ZIP 压缩包名（不含 .zip）', 'ZIP 壓縮檔名（不含 .zip）', 'ZIP 名（.zip なし）', 'ZIP filename (without .zip)'], ['正则替换（可选）', '正則取代（選填）', '正規表現置換（任意）', 'Regex replacement (optional)'], ['替换为', '取代為', '置換後', 'Replace with'], ['例如：', '例如：', '例：', 'Example: '], ['；支持 $1', '；支援 $1', '（$1 に対応）', '; supports $1'], ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'], ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'], ['关闭NFL', '關閉 NFL', 'NFL を非表示', 'Hide NFL'], ['帖子内媒体改为网格视图', '貼文內媒體改為網格檢視', 'ポスト内メディアをグリッド表示', 'Show post media in a grid'], ['取消年龄限制（用原图 / 视频进行替换）', '解除年齡限制（以原圖 / 影片取代）', '年齢制限を解除（元画像 / 動画に置換）', 'Bypass age gate (replace with original media)'], ['自动展开帖子里“显示更多”', '自動展開貼文中的「顯示更多」', 'ポストの「さらに表示」を自動展開', 'Automatically expand “Show more” in posts'], ['进入用户主页默认查看', '進入使用者主頁時預設檢視', 'プロフィールの既定タブ', 'Default profile tab'], ['亮点', '亮點', 'ハイライト', 'Highlights'], ['用户主页帖子排序方式', '使用者主頁貼文排序方式', 'プロフィールのポスト並び順', 'Profile post sorting'], ['最近', '最近', '最新', 'Recent'], ['热门', '熱門', '人気', 'Popular'], ['选择“热门”时，会使用 X 的热门排序；视频和图片页不受影响。', '選擇「熱門」時，會使用 X 的熱門排序；影片和圖片頁不受影響。', '「人気」を選ぶと X の人気順を使います。動画・画像ページには影響しません。', 'Selecting Popular uses X’s popular sorting; video and photo pages are unaffected.'], ['其他功能', '其他功能', 'その他の機能', 'Other features'], ['兼容 Firefox（仅 Firefox）', '相容 Firefox（僅 Firefox）', 'Firefox 互換モード（Firefox のみ）', 'Firefox compatibility (Firefox only)'], ['帖子上限提示', '貼文上限提示', 'ポスト件数の上限通知', 'Post limit warning'], ['帖子记录接近“最大条数”时提醒你。关闭提醒后，也可以随时在这里重新开启。', '貼文記錄接近「最大筆數」時提醒你。關閉提醒後，也可以隨時在這裡重新開啟。', 'ポスト記録が「最大件数」に近づくと通知します。通知を閉じても、ここからいつでも再開できます。', 'Warns you when saved posts approach the maximum. If dismissed, the warning can be re-enabled here anytime.'], ['已恢复上限提示', '已恢復上限提示', '上限通知を再開しました', 'Limit warning restored'], ['已关闭上限提示', '已關閉上限提示', '上限通知を無効にしました', 'Limit warning disabled'], ['隐藏应用徽标', '隱藏應用徽章', 'アプリバッジを非表示', 'Hide app badge'], ['切换为移动端徽标（仅 PC）', '切換為行動版徽章（僅 PC）', 'モバイル用バッジに切替（PC のみ）', 'Use mobile badge (PC only)'], ['切换为半透明蓝色条（仅移动端）', '切換為半透明藍色條（僅行動裝置）', '半透明の青いバーに切替（モバイルのみ）', 'Use translucent blue bar (mobile only)'], ['高级设置', '進階設定', '詳細設定', 'Advanced settings'], ['自动清理(天)', '自動清理（日）', '自動削除（日）', 'Auto-clean (days)'], ['最大条数', '最大筆數', '最大件数', 'Maximum posts'], ['闪现阈值(秒)', '閃現門檻（秒）', '消失判定（秒）', 'Disappear threshold (sec)'], ['主题', '主題', 'テーマ', 'Theme'], ['跟随系统', '跟隨系統', 'システムに合わせる', 'Follow system'], ['深色', '深色', 'ダーク', 'Dark'], ['浅色', '淺色', 'ライト', 'Light'], ['下载超时(秒)', '下載逾時（秒）', 'タイムアウト（秒）', 'Download timeout (sec)'], ['下载并发', '下載並行數', '同時ダウンロード数', 'Concurrent downloads'], ['应用', '套用', '適用', 'Apply'], ['帖子记录即将达到上限', '貼文記錄即將達到上限', 'ポスト記録が上限に近づいています', 'Post history is nearing its limit'], ['达到上限后，新帖子仍会继续记录；最旧的未收藏、未置顶帖子会被删除。收藏和置顶帖子不会被上限删除，因此总数有时可能超过设置值。', '達到上限後仍會繼續記錄新貼文；最舊且未收藏、未置頂的貼文會被刪除。收藏與置頂貼文不受上限刪除，因此總數有時可能超過設定值。', '上限に達しても新しいポストは記録され、古い未お気に入り・未固定のポストから削除されます。お気に入りと固定済みポストは削除されないため、合計が設定値を超える場合があります。', 'New posts will still be recorded at the limit; the oldest unfavorited and unpinned posts are removed. Favorited and pinned posts are protected, so the total may sometimes exceed the configured value.'], ['你可以打开“高级设置”调大“最大条数”，或先导出备份。', '你可以開啟「進階設定」調高「最大筆數」，或先匯出備份。', '「詳細設定」で上限を増やすか、先にバックアップをエクスポートできます。', 'You can increase the maximum under Advanced settings or export a backup first.'], ['打开高级设置', '開啟進階設定', '詳細設定を開く', 'Open advanced settings'], ['不再提示', '不再提示', '今後表示しない', "Don't remind me again"], ['点亮按钮即不保存对应页面的帖子', '點亮按鈕即不儲存對應頁面的貼文', 'ボタンをオンにすると、そのページのポストを保存しません', 'Turn on a button to stop saving posts from that page'], ['下载任务', '下載工作', 'ダウンロードタスク', 'Download tasks'], ['暂无下载任务', '暫無下載工作', 'ダウンロードはありません', 'No download tasks'], ['下载', '下載', 'ダウンロード', 'Download'], ['下载中', '下載中', 'ダウンロード中', 'Downloading'], ['转 GIF', '轉 GIF', 'GIF 変換', 'GIF'], ['正在转换 GIF', '正在轉換 GIF', 'GIF に変換中', 'Converting to GIF'], ['排队中', '排隊中', '待機中', 'Queued'], ['排队', '排隊', '待機', 'Queued'], ['正在打包', '正在打包', '圧縮中', 'Packing'], ['打包', '打包', '圧縮', 'Packing'], ['正在保存', '正在儲存', '保存中', 'Saving'], ['正在取消下载', '正在取消下載', 'キャンセル中', 'Cancelling download'], ['取消中', '取消中', 'キャンセル中', 'Cancelling'], ['下载完成', '下載完成', 'ダウンロード完了', 'Download complete'], ['已取消', '已取消', 'キャンセル済み', 'Cancelled'], ['失败：', '失敗：', '失敗：', 'Failed: '], ['重试', '重試', '再試行', 'Retry'], ['查看下载任务', '查看下載工作', 'ダウンロードを表示', 'View downloads'], ['取消下载', '取消下載', 'ダウンロードをキャンセル', 'Cancel download'], ['下载图片/视频/GIF', '下載圖片/影片/GIF', '画像/動画/GIFを保存', 'Download images/videos/GIFs'], ['正在获取视频地址…', '正在取得影片網址…', '動画 URL を取得中…', 'Getting video URL…'], ['获取中', '取得中', '取得中', 'Looking up'], ['已下载过媒体；点击可再次下载', '已下載過媒體；點擊可再次下載', 'ダウンロード済みです。クリックすると再保存できます', 'Downloaded before; click to download again'], ['个任务', '個工作', '件のタスク', ' tasks'], ['查看下载任务：', '查看下載工作：', 'ダウンロードを表示：', 'View downloads: '], ['命名效果预览：', '命名效果預覽：', 'ファイル名プレビュー：', 'Filename preview: '], ['示例用户', '範例使用者', 'サンプルユーザー', 'Sample user'], ['这是用于预览下载文件名的帖子正文', '這是用於預覽下載檔名的貼文內文', 'ダウンロード名を確認するためのサンプル本文', 'Sample post text for previewing download names'], ['下载超时', '下載逾時', 'ダウンロードがタイムアウトしました', 'Download timed out'], ['网络错误', '網路錯誤', 'ネットワークエラー', 'Network error'], ['下载失败', '下載失敗', 'ダウンロード失敗', 'Download failed'], ['读取失败', '讀取失敗', '読み込み失敗', 'Read failed'], ['媒体总量超出经典 ZIP 范围，请改为逐个下载', '媒體總量超出傳統 ZIP 範圍，請改為逐一下載', 'メディア総量が従来形式の ZIP 上限を超えました。個別に保存してください', 'Media exceeds classic ZIP limits; download files separately'], ['跨域下载失败：请使用支持 GM_xmlhttpRequest 的脚本管理器', '跨網域下載失敗：請使用支援 GM_xmlhttpRequest 的使用者腳本管理器', 'クロスオリジン保存に失敗しました。GM_xmlhttpRequest 対応のユーザースクリプト管理拡張を使用してください', 'Cross-origin download failed. Use a userscript manager that supports GM_xmlhttpRequest'], ['⚠️ 未能取得视频地址：检测到 Violentmonkey。安卓 Firefox 上可能无法正确携带 X 登录态，请改用 Tampermonkey 后重试', '⚠️ 無法取得影片網址：偵測到 Violentmonkey。Android Firefox 可能無法正確攜帶 X 登入狀態，請改用 Tampermonkey 後重試', '⚠️ 動画 URL を取得できませんでした。Violentmonkey を検出しました。Android Firefox では X のログイン状態が正しく送信されない場合があるため、Tampermonkey に変更して再試行してください', '⚠️ Could not get the video URL. Violentmonkey was detected; Android Firefox may not pass the X login session correctly. Switch to Tampermonkey and try again'], ['未能取得媒体地址，请确认已登录 X 后重试', '無法取得媒體網址，請確認已登入 X 後重試', 'メディア URL を取得できませんでした。X にログインして再試行してください', 'Could not get the media URL. Make sure you are signed in to X and try again'], ['未找到可下载的媒体，若为视频请先点开或播放一下再试', '找不到可下載的媒體；若為影片，請先開啟或播放後再試', '保存できるメディアが見つかりません。動画の場合は一度開くか再生してから再試行してください', 'No downloadable media was found. For video, open or play it once and try again'], ['图片预览', '圖片預覽', '画像プレビュー', 'Image preview'], ['关闭图片预览', '關閉圖片預覽', '画像プレビューを閉じる', 'Close image preview'], ['上一张图片', '上一張圖片', '前の画像', 'Previous image'], ['下一张图片', '下一張圖片', '次の画像', 'Next image'], ['提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。', '提示：列表僅記錄你瀏覽時出現過的貼文。收藏／置頂貼文不會因數量上限或自動清理而刪除。', 'ヒント：閲覧中に表示されたポストだけを記録します。お気に入り／固定したポストは上限や自動削除の対象外です。', 'Tip: Only posts seen while browsing are saved. Favorited or pinned posts are never removed by limits or auto-cleaning.'], ['读取 X 的铃铛订阅状态；开关操作会同步修改 X 账号设置。本页不会抓取或显示订阅账号的帖子。', '讀取 X 的鈴鐺訂閱狀態；開關操作會同步修改 X 帳號設定。本頁不會擷取或顯示訂閱帳號的貼文。', 'X のベル購読状態を読み取り、切替は X アカウントにも反映されます。このページで購読アカウントのポストを取得・表示することはありません。', 'Reads X bell-subscription status; toggles also update your X account. This page does not fetch or display posts from subscribed accounts.'], ['只影响 BetterX 已记录的帖子：关键词用来高亮和筛选，排除词会隐藏匹配的帖子。', '只影響 BetterX 已記錄的貼文：關鍵字用來醒目提示和篩選，排除詞會隱藏符合的貼文。', 'BetterX に記録済みのポストだけが対象です。キーワードは強調と絞り込みに使い、除外語に一致したポストは非表示にします。', 'Only affects posts saved by BetterX: keywords highlight and filter, while exclusions hide matching posts.'], ['普通文字可直接输入；正则表达式请写成 <code>/表达式/</code>，例如 <code>/猫|狗/</code>。两种写法可以混用。', '一般文字可直接輸入；正則表達式請寫成 <code>/運算式/</code>，例如 <code>/貓|狗/</code>。兩種寫法可以混用。', '通常の文字はそのまま入力できます。正規表現は <code>/式/</code> の形で入力してください（例：<code>/猫|犬/</code>）。両方を組み合わせて使えます。', 'Enter plain text directly. Write regex as <code>/expression/</code>, for example <code>/cat|dog/</code>. Both forms can be mixed.'], ['根据正文、账号名和引流特征综合判断，只在当前页面隐藏可疑帖子，不会拉黑账号。关闭后会恢复显示。', '根據內文、帳號名稱和引流特徵綜合判斷，只在目前頁面隱藏可疑貼文，不會封鎖帳號。關閉後會恢復顯示。', '本文、アカウント名、誘導の特徴から総合的に判定し、現在のページで疑わしいポストだけを非表示にします。アカウントはブロックせず、オフにすると再表示します。', 'Checks post text, account names, and spam signals, then hides suspicious posts only on the current page. It never blocks accounts; turn it off to show them again.'], ['自动读取 X 当前的时间线与左侧栏宽度（默认开启）', '自動讀取 X 目前的時間軸與左側欄寬度（預設開啟）', 'X の現在のタイムライン幅と左サイドバー幅を自動取得（既定でオン）', 'Automatically detect X timeline and left-sidebar widths (enabled by default)'], ['在消息页和设置页不会调整布局；关闭此功能即可恢复 X 原来的界面。', '在訊息頁和設定頁不會調整版面；關閉此功能即可恢復 X 原來的介面。', 'メッセージと設定ページではレイアウトを変更しません。この機能をオフにすると X 本来の表示に戻ります。', 'The layout is not changed on Messages or Settings pages. Turn this feature off to restore X’s original layout.'], ['开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。', '開啟後貼文操作列會顯示下載進度與取消按鈕；桌面版顯示下載工作膠囊，行動版顯示帶工作數量的藍色下載按鈕。', '有効にするとポスト操作欄に進捗とキャンセルボタンを表示します。デスクトップではタスクピル、モバイルでは件数付きの青いボタンを表示します。', 'Shows download progress and cancel controls in post actions. Desktop gets a task pill; mobile gets a blue button with a task count.'], ['默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。', '預設開啟；ZIP 內檔案使用下方「媒體檔名」範本。關閉後會同時下載多個媒體。', '既定でオンです。ZIP 内のファイル名には下のメディア名テンプレートを使います。オフの場合は複数ファイルを個別保存します。', 'Enabled by default. Files inside ZIP use the media filename template below. When disabled, media files download separately.'], ['默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設關閉；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオフです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Disabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'], ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 <code>{序號}</code>，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで <code>{連番}</code> がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If <code>{index}</code> is omitted for multiple media files, a number is appended automatically.'], ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 <code>$1</code>）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（<code>$1</code> など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as <code>$1</code> are supported; invalid or risky regexes are not saved.'], ['隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。', '隱藏時間軸廣告、廣告卡片和「訂閱 Premium」提示。廣告貼文不會儲存到 BetterX，關閉後會重新顯示。', 'タイムライン広告、広告カード、「Premium に登録」の案内を非表示にします。広告ポストは BetterX に保存されず、オフにすると再表示します。', 'Hides timeline ads, ad cards, and Subscribe to Premium prompts. Ad posts are not saved to BetterX and reappear when this is turned off.'], ['隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。', '隱藏 X 右側欄中的 NFL 球隊、賽程和比賽入口；關閉此開關後會恢復顯示。', 'X の右サイドバーにある NFL のチーム、日程、試合への入口を非表示にします。オフにすると再表示します。', 'Hides NFL teams, schedules, and game links in X’s right sidebar. Turn it off to show them again.'], ['把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。', '把貼文裡的多個媒體改成網格：2 個並排，3 個左大右二，4 個按 2×2 排列。', 'ポスト内の複数メディアをグリッド表示にします。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Shows multiple media items in a grid: two side by side, three with one large item on the left, and four in a 2×2 layout.'], ['移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”', '移除敏感內容遮罩並顯示原圖或影片；建議在新開啟的視窗中勾選「顯示可能含有敏感內容的媒體內容」', 'センシティブな内容の覆いを外して元の画像や動画を表示します。新しく開いたウィンドウで「センシティブな内容を含む可能性のあるメディアを表示する」を有効にすることをおすすめします。', 'Removes sensitive-content covers and shows original images or videos. In the newly opened window, we recommend enabling “Display media that may contain sensitive content”.'], ['如果您没有勾选的话，麻烦您勾选上“显示可能含有敏感内容的媒体内容”，大部分成人内容会自动显示', '如果尚未勾選，請勾選「顯示可能含有敏感內容的媒體內容」，大部分成人內容便會自動顯示', 'まだ有効にしていない場合は、「センシティブな内容を含む可能性のあるメディアを表示する」を有効にしてください。ほとんどの成人向けコンテンツが自動的に表示されます。', 'If it is not already enabled, please enable “Display media that may contain sensitive content”. Most adult content will then appear automatically.'], ['自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。', '自動點開貼文內文裡的「顯示更多 / Show more」；不會展開回覆或側欄內容。', 'ポスト本文の「さらに表示 / Show more」を自動で開きます。返信やサイドバーの内容は展開しません。', 'Automatically opens “Show more” in post text. Replies and sidebar content are not expanded.'], ['进入用户主页时自动切换到所选页签；帖子详情、回复和关注者页面不受影响。', '進入使用者主頁時自動切換到所選分頁；貼文詳情、回覆和追蹤者頁面不受影響。', 'プロフィールを開くと選んだタブへ自動で切り替えます。ポスト詳細、返信、フォロワーページには影響しません。', 'Automatically switches to the selected tab when you open a profile. Post details, replies, and follower pages are unaffected.'], ['如果 X 一直停在启动图标，可尝试开启。开启后会停用部分网络数据读取；点击开关可先查看影响。', '如果 X 一直停在啟動圖示，可嘗試開啟。開啟後會停用部分網路資料讀取；點擊開關可先查看影響。', 'X が起動ロゴのまま止まる場合にお試しください。有効にすると一部のネットワークデータ読み取りを停止します。切り替える前に影響を確認できます。', 'Try this if X remains stuck on its startup logo. It disables some network-data reading; click the switch to review the impact first.'], ['在电脑上会隐藏徽标；在手机上会收成屏幕右侧的蓝色小条。点击小条、从屏幕右边缘向内滑动，或使用油猴菜单都能恢复。', '在電腦上會隱藏徽章；在手機上會收成螢幕右側的藍色小條。點擊小條、從螢幕右邊緣向內滑動，或使用腳本管理器選單都能恢復。', 'パソコンではバッジを隠し、スマートフォンでは画面右側の青いバーに収納します。バーをタップする、右端から内側へスワイプする、またはユーザースクリプトメニューから復元できます。', 'Hides the badge on desktop and collapses it into a blue bar on mobile. Tap the bar, swipe inward from the right edge, or use the userscript menu to restore it.'], ['在电脑上使用圆形图标和未读角标，仍可拖动位置。', '在電腦上使用圓形圖示和未讀角標，仍可拖曳位置。', 'パソコンで丸いアイコンと未読バッジを使います。位置は引き続きドラッグできます。', 'Uses a circular icon and unread badge on desktop; you can still drag it to a new position.'], ['把手机上的圆形徽标收成右侧蓝色小条；点击打开面板，长按后可上下移动。', '把手機上的圓形徽章收成右側藍色小條；點擊開啟面板，長按後可上下移動。', 'スマートフォンの丸いバッジを右側の青いバーに収納します。タップでパネルを開き、長押し後に上下へ動かせます。', 'Collapses the circular mobile badge into a blue bar on the right. Tap to open the panel; long-press to move it up or down.'], ['下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。自动清理(天)为0则不自动清理。', '下載並行數可設為 1～6，預設 2；提高可加速多媒體工作，但也會增加頻寬與記憶體使用。自動清理（日）設為0則不自動清理。', '同時数は1～6（既定2）。増やすと速くなりますが、帯域とメモリ使用量も増えます。自動削除（日）を0にすると自動削除しません。', 'Concurrency can be 1–6 (default 2). Higher values speed up multi-media jobs but use more bandwidth and memory. Set Auto-clean (days) to 0 to disable automatic cleaning.'], ['当前筛选条件下没有帖子。可以刷新页面、切换 X 标签页，或把筛选改回“全部”。', '目前篩選條件下沒有貼文。可重新整理頁面、切換 X 分頁，或將篩選改回「全部」。', '現在の条件に一致するポストはありません。ページや X のタブを更新するか、フィルターを「すべて」に戻してください。', 'No posts match the current filters. Refresh the page, switch X tabs, or reset the filter to All.'], ['还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。', '尚未讀取貼文通知訂閱。請點擊「同步訂閱使用者」，或瀏覽已開啟鈴鐺的使用者主頁後再查看。', 'ポスト通知の購読情報がありません。「購読ユーザーを同期」を押すか、ベルを有効にしたプロフィールを開いてください。', 'No post-notification subscriptions have been read. Click “Sync subscribed users” or visit a profile with its bell enabled.'], ['智能排序：置顶、收藏和快消失的帖子先显示，其他的按抓到的顺序排。', '智慧排序：置頂、收藏和快速消失的貼文優先，其餘依擷取順序排列。', 'スマート順：固定・お気に入り・すぐ消えたポストを優先し、残りは取得順に表示します。', 'Smart sort: pinned, favorited, and quickly disappeared posts first; others follow capture order.'], ['最近浏览：按你在屏幕上看到的帖子顺序排。适合用来找刚刷过的帖子。', '最近瀏覽：依螢幕上看到貼文的順序排列，適合尋找剛瀏覽過的貼文。', '最近表示：画面で見た順に並べ、直前に見たポストを探すのに便利です。', 'Recently viewed: orders posts by when they appeared on screen, useful for finding what you just saw.'], ['最近抓取：按脚本发现帖子的时间排。X 会提前加载，顺序不一定等于你看到的顺序。', '最近擷取：依腳本發現貼文的時間排列。X 會預先載入，因此不一定等於實際看到的順序。', '最近取得：スクリプトが見つけた時刻順です。X の先読みのため、実際に見た順とは限りません。', 'Recently captured: orders by discovery time. X preloads posts, so this may differ from viewing order.'], ['出现次数：反复刷到的帖子排在前面。', '出現次數：反覆看到的貼文排在前面。', '表示回数：繰り返し表示されたポストを先にします。', 'Appearances: repeatedly seen posts come first.'], ['按作者：把同一个作者的帖子排在一起。', '依作者：將同一作者的貼文排在一起。', '投稿者順：同じ投稿者のポストをまとめます。', 'By author: groups posts from the same author.'], ['按来源：按为你推荐、正在关注、搜索、书签、喜欢等页面分类排。', '依來源：依為你推薦、正在關注、搜尋、書籤、喜歡等頁面分類。', 'ソース順：おすすめ、フォロー中、検索、ブックマーク、いいねなどで分類します。', 'By source: groups posts by For You, Following, Search, Bookmarks, Likes, and other pages.'], ['BetterX：显示 / 隐藏应用徽标', 'BetterX：顯示 / 隱藏應用徽章', 'BetterX：アプリバッジを表示 / 非表示', 'BetterX: Show / hide app badge'], ['BetterX：强制开启 Firefox 兼容模式并刷新', 'BetterX：強制開啟 Firefox 相容模式並重新整理', 'BetterX：Firefox 互換モードを強制して更新', 'BetterX: Force Firefox compatibility and reload'], ['BetterX：恢复 Firefox 完整模式并刷新', 'BetterX：恢復 Firefox 完整模式並重新整理', 'BetterX：Firefox フルモードに戻して更新', 'BetterX: Restore full Firefox mode and reload'], ['BetterX：导出 Firefox 兼容诊断', 'BetterX：匯出 Firefox 相容診斷', 'BetterX：Firefox 互換診断をエクスポート', 'BetterX: Export Firefox compatibility diagnostics'], ['无法读取当前 X 用户 ID，请确认已经登录', '無法讀取目前 X 使用者 ID，請確認已登入', '現在の X ユーザー ID を取得できません。ログインを確認してください', 'Could not read the current X user ID. Make sure you are signed in'], ['本次识别', '本次識別', '今回検出', 'Found this time'], ['个，当前保留', '個，目前保留', '件、現在保持', '; currently keeping'], ['个订阅', '個訂閱', '件の購読', ' subscriptions'], ['同步失败：', '同步失敗：', '同期失敗：', 'Sync failed: '], ['修改失败：', '修改失敗：', '変更失敗：', 'Update failed: '], ['已开启', '已開啟', '有効化しました', 'Enabled'], ['的帖子通知', '的貼文通知', 'のポスト通知', ' post notifications'], ['已关闭', '已關閉', '無効化しました', 'Disabled'], ['下载完成：已逐个保存', '下載完成：已逐一儲存', 'ダウンロード完了：個別に保存', 'Download complete: saved separately'], ['个文件', '個檔案', 'ファイル', ' files'], ['，跳过', '，略過', '、スキップ', '; skipped'], ['个失败项', '個失敗項目', '件の失敗', ' failed items'], ['正在开启 Firefox 兼容模式并刷新…', '正在開啟 Firefox 相容模式並重新整理…', 'Firefox 互換モードを有効にして更新中…', 'Enabling Firefox compatibility and reloading…'], ['正在关闭 Firefox 兼容模式并刷新…', '正在關閉 Firefox 相容模式並重新整理…', 'Firefox 互換モードを無効にして更新中…', 'Disabling Firefox compatibility and reloading…'], ['此选项仅用于 Firefox', '此選項僅適用於 Firefox', 'この設定は Firefox 専用です', 'This option is only for Firefox'], ['已开启 Firefox 兼容模式', '已開啟 Firefox 相容模式', 'Firefox 互換モードを有効にしました', 'Firefox compatibility enabled'], ['已使用 Firefox 完整功能模式', '已使用 Firefox 完整功能模式', 'Firefox フル機能モードを使用します', 'Using full Firefox mode'], ['已导出 Firefox 兼容诊断', '已匯出 Firefox 相容診斷', 'Firefox 互換診断をエクスポートしました', 'Firefox compatibility diagnostics exported'], ['已恢复应用徽标', '已恢復應用徽章', 'アプリバッジを復元しました', 'App badge restored'], ['已显示应用徽标', '已顯示應用徽章', 'アプリバッジを表示しました', 'App badge shown'], ['已隐藏应用徽标 · Alt+X 可打开面板', '已隱藏應用徽章 · Alt+X 可開啟面板', 'アプリバッジを非表示にしました · Alt+X でパネルを開けます', 'App badge hidden · Press Alt+X to open the panel'], ['点击屏幕右侧小蓝条可显示徽标', '點擊螢幕右側小藍條可顯示徽章', '画面右の青いバーをタップしてバッジを表示', 'Tap the blue bar on the right to show the badge'], ['已切换为屏幕右侧小蓝条', '已切換為螢幕右側小藍條', '画面右の青いバーに切り替えました', 'Switched to the blue right-edge bar'], ['显示 BetterX 应用徽标', '顯示 BetterX 應用徽章', 'BetterX アプリバッジを表示', 'Show BetterX app badge'], ['打开 BetterX 面板', '開啟 BetterX 面板', 'BetterX パネルを開く', 'Open BetterX panel'], ['关闭 BetterX 面板', '關閉 BetterX 面板', 'BetterX パネルを閉じる', 'Close BetterX panel'], ['点按显示 BetterX 徽标', '點按以顯示 BetterX 徽章', 'タップして BetterX バッジを表示', 'Tap to show the BetterX badge'], ['正则无效或风险过高，未保存', '正則無效或風險過高，未儲存', '正規表現が無効または危険なため保存しませんでした', 'Regex was invalid or too risky and was not saved'], ['已保存下载命名', '已儲存下載命名', 'ダウンロード命名設定を保存しました', 'Download naming saved'], ['已将当前列表全部标为已读', '已將目前列表全部標為已讀', '現在の一覧をすべて既読にしました', 'Marked the current list as read'], ['已保存关键词', '已儲存關鍵字', 'キーワードを保存しました', 'Keywords saved'], ['已保存排除词', '已儲存排除詞', '除外語を保存しました', 'Exclusions saved'], ['已保存自定义屏蔽词', '已儲存自訂封鎖詞', 'カスタムブロック語を保存しました', 'Custom blocked words saved'], ['已保存账号白名单', '已儲存帳號白名單', 'アカウント許可リストを保存しました', 'Account allowlist saved'], ['已切换为手动宽度并应用', '已切換為手動寬度並套用', '手動幅へ切り替えて適用しました', 'Switched to manual widths and applied'], ['已应用高级设置', '已套用進階設定', '詳細設定を適用しました', 'Advanced settings applied'], ['确定要清空', '確定要清空', '消去しますか：', 'Clear'], ['条未收藏/未置顶的帖子吗？此操作不可撤销。', '筆未收藏／未置頂的貼文嗎？此操作無法復原。', '件のお気に入り／固定されていないポスト。この操作は取り消せません。', ' unfavorited/unpinned posts? This cannot be undone.'], ['导入失败：单次最多允许', '匯入失敗：單次最多允許', 'インポート失敗：一度に許可される上限は', 'Import failed: at most'], ['条帖子。', '筆貼文。', '件です。', ' posts are allowed.'], ['导入完成：新增', '匯入完成：新增', 'インポート完了：追加', 'Import complete: added'], ['条，合并', '筆，合併', '件、統合', ', merged'], ['条，跳过', '筆，略過', '件、スキップ', ', skipped'], ['条无效记录', '筆無效記錄', '件の無効な記録', ' invalid records'], ['该帖子内媒体文件曾下载过，是否继续下载？', '此貼文的媒體曾下載過，是否繼續？', 'このポストのメディアはダウンロード済みです。続行しますか？', 'Media from this post was downloaded before. Continue?'], ['是否同时恢复备份中的设置？', '是否同時還原備份中的設定？', 'バックアップ内の設定も復元しますか？', 'Restore settings from the backup too?'], ['页面尚未就绪，诊断信息已输出到控制台。', '頁面尚未就緒，診斷資訊已輸出至主控台。', 'ページの準備ができていません。診断情報をコンソールへ出力しました。', 'The page is not ready; diagnostics were written to the console.'], ['当前筛选结果为空，没有可导出的内容。', '目前篩選結果為空，沒有可匯出的內容。', '現在の絞り込み結果は空です。エクスポートする内容がありません。', 'The current filtered result is empty; there is nothing to export.'], ['导入失败：备份文件不能超过 25 MB。', '匯入失敗：備份檔不得超過 25 MB。', 'インポート失敗：バックアップは 25 MB 以下にしてください。', 'Import failed: backup files cannot exceed 25 MB.'], ['无法识别的备份文件格式。', '無法識別的備份檔格式。', '認識できないバックアップ形式です。', 'Unrecognized backup format.'], ['导入失败：文件解析出错。', '匯入失敗：檔案解析錯誤。', 'インポート失敗：ファイルを解析できませんでした。', 'Import failed: file parsing error.'], ['当前列表没有未读的帖子喂～', '目前列表沒有未讀貼文喔～', '現在の一覧に未読ポストはありません。', 'There are no unread posts in the current list.'], ['确定要把当前列表的 ', '確定要將目前列表中的 ', '現在の一覧にある', 'Mark all '], [' 条未读帖子全部标为已读吗？', ' 筆未讀貼文全部標為已讀嗎？', '件の未読ポストをすべて既読にしますか？', ' unread posts in the current list as read?'], ['⚠️ 已忽略', '⚠️ 已忽略', '⚠️ 無視しました：', '⚠️ Ignored'], ['条高风险或无效正则', '筆高風險或無效正則', '件の危険または無効な正規表現', ' risky or invalid regex rules'], ['最多保存 50 个', '最多儲存 50 個', '保存できる上限は50件です：', 'At most 50 can be saved: '], ['自定义屏蔽词', '自訂封鎖詞', 'カスタムブロック語', 'custom blocked words'], ['关键词', '關鍵字', 'キーワード', 'keywords'], ['排除词', '排除詞', '除外語', 'exclusions'], ['没有找到与“', '找不到與「', '「', 'No username or @username matched “'], ['”匹配的用户名或 @用户名。', '」相符的使用者名稱或 @使用者名稱。', '」に一致するユーザー名または @ユーザー名はありません。', '”.'], ['开启“兼容 Firefox”？', '開啟「Firefox 相容模式」？', 'Firefox 互換モードを有効にしますか？', 'Enable Firefox compatibility?'], ['开启后 BetterX 不再改写页面的', '開啟後 BetterX 將不再改寫頁面的', '有効にすると BetterX はページの', 'When enabled, BetterX will stop wrapping the page’s'], ['可避免部分 Firefox 环境或多个 X 脚本冲突时一直卡在 X 图标。', '可避免部分 Firefox 環境或多個 X 腳本衝突時一直卡在 X 圖示。', 'を変更しなくなり、一部の Firefox 環境や複数の X スクリプトが競合した際に X ロゴで停止する問題を避けられます。', ', which can prevent X from getting stuck on its logo in some Firefox setups or when multiple X scripts conflict.'], ['以下能力可能降级：', '以下功能可能受限：', '次の機能が制限される場合があります：', 'The following features may be limited:'], ['部分视频 / GIF 无法取得真实下载地址；', '部分影片 / GIF 可能無法取得實際下載網址；', '一部の動画 / GIF の実際のダウンロード URL を取得できない場合があります。', 'Some videos / GIFs may not expose a direct download URL;'], ['部分年龄限制视频无法内联显示；', '部分年齡限制影片可能無法直接顯示；', '一部の年齢制限動画をページ内表示できない場合があります。', 'Some age-restricted videos may not display inline;'], ['无法从接口响应学习关注关系，主要依靠主页按钮和“正在关注”时间线。', '無法從介面回應學習關注關係，主要依靠個人主頁按鈕與「正在關注」時間軸。', 'API 応答からフォロー関係を学習できず、プロフィールのボタンと「フォロー中」タイムラインが主な情報源になります。', 'Following relationships cannot be learned from API responses and instead rely mainly on profile buttons and the Following timeline.'], ['帖子记录、搜索、面板、内容净化、广告过滤、布局和图片 DOM 兜底不受影响。确认后页面会刷新。', '貼文記錄、搜尋、面板、內容淨化、廣告過濾、版面配置與圖片 DOM 備援不受影響。確認後頁面會重新整理。', 'ポスト記録、検索、パネル、コンテンツフィルター、広告非表示、レイアウト、画像の DOM フォールバックには影響しません。確認後にページを更新します。', 'Post history, search, the panel, content filtering, ad hiding, layout, and the image DOM fallback are unaffected. The page will reload after confirmation.'], ['开启并刷新', '開啟並重新整理', '有効にして更新', 'Enable and reload'], ['关闭“兼容 Firefox”？', '關閉「Firefox 相容模式」？', 'Firefox 互換モードを無効にしますか？', 'Disable Firefox compatibility?'], ['关闭后将恢复 v1.7 的网络媒体与关注关系采集。如果当前环境曾卡在只显示 X 图标的页面，建议继续保持开启。确认后页面会刷新。', '關閉後將恢復 v1.7 的網路媒體與關注關係擷取。如果目前環境曾卡在只顯示 X 圖示的頁面，建議繼續保持開啟。確認後頁面會重新整理。', '無効にすると v1.7 のネットワークメディア・フォロー関係の取得を再開します。X ロゴだけの画面で停止したことがある環境では、有効のままにすることをおすすめします。確認後にページを更新します。', 'Disabling restores v1.7 network media and following-relationship capture. If this setup has ever stalled on the X logo, keeping compatibility enabled is recommended. The page will reload after confirmation.'], ['关闭并刷新', '關閉並重新整理', '無効にして更新', 'Disable and reload'], ['检测到 Firefox', '偵測到 Firefox', 'Firefox を検出しました', 'Firefox detected'], ['请问你在使用 BetterX 时，能否正常进入 X？', '使用 BetterX 時，是否能正常進入 X？', 'BetterX の使用中、X を正常に開けていますか？', 'Can you open X normally while using BetterX?'], ['目前已知部分 Firefox 用户会一直卡在', '目前已知部分 Firefox 使用者會一直卡在', '一部の Firefox ユーザーでは', 'Some Firefox users may remain stuck on the'], ['只显示 X 图标', '只顯示 X 圖示', 'X ロゴだけが表示される', 'X-logo-only'], ['的启动页面，常见于广告过滤、媒体下载等多个 X 脚本同时运行的环境。', '的啟動畫面，常見於廣告過濾、媒體下載等多個 X 腳本同時執行的環境。', '起動画面で停止することがあります。広告フィルターやメディア保存など、複数の X スクリプトを同時に使う環境で起きやすい問題です。', ' startup screen, especially when multiple X scripts such as ad filters and media downloaders run together.'], ['如果遇到异常，请点击', '如果遇到異常，請點擊', '問題がある場合は', 'If you encounter this issue, click'], ['有异常', '有異常', '問題あり', 'Having problems'], ['，BetterX 会开启', '，BetterX 會開啟', 'を選ぶと、BetterX は', '; BetterX will enable'], ['“设置 → 其他功能 → 兼容 Firefox”', '「設定 → 其他功能 → Firefox 相容模式」', '「設定 → その他の機能 → Firefox 互換モード」', '“Settings → Other features → Firefox compatibility”'], ['。该模式会停用页面网络 Hook；部分视频 / GIF 下载、年龄限制视频和接口关注关系识别可能降级，其他主体功能不受影响。', '。此模式會停用頁面網路 Hook；部分影片 / GIF 下載、年齡限制影片與介面關注關係識別可能受限，其他主要功能不受影響。', '。このモードはページのネットワーク Hook を無効化します。一部の動画 / GIF の保存、年齢制限動画、API によるフォロー関係の認識は制限される場合がありますが、その他の主要機能には影響しません。', '. This disables page network hooks. Some video / GIF downloads, age-restricted videos, and API-based following detection may be limited; other main features are unaffected.'], ['目前正常', '目前正常', '現在は正常', 'Working normally'], ['确定', '確定', '確認', 'OK'], ['未知错误', '未知錯誤', '不明なエラー', 'Unknown error'], ];
+const UI_TEXT_ENTRIES = [ ['更好的 X', '更好的 X', 'もっと便利な X', 'Better X'], ['Alt+X 开关', 'Alt+X 開關', 'Alt+X で開閉', 'Toggle with Alt+X'], ['刷新', '重新整理', '更新', 'Refresh'], ['全部已读', '全部已讀', 'すべて既読', 'Mark all read'], ['重新扫描当前页面', '重新掃描目前頁面', '現在のページを再スキャン', 'Rescan the current page'], ['把当前列表全部标为已读', '將目前列表全部標為已讀', '現在の一覧をすべて既読にする', 'Mark the current list as read'], ['切换语言', '切換語言', '言語を切替', 'Switch language'], ['切换 BetterX 界面语言', '切換 BetterX 介面語言', 'BetterX の表示言語を切り替える', 'Switch BetterX interface language'], ['选择界面语言', '選擇介面語言', '表示言語を選択', 'Choose interface language'], ['选择后页面会刷新，帖子与设置数据不会受到影响。', '選擇後頁面會重新整理，貼文與設定資料不受影響。', '選択後にページを更新します。ポストや設定データには影響しません。', 'The page will reload after selection. Your posts and settings will not be affected.'], ['正在切换语言并刷新…', '正在切換語言並重新整理…', '言語を切り替えて更新中…', 'Switching language and reloading…'], ['无法保存语言设置', '無法儲存語言設定', '言語設定を保存できませんでした', 'Could not save the language setting'], ['更多', '更多', 'その他', 'More'], ['关闭', '關閉', '閉じる', 'Close'], ['帖子', '貼文', 'ポスト', 'Posts'], ['通知', '通知', '通知', 'Notifications'], ['设置', '設定', '設定', 'Settings'], ['导出筛选', '匯出篩選結果', '絞り込み結果をエクスポート', 'Export filtered'], ['备份全部', '備份全部', 'すべてバックアップ', 'Back up all'], ['导出备份', '匯出備份', 'バックアップをエクスポート', 'Export backup'], ['导入', '匯入', 'インポート', 'Import'], ['备份已分卷', '備份已分卷', 'バックアップを分割しました', 'Backup split into parts'], ['数据较大，请保存全部分卷；恢复时可同时选择这些 JSON 文件。', '資料較大，請儲存全部分卷；還原時可同時選取這些 JSON 檔案。', 'データ量が多いため、すべての分割ファイルを保存してください。復元時にこれらの JSON ファイルをまとめて選択できます。', 'Save every part. You can select these JSON files together when restoring.'], ['下载分卷', '下載分卷', '分割ファイルを保存', 'Download part'], ['完成', '完成', '完了', 'Done'], ['无法导出：单条记录或设置超过备份容量限制。', '無法匯出：單筆記錄或設定超過備份容量限制。', '1 件の記録または設定がバックアップ容量の上限を超えています。', 'Cannot export: a record or the settings exceed the backup size limit.'], ['此前已导入的分卷会保留，可重新选择文件继续恢复。', '先前已匯入的分卷會保留，可重新選取檔案繼續還原。', '読み込み済みの分割ファイルは保持されます。ファイルを選択し直して復元を続けられます。', 'Previously imported parts are kept. Select files again to continue restoring.'], ['清空', '清空', '消去', 'Clear'], ['快速筛选', '快速篩選', 'クイックフィルター', 'Quick filters'], ['搜索', '搜尋', '検索', 'Search'], ['搜索帖子', '搜尋貼文', 'ポストを検索', 'Search posts'], ['搜索作者、正文或备注…', '搜尋作者、內文或備註…', '投稿者・本文・メモを検索…', 'Search author, text, or notes…'], ['来源筛选', '來源篩選', 'ソースで絞り込む', 'Filter by source'], ['媒体筛选', '媒體篩選', 'メディアで絞り込む', 'Filter by media'], ['排序方式', '排序方式', '並べ替え', 'Sort order'], ['智能排序', '智慧排序', 'スマート順', 'Smart sort'], ['最近浏览', '最近瀏覽', '最近表示', 'Recently viewed'], ['最近抓取', '最近擷取', '最近取得', 'Recently captured'], ['首次抓取（新→旧）', '首次擷取（新→舊）', '初回取得（新→古）', 'First captured (new→old)'], ['首次抓取（旧→新）', '首次擷取（舊→新）', '初回取得（古→新）', 'First captured (old→new)'], ['出现次数', '出現次數', '表示回数', 'Appearances'], ['按作者', '依作者', '投稿者順', 'By author'], ['按来源', '依來源', 'ソース順', 'By source'], ['全部', '全部', 'すべて', 'All'], ['未打开', '未開啟', '未表示', 'Unopened'], ['已打开', '已開啟', '表示済み', 'Opened'], ['快速消失', '快速消失', 'すぐ消えた', 'Disappeared quickly'], ['已收藏', '已收藏', 'お気に入り済み', 'Favorited'], ['已置顶', '已置頂', '固定済み', 'Pinned'], ['命中关键词', '符合關鍵字', 'キーワード一致', 'Keyword matches'], ['全部媒体', '全部媒體', 'すべてのメディア', 'All media'], ['含图片', '含圖片', '画像あり', 'With images'], ['含视频', '含影片', '動画あり', 'With video'], ['纯文字', '純文字', 'テキストのみ', 'Text only'], ['全部来源', '全部來源', 'すべてのソース', 'All sources'], ['主页', '首頁', 'ホーム', 'Home'], ['正在关注', '正在關注', 'フォロー中', 'Following'], ['为你推荐', '為你推薦', 'おすすめ', 'For You'], ['列表', '列表', 'リスト', 'List'], ['书签', '書籤', 'ブックマーク', 'Bookmarks'], ['喜欢', '喜歡', 'いいね', 'Likes'], ['未知页面', '未知頁面', '不明なページ', 'Unknown page'], ['个人主页', '個人主頁', 'プロフィール', 'Profile'], ['帖子详情', '貼文詳情', 'ポスト詳細', 'Post details'], ['搜索页', '搜尋頁', '検索ページ', 'Search page'], ['书签页', '書籤頁', 'ブックマークページ', 'Bookmarks page'], ['喜欢页', '喜歡頁', 'いいねページ', 'Likes page'], ['列表页', '列表頁', 'リストページ', 'List page'], ['总数', '總數', '合計', 'Total'], ['未读', '未讀', '未読', 'Unread'], ['图片', '圖片', '画像', 'Image'], ['视频', '影片', '動画', 'Video'], ['来源:', '來源：', 'ソース：', 'Source:'], ['历史来源:', '歷史來源：', '過去のソース：', 'Source history:'], ['抓取:', '擷取：', '取得：', 'Captured:'], ['浏览:', '瀏覽：', '表示：', 'Viewed:'], ['出现:', '出現：', '表示：', 'Seen:'], ['当前来源:', '目前來源：', '現在のソース：', 'Current source:'], ['当前选择：', '目前選擇：', '現在の選択：', 'Current:'], ['打开', '開啟', '開く', 'Open'], ['复制链接', '複製連結', 'リンクをコピー', 'Copy link'], [' 的个人主页', ' 的個人主頁', ' のプロフィール', ' profile'], ['复制链接：', '複製連結：', 'リンクをコピー：', 'Copy link: '], ['已复制', '已複製', 'コピー済み', 'Copied'], ['取消置顶', '取消置頂', '固定解除', 'Unpin'], ['置顶', '置頂', '固定', 'Pin'], ['取消收藏', '取消收藏', 'お気に入り解除', 'Unfavorite'], ['收藏', '收藏', 'お気に入り', 'Favorite'], ['删', '刪除', '削除', 'Delete'], ['展开全文', '展開全文', '全文を表示', 'Show full text'], ['收起', '收合', '折りたたむ', 'Collapse'], ['备注', '備註', 'メモ', 'Note'], ['保存备注', '儲存備註', 'メモを保存', 'Save note'], ['取消', '取消', 'キャンセル', 'Cancel'], ['在这里写备注…', '在這裡寫備註…', 'ここにメモを入力…', 'Write a note here…'], ['无正文', '無內文', '本文なし', 'No text'], ['加载更多', '載入更多', 'さらに読み込む', 'Load more'], ['帖子通知管理', '貼文通知管理', 'ポスト通知の管理', 'Post notification management'], ['搜索用户名或 @用户名…', '搜尋使用者名稱或 @使用者名稱…', 'ユーザー名または @ユーザー名を検索…', 'Search name or @username…'], ['搜索帖子通知用户', '搜尋貼文通知使用者', '通知ユーザーを検索', 'Search notification users'], ['同步订阅用户', '同步訂閱使用者', '購読ユーザーを同期', 'Sync subscribed users'], ['正在同步…', '正在同步…', '同期中…', 'Syncing…'], ['尚未读取订阅用户', '尚未讀取訂閱使用者', '購読ユーザー未取得', 'Subscribed users not loaded'], ['正在读取关注列表…', '正在讀取關注列表…', 'フォロー一覧を取得中…', 'Reading following list…'], ['已订阅', '已訂閱', '購読中', 'Subscribed'], ['本地保留', '本機保留', 'ローカル保存', 'Stored locally'], ['筛选到', '篩選到', '絞り込み', 'Filtered'], ['上次同步：', '上次同步：', '最終同期：', 'Last sync: '], ['尚未完整同步', '尚未完整同步', '完全同期前', 'Not fully synced'], ['已同步', '已同步', '同期済み', 'Synced'], ['处理中…', '處理中…', '処理中…', 'Processing…'], ['关闭通知', '關閉通知', '通知をオフ', 'Disable notifications'], ['重新开启', '重新開啟', '再度オン', 'Re-enable'], ['移除记录', '移除記錄', '記録を削除', 'Remove record'], ['设置', '設定', '設定', 'Settings'], ['大多数设置会立即生效；带“保存”或“应用”按钮的设置需要手动确认。', '大多數設定會立即生效；帶「儲存」或「套用」按鈕的設定需要手動確認。', 'ほとんどの設定はすぐ反映されます。「保存」または「適用」ボタンがある設定は手動で確定してください。', 'Most settings apply immediately. Settings with a Save or Apply button require confirmation.'], ['关键词与排除词', '關鍵字與排除詞', 'キーワードと除外語', 'Keywords and exclusions'], ['任意匹配', '任意符合', 'いずれか一致', 'Match any'], ['全部匹配', '全部符合', 'すべて一致', 'Match all'], ['保存', '儲存', '保存', 'Save'], ['输入关键词，支持正则，按回车添加', '輸入關鍵字，支援正則，按 Enter 新增', 'キーワードを入力（正規表現対応）、Enter で追加', 'Enter keywords (regex supported), press Enter to add'], ['输入排除词，支持正则，按回车添加', '輸入排除詞，支援正則，按 Enter 新增', '除外語を入力（正規表現対応）、Enter で追加', 'Enter exclusions (regex supported), press Enter to add'], ['内容净化', '內容淨化', 'コンテンツフィルター', 'Content filtering'], ['隐藏黄推 / 成人引流机器人', '隱藏成人內容／引流機器人', '成人スパムを非表示', 'Hide adult spam accounts'], ['检测强度', '偵測強度', '検出強度', 'Detection strength'], ['均衡', '均衡', '標準', 'Balanced'], ['保守', '保守', '控えめ', 'Conservative'], ['不审查已关注账号（转发内容除外）', '不審查已關注帳號（轉發內容除外）', 'フォロー中のアカウントを除外（リポストは対象）', 'Skip followed accounts (except reposts)'], ['不审查已关注账号的转发内容', '不審查已關注帳號的轉發內容', 'フォロー中アカウントのリポストも除外', 'Also skip reposts by followed accounts'], ['启用自定义规则（屏蔽词与账号白名单）', '啟用自訂規則（封鎖詞與帳號白名單）', 'カスタムルールを有効化（ブロック語・許可リスト）', 'Enable custom rules (blocked words and allowlist)'], ['输入自定义屏蔽词，按回车添加', '輸入自訂封鎖詞，按 Enter 新增', 'ブロック語を入力し Enter で追加', 'Enter a blocked word and press Enter'], ['输入账号白名单（如 @example），按回车添加', '輸入帳號白名單（如 @example），按 Enter 新增', '許可するアカウント（例 @example）を入力し Enter', 'Enter an allowed account (e.g. @example) and press Enter'], ['当前隐藏', '目前隱藏', '現在非表示', 'Currently hidden'], ['本次累计', '本次累計', '今回の累計', 'This session'], ['已扫描', '已掃描', 'スキャン済み', 'Scanned'], ['已识别关注', '已識別關注', '認識済みフォロー', 'Known following'], ['界面简化与宽屏', '介面簡化與寬螢幕', 'UI 簡素化とワイド表示', 'Simplified and wide layout'], ['启用界面简化与宽屏', '啟用介面簡化與寬螢幕', 'UI 簡素化とワイド表示を有効化', 'Enable simplified and wide layout'], ['时间线宽度(px)', '時間軸寬度(px)', 'タイムライン幅 (px)', 'Timeline width (px)'], ['左侧栏宽度(px)', '左側欄寬度(px)', '左サイドバー幅 (px)', 'Left sidebar width (px)'], ['应用宽度', '套用寬度', '幅を適用', 'Apply widths'], ['隐藏左侧栏', '隱藏左側欄', '左サイドバーを非表示', 'Hide left sidebar'], ['隐藏右侧栏', '隱藏右側欄', '右サイドバーを非表示', 'Hide right sidebar'], ['中间栏填满（启用时同时隐藏左右栏）', '中間欄填滿（啟用時同時隱藏左右欄）', '中央列を全幅表示（左右列も非表示）', 'Fill center column (also hides sidebars)'], ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'], ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'], ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'], ['GIF内容下载格式', 'GIF 內容下載格式', 'GIF コンテンツの保存形式', 'GIF content download format'], ['默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。', '預設開啟；關閉時 GIF 內容會以原始 MP4 下載。選擇 GIF 時會在瀏覽器內轉換，耗時更長、檔案更大。', '既定で有効です。オフにすると GIF コンテンツは元の MP4 形式で保存されます。GIF を選ぶとブラウザー内で変換するため、時間がかかりファイルも大きくなります。', 'Enabled by default. When off, GIF content is saved as the original MP4. Selecting GIF converts it in the browser, which takes longer and produces larger files.'], ['自定义下载文件/压缩包名', '自訂下載檔案／壓縮檔名稱', 'ダウンロードファイル／ZIP 名をカスタマイズ', 'Customize downloaded file / ZIP names'], ['已自定义', '已自訂', 'カスタマイズ済み', 'Customized'], ['下载多个媒体自动压缩 ZIP 包', '下載多個媒體時自動壓縮 ZIP', '複数メディアを ZIP にまとめる', 'Package multiple media files as ZIP'], ['记录已经下载过的帖子', '記錄已下載過的貼文', 'ダウンロード済みポストを記録', 'Track downloaded posts'], ['媒体文件名（不含扩展名）', '媒體檔名（不含副檔名）', 'メディア名（拡張子なし）', 'Media filename (without extension)'], ['ZIP 压缩包名（不含 .zip）', 'ZIP 壓縮檔名（不含 .zip）', 'ZIP 名（.zip なし）', 'ZIP filename (without .zip)'], ['正则替换（可选）', '正則取代（選填）', '正規表現置換（任意）', 'Regex replacement (optional)'], ['替换为', '取代為', '置換後', 'Replace with'], ['例如：', '例如：', '例：', 'Example: '], ['；支持 $1', '；支援 $1', '（$1 に対応）', '; supports $1'], ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'], ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'], ['关闭NFL', '關閉 NFL', 'NFL を非表示', 'Hide NFL'], ['帖子内媒体改为网格视图', '貼文內媒體改為網格檢視', 'ポスト内メディアをグリッド表示', 'Show post media in a grid'], ['取消年龄限制（用原图 / 视频进行替换）', '解除年齡限制（以原圖 / 影片取代）', '年齢制限を解除（元画像 / 動画に置換）', 'Bypass age gate (replace with original media)'], ['自动展开帖子里“显示更多”', '自動展開貼文中的「顯示更多」', 'ポストの「さらに表示」を自動展開', 'Automatically expand “Show more” in posts'], ['进入用户主页默认查看', '進入使用者主頁時預設檢視', 'プロフィールの既定タブ', 'Default profile tab'], ['亮点', '亮點', 'ハイライト', 'Highlights'], ['用户主页帖子排序方式', '使用者主頁貼文排序方式', 'プロフィールのポスト並び順', 'Profile post sorting'], ['最近', '最近', '最新', 'Recent'], ['热门', '熱門', '人気', 'Popular'], ['选择“热门”时，会使用 X 的热门排序；视频和图片页不受影响。', '選擇「熱門」時，會使用 X 的熱門排序；影片和圖片頁不受影響。', '「人気」を選ぶと X の人気順を使います。動画・画像ページには影響しません。', 'Selecting Popular uses X’s popular sorting; video and photo pages are unaffected.'], ['其他功能', '其他功能', 'その他の機能', 'Other features'], ['兼容 Firefox（仅 Firefox）', '相容 Firefox（僅 Firefox）', 'Firefox 互換モード（Firefox のみ）', 'Firefox compatibility (Firefox only)'], ['帖子上限提示', '貼文上限提示', 'ポスト件数の上限通知', 'Post limit warning'], ['帖子记录接近“最大条数”时提醒你。关闭提醒后，也可以随时在这里重新开启。', '貼文記錄接近「最大筆數」時提醒你。關閉提醒後，也可以隨時在這裡重新開啟。', 'ポスト記録が「最大件数」に近づくと通知します。通知を閉じても、ここからいつでも再開できます。', 'Warns you when saved posts approach the maximum. If dismissed, the warning can be re-enabled here anytime.'], ['已恢复上限提示', '已恢復上限提示', '上限通知を再開しました', 'Limit warning restored'], ['已关闭上限提示', '已關閉上限提示', '上限通知を無効にしました', 'Limit warning disabled'], ['隐藏应用徽标', '隱藏應用徽章', 'アプリバッジを非表示', 'Hide app badge'], ['切换为移动端徽标（仅 PC）', '切換為行動版徽章（僅 PC）', 'モバイル用バッジに切替（PC のみ）', 'Use mobile badge (PC only)'], ['切换为半透明蓝色条（仅移动端）', '切換為半透明藍色條（僅行動裝置）', '半透明の青いバーに切替（モバイルのみ）', 'Use translucent blue bar (mobile only)'], ['高级设置', '進階設定', '詳細設定', 'Advanced settings'], ['自动清理(天)', '自動清理（日）', '自動削除（日）', 'Auto-clean (days)'], ['最大条数', '最大筆數', '最大件数', 'Maximum posts'], ['闪现阈值(秒)', '閃現門檻（秒）', '消失判定（秒）', 'Disappear threshold (sec)'], ['主题', '主題', 'テーマ', 'Theme'], ['跟随系统', '跟隨系統', 'システムに合わせる', 'Follow system'], ['深色', '深色', 'ダーク', 'Dark'], ['浅色', '淺色', 'ライト', 'Light'], ['下载超时(秒)', '下載逾時（秒）', 'タイムアウト（秒）', 'Download timeout (sec)'], ['下载并发', '下載並行數', '同時ダウンロード数', 'Concurrent downloads'], ['应用', '套用', '適用', 'Apply'], ['帖子记录即将达到上限', '貼文記錄即將達到上限', 'ポスト記録が上限に近づいています', 'Post history is nearing its limit'], ['达到上限后，新帖子仍会继续记录；最旧的未收藏、未置顶帖子会被删除。收藏和置顶帖子不会被上限删除，因此总数有时可能超过设置值。', '達到上限後仍會繼續記錄新貼文；最舊且未收藏、未置頂的貼文會被刪除。收藏與置頂貼文不受上限刪除，因此總數有時可能超過設定值。', '上限に達しても新しいポストは記録され、古い未お気に入り・未固定のポストから削除されます。お気に入りと固定済みポストは削除されないため、合計が設定値を超える場合があります。', 'New posts will still be recorded at the limit; the oldest unfavorited and unpinned posts are removed. Favorited and pinned posts are protected, so the total may sometimes exceed the configured value.'], ['你可以打开“高级设置”调大“最大条数”，或先导出备份。', '你可以開啟「進階設定」調高「最大筆數」，或先匯出備份。', '「詳細設定」で上限を増やすか、先にバックアップをエクスポートできます。', 'You can increase the maximum under Advanced settings or export a backup first.'], ['打开高级设置', '開啟進階設定', '詳細設定を開く', 'Open advanced settings'], ['不再提示', '不再提示', '今後表示しない', "Don't remind me again"], ['点亮按钮即不保存对应页面的帖子', '點亮按鈕即不儲存對應頁面的貼文', 'ボタンをオンにすると、そのページのポストを保存しません', 'Turn on a button to stop saving posts from that page'], ['下载任务', '下載工作', 'ダウンロードタスク', 'Download tasks'], ['暂无下载任务', '暫無下載工作', 'ダウンロードはありません', 'No download tasks'], ['下载', '下載', 'ダウンロード', 'Download'], ['下载中', '下載中', 'ダウンロード中', 'Downloading'], ['转 GIF', '轉 GIF', 'GIF 変換', 'GIF'], ['正在转换 GIF', '正在轉換 GIF', 'GIF に変換中', 'Converting to GIF'], ['排队中', '排隊中', '待機中', 'Queued'], ['排队', '排隊', '待機', 'Queued'], ['正在打包', '正在打包', '圧縮中', 'Packing'], ['打包', '打包', '圧縮', 'Packing'], ['正在保存', '正在儲存', '保存中', 'Saving'], ['正在取消下载', '正在取消下載', 'キャンセル中', 'Cancelling download'], ['取消中', '取消中', 'キャンセル中', 'Cancelling'], ['下载完成', '下載完成', 'ダウンロード完了', 'Download complete'], ['已取消', '已取消', 'キャンセル済み', 'Cancelled'], ['失败：', '失敗：', '失敗：', 'Failed: '], ['重试', '重試', '再試行', 'Retry'], ['查看下载任务', '查看下載工作', 'ダウンロードを表示', 'View downloads'], ['取消下载', '取消下載', 'ダウンロードをキャンセル', 'Cancel download'], ['下载图片/视频/GIF', '下載圖片/影片/GIF', '画像/動画/GIFを保存', 'Download images/videos/GIFs'], ['正在获取视频地址…', '正在取得影片網址…', '動画 URL を取得中…', 'Getting video URL…'], ['获取中', '取得中', '取得中', 'Looking up'], ['已下载过媒体；点击可再次下载', '已下載過媒體；點擊可再次下載', 'ダウンロード済みです。クリックすると再保存できます', 'Downloaded before; click to download again'], ['个任务', '個工作', '件のタスク', ' tasks'], ['查看下载任务：', '查看下載工作：', 'ダウンロードを表示：', 'View downloads: '], ['命名效果预览：', '命名效果預覽：', 'ファイル名プレビュー：', 'Filename preview: '], ['示例用户', '範例使用者', 'サンプルユーザー', 'Sample user'], ['这是用于预览下载文件名的帖子正文', '這是用於預覽下載檔名的貼文內文', 'ダウンロード名を確認するためのサンプル本文', 'Sample post text for previewing download names'], ['下载超时', '下載逾時', 'ダウンロードがタイムアウトしました', 'Download timed out'], ['网络错误', '網路錯誤', 'ネットワークエラー', 'Network error'], ['下载失败', '下載失敗', 'ダウンロード失敗', 'Download failed'], ['读取失败', '讀取失敗', '読み込み失敗', 'Read failed'], ['媒体总量超出经典 ZIP 范围，请改为逐个下载', '媒體總量超出傳統 ZIP 範圍，請改為逐一下載', 'メディア総量が従来形式の ZIP 上限を超えました。個別に保存してください', 'Media exceeds classic ZIP limits; download files separately'], ['跨域下载失败：请使用支持 GM_xmlhttpRequest 的脚本管理器', '跨網域下載失敗：請使用支援 GM_xmlhttpRequest 的使用者腳本管理器', 'クロスオリジン保存に失敗しました。GM_xmlhttpRequest 対応のユーザースクリプト管理拡張を使用してください', 'Cross-origin download failed. Use a userscript manager that supports GM_xmlhttpRequest'], ['⚠️ 未能取得视频地址：检测到 Violentmonkey。安卓 Firefox 上可能无法正确携带 X 登录态，请改用 Tampermonkey 后重试', '⚠️ 無法取得影片網址：偵測到 Violentmonkey。Android Firefox 可能無法正確攜帶 X 登入狀態，請改用 Tampermonkey 後重試', '⚠️ 動画 URL を取得できませんでした。Violentmonkey を検出しました。Android Firefox では X のログイン状態が正しく送信されない場合があるため、Tampermonkey に変更して再試行してください', '⚠️ Could not get the video URL. Violentmonkey was detected; Android Firefox may not pass the X login session correctly. Switch to Tampermonkey and try again'], ['未能取得媒体地址，请确认已登录 X 后重试', '無法取得媒體網址，請確認已登入 X 後重試', 'メディア URL を取得できませんでした。X にログインして再試行してください', 'Could not get the media URL. Make sure you are signed in to X and try again'], ['未找到可下载的媒体，若为视频请先点开或播放一下再试', '找不到可下載的媒體；若為影片，請先開啟或播放後再試', '保存できるメディアが見つかりません。動画の場合は一度開くか再生してから再試行してください', 'No downloadable media was found. For video, open or play it once and try again'], ['图片预览', '圖片預覽', '画像プレビュー', 'Image preview'], ['关闭图片预览', '關閉圖片預覽', '画像プレビューを閉じる', 'Close image preview'], ['上一张图片', '上一張圖片', '前の画像', 'Previous image'], ['下一张图片', '下一張圖片', '次の画像', 'Next image'], ['提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。', '提示：列表僅記錄你瀏覽時出現過的貼文。收藏／置頂貼文不會因數量上限或自動清理而刪除。', 'ヒント：閲覧中に表示されたポストだけを記録します。お気に入り／固定したポストは上限や自動削除の対象外です。', 'Tip: Only posts seen while browsing are saved. Favorited or pinned posts are never removed by limits or auto-cleaning.'], ['读取 X 的铃铛订阅状态；开关操作会同步修改 X 账号设置。本页不会抓取或显示订阅账号的帖子。', '讀取 X 的鈴鐺訂閱狀態；開關操作會同步修改 X 帳號設定。本頁不會擷取或顯示訂閱帳號的貼文。', 'X のベル購読状態を読み取り、切替は X アカウントにも反映されます。このページで購読アカウントのポストを取得・表示することはありません。', 'Reads X bell-subscription status; toggles also update your X account. This page does not fetch or display posts from subscribed accounts.'], ['只影响 BetterX 已记录的帖子：关键词用来高亮和筛选，排除词会隐藏匹配的帖子。', '只影響 BetterX 已記錄的貼文：關鍵字用來醒目提示和篩選，排除詞會隱藏符合的貼文。', 'BetterX に記録済みのポストだけが対象です。キーワードは強調と絞り込みに使い、除外語に一致したポストは非表示にします。', 'Only affects posts saved by BetterX: keywords highlight and filter, while exclusions hide matching posts.'], ['普通文字可直接输入；正则表达式请写成 <code>/表达式/</code>，例如 <code>/猫|狗/</code>。两种写法可以混用。', '一般文字可直接輸入；正則表達式請寫成 <code>/運算式/</code>，例如 <code>/貓|狗/</code>。兩種寫法可以混用。', '通常の文字はそのまま入力できます。正規表現は <code>/式/</code> の形で入力してください（例：<code>/猫|犬/</code>）。両方を組み合わせて使えます。', 'Enter plain text directly. Write regex as <code>/expression/</code>, for example <code>/cat|dog/</code>. Both forms can be mixed.'], ['根据正文、账号名和引流特征综合判断，只在当前页面隐藏可疑帖子，不会拉黑账号。关闭后会恢复显示。', '根據內文、帳號名稱和引流特徵綜合判斷，只在目前頁面隱藏可疑貼文，不會封鎖帳號。關閉後會恢復顯示。', '本文、アカウント名、誘導の特徴から総合的に判定し、現在のページで疑わしいポストだけを非表示にします。アカウントはブロックせず、オフにすると再表示します。', 'Checks post text, account names, and spam signals, then hides suspicious posts only on the current page. It never blocks accounts; turn it off to show them again.'], ['自动读取 X 当前的时间线与左侧栏宽度（默认开启）', '自動讀取 X 目前的時間軸與左側欄寬度（預設開啟）', 'X の現在のタイムライン幅と左サイドバー幅を自動取得（既定でオン）', 'Automatically detect X timeline and left-sidebar widths (enabled by default)'], ['在消息页和设置页不会调整布局；关闭此功能即可恢复 X 原来的界面。', '在訊息頁和設定頁不會調整版面；關閉此功能即可恢復 X 原來的介面。', 'メッセージと設定ページではレイアウトを変更しません。この機能をオフにすると X 本来の表示に戻ります。', 'The layout is not changed on Messages or Settings pages. Turn this feature off to restore X’s original layout.'], ['开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。', '開啟後貼文操作列會顯示下載進度與取消按鈕；桌面版顯示下載工作膠囊，行動版顯示帶工作數量的藍色下載按鈕。', '有効にするとポスト操作欄に進捗とキャンセルボタンを表示します。デスクトップではタスクピル、モバイルでは件数付きの青いボタンを表示します。', 'Shows download progress and cancel controls in post actions. Desktop gets a task pill; mobile gets a blue button with a task count.'], ['默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。', '預設開啟；ZIP 內檔案使用下方「媒體檔名」範本。關閉後會同時下載多個媒體。', '既定でオンです。ZIP 内のファイル名には下のメディア名テンプレートを使います。オフの場合は複数ファイルを個別保存します。', 'Enabled by default. Files inside ZIP use the media filename template below. When disabled, media files download separately.'], ['默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設關閉；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオフです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Disabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'], ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 <code>{序號}</code>，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで <code>{連番}</code> がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If <code>{index}</code> is omitted for multiple media files, a number is appended automatically.'], ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 <code>$1</code>）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（<code>$1</code> など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as <code>$1</code> are supported; invalid or risky regexes are not saved.'], ['隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。', '隱藏時間軸廣告、廣告卡片和「訂閱 Premium」提示。廣告貼文不會儲存到 BetterX，關閉後會重新顯示。', 'タイムライン広告、広告カード、「Premium に登録」の案内を非表示にします。広告ポストは BetterX に保存されず、オフにすると再表示します。', 'Hides timeline ads, ad cards, and Subscribe to Premium prompts. Ad posts are not saved to BetterX and reappear when this is turned off.'], ['隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。', '隱藏 X 右側欄中的 NFL 球隊、賽程和比賽入口；關閉此開關後會恢復顯示。', 'X の右サイドバーにある NFL のチーム、日程、試合への入口を非表示にします。オフにすると再表示します。', 'Hides NFL teams, schedules, and game links in X’s right sidebar. Turn it off to show them again.'], ['把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。', '把貼文裡的多個媒體改成網格：2 個並排，3 個左大右二，4 個按 2×2 排列。', 'ポスト内の複数メディアをグリッド表示にします。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Shows multiple media items in a grid: two side by side, three with one large item on the left, and four in a 2×2 layout.'], ['移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”', '移除敏感內容遮罩並顯示原圖或影片；建議在新開啟的視窗中勾選「顯示可能含有敏感內容的媒體內容」', 'センシティブな内容の覆いを外して元の画像や動画を表示します。新しく開いたウィンドウで「センシティブな内容を含む可能性のあるメディアを表示する」を有効にすることをおすすめします。', 'Removes sensitive-content covers and shows original images or videos. In the newly opened window, we recommend enabling “Display media that may contain sensitive content”.'], ['如果您没有勾选的话，麻烦您勾选上“显示可能含有敏感内容的媒体内容”，大部分成人内容会自动显示', '如果尚未勾選，請勾選「顯示可能含有敏感內容的媒體內容」，大部分成人內容便會自動顯示', 'まだ有効にしていない場合は、「センシティブな内容を含む可能性のあるメディアを表示する」を有効にしてください。ほとんどの成人向けコンテンツが自動的に表示されます。', 'If it is not already enabled, please enable “Display media that may contain sensitive content”. Most adult content will then appear automatically.'], ['自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。', '自動點開貼文內文裡的「顯示更多 / Show more」；不會展開回覆或側欄內容。', 'ポスト本文の「さらに表示 / Show more」を自動で開きます。返信やサイドバーの内容は展開しません。', 'Automatically opens “Show more” in post text. Replies and sidebar content are not expanded.'], ['进入用户主页时自动切换到所选页签；帖子详情、回复和关注者页面不受影响。', '進入使用者主頁時自動切換到所選分頁；貼文詳情、回覆和追蹤者頁面不受影響。', 'プロフィールを開くと選んだタブへ自動で切り替えます。ポスト詳細、返信、フォロワーページには影響しません。', 'Automatically switches to the selected tab when you open a profile. Post details, replies, and follower pages are unaffected.'], ['如果 X 一直停在启动图标，可尝试开启。开启后会停用部分网络数据读取；点击开关可先查看影响。', '如果 X 一直停在啟動圖示，可嘗試開啟。開啟後會停用部分網路資料讀取；點擊開關可先查看影響。', 'X が起動ロゴのまま止まる場合にお試しください。有効にすると一部のネットワークデータ読み取りを停止します。切り替える前に影響を確認できます。', 'Try this if X remains stuck on its startup logo. It disables some network-data reading; click the switch to review the impact first.'], ['在电脑上会隐藏徽标；在手机上会收成屏幕右侧的蓝色小条。点击小条、从屏幕右边缘向内滑动，或使用油猴菜单都能恢复。', '在電腦上會隱藏徽章；在手機上會收成螢幕右側的藍色小條。點擊小條、從螢幕右邊緣向內滑動，或使用腳本管理器選單都能恢復。', 'パソコンではバッジを隠し、スマートフォンでは画面右側の青いバーに収納します。バーをタップする、右端から内側へスワイプする、またはユーザースクリプトメニューから復元できます。', 'Hides the badge on desktop and collapses it into a blue bar on mobile. Tap the bar, swipe inward from the right edge, or use the userscript menu to restore it.'], ['在电脑上使用圆形图标和未读角标，仍可拖动位置。', '在電腦上使用圓形圖示和未讀角標，仍可拖曳位置。', 'パソコンで丸いアイコンと未読バッジを使います。位置は引き続きドラッグできます。', 'Uses a circular icon and unread badge on desktop; you can still drag it to a new position.'], ['把手机上的圆形徽标收成右侧蓝色小条；点击打开面板，长按后可上下移动。', '把手機上的圓形徽章收成右側藍色小條；點擊開啟面板，長按後可上下移動。', 'スマートフォンの丸いバッジを右側の青いバーに収納します。タップでパネルを開き、長押し後に上下へ動かせます。', 'Collapses the circular mobile badge into a blue bar on the right. Tap to open the panel; long-press to move it up or down.'], ['下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。自动清理(天)为0则不自动清理。', '下載並行數可設為 1～6，預設 2；提高可加速多媒體工作，但也會增加頻寬與記憶體使用。自動清理（日）設為0則不自動清理。', '同時数は1～6（既定2）。増やすと速くなりますが、帯域とメモリ使用量も増えます。自動削除（日）を0にすると自動削除しません。', 'Concurrency can be 1–6 (default 2). Higher values speed up multi-media jobs but use more bandwidth and memory. Set Auto-clean (days) to 0 to disable automatic cleaning.'], ['当前筛选条件下没有帖子。可以刷新页面、切换 X 标签页，或把筛选改回“全部”。', '目前篩選條件下沒有貼文。可重新整理頁面、切換 X 分頁，或將篩選改回「全部」。', '現在の条件に一致するポストはありません。ページや X のタブを更新するか、フィルターを「すべて」に戻してください。', 'No posts match the current filters. Refresh the page, switch X tabs, or reset the filter to All.'], ['还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。', '尚未讀取貼文通知訂閱。請點擊「同步訂閱使用者」，或瀏覽已開啟鈴鐺的使用者主頁後再查看。', 'ポスト通知の購読情報がありません。「購読ユーザーを同期」を押すか、ベルを有効にしたプロフィールを開いてください。', 'No post-notification subscriptions have been read. Click “Sync subscribed users” or visit a profile with its bell enabled.'], ['智能排序：置顶、收藏和快消失的帖子先显示，其他的按抓到的顺序排。', '智慧排序：置頂、收藏和快速消失的貼文優先，其餘依擷取順序排列。', 'スマート順：固定・お気に入り・すぐ消えたポストを優先し、残りは取得順に表示します。', 'Smart sort: pinned, favorited, and quickly disappeared posts first; others follow capture order.'], ['最近浏览：按你在屏幕上看到的帖子顺序排。适合用来找刚刷过的帖子。', '最近瀏覽：依螢幕上看到貼文的順序排列，適合尋找剛瀏覽過的貼文。', '最近表示：画面で見た順に並べ、直前に見たポストを探すのに便利です。', 'Recently viewed: orders posts by when they appeared on screen, useful for finding what you just saw.'], ['最近抓取：按脚本发现帖子的时间排。X 会提前加载，顺序不一定等于你看到的顺序。', '最近擷取：依腳本發現貼文的時間排列。X 會預先載入，因此不一定等於實際看到的順序。', '最近取得：スクリプトが見つけた時刻順です。X の先読みのため、実際に見た順とは限りません。', 'Recently captured: orders by discovery time. X preloads posts, so this may differ from viewing order.'], ['出现次数：反复刷到的帖子排在前面。', '出現次數：反覆看到的貼文排在前面。', '表示回数：繰り返し表示されたポストを先にします。', 'Appearances: repeatedly seen posts come first.'], ['按作者：把同一个作者的帖子排在一起。', '依作者：將同一作者的貼文排在一起。', '投稿者順：同じ投稿者のポストをまとめます。', 'By author: groups posts from the same author.'], ['按来源：按为你推荐、正在关注、搜索、书签、喜欢等页面分类排。', '依來源：依為你推薦、正在關注、搜尋、書籤、喜歡等頁面分類。', 'ソース順：おすすめ、フォロー中、検索、ブックマーク、いいねなどで分類します。', 'By source: groups posts by For You, Following, Search, Bookmarks, Likes, and other pages.'], ['BetterX：显示 / 隐藏应用徽标', 'BetterX：顯示 / 隱藏應用徽章', 'BetterX：アプリバッジを表示 / 非表示', 'BetterX: Show / hide app badge'], ['BetterX：强制开启 Firefox 兼容模式并刷新', 'BetterX：強制開啟 Firefox 相容模式並重新整理', 'BetterX：Firefox 互換モードを強制して更新', 'BetterX: Force Firefox compatibility and reload'], ['BetterX：恢复 Firefox 完整模式并刷新', 'BetterX：恢復 Firefox 完整模式並重新整理', 'BetterX：Firefox フルモードに戻して更新', 'BetterX: Restore full Firefox mode and reload'], ['BetterX：导出 Firefox 兼容诊断', 'BetterX：匯出 Firefox 相容診斷', 'BetterX：Firefox 互換診断をエクスポート', 'BetterX: Export Firefox compatibility diagnostics'], ['无法读取当前 X 用户 ID，请确认已经登录', '無法讀取目前 X 使用者 ID，請確認已登入', '現在の X ユーザー ID を取得できません。ログインを確認してください', 'Could not read the current X user ID. Make sure you are signed in'], ['本次识别', '本次識別', '今回検出', 'Found this time'], ['个，当前保留', '個，目前保留', '件、現在保持', '; currently keeping'], ['个订阅', '個訂閱', '件の購読', ' subscriptions'], ['同步失败：', '同步失敗：', '同期失敗：', 'Sync failed: '], ['修改失败：', '修改失敗：', '変更失敗：', 'Update failed: '], ['已开启', '已開啟', '有効化しました', 'Enabled'], ['的帖子通知', '的貼文通知', 'のポスト通知', ' post notifications'], ['已关闭', '已關閉', '無効化しました', 'Disabled'], ['下载完成：已逐个保存', '下載完成：已逐一儲存', 'ダウンロード完了：個別に保存', 'Download complete: saved separately'], ['个文件', '個檔案', 'ファイル', ' files'], ['，跳过', '，略過', '、スキップ', '; skipped'], ['个失败项', '個失敗項目', '件の失敗', ' failed items'], ['正在开启 Firefox 兼容模式并刷新…', '正在開啟 Firefox 相容模式並重新整理…', 'Firefox 互換モードを有効にして更新中…', 'Enabling Firefox compatibility and reloading…'], ['正在关闭 Firefox 兼容模式并刷新…', '正在關閉 Firefox 相容模式並重新整理…', 'Firefox 互換モードを無効にして更新中…', 'Disabling Firefox compatibility and reloading…'], ['此选项仅用于 Firefox', '此選項僅適用於 Firefox', 'この設定は Firefox 専用です', 'This option is only for Firefox'], ['已开启 Firefox 兼容模式', '已開啟 Firefox 相容模式', 'Firefox 互換モードを有効にしました', 'Firefox compatibility enabled'], ['已使用 Firefox 完整功能模式', '已使用 Firefox 完整功能模式', 'Firefox フル機能モードを使用します', 'Using full Firefox mode'], ['已导出 Firefox 兼容诊断', '已匯出 Firefox 相容診斷', 'Firefox 互換診断をエクスポートしました', 'Firefox compatibility diagnostics exported'], ['已恢复应用徽标', '已恢復應用徽章', 'アプリバッジを復元しました', 'App badge restored'], ['已显示应用徽标', '已顯示應用徽章', 'アプリバッジを表示しました', 'App badge shown'], ['已隐藏应用徽标 · Alt+X 可打开面板', '已隱藏應用徽章 · Alt+X 可開啟面板', 'アプリバッジを非表示にしました · Alt+X でパネルを開けます', 'App badge hidden · Press Alt+X to open the panel'], ['点击屏幕右侧小蓝条可显示徽标', '點擊螢幕右側小藍條可顯示徽章', '画面右の青いバーをタップしてバッジを表示', 'Tap the blue bar on the right to show the badge'], ['已切换为屏幕右侧小蓝条', '已切換為螢幕右側小藍條', '画面右の青いバーに切り替えました', 'Switched to the blue right-edge bar'], ['显示 BetterX 应用徽标', '顯示 BetterX 應用徽章', 'BetterX アプリバッジを表示', 'Show BetterX app badge'], ['打开 BetterX 面板', '開啟 BetterX 面板', 'BetterX パネルを開く', 'Open BetterX panel'], ['关闭 BetterX 面板', '關閉 BetterX 面板', 'BetterX パネルを閉じる', 'Close BetterX panel'], ['点按显示 BetterX 徽标', '點按以顯示 BetterX 徽章', 'タップして BetterX バッジを表示', 'Tap to show the BetterX badge'], ['正则无效或风险过高，未保存', '正則無效或風險過高，未儲存', '正規表現が無効または危険なため保存しませんでした', 'Regex was invalid or too risky and was not saved'], ['已保存下载命名', '已儲存下載命名', 'ダウンロード命名設定を保存しました', 'Download naming saved'], ['已将当前列表全部标为已读', '已將目前列表全部標為已讀', '現在の一覧をすべて既読にしました', 'Marked the current list as read'], ['已保存关键词', '已儲存關鍵字', 'キーワードを保存しました', 'Keywords saved'], ['已保存排除词', '已儲存排除詞', '除外語を保存しました', 'Exclusions saved'], ['已保存自定义屏蔽词', '已儲存自訂封鎖詞', 'カスタムブロック語を保存しました', 'Custom blocked words saved'], ['已保存账号白名单', '已儲存帳號白名單', 'アカウント許可リストを保存しました', 'Account allowlist saved'], ['已切换为手动宽度并应用', '已切換為手動寬度並套用', '手動幅へ切り替えて適用しました', 'Switched to manual widths and applied'], ['已应用高级设置', '已套用進階設定', '詳細設定を適用しました', 'Advanced settings applied'], ['确定要清空', '確定要清空', '消去しますか：', 'Clear'], ['条未收藏/未置顶的帖子吗？此操作不可撤销。', '筆未收藏／未置頂的貼文嗎？此操作無法復原。', '件のお気に入り／固定されていないポスト。この操作は取り消せません。', ' unfavorited/unpinned posts? This cannot be undone.'], ['导入失败：单次最多允许', '匯入失敗：單次最多允許', 'インポート失敗：一度に許可される上限は', 'Import failed: at most'], ['条帖子。', '筆貼文。', '件です。', ' posts are allowed.'], ['导入完成：新增', '匯入完成：新增', 'インポート完了：追加', 'Import complete: added'], ['条，合并', '筆，合併', '件、統合', ', merged'], ['条，跳过', '筆，略過', '件、スキップ', ', skipped'], ['条无效记录', '筆無效記錄', '件の無効な記録', ' invalid records'], ['该帖子内媒体文件曾下载过，是否继续下载？', '此貼文的媒體曾下載過，是否繼續？', 'このポストのメディアはダウンロード済みです。続行しますか？', 'Media from this post was downloaded before. Continue?'], ['是否同时恢复备份中的设置？', '是否同時還原備份中的設定？', 'バックアップ内の設定も復元しますか？', 'Restore settings from the backup too?'], ['页面尚未就绪，诊断信息已输出到控制台。', '頁面尚未就緒，診斷資訊已輸出至主控台。', 'ページの準備ができていません。診断情報をコンソールへ出力しました。', 'The page is not ready; diagnostics were written to the console.'], ['当前筛选结果为空，没有可导出的内容。', '目前篩選結果為空，沒有可匯出的內容。', '現在の絞り込み結果は空です。エクスポートする内容がありません。', 'The current filtered result is empty; there is nothing to export.'], ['导入失败：备份文件不能超过 25 MB。', '匯入失敗：備份檔不得超過 25 MB。', 'インポート失敗：バックアップは 25 MB 以下にしてください。', 'Import failed: backup files cannot exceed 25 MB.'], ['无法识别的备份文件格式。', '無法識別的備份檔格式。', '認識できないバックアップ形式です。', 'Unrecognized backup format.'], ['导入失败：文件解析出错。', '匯入失敗：檔案解析錯誤。', 'インポート失敗：ファイルを解析できませんでした。', 'Import failed: file parsing error.'], ['当前列表没有未读的帖子喂～', '目前列表沒有未讀貼文喔～', '現在の一覧に未読ポストはありません。', 'There are no unread posts in the current list.'], ['确定要把当前列表的 ', '確定要將目前列表中的 ', '現在の一覧にある', 'Mark all '], [' 条未读帖子全部标为已读吗？', ' 筆未讀貼文全部標為已讀嗎？', '件の未読ポストをすべて既読にしますか？', ' unread posts in the current list as read?'], ['⚠️ 已忽略', '⚠️ 已忽略', '⚠️ 無視しました：', '⚠️ Ignored'], ['条高风险或无效正则', '筆高風險或無效正則', '件の危険または無効な正規表現', ' risky or invalid regex rules'], ['最多保存 50 个', '最多儲存 50 個', '保存できる上限は50件です：', 'At most 50 can be saved: '], ['自定义屏蔽词', '自訂封鎖詞', 'カスタムブロック語', 'custom blocked words'], ['关键词', '關鍵字', 'キーワード', 'keywords'], ['排除词', '排除詞', '除外語', 'exclusions'], ['没有找到与“', '找不到與「', '「', 'No username or @username matched “'], ['”匹配的用户名或 @用户名。', '」相符的使用者名稱或 @使用者名稱。', '」に一致するユーザー名または @ユーザー名はありません。', '”.'], ['开启“兼容 Firefox”？', '開啟「Firefox 相容模式」？', 'Firefox 互換モードを有効にしますか？', 'Enable Firefox compatibility?'], ['开启后 BetterX 不再改写页面的', '開啟後 BetterX 將不再改寫頁面的', '有効にすると BetterX はページの', 'When enabled, BetterX will stop wrapping the page’s'], ['可避免部分 Firefox 环境或多个 X 脚本冲突时一直卡在 X 图标。', '可避免部分 Firefox 環境或多個 X 腳本衝突時一直卡在 X 圖示。', 'を変更しなくなり、一部の Firefox 環境や複数の X スクリプトが競合した際に X ロゴで停止する問題を避けられます。', ', which can prevent X from getting stuck on its logo in some Firefox setups or when multiple X scripts conflict.'], ['以下能力可能降级：', '以下功能可能受限：', '次の機能が制限される場合があります：', 'The following features may be limited:'], ['部分视频 / GIF 无法取得真实下载地址；', '部分影片 / GIF 可能無法取得實際下載網址；', '一部の動画 / GIF の実際のダウンロード URL を取得できない場合があります。', 'Some videos / GIFs may not expose a direct download URL;'], ['部分年龄限制视频无法内联显示；', '部分年齡限制影片可能無法直接顯示；', '一部の年齢制限動画をページ内表示できない場合があります。', 'Some age-restricted videos may not display inline;'], ['无法从接口响应学习关注关系，主要依靠主页按钮和“正在关注”时间线。', '無法從介面回應學習關注關係，主要依靠個人主頁按鈕與「正在關注」時間軸。', 'API 応答からフォロー関係を学習できず、プロフィールのボタンと「フォロー中」タイムラインが主な情報源になります。', 'Following relationships cannot be learned from API responses and instead rely mainly on profile buttons and the Following timeline.'], ['帖子记录、搜索、面板、内容净化、广告过滤、布局和图片 DOM 兜底不受影响。确认后页面会刷新。', '貼文記錄、搜尋、面板、內容淨化、廣告過濾、版面配置與圖片 DOM 備援不受影響。確認後頁面會重新整理。', 'ポスト記録、検索、パネル、コンテンツフィルター、広告非表示、レイアウト、画像の DOM フォールバックには影響しません。確認後にページを更新します。', 'Post history, search, the panel, content filtering, ad hiding, layout, and the image DOM fallback are unaffected. The page will reload after confirmation.'], ['开启并刷新', '開啟並重新整理', '有効にして更新', 'Enable and reload'], ['关闭“兼容 Firefox”？', '關閉「Firefox 相容模式」？', 'Firefox 互換モードを無効にしますか？', 'Disable Firefox compatibility?'], ['关闭后将恢复 v1.7 的网络媒体与关注关系采集。如果当前环境曾卡在只显示 X 图标的页面，建议继续保持开启。确认后页面会刷新。', '關閉後將恢復 v1.7 的網路媒體與關注關係擷取。如果目前環境曾卡在只顯示 X 圖示的頁面，建議繼續保持開啟。確認後頁面會重新整理。', '無効にすると v1.7 のネットワークメディア・フォロー関係の取得を再開します。X ロゴだけの画面で停止したことがある環境では、有効のままにすることをおすすめします。確認後にページを更新します。', 'Disabling restores v1.7 network media and following-relationship capture. If this setup has ever stalled on the X logo, keeping compatibility enabled is recommended. The page will reload after confirmation.'], ['关闭并刷新', '關閉並重新整理', '無効にして更新', 'Disable and reload'], ['检测到 Firefox', '偵測到 Firefox', 'Firefox を検出しました', 'Firefox detected'], ['请问你在使用 BetterX 时，能否正常进入 X？', '使用 BetterX 時，是否能正常進入 X？', 'BetterX の使用中、X を正常に開けていますか？', 'Can you open X normally while using BetterX?'], ['目前已知部分 Firefox 用户会一直卡在', '目前已知部分 Firefox 使用者會一直卡在', '一部の Firefox ユーザーでは', 'Some Firefox users may remain stuck on the'], ['只显示 X 图标', '只顯示 X 圖示', 'X ロゴだけが表示される', 'X-logo-only'], ['的启动页面，常见于广告过滤、媒体下载等多个 X 脚本同时运行的环境。', '的啟動畫面，常見於廣告過濾、媒體下載等多個 X 腳本同時執行的環境。', '起動画面で停止することがあります。広告フィルターやメディア保存など、複数の X スクリプトを同時に使う環境で起きやすい問題です。', ' startup screen, especially when multiple X scripts such as ad filters and media downloaders run together.'], ['如果遇到异常，请点击', '如果遇到異常，請點擊', '問題がある場合は', 'If you encounter this issue, click'], ['有异常', '有異常', '問題あり', 'Having problems'], ['，BetterX 会开启', '，BetterX 會開啟', 'を選ぶと、BetterX は', '; BetterX will enable'], ['“设置 → 其他功能 → 兼容 Firefox”', '「設定 → 其他功能 → Firefox 相容模式」', '「設定 → その他の機能 → Firefox 互換モード」', '“Settings → Other features → Firefox compatibility”'], ['。该模式会停用页面网络 Hook；部分视频 / GIF 下载、年龄限制视频和接口关注关系识别可能降级，其他主体功能不受影响。', '。此模式會停用頁面網路 Hook；部分影片 / GIF 下載、年齡限制影片與介面關注關係識別可能受限，其他主要功能不受影響。', '。このモードはページのネットワーク Hook を無効化します。一部の動画 / GIF の保存、年齢制限動画、API によるフォロー関係の認識は制限される場合がありますが、その他の主要機能には影響しません。', '. This disables page network hooks. Some video / GIF downloads, age-restricted videos, and API-based following detection may be limited; other main features are unaffected.'], ['目前正常', '目前正常', '現在は正常', 'Working normally'], ['确定', '確定', '確認', 'OK'], ['未知错误', '未知錯誤', '不明なエラー', 'Unknown error'], ];
 function readUiLanguageOverride() {
   try {
     if (typeof GM_getValue !== 'function') return '';
@@ -261,6 +261,8 @@ const state = {
   searchQuery: '',
   expandedPosts: new Set(),
   editingNoteId: null,
+  noteDrafts: new Map(),
+  importInProgress: false,
   renderLimit: DEFAULT_SETTINGS.pageSize,
   lastFilteredCount: 0,
   visibleMap: new Map(),
@@ -282,6 +284,8 @@ const state = {
   dbWriteFailureVersion: 0,
   lastDbWriteError: null,
 };
+let indexedPosts = state.posts;
+let indexedPostLength = 0;
 let crossTabChannel = null;
 let crossTabReloadTimer = null;
 let crossTabReloadAllPosts = false;
@@ -633,7 +637,7 @@ function scheduleAdultSpamLayoutFlush(article) {
 }
 const debouncedRefreshUI = debounce(() => {
   if (!state.panelOpen) { refreshBadge(); return; }
-  if (state.editingNoteId) { refreshBadge(); return; }
+  if (state.panelView === 'vault' && state.editingNoteId) { refreshBadge(); return; }
   refreshUI({ keepScroll: true });
 }, 120);
 const TIME_FORMATTER = new Intl.DateTimeFormat(UI_LANGUAGE, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, });
@@ -928,7 +932,7 @@ function simplePositiveRegexClassMatcher(atom) {
 }
 function regexAtomsDefinitelyDisjoint(left, right) {
   if (!left || !right) return false;
-  if (left.kind === 'literal' && right.kind === 'literal') return left.value !== right.value;
+  if (left.kind === 'literal' && right.kind === 'literal') return left.value.toLowerCase() !== right.value.toLowerCase();
   if (left.kind === 'literal' && right.kind === 'category') {
     return !literalMatchesRegexCategory(left.value, right.value);
   }
@@ -955,7 +959,7 @@ function regexAtomsDefinitelyDisjoint(left, right) {
   ]).has(pair);
 }
 function hasRiskyAdjacentRegexQuantifiers(source) {
-  const contexts = [{ variableAtoms: [], groupStart: -1 }];
+  const contexts = [{ variableAtoms: [], inheritedAtoms: [], branchAtoms: [], groupStart: -1 }];
   const currentContext = () => contexts[contexts.length - 1];
   let inClass = false;
   let classStart = -1;
@@ -991,18 +995,35 @@ function hasRiskyAdjacentRegexQuantifiers(source) {
       } else if (escaped === 'u' && /^[0-9a-f]{4}/i.test(source.slice(i + 1, i + 5))) {
         atom = { kind: 'escape', value: source.slice(i - 1, i + 5) };
         i += 4;
+      } else if (escaped === 'c' && /^[a-z]$/i.test(source[i + 1] || '')) {
+        atom = { kind: 'escape', value: source.slice(i - 1, i + 2) };
+        i++;
       } else {
         atom = { kind: 'literal', value: escaped };
       }
     } else if (ch === '(') {
-      contexts.push({ variableAtoms: [], groupStart: i });
+      const inheritedAtoms = [...currentContext().variableAtoms];
+      const prefix = source.slice(i + 1).match(/^\?(?::|=|!|<=|<!|<[A-Za-z_$][\w$]*>)/)?.[0] || '';
+      if (source[i + 1] === '?' && !prefix) return true;
+      contexts.push({
+        variableAtoms: [...inheritedAtoms], inheritedAtoms, branchAtoms: [], groupStart: i,
+        zeroWidth: /^\?(?:[=!]|<[=!])/.test(prefix),
+      });
+      i += prefix.length;
       continue;
     } else if (ch === ')') {
       if (contexts.length <= 1) continue;
       const closed = contexts.pop();
+      const quantified = readRegexQuantifier(source, i + 1);
+      currentContext().variableAtoms = [...new Set([
+        ...(quantified || closed.zeroWidth ? closed.inheritedAtoms : []),
+        ...closed.branchAtoms, ...closed.variableAtoms,
+      ])];
       atom = { kind: 'group', value: source.slice(closed.groupStart, i + 1) };
     } else if (ch === '|') {
-      currentContext().variableAtoms = [];
+      const context = currentContext();
+      context.branchAtoms.push(...context.variableAtoms);
+      context.variableAtoms = [...context.inheritedAtoms];
       continue;
     } else if (ch === '^' || ch === '$') {
       continue;
@@ -1039,7 +1060,7 @@ function hasRiskyAdjacentRegexQuantifiers(source) {
 function isSafeRegexSource(src) {
   const text = String(src || '');
   if (!text || text.length > MAX_REGEX_SOURCE_LENGTH) return false;
-  if (/\\(?:[1-9][0-9]*|k<)/.test(text)) return false;
+  if (/\\(?:[1-9][0-9]*|0[0-9]|k<)/.test(text)) return false;
   if (hasRiskyAdjacentRegexQuantifiers(text)) return false;
   const stack = [{ hasRepeat: false, hasAlternation: false }];
   let escaped = false;
@@ -1062,7 +1083,9 @@ function isSafeRegexSource(src) {
       const group = stack.pop();
       const repeated = quantifierAt(i + 1);
       if (repeated && (group.hasRepeat || group.hasAlternation)) return false;
-      if (repeated) stack[stack.length - 1].hasRepeat = true;
+      const parent = stack[stack.length - 1];
+      parent.hasRepeat ||= repeated || group.hasRepeat;
+      parent.hasAlternation ||= group.hasAlternation;
       continue;
     }
     if (ch === '?' && text[i - 1] === '(') continue;
@@ -1088,13 +1111,24 @@ function isSafeKeywordRule(value) {
   const source = getDelimitedRegexSource(value);
   return source === null || isSafeRegexSource(source);
 }
+const keywordRuleCache = new Map();
+function getCompiledKeywordRule(rule) {
+  const key = String(rule || '');
+  const cached = keywordRuleCache.get(key);
+  if (cached) return cached;
+  const source = getDelimitedRegexSource(key);
+  const compiled = source === null
+    ? { literal: key.toLowerCase(), regex: null }
+    : { literal: null, regex: safeRegex(source, 'i') };
+  keywordRuleCache.set(key, compiled);
+  if (keywordRuleCache.size > 200) keywordRuleCache.delete(keywordRuleCache.keys().next().value);
+  return compiled;
+}
 function keywordRuleMatches(rule, haystack, lowerHaystack) {
-  const source = getDelimitedRegexSource(rule);
-  if (source !== null) {
-    const regex = safeRegex(source, 'i');
-    return !!(regex && regex.test(haystack));
-  }
-  return lowerHaystack.includes(String(rule || '').toLowerCase());
+  const compiled = getCompiledKeywordRule(rule);
+  return compiled.literal !== null
+    ? lowerHaystack.includes(compiled.literal)
+    : !!(compiled.regex && compiled.regex.test(haystack));
 }
 function computeMatchedKeywords(post) {
   const cached = matchCache.get(post.id);
@@ -1333,8 +1367,7 @@ async function dbPatchPost(id, changes) {
     const index = getPostIndexById(storedPost.id);
     if (index >= 0) state.posts[index] = storedPost;
     else {
-      state.posts.push(storedPost);
-      state.postIndexById.set(String(storedPost.id), state.posts.length - 1);
+      appendPost(storedPost);
     }
     debouncedRefreshUI();
   }
@@ -1524,15 +1557,26 @@ function installCrossTabSync() {
 }
 function rebuildPostIndex() {
   state.postIndexById = new Map(state.posts.map((post, index) => [String(post.id), index]));
+  indexedPosts = state.posts;
+  indexedPostLength = state.posts.length;
+}
+function ensurePostIndex() {
+  if (indexedPosts !== state.posts || indexedPostLength !== state.posts.length) rebuildPostIndex();
+}
+function appendPost(post) {
+  ensurePostIndex();
+  state.posts.push(post);
+  state.postIndexById.set(String(post.id), state.posts.length - 1);
+  indexedPostLength = state.posts.length;
 }
 function getPostIndexById(id) {
+  ensurePostIndex();
   const key = String(id);
   const cached = state.postIndexById.get(key);
-  if (cached != null && state.posts[cached] && String(state.posts[cached].id) === key) return cached;
-  const index = state.posts.findIndex((post) => String(post.id) === key);
-  if (index >= 0) state.postIndexById.set(key, index);
-  else state.postIndexById.delete(key);
-  return index;
+  if (cached == null) return -1;
+  if (state.posts[cached] && String(state.posts[cached].id) === key) return cached;
+  rebuildPostIndex();
+  return state.postIndexById.get(key) ?? -1;
 }
 function getPostById(id) {
   const index = getPostIndexById(id);
@@ -1545,6 +1589,7 @@ function prunePostRuntimeCaches(ids) {
     matchCache.delete(id);
     state.visibleMap.delete(id);
     state.expandedPosts.delete(id);
+    state.noteDrafts.delete(id);
     mediaRegistry.delete(id);
     cardRegistry.delete(id);
   }
@@ -1870,7 +1915,7 @@ function renderPostItem(post) {
     : '';
   const noteHtml = isEditingNote
     ? uiHtml`<div class="BetterX-note-edit">
-           <textarea class="BetterX-note-input" data-id="${escapeHtml(post.id)}" placeholder="在这里写备注…">${escapeHtml(post.note || '')}</textarea>
+           <textarea class="BetterX-note-input" data-id="${escapeHtml(post.id)}" placeholder="在这里写备注…">${escapeHtml(state.noteDrafts.get(post.id) ?? post.note ?? '')}</textarea>
            <div class="BetterX-note-actions">
              <button class="BetterX-btn primary" data-action="save-note" data-id="${escapeHtml(post.id)}">保存备注</button>
              <button class="BetterX-btn" data-action="cancel-note">取消</button>
@@ -1920,23 +1965,55 @@ function renderPostItem(post) {
       </div>
     `;
 }
-function refreshUI(opts) {
-  opts = opts || {};
-  if (!state.panelEl) return;
-  refreshBadge();
-  if (!state.panelOpen && opts.force !== true) return;
-  const keepListScroll = !!opts.keepScroll || state.panelView === 'settings';
-  if (state.summaryEl) state.summaryEl.innerHTML = buildSummaryHtml();
-  if (state.filterBarEl) state.filterBarEl.innerHTML = buildFilterHtml();
-  if (state.sourceSelectEl) {
-    state.sourceSelectEl.innerHTML = buildSourceOptionsHtml();
+function snapshotNoteEditor() {
+  const input = state.listEl?.querySelector('.BetterX-note-input');
+  const id = input?.getAttribute('data-id');
+  if (!id || id !== state.editingNoteId) return null;
+  state.noteDrafts.set(id, input.value);
+  return {
+    id, element: input.closest('.BetterX-note-edit'), focused: document.activeElement === input,
+    scrollTop: input.scrollTop,
+  };
+}
+function renderPostList(html, snapshot) {
+  const editingCard = snapshot?.element.closest('.BetterX-item');
+  if (!editingCard || snapshot.id !== state.editingNoteId) {
+    state.listEl.innerHTML = html;
+    return;
   }
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  const nextCard = template.content.querySelector('.BetterX-note-edit')?.closest('.BetterX-item');
+  if (!nextCard) { state.listEl.innerHTML = html; return; }
+  const noteArea = snapshot.element.closest('.BetterX-note-area');
+  editingCard.className = nextCard.className;
+  for (const child of [...editingCard.children]) {
+    if (child !== noteArea) child.remove();
+  }
+  let afterNote = false;
+  for (const child of [...nextCard.children]) {
+    if (child.classList.contains('BetterX-note-area')) { afterNote = true; continue; }
+    if (afterNote) editingCard.appendChild(child);
+    else editingCard.insertBefore(child, noteArea);
+  }
+  for (const child of [...state.listEl.childNodes]) {
+    if (child !== editingCard) child.remove();
+  }
+  let afterCard = false;
+  for (const child of [...template.content.childNodes]) {
+    if (child === nextCard) { afterCard = true; continue; }
+    if (afterCard) state.listEl.appendChild(child);
+    else state.listEl.insertBefore(child, editingCard);
+  }
+  const input = snapshot.element.querySelector('.BetterX-note-input');
+  if (snapshot.focused && document.activeElement !== input) input.focus({ preventScroll: true });
+  input.scrollTop = snapshot.scrollTop;
+}
+function refreshSettingsUI() {
   if (state.skipSourcesEl) state.skipSourcesEl.innerHTML = buildSkipSourcesHtml();
   renderSavedKeywordTags();
   renderSavedExcludeKeywordTags();
-  syncSettingsControls();
-  updateSortHint();
-  updateQuickFilterHeader();
+  syncSettingsControls('settings');
   updateDownloadAdvancedHeader();
   syncInactiveInput(state.autoCleanInputEl, state.settings.autoCleanDays || 0);
   syncInactiveInput(state.maxPostsInputEl, state.settings.maxPosts || DEFAULT_SETTINGS.maxPosts);
@@ -1981,7 +2058,16 @@ function refreshUI(opts) {
     [state.profilePostSortEl, 'disabled', state.settings.profilePostSortEnabled === false],
   ]);
   updateSettingsDependencyUI();
-  renderNotificationSubscriptions();
+}
+function refreshVaultUI(opts) {
+  const noteEditor = snapshotNoteEditor();
+  const keepListScroll = !!opts.keepScroll;
+  if (state.summaryEl) state.summaryEl.innerHTML = buildSummaryHtml();
+  if (state.filterBarEl) state.filterBarEl.innerHTML = buildFilterHtml();
+  if (state.sourceSelectEl) state.sourceSelectEl.innerHTML = buildSourceOptionsHtml();
+  syncSettingsControls('vault');
+  updateSortHint();
+  updateQuickFilterHeader();
   if (!state.listEl) return;
   const scrollTop = keepListScroll ? state.listEl.scrollTop : 0;
   const filtered = filterPosts(state.posts);
@@ -1996,8 +2082,17 @@ function refreshUI(opts) {
   if (filtered.length > shown.length) {
     html += uiHtml`<button class="BetterX-loadmore" data-action="load-more">加载更多（还有 ${filtered.length - shown.length} 条）</button>`;
   }
-  state.listEl.innerHTML = html;
+  renderPostList(html, noteEditor);
   if (keepListScroll) state.listEl.scrollTop = scrollTop;
+}
+function refreshUI(opts) {
+  opts = opts || {};
+  if (!state.panelEl) return;
+  refreshBadge();
+  if (!state.panelOpen && opts.force !== true) return;
+  if (state.panelView === 'settings') refreshSettingsUI();
+  else if (state.panelView === 'notifications') renderNotificationSubscriptions(opts.force === true);
+  else refreshVaultUI(opts);
 }
 function sanitizeSettings(raw) {
   const input = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
@@ -2191,6 +2286,7 @@ function applySettingsSnapshot(rawSettings, options) {
     if (settingsValueChanged(previous[key], next[key])) changed[key] = next[key];
   }
   state.settings = next;
+  if (!Object.keys(changed).length && opts.force !== true) return next;
   const followedChanged = settingsValueChanged(previous.knownFollowedHandles, next.knownFollowedHandles);
   followedHandles.clear();
   for (const handle of next.knownFollowedHandles || []) followedHandles.add(handle);
@@ -2210,7 +2306,6 @@ function applySettingsSnapshot(rawSettings, options) {
   }
   resetPaging();
   refreshUI({ keepScroll: true });
-  renderNotificationSubscriptions();
   scheduleDownloadUiRefresh();
   return next;
 }
@@ -2264,8 +2359,7 @@ function upsertPost(post, opts) {
       avatarUrl: '',
       ...post,
     };
-    state.posts.push(created);
-    state.postIndexById.set(String(created.id), state.posts.length - 1);
+    appendPost(created);
     maybeShowPostLimitWarning();
     queueDbWrite(async () => {
       await dbPutPost(created, { preserveUserState: true });
@@ -2323,6 +2417,7 @@ function markFlashLost(id) {
 function updatePostNote(id, note) {
   if (!updateStoredPost(id, () => ({ note }), null)) return;
   state.editingNoteId = null;
+  state.noteDrafts.delete(id);
   matchCache.delete(id);
   refreshUI({ keepScroll: true });
 }
@@ -4778,7 +4873,7 @@ function switchFirefoxCompatibilityFromMenu(enabled) {
 function buildFirefoxCompatibilityDiagnostic() {
   const diagnostic = {
     generatedAt: new Date().toISOString(),
-    scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '3.9.0',
+    scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '4.0.0',
     userscriptManager: USERSCRIPT_MANAGER || 'unknown',
     userAgent: navigator.userAgent || '',
     page: `${location.origin || ''}${location.pathname || ''}`,
@@ -5222,7 +5317,7 @@ function applyLayoutEnhancements() {
   if (style.textContent !== css) style.textContent = css;
   applyLayoutDomCleanup();
 }
-const ADULT_SPAM_STRONG_TERMS = [ '抽插', '淫叫', '母狗', '肉便器', '母猪', '反差婊', '小穴', '穴穴', '性奴', '蜜穴', '爆菊', '性交', '爆操', '福利姬', '里番', '裸照', '裸体', '阴茎', '做愛','嫩穴','ntr', '做爱', '自慰', '精液', '打飞机', '性欲', '果照', '肏', '约炮', '裸聊','美鲍', '子宫', '援交', '外围', '包夜', '无套', '全套服务', '上门约', '成人视频', '成人影片','发情', '黄片', '黄网', '色情网站', '看片网站', 'porn', 'nudes', 'onlyfans leak','网黄', 'sex video', 'wataa', 'Wataa', '私处', '尤物', '人妻', '口交', '内射', 'ts','NTR', '阴道', '偷拍', '手冲', '淫趴', 'p眼', '屁眼', '皮炎', '迷奸', '小烧货', '骚货', 'sao货', '破处', '陪睡', '后入', '肛交', '催情','约啪','艹','跳蛋','晨勃','Chudai','chudai', '露B','潮喷','龟头','射精','肉棒','鸡巴','3p','4i','被操','榨精','撸管','深喉','69', 'G点','91','糖心','麻豆','50度灰','足交','乳交','烧姬','约爱','字母圈','淫窝','车震', 'TS','约p','戴套','阴唇','秒射','飞机杯','屁穴','幹','性爱','鸡鸡','磨豆腐','双头龙', ]; const ADULT_SPAM_INSTANT_BLOCK_TERMS = [ '没她骚', '福不黑', '我的福', '顶不住', '爱几把', '瓜', '线下', '同城', '妈妈', '儿子', '一夜', '进入身', 'sao', '全国牵', 't.cn', '👆', '👉', '联系', '主页', '快手', '抖音', '免费', '我好看', '寻', ]; const ADULT_SPAM_SENSITIVE_TERMS = [ '一发入魂', '调教', '高潮', '翘臀', '奶子', '反差', '巨乳', '嫩妹', '尿尿', '痴女', '黑丝', '白丝', '玉足', '喷了', '涩涩', '私房', '纯欲', '蜜桃臀', '可瑟瑟', '固炮', '炮友', '找主人', '大一学生', '白虎', '烧鸡', '好色', '色色', '熟女', '少妇', '嫩模', '学生妹', '商k', '白给', '处男', '野战', '射出来','魅魔','性瘾','打桩','喷出来','射出来','戴套','福照','无码','蛋蛋', '有码','情趣','丝袜','刺激','娇喘','罩杯','早泄','失禁','毛毛','绝顶', '肉欲','黑森林','制服','赤裸','粉嫩','水多','喷水','呻吟','吸吮','成人', ]; const ADULT_SPAM_BOT_BAIT_TERMS = [ '陪我聊聊天', '有没有单男', '有没有单女', '我是真人', '互关', '互粉', '互fo', '体制内老师', '体制内护士', '体制内医生', '在线等哥哥', '在线等弟弟', ]; const ADULT_SPAM_SUGGESTIVE_TERMS = [ '同城可约', '附近可约', '私密视频', '福利视频', '大尺度视频', '成人直播', '萝莉资源', '少女资源', '嫩模资源', '看片入口', '成人视频资源', ]; const ADULT_SPAM_MARKETING_TERMS = [ '免费领取', '点击领取', '立即加入', '频道入口', '群组入口', '资源合集', '试看', '解锁', '置顶获取', '主页获取', '进群', '电报群', ]; const ADULT_SPAM_CONTACT_TERMS = [ '私信', '私聊', '联系我', '加我', '主页', '简介', '置顶', 'telegram', 'whatsapp', '电报', '飞机群', 'tg群', '订阅' ]; const ADULT_SPAM_CONTEXT_EXEMPTIONS = [ '黄推机器人', '举报黄推', '屏蔽黄推', '黄推太多', '垃圾黄推', '清理黄推', '色情诈骗', '反诈', '曝光骗子', ]; const ADULT_SPAM_NAME_RE = /(?:福利姬|约炮|裸聊|外围|看片|成人视频|黄网|反差婊|巨乳|痴女|porn|nudes|onlyfans|sex(?:y|cam)?|xxx)/i; const ADULT_SPAM_EXACT_AMBIGUOUS_RE = /^(?:骚|逼|肏|doi|spa|全套|处女|chu男|cchu男|c男)$/i; const ADULT_SPAM_AMBIGUOUS_RES = [ /(?<!离)骚(?!操作|扰|包|话|客|气)/, /(?<!牛|装|傻|苦|逗|懵|被)逼(?!迫|真|近|问|债|婚|供|退)/, /处女(?!作|航|座|秀)/, ]; const ADULT_SPAM_BOT_HANDLE_RES = [ /^[a-z]{4,10}\d{5,12}$/i, /^[a-z]+_[a-z]+\d{4,}$/i, /^[A-Z][a-z]+[A-Z][a-z]+\d{2,}$/, /^(?=[a-z]*[bcdfghjklmnpqrstvwxyz]{4})[a-z]+\d+$/i, ]; const ADULT_SPAM_TEMPLATE_RES = [ /快领我回家|扣1白给|推特第一骚|我约过她|姐姐在等你|视频要吗|满足我|可瑟瑟/, /懂[得的].{0,3}(?:来|私|入|dd|联系|撩|进|加)/i, /(?:找|来|想要).{0,5}(?:哥哥|主人).{0,5}(?:调教|私聊|联系|带走)/, /(?:在线等|蹲一个|急需一位).{0,6}(?:哥哥|弟弟|单男|主人)/, /(?:主页|简介).{0,5}(?:打飞|打飞机|打✈️?|有资源|有福利|可约)|(?:打飞|打飞机|打✈️?).{0,5}(?:主页|简介)/, /(?:刷了半天|就她|点开|快看).{0,5}(?:主页|简介)/, /(?:👉|⬆|↑|✈️?).{0,4}@[a-z0-9_]+|@[a-z0-9_]+.{0,4}(?:👉|⬆|↑|✈️?)/i, /(?:包夜|上门|外围|服务|按摩).{0,5}(?:全套|spa)|(?:全套|spa).{0,5}(?:包夜|上门|外围|服务)/i, /(?:酒店|约|想|一起).{0,5}doi|doi.{0,5}(?:酒店|约|一起)/i, /(?:c\s*\/?\s*chu男|chu男|c男)/i, ]; const ADULT_SPAM_COMBO_RES = [ /(?:同城|附近).{0,5}(?:可约|约炮|上门)/, /(?:私信|私聊|联系|加我).{0,8}(?:约炮|裸聊|看片|黄网|成人视频)/, /(?:约炮|裸聊|看片|黄网|成人视频).{0,8}(?:私信|私聊|联系|加我|主页|电报)/, /(?:萝莉|少女|嫩模|空姐|学生妹|少妇).{0,6}(?:资源|上门|可约|视频|福利)/, /(?:免费|最新|海量).{0,6}(?:成人视频|黄片|色情视频|看片资源)/, /(?:成人视频|黄片|色情视频).{0,5}(?:资源|入口|合集|频道|群)/, ]; const ADULT_SPAM_REPOST_CONTEXT_RE = /(?:已转帖|已轉帖|转帖|轉帖|转发|轉發|reposted|retweeted|リポスト|재게시|리트윗)/i;
+const ADULT_SPAM_STRONG_TERMS = [ '抽插', '淫叫', '母狗', '肉便器', '母猪', '反差婊', '小穴', '穴穴', '性奴', '蜜穴', '爆菊', '性交', '爆操', '福利姬', '里番', '裸照', '裸体', '阴茎', '做愛','嫩穴', '做爱', '自慰', '精液', '打飞机', '果照', '约炮', '裸聊','美鲍', '援交', '包夜', '成人视频', '成人影片', '黄片', '黄网', '色情网站', '看片网站', 'porn', 'nudes', 'onlyfans leak','网黄', 'sex video', 'sex videos', 'wataa', 'Wataa', '私处', '尤物', '人妻', '口交', '内射', '阴道', '淫趴', '屁眼', '迷奸', '小烧货', '骚货', 'sao货', '破处', '陪睡', '后入', '肛交', '催情','约啪','跳蛋','Chudai','chudai', '露B','潮喷','龟头','射精','肉棒','鸡巴','被操','榨精','撸管','深喉', '足交','乳交','烧姬','淫窝','车震', '约p','阴唇','秒射','飞机杯','屁穴','性爱','鸡鸡','磨豆腐','双头龙','没她骚','爱几把', ]; const ADULT_SPAM_WEAK_TERMS = [ 'ts', 'TS', 'ntr', 'NTR', '91', '69', '3p', '4i', 'p眼', 'G点', '皮炎', '子宫', '手冲', '外围', '无套', '全套服务', '发情', '性欲', '晨勃', '糖心', '麻豆', '50度灰', '字母圈', '戴套', '偷拍', '艹', '幹', '同城可约', '附近可约', '私密视频', '大尺度视频', '成人直播', '上门约', '约爱', '福不黑', '我的福', '顶不住', '瓜', '线下', '同城', '妈妈', '儿子', '一夜', '进入身', 'sao', '全国牵', 't.cn', '👆', '👉', '联系', '主页', '快手', '抖音', '免费', '我好看', '寻', ]; const ADULT_SPAM_SENSITIVE_TERMS = [ '一发入魂', '调教', '高潮', '翘臀', '奶子', '反差', '巨乳', '嫩妹', '尿尿', '痴女', '黑丝', '白丝', '玉足', '喷了', '涩涩', '私房', '纯欲', '蜜桃臀', '可瑟瑟', '固炮', '炮友', '找主人', '大一学生', '白虎', '烧鸡', '好色', '色色', '熟女', '少妇', '嫩模', '学生妹', '商k', '白给', '处男', '野战', '射出来','魅魔','性瘾','打桩','喷出来','射出来','戴套','福照','无码','蛋蛋', '有码','情趣','丝袜','刺激','娇喘','罩杯','早泄','失禁','毛毛','绝顶', '肉欲','黑森林','制服','赤裸','粉嫩','水多','喷水','呻吟','吸吮','成人', ]; const ADULT_SPAM_BOT_BAIT_TERMS = [ '陪我聊聊天', '有没有单男', '有没有单女', '我是真人', '互关', '互粉', '互fo', '体制内老师', '体制内护士', '体制内医生', '在线等哥哥', '在线等弟弟', ]; const ADULT_SPAM_SUGGESTIVE_TERMS = [ '福利视频', '萝莉资源', '少女资源', '嫩模资源', '看片入口', '成人视频资源', '可瑟瑟', '推特第一骚', ]; const ADULT_SPAM_MARKETING_TERMS = [ '免费领取', '点击领取', '立即加入', '频道入口', '群组入口', '资源合集', '试看', '解锁', '置顶获取', '主页获取', '进群', '电报群', ]; const ADULT_SPAM_CONTACT_TERMS = [ '私信', '私聊', '联系我', '加我', '主页', '简介', '置顶', 'telegram', 'whatsapp', '电报', '飞机群', 'tg群', '订阅' ]; const ADULT_SPAM_CONTEXT_EXEMPTIONS = [ '黄推机器人', '举报黄推', '屏蔽黄推', '黄推太多', '垃圾黄推', '清理黄推', '色情诈骗', '反诈', '曝光骗子', ]; const ADULT_SPAM_NAME_RE = /(?:福利姬|约炮|裸聊|看片|成人视频|黄网|反差婊|巨乳|痴女|(?:^|[^a-z0-9])(?:porn|nudes|onlyfans|sex(?:y|cam)?|xxx)(?![a-z0-9]))/i; const ADULT_SPAM_EXACT_AMBIGUOUS_RE = /^(?:骚|逼|肏|doi|spa|全套|处女|chu男|cchu男|c男)$/i; const ADULT_SPAM_AMBIGUOUS_RES = [ /(?<!离)骚(?!操作|扰|包|话|客|气)/, /(?<!牛|装|傻|苦|逗|懵|被)逼(?!迫|真|近|问|债|婚|供|退)/, /处女(?!作|航|座|秀)/, ]; const ADULT_SPAM_BOT_HANDLE_RES = [ /^[a-z]{4,10}\d{5,12}$/i, /^[a-z]+_[a-z]+\d{4,}$/i, /^[A-Z][a-z]+[A-Z][a-z]+\d{2,}$/, /^(?=[a-z]*[bcdfghjklmnpqrstvwxyz]{4})[a-z]+\d+$/i, ]; const ADULT_SPAM_TEMPLATE_RES = [ /快领我回家|扣1白给|推特第一骚|我约过她|姐姐在等你|视频要吗|满足我|可瑟瑟/, /懂[得的].{0,3}(?:来|私|入|dd|联系|撩|进|加)/i, /(?:找|来|想要).{0,5}(?:哥哥|主人).{0,5}(?:调教|私聊|联系|带走)/, /(?:在线等|蹲一个|急需一位).{0,6}(?:哥哥|弟弟|单男|主人)/, /(?:主页|简介).{0,5}(?:打飞|打飞机|打✈️?|有资源|有福利|可约)|(?:打飞|打飞机|打✈️?).{0,5}(?:主页|简介)/, /(?:刷了半天|就她|点开|快看).{0,5}(?:主页|简介)/, /(?:👉|⬆|↑|✈️?).{0,4}@[a-z0-9_]+|@[a-z0-9_]+.{0,4}(?:👉|⬆|↑|✈️?)/i, /(?:包夜|上门|外围|服务|按摩).{0,5}(?:全套|spa)|(?:全套|spa).{0,5}(?:包夜|上门|外围|服务)/i, /(?:酒店|约|想|一起).{0,5}doi|doi.{0,5}(?:酒店|约|一起)/i, /(?:c\s*\/?\s*chu男|chu男|c男)/i, ]; const ADULT_SPAM_COMBO_RES = [ /(?:同城|附近).{0,5}(?:可约|约炮|上门)/, /(?:私信|私聊|联系|加我).{0,8}(?:约炮|裸聊|看片|黄网|成人视频)/, /(?:约炮|裸聊|看片|黄网|成人视频).{0,8}(?:私信|私聊|联系|加我|主页|电报)/, /(?:萝莉|少女|嫩模|空姐|学生妹|少妇).{0,6}(?:资源|上门|可约|视频|福利)/, /(?:免费|最新|海量).{0,6}(?:成人视频|黄片|色情视频|看片资源)/, /(?:成人视频|黄片|色情视频).{0,5}(?:资源|入口|合集|频道|群)/, ]; const ADULT_SPAM_REPOST_CONTEXT_RE = /(?:已转帖|已轉帖|转帖|轉帖|转发|轉發|reposted|retweeted|リポスト|재게시|리트윗)/i;
 function normalizeAdultSpamText(value) {
   let text = String(value || '').slice(0, 5000);
   try { text = text.normalize('NFKC'); } catch (err) {}
@@ -5234,25 +5329,66 @@ function normalizeAdultSpamText(value) {
 function compactAdultSpamText(value) {
   return normalizeAdultSpamText(value).replace(/[\s\p{P}\p{S}_]+/gu, '');
 }
-function compileAdultSpamInstantBlockTerm(raw) {
-  return { raw, normalized: normalizeAdultSpamText(raw), compact: compactAdultSpamText(raw) };
+function compileAdultSpamTerms(terms, allowObfuscation = true) {
+  const compiled = new Map();
+  for (const raw of terms) {
+    const normalized = normalizeAdultSpamText(raw);
+    if (!normalized) continue;
+    const compact = compactAdultSpamText(normalized);
+    const key = compact || normalized;
+    let patternSource = '';
+    if (/^[\x00-\x7F]+$/.test(normalized) && /[a-z0-9]/.test(normalized)) {
+      const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let literal = escape(normalized);
+      if (allowObfuscation && compact.length >= 4 && /^[a-z0-9 ]+$/.test(normalized) && /[a-z]/.test(normalized)) {
+        literal = normalized.split(' ').map((word) => [...word].map(escape).join('[\\p{P}\\p{S}_]*'))
+          .join('[\\s\\p{P}\\p{S}_]*');
+      }
+      patternSource = `(?:^|[^a-z0-9_])${literal}(?![a-z0-9_])`;
+    }
+    const variantKey = patternSource || compact || normalized;
+    if (!compiled.has(key)) compiled.set(key, new Map());
+    const variants = compiled.get(key);
+    if (!variants.has(variantKey)) variants.set(variantKey, {
+      normalized, compact, pattern: patternSource ? new RegExp(patternSource, 'u') : null,
+    });
+  }
+  return [...compiled].map(([key, variants]) => ({ key, variants: [...variants.values()] }));
 }
-function findAdultSpamInstantBlockTerm(normalized, compact) {
-  return COMPILED_ADULT_SPAM_INSTANT_BLOCK_TERMS.find((term) => (
-    (term.normalized && normalized.includes(term.normalized))
-    || (term.compact && compact.includes(term.compact))
-  ));
-}
-const COMPILED_ADULT_SPAM_INSTANT_BLOCK_TERMS = ADULT_SPAM_INSTANT_BLOCK_TERMS.map(compileAdultSpamInstantBlockTerm);
-const COMPILED_ADULT_SPAM_TERMS = {
-  strong: ADULT_SPAM_STRONG_TERMS.map(compactAdultSpamText),
-  sensitive: ADULT_SPAM_SENSITIVE_TERMS.map(compactAdultSpamText),
-  botBait: ADULT_SPAM_BOT_BAIT_TERMS.map(compactAdultSpamText),
-  suggestive: ADULT_SPAM_SUGGESTIVE_TERMS.map(compactAdultSpamText),
-  marketing: ADULT_SPAM_MARKETING_TERMS.map(compactAdultSpamText),
-  contact: ADULT_SPAM_CONTACT_TERMS.map(compactAdultSpamText),
-  exemptions: ADULT_SPAM_CONTEXT_EXEMPTIONS.map(compactAdultSpamText),
-};
+const ADULT_SPAM_WEAK_KEYS = new Set(ADULT_SPAM_WEAK_TERMS.map((term) => compactAdultSpamText(term) || normalizeAdultSpamText(term)));
+const withoutWeakTerms = (terms) => terms.filter((term) => !ADULT_SPAM_WEAK_KEYS.has(compactAdultSpamText(term)));
+const COMPILED_ADULT_SPAM_TERMS = (() => {
+  const groups = {
+    strong: compileAdultSpamTerms(withoutWeakTerms(ADULT_SPAM_STRONG_TERMS)),
+    sensitive: compileAdultSpamTerms(withoutWeakTerms(ADULT_SPAM_SENSITIVE_TERMS)),
+    botBait: compileAdultSpamTerms(ADULT_SPAM_BOT_BAIT_TERMS),
+    suggestive: compileAdultSpamTerms(ADULT_SPAM_SUGGESTIVE_TERMS),
+    marketing: compileAdultSpamTerms(ADULT_SPAM_MARKETING_TERMS),
+    contact: compileAdultSpamTerms(ADULT_SPAM_CONTACT_TERMS),
+    exemptions: compileAdultSpamTerms(ADULT_SPAM_CONTEXT_EXEMPTIONS),
+    weak: compileAdultSpamTerms(ADULT_SPAM_WEAK_TERMS, false),
+  };
+  const claimed = new Map();
+  const variantKey = (variant) => variant.pattern?.source || variant.compact || variant.normalized;
+  for (const group of ['strong', 'suggestive', 'sensitive', 'botBait', 'marketing', 'contact', 'weak']) {
+    groups[group] = groups[group].filter((term) => {
+      const existing = claimed.get(term.key);
+      if (existing) {
+        const variants = new Set(existing.variants.map(variantKey));
+        for (const variant of term.variants) {
+          if (!variants.has(variantKey(variant))) {
+            existing.variants.push(variant);
+            variants.add(variantKey(variant));
+          }
+        }
+        return false;
+      }
+      claimed.set(term.key, term);
+      return true;
+    });
+  }
+  return groups;
+})();
 let compiledAdultSpamCustomRulesVersion = -1;
 let compiledAdultSpamCustomRules = [];
 function getCompiledAdultSpamCustomRules() {
@@ -5267,16 +5403,19 @@ function getCompiledAdultSpamCustomRules() {
   compiledAdultSpamCustomRulesVersion = adultSpamRulesVersion;
   return compiledAdultSpamCustomRules;
 }
-function countCompiledTerms(haystack, terms) {
+function countCompiledTerms(normalized, compact, terms) {
   let count = 0;
   for (const term of terms) {
-    if (term && haystack.includes(term)) count++;
+    if (term.variants.some((variant) => variant.pattern
+      ? variant.pattern.test(normalized)
+      : variant.compact ? compact.includes(variant.compact) : normalized.includes(variant.normalized))) count++;
   }
   return count;
 }
 function getAdultSpamInput(article) {
   const author = extractAuthor(article);
-  const text = (extractText(article) || '').trim().slice(0, 2500);
+  const fullText = (extractText(article) || '').trim();
+  const text = fullText.slice(0, 2500);
   const socialContextEl = article.querySelector('[data-testid="socialContext"]');
   const repostContext = (socialContextEl?.innerText || '').trim().slice(0, 300);
   const isRepost = ADULT_SPAM_REPOST_CONTEXT_RE.test(repostContext);
@@ -5306,7 +5445,7 @@ function getAdultSpamInput(article) {
     else if (!isRepost && username) rememberFollowingRelation(username, true);
   }
   return {
-    author, text, displayName: author.displayName || '', username, rawUsername,
+    author, text, fullText, displayName: author.displayName || '', username, rawUsername,
     repostContext, isRepost, reposterUsername, externalLinkCount, mentionCount, hasMedia, isFollowingTimeline,
   };
 }
@@ -5344,58 +5483,53 @@ function scoreAdultSpam(input) {
         : (contentAuthorFollowed ? '正文原作者已关注' : '正在关注时间线的原创帖')],
     };
   }
-  const instantBlockTerm = findAdultSpamInstantBlockTerm(normalized, compact);
-  if (instantBlockTerm) {
-    return { hidden: true, score: 99, reasons: [`高风险屏蔽词：${instantBlockTerm.raw}`] };
-  }
   const reasons = [];
   let score = 0;
-  let signalGroups = 0;
-  const strongCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.strong);
-  const sensitiveCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.sensitive);
-  const botBaitCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.botBait);
-  const suggestiveCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.suggestive);
-  const marketingCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.marketing);
-  const contactCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.contact);
+  const strongCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.strong);
+  const sensitiveCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.sensitive);
+  const botBaitCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.botBait);
+  const suggestiveCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.suggestive);
+  const marketingCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.marketing);
+  const contactCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.contact);
+  const weakCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.weak);
   const comboCount = ADULT_SPAM_COMBO_RES.filter((re) => re.test(compact)).length;
   const templateCount = ADULT_SPAM_TEMPLATE_RES.filter((re) => re.test(normalized) || re.test(compact)).length;
   const exactAmbiguous = ADULT_SPAM_EXACT_AMBIGUOUS_RE.test(compactAdultSpamText(input.text));
   const ambiguousCount = ADULT_SPAM_AMBIGUOUS_RES.filter((re) => re.test(compact)).length;
   const riskyName = ADULT_SPAM_NAME_RE.test(input.displayName) || ADULT_SPAM_NAME_RE.test(usernameText);
   const syntheticHandle = ADULT_SPAM_BOT_HANDLE_RES.some((re) => re.test(input.rawUsername || input.username || ''));
-  if (strongCount) { score += Math.min(14, strongCount * 10); signalGroups++; reasons.push('强成人内容词'); }
-  if (sensitiveCount) { score += Math.min(10, sensitiveCount * 4); signalGroups++; reasons.push('敏感暗示词'); }
-  if (botBaitCount) { score += Math.min(6, botBaitCount * 3); signalGroups++; reasons.push('机器人诱导短句'); }
-  if (suggestiveCount) { score += Math.min(6, suggestiveCount * 3); signalGroups++; reasons.push('成人引流短语'); }
-  if (comboCount) { score += Math.min(8, comboCount * 4); signalGroups++; reasons.push('高风险组合话术'); }
-  if (templateCount) { score += Math.min(10, templateCount * 8); signalGroups++; reasons.push('黄推模板话术'); }
-  if (exactAmbiguous) { score += 10; signalGroups++; reasons.push('单字露骨内容'); }
-  if (ambiguousCount) { score += Math.min(6, ambiguousCount * 4); signalGroups++; reasons.push('语境敏感词'); }
-  if (marketingCount) { score += Math.min(4, marketingCount * 2); signalGroups++; reasons.push('营销引导'); }
-  if (contactCount) { score += Math.min(4, contactCount * 2); signalGroups++; reasons.push('站外联系引导'); }
+  if (strongCount) { score += Math.min(14, strongCount * 10); reasons.push('强成人内容词'); }
+  if (sensitiveCount) { score += Math.min(10, sensitiveCount * 4); reasons.push('敏感暗示词'); }
+  if (botBaitCount) { score += Math.min(6, botBaitCount * 3); reasons.push('机器人诱导短句'); }
+  if (suggestiveCount) { score += Math.min(6, suggestiveCount * 3); reasons.push('成人引流短语'); }
+  if (comboCount) { score += Math.min(8, comboCount * 4); reasons.push('高风险组合话术'); }
+  if (templateCount) { score += Math.min(10, templateCount * 8); reasons.push('黄推模板话术'); }
+  if (exactAmbiguous) { score += 2; reasons.push('多义词（需语境）'); }
+  if (ambiguousCount) { score += Math.min(6, ambiguousCount * 4); reasons.push('语境敏感词'); }
+  if (weakCount) { score += Math.min(2, weakCount); reasons.push('多义词/引流辅助词'); }
+  if (marketingCount) { score += Math.min(4, marketingCount * 2); reasons.push('营销引导'); }
+  if (contactCount) { score += Math.min(4, contactCount * 2); reasons.push('站外联系引导'); }
   if (riskyName) {
     score += 3;
-    signalGroups++;
     reasons.push('账号名特征');
   }
-  if (syntheticHandle) { score += 3; signalGroups++; reasons.push('机器用户名结构'); }
-  if (input.externalLinkCount > 0) { score += 2; signalGroups++; reasons.push('外部链接'); }
+  if (syntheticHandle) { score += 3; reasons.push('机器用户名结构'); }
+  if (input.externalLinkCount > 0) { score += 2; reasons.push('外部链接'); }
   if ((input.mentionCount || 0) > 0 && (contactCount || templateCount)) {
     score += 3;
-    signalGroups++;
     reasons.push('@账号引流');
   }
   const riskEmojiCount = (normalized.match(/[✈️🔞💦🈲👅🍑👙🙇❣️❤️🍓🎀💋🥵]/gu) || []).length;
-  if (riskEmojiCount >= 2 || normalized.includes('🔞')) { score += 3; signalGroups++; reasons.push('高风险表情组合'); }
-  const hasContentRisk = strongCount || sensitiveCount || botBaitCount || suggestiveCount || comboCount || templateCount || exactAmbiguous || ambiguousCount || riskyName;
-  if (input.hasMedia && hasContentRisk) { score += 2; signalGroups++; reasons.push('敏感媒体组合'); }
-  if (input.text && input.text.length <= 120 && hasContentRisk) score += 1;
-  const exemptionCount = countCompiledTerms(compact, COMPILED_ADULT_SPAM_TERMS.exemptions);
+  if (riskEmojiCount >= 2 || normalized.includes('🔞')) { score += 3; reasons.push('高风险表情组合'); }
+  const hasPromotionContext = contactCount || marketingCount || comboCount || templateCount;
+  const hasAdultContext = strongCount > 0 || suggestiveCount > 0
+    || ((sensitiveCount >= 2 || riskyName) && hasPromotionContext);
+  if (input.hasMedia && hasAdultContext) { score += 2; reasons.push('敏感媒体组合'); }
+  if (input.text && input.text.length <= 120 && hasAdultContext) score += 1;
+  const exemptionCount = countCompiledTerms(normalized, compact, COMPILED_ADULT_SPAM_TERMS.exemptions);
   if (exemptionCount) { score = Math.max(0, score - 6); reasons.push('讨论/反诈语境降权'); }
   const threshold = state.settings.adultSpamLevel === 'balanced' ? 6 : 9;
-  const hasStrongAnchor = strongCount > 0 || templateCount > 0 || comboCount > 0 || exactAmbiguous;
-  const qualified = hasStrongAnchor || (hasContentRisk && signalGroups >= 2);
-  return { hidden: qualified && score >= threshold, score, reasons };
+  return { hidden: !!hasAdultContext && score >= threshold, score, reasons };
 }
 function captureAdultSpamScrollAnchors(articles = document.querySelectorAll('article')) {
   const viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
@@ -5614,7 +5748,7 @@ function captureArticle(article) {
   if ((state.settings.skipSources || []).includes(sourceInfo.type)) return;
   const isFirstVisibleCapture = !state.visibleMap.has(id);
   const author = adultSpamResult?.input?.author || extractAuthor(article);
-  const text = adultSpamResult?.input?.text ?? extractText(article);
+  const text = adultSpamResult?.input?.fullText ?? extractText(article);
   const media = detectMedia(article, id);
   const avatarUrl = extractAvatar(article);
   if (isFirstVisibleCapture) {
@@ -5623,7 +5757,7 @@ function captureArticle(article) {
       displayName: author.displayName,
       username: author.username,
       timeLabel: author.timeLabel,
-      text,
+      text: selectRicherPostText(getPostById(id)?.text, text),
       hasImage: media.hasImage,
       hasVideo: media.hasVideo,
       mediaThumbs: media.thumbs,
@@ -6174,8 +6308,8 @@ function formatNotificationSyncTime(timestamp) {
   if (!timestamp) return '尚未完整同步';
   try { return `上次同步：${new Date(timestamp).toLocaleString()}`; } catch (err) { return '已同步'; }
 }
-function renderNotificationSubscriptions() {
-  if (!state.notificationListEl) return;
+function renderNotificationSubscriptions(force = false) {
+  if (!state.notificationListEl || state.panelView !== 'notifications' || (!state.panelOpen && !force)) return;
   const syncButton = state.panelEl && state.panelEl.querySelector('[data-action="sync-notification-users"]');
   if (syncButton) {
     syncButton.disabled = state.notificationSyncInProgress;
@@ -6246,8 +6380,7 @@ function setPanelView(view) {
     tabEl.setAttribute('aria-selected', active ? 'true' : 'false');
     tabEl.tabIndex = active ? 0 : -1;
   });
-  updateSettingsDependencyUI();
-  if (nextView === 'notifications') renderNotificationSubscriptions();
+  if (state.panelOpen) refreshUI({ keepScroll: true });
 }
 function togglePanel(force) {
   const next = typeof force === 'boolean' ? force : !state.panelOpen;
@@ -6296,7 +6429,63 @@ function download(filename, text) {
 function exportPosts() {
   const data = filterPosts(state.posts);
   if (!data.length) { uiAlert('当前筛选结果为空，没有可导出的内容。'); return; }
-  download(`BetterX-filtered-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
+  savePostExport(data, null, `BetterX-filtered-${new Date().toISOString().slice(0, 10)}`);
+}
+function buildPostExportBlob(posts, metadata, backupPart) {
+  const header = metadata ? { ...metadata, ...(backupPart ? { backupPart } : {}) } : null;
+  const chunks = [header ? JSON.stringify({ ...header, posts: [] }).slice(0, -2) : '['];
+  posts.forEach((post, index) => {
+    if (index) chunks.push(',');
+    chunks.push(JSON.stringify(post));
+  });
+  chunks.push(header ? ']}' : ']');
+  return new Blob(chunks, { type: 'application/json' });
+}
+function partitionPostExport(posts, metadata, maxBytes = MAX_IMPORT_FILE_BYTES, maxPosts = MAX_IMPORT_POSTS) {
+  const placeholder = { index: Number.MAX_SAFE_INTEGER, total: Number.MAX_SAFE_INTEGER };
+  const overhead = buildPostExportBlob([], metadata, placeholder).size;
+  if (overhead > maxBytes) throw new Error('EXPORT_RECORD_TOO_LARGE');
+  const encoder = new TextEncoder();
+  const groups = [];
+  let group = [];
+  let bytes = overhead;
+  for (const post of posts) {
+    const recordBytes = encoder.encode(JSON.stringify(post)).byteLength;
+    if (overhead + recordBytes > maxBytes) throw new Error('EXPORT_RECORD_TOO_LARGE');
+    if (group.length && (bytes + 1 + recordBytes > maxBytes || group.length >= maxPosts)) {
+      groups.push(group);
+      group = [];
+      bytes = overhead;
+    }
+    bytes += (group.length ? 1 : 0) + recordBytes;
+    group.push(post);
+  }
+  if (group.length || !groups.length) groups.push(group);
+  return groups;
+}
+function savePostExport(posts, metadata, baseName) {
+  let groups;
+  try { groups = partitionPostExport(posts, metadata); }
+  catch (err) { uiAlert('无法导出：单条记录或设置超过备份容量限制。'); return; }
+  const savePart = (index) => {
+    const suffix = groups.length > 1 ? `-part-${index + 1}-of-${groups.length}` : '';
+    const part = groups.length > 1 ? { index: index + 1, total: groups.length } : null;
+    download(`${baseName}${suffix}.json`, buildPostExportBlob(groups[index], metadata, part));
+  };
+  if (groups.length === 1) { savePart(0); return; }
+  showBetterXDialog({
+    title: '备份已分卷',
+    bodyHtml: uiHtml`<p>数据较大，请保存全部分卷；恢复时可同时选择这些 JSON 文件。</p>
+        ${groups.map((group, index) => uiHtml`<p><button type="button" class="BetterX-btn" data-backup-part="${index}">下载分卷 ${index + 1} / ${groups.length}</button></p>`).join('')}`,
+    primaryText: '完成', secondaryText: '关闭',
+  });
+  const dialog = document.getElementById('BetterX-choice-dialog');
+  dialog.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-backup-part]');
+    if (!button) return;
+    const index = Number(button.getAttribute('data-backup-part'));
+    if (Number.isInteger(index) && index >= 0 && index < groups.length) savePart(index);
+  });
 }
 function backupAll() {
   const portableSettings = { ...state.settings };
@@ -6307,9 +6496,8 @@ function backupAll() {
     version: '1.2.0',
     exportedAt: new Date().toISOString(),
     settings: portableSettings,
-    posts: state.posts,
   };
-  download(`BetterX-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(payload, null, 2));
+  savePostExport([...state.posts], payload, `BetterX-backup-${new Date().toISOString().slice(0, 10)}`);
 }
 function sanitizeImportedPost(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -6373,79 +6561,25 @@ function sanitizeImportedPost(raw) {
     lastClickedAt: finiteInt(raw.lastClickedAt, 0, Number.MAX_SAFE_INTEGER, 0),
   };
 }
-async function importPosts(file) {
+async function importPosts(fileOrFiles) {
+  if (state.importInProgress) return;
+  const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
+  if (!files.length) return;
+  if (files.some((file) => !file || file.size > MAX_IMPORT_FILE_BYTES)) {
+    uiAlert('导入失败：备份文件不能超过 25 MB。');
+    return;
+  }
+  state.importInProgress = true;
   const initialDbWriteFailureVersion = state.dbWriteFailureVersion || 0;
+  const session = { settingsHandled: false, added: 0, merged: 0, skipped: 0, trimmed: 0, completed: 0 };
   try {
-    if (!file || file.size > MAX_IMPORT_FILE_BYTES) {
-      uiAlert('导入失败：备份文件不能超过 25 MB。');
-      return;
-    }
-    const text = await file.text();
-    const parsed = JSON.parse(text);
-    let posts = [];
-    let importedSettings = null;
-    if (Array.isArray(parsed)) posts = parsed;
-    else if (parsed && Array.isArray(parsed.posts)) { posts = parsed.posts; importedSettings = parsed.settings || null; }
-    else { uiAlert('无法识别的备份文件格式。'); return; }
-    if (posts.length > MAX_IMPORT_POSTS) {
-      uiAlert(`导入失败：单次最多允许 ${MAX_IMPORT_POSTS} 条帖子。`);
-      return;
-    }
-    let added = 0, merged = 0, skipped = 0;
-    const postIndexById = new Map(state.posts.map((post, index) => [post.id, index]));
-    const postsToPersist = new Map();
-    for (const raw of posts) {
-      const imported = sanitizeImportedPost(raw);
-      if (!imported) { skipped++; continue; }
-      const existingIndex = postIndexById.get(imported.id);
-      const existing = existingIndex == null ? null : state.posts[existingIndex];
-      if (existing) {
-        const combined = {
-          ...existing,
-          ...imported,
-          id: existing.id,
-          favorite: existing.favorite || imported.favorite,
-          pinned: existing.pinned || imported.pinned,
-          clicked: existing.clicked || imported.clicked,
-          flashLost: existing.flashLost || imported.flashLost,
-          note: existing.note || imported.note,
-          sourceHistory: uniqueStrings([...(existing.sourceHistory || []), ...imported.sourceHistory]).slice(-8),
-          mediaThumbs: imported.mediaThumbs.length ? imported.mediaThumbs : (existing.mediaThumbs || []),
-          avatarUrl: existing.avatarUrl || imported.avatarUrl,
-          capturedCount: Math.max(existing.capturedCount || 1, imported.capturedCount),
-          firstCapturedAt: Math.min(existing.firstCapturedAt || now(), imported.firstCapturedAt),
-          lastCapturedAt: Math.max(existing.lastCapturedAt || 0, imported.lastCapturedAt),
-          firstViewedAt: existing.firstViewedAt && imported.firstViewedAt
-            ? Math.min(existing.firstViewedAt, imported.firstViewedAt)
-            : Math.max(existing.firstViewedAt || 0, imported.firstViewedAt || 0),
-          lastViewedAt: Math.max(existing.lastViewedAt || 0, imported.lastViewedAt || 0),
-          lastClickedAt: Math.max(existing.lastClickedAt || 0, imported.lastClickedAt || 0),
-        };
-        state.posts[existingIndex] = combined;
-        postsToPersist.set(combined.id, combined);
-        merged++;
-      } else {
-        state.posts.push(imported);
-        postIndexById.set(imported.id, state.posts.length - 1);
-        postsToPersist.set(imported.id, imported);
-        added++;
+    for (const file of files) {
+      const result = await importPostFile(file, session);
+      if ((state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion) {
+        throw state.lastDbWriteError || new Error('IndexedDB write failed');
       }
-    }
-    rebuildPostIndex();
-    if (importedSettings && uiConfirm('是否同时恢复备份中的设置？')) {
-      applySettingsSnapshot(importedSettings, { preserveFirefoxCompatibility: true });
-      queueSettingsPersist();
-    }
-    const trimmedIds = trimPostsToMax();
-    const liveIds = new Set(state.posts.map((post) => post.id));
-    const survivingPosts = [...postsToPersist.values()].filter((post) => liveIds.has(post.id));
-    queueDbWrite(async () => {
-      await dbPutPosts(survivingPosts, { mergeUserState: true });
-      await dbDeleteMany(trimmedIds, { preserveProtected: true });
-    });
-    await state.dbWriteQueue;
-    if ((state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion) {
-      throw state.lastDbWriteError || new Error('IndexedDB write failed');
+      for (const key of ['added', 'merged', 'skipped', 'trimmed']) session[key] += result[key];
+      session.completed++;
     }
     state.posts = (await dbGetAllPosts()).map(sanitizeImportedPost).filter(Boolean)
       .sort((a, b) => (b.lastCapturedAt || 0) - (a.lastCapturedAt || 0));
@@ -6453,14 +6587,87 @@ async function importPosts(file) {
     bumpKeywordCache();
     resetPaging();
     refreshUI();
-    const trimmedMessage = trimmedIds.length ? `，按最大条数清理 ${trimmedIds.length} 条` : '';
-    uiAlert(`导入完成：新增 ${added} 条，合并 ${merged} 条，跳过 ${skipped} 条无效记录${trimmedMessage}。`);
+    const trimmedMessage = session.trimmed ? `，按最大条数清理 ${session.trimmed} 条` : '';
+    uiAlert(`导入完成：新增 ${session.added} 条，合并 ${session.merged} 条，跳过 ${session.skipped} 条无效记录${trimmedMessage}。`);
+    return true;
   } catch (err) {
     console.error('[BetterX] import failed:', err);
-    uiAlert((state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion
+    const message = (state.dbWriteFailureVersion || 0) !== initialDbWriteFailureVersion
       ? '导入失败：数据未能写入浏览器存储，请检查可用空间后重试。'
-      : '导入失败：文件解析出错。');
+      : err.message === 'IMPORT_POST_LIMIT'
+        ? `导入失败：单次最多允许 ${MAX_IMPORT_POSTS} 条帖子。`
+        : '导入失败：文件解析出错。';
+    uiAlert(session.completed ? `${uiText(message)}\n${uiText('此前已导入的分卷会保留，可重新选择文件继续恢复。')}` : message);
+    return false;
+  } finally {
+    state.importInProgress = false;
   }
+}
+async function importPostFile(file, session) {
+  const parsed = JSON.parse(await file.text());
+  let posts = [];
+  let importedSettings = null;
+  if (Array.isArray(parsed)) posts = parsed;
+  else if (parsed && Array.isArray(parsed.posts)) { posts = parsed.posts; importedSettings = parsed.settings || null; }
+  else throw new Error('IMPORT_FORMAT');
+  if (posts.length > MAX_IMPORT_POSTS) throw new Error('IMPORT_POST_LIMIT');
+  let added = 0, merged = 0, skipped = 0;
+  const postIndexById = new Map(state.posts.map((post, index) => [post.id, index]));
+  const postsToPersist = new Map();
+  for (const raw of posts) {
+    const imported = sanitizeImportedPost(raw);
+    if (!imported) { skipped++; continue; }
+    const existingIndex = postIndexById.get(imported.id);
+    const existing = existingIndex == null ? null : state.posts[existingIndex];
+    if (existing) {
+      const combined = {
+        ...existing,
+        ...imported,
+        id: existing.id,
+        favorite: existing.favorite || imported.favorite,
+        pinned: existing.pinned || imported.pinned,
+        clicked: existing.clicked || imported.clicked,
+        flashLost: existing.flashLost || imported.flashLost,
+        note: existing.note || imported.note,
+        sourceHistory: uniqueStrings([...(existing.sourceHistory || []), ...imported.sourceHistory]).slice(-8),
+        mediaThumbs: imported.mediaThumbs.length ? imported.mediaThumbs : (existing.mediaThumbs || []),
+        avatarUrl: existing.avatarUrl || imported.avatarUrl,
+        capturedCount: Math.max(existing.capturedCount || 1, imported.capturedCount),
+        firstCapturedAt: Math.min(existing.firstCapturedAt || now(), imported.firstCapturedAt),
+        lastCapturedAt: Math.max(existing.lastCapturedAt || 0, imported.lastCapturedAt),
+        firstViewedAt: existing.firstViewedAt && imported.firstViewedAt
+          ? Math.min(existing.firstViewedAt, imported.firstViewedAt)
+          : Math.max(existing.firstViewedAt || 0, imported.firstViewedAt || 0),
+        lastViewedAt: Math.max(existing.lastViewedAt || 0, imported.lastViewedAt || 0),
+        lastClickedAt: Math.max(existing.lastClickedAt || 0, imported.lastClickedAt || 0),
+      };
+      state.posts[existingIndex] = combined;
+      postsToPersist.set(combined.id, combined);
+      merged++;
+    } else {
+      state.posts.push(imported);
+      postIndexById.set(imported.id, state.posts.length - 1);
+      postsToPersist.set(imported.id, imported);
+      added++;
+    }
+  }
+  rebuildPostIndex();
+  if (importedSettings && !session.settingsHandled) {
+    session.settingsHandled = true;
+    if (uiConfirm('是否同时恢复备份中的设置？')) {
+      applySettingsSnapshot(importedSettings, { preserveFirefoxCompatibility: true, force: true });
+      queueSettingsPersist();
+    }
+  }
+  const trimmedIds = trimPostsToMax();
+  const liveIds = new Set(state.posts.map((post) => post.id));
+  const survivingPosts = [...postsToPersist.values()].filter((post) => liveIds.has(post.id));
+  queueDbWrite(async () => {
+    await dbPutPosts(survivingPosts, { mergeUserState: true });
+    await dbDeleteMany(trimmedIds, { preserveProtected: true });
+  });
+  await state.dbWriteQueue;
+  return { added, merged, skipped, trimmed: trimmedIds.length };
 }
 async function runAutoClean() {
   const days = state.settings.autoCleanDays || 0;
@@ -6842,7 +7049,7 @@ function dispatchSettingRemoveAction(action, actionEl) {
   });
   return true;
 }
-const PANEL_ACTION_HANDLERS = Object.freeze({ 'set-panel-view': ({ el }) => setPanelView(el.getAttribute('data-view')), 'sync-notification-users': () => syncNotificationSubscriptions(), 'search-notification-users': () => applyNotificationSearch(), 'toggle-notification-pin': ({ el }) => toggleNotificationSubscriptionPinned(el.getAttribute('data-username') || ''), 'toggle-notification-user': ({ el }) => updateNotificationSubscription( el.getAttribute('data-username') || '', el.getAttribute('data-enabled') === 'true' ), 'forget-notification-user': ({ el }) => removeRememberedNotificationSubscription(el.getAttribute('data-username') || ''), 'menu-toggle': () => { if (state.menuEl) state.menuEl.hidden = !state.menuEl.hidden; }, close: () => togglePanel(false), refresh: () => { scanArticles(document); refreshUI(); }, 'switch-language': () => showLanguageDialog(), export: () => exportPosts(), backup: () => backupAll(), import: () => state.importInputEl.click(), 'clear-non-fav': () => clearNonFavoritePosts(), 'set-filter': ({ el }) => setSettingsPartial({ filter: el.getAttribute('data-filter') }), 'toggle-skip': ({ el }) => { const key = el.getAttribute('data-skip'); const current = state.settings.skipSources || []; setSettingsPartial({ skipSources: current.includes(key) ? current.filter((item) => item !== key) : [...current, key] }); }, 'save-keywords': () => { if (!commitKeywordInput().rejected) showToast('✅ 已保存关键词'); }, 'save-exclude': () => { if (!commitExcludeKeywordInput().rejected) showToast('✅ 已保存排除词'); }, 'save-adultspam-keywords': () => { commitAdultSpamKeywordInput(); showToast('✓ 已保存自定义屏蔽词'); }, 'save-adultspam-whitelist': () => { commitAdultSpamWhitelistInput(); showToast('✓ 已保存账号白名单'); }, 'load-more': () => { state.renderLimit = (state.renderLimit || state.settings.pageSize || 60) + (state.settings.pageSize || 60); refreshUI({ keepScroll: true }); }, 'toggle-expand': ({ id }) => { if (state.expandedPosts.has(id)) state.expandedPosts.delete(id); else state.expandedPosts.add(id); refreshUI({ keepScroll: true }); }, 'save-note': ({ id }) => { const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`); updatePostNote(id, input ? input.value.trim() : ''); }, 'cancel-note': () => { state.editingNoteId = null; refreshUI({ keepScroll: true }); }, open: ({ id }) => openRecordedPost(getPostById(id)), pin: ({ id }) => togglePin(id), fav: ({ id }) => toggleFavorite(id), delete: ({ id }) => deletePost(id), 'mark-all-read': () => { const unreadPosts = filterPosts(state.posts).filter((post) => !post.clicked); if (!unreadPosts.length) { uiAlert('当前列表没有未读的帖子喂～'); return; } if (!uiConfirm('确定要把当前列表的 ' + unreadPosts.length + ' 条未读帖子全部标为已读吗？')) return; markPostsRead(unreadPosts.map((post) => post.id)); showToast('✅ 已将当前列表全部标为已读'); }, 'preview-image': ({ el }) => { const rawUrl = el.getAttribute('data-image-url') || ''; const postId = el.getAttribute('data-post-id') || ''; const post = postId ? getPostById(postId) : null; const imageUrls = post ? uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4) : [rawUrl]; const imageIndex = parseInt(el.getAttribute('data-image-index') || '0', 10); showImagePreview(rawUrl, imageUrls, imageIndex); }, 'save-layout': () => { const timelineWidth = readIntegerSetting(state.timelineWidthEl, 'timelineWidth'); const leftbarWidth = readIntegerSetting(state.leftbarWidthEl, 'leftbarWidth'); setSettingsPartial({ layoutAutoWidth: false, timelineWidth, leftbarWidth }); showToast('✓ 已切换为手动宽度并应用'); }, 'edit-note': ({ id }) => { state.editingNoteId = id; refreshUI({ keepScroll: true }); setTimeout(() => { const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`); if (input) { input.focus(); input.selectionStart = input.value.length; } }, 20); }, copy: ({ el, id }) => { const post = getPostById(id); if (!post || !post.url) return; const manualCopy = () => window.prompt(uiText('复制链接：'), post.url); try { (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(post.url).then(() => { el.textContent = uiText('已复制'); setTimeout(() => { el.textContent = uiText('复制链接'); }, 1200); }).catch(manualCopy) : manualCopy(); } catch (err) { manualCopy(); } }, });
+const PANEL_ACTION_HANDLERS = Object.freeze({ 'set-panel-view': ({ el }) => setPanelView(el.getAttribute('data-view')), 'sync-notification-users': () => syncNotificationSubscriptions(), 'search-notification-users': () => applyNotificationSearch(), 'toggle-notification-pin': ({ el }) => toggleNotificationSubscriptionPinned(el.getAttribute('data-username') || ''), 'toggle-notification-user': ({ el }) => updateNotificationSubscription( el.getAttribute('data-username') || '', el.getAttribute('data-enabled') === 'true' ), 'forget-notification-user': ({ el }) => removeRememberedNotificationSubscription(el.getAttribute('data-username') || ''), 'menu-toggle': () => { if (state.menuEl) state.menuEl.hidden = !state.menuEl.hidden; }, close: () => togglePanel(false), refresh: () => { scanArticles(document); refreshUI(); }, 'switch-language': () => showLanguageDialog(), export: () => exportPosts(), backup: () => backupAll(), import: () => state.importInputEl.click(), 'clear-non-fav': () => clearNonFavoritePosts(), 'set-filter': ({ el }) => setSettingsPartial({ filter: el.getAttribute('data-filter') }), 'toggle-skip': ({ el }) => { const key = el.getAttribute('data-skip'); const current = state.settings.skipSources || []; setSettingsPartial({ skipSources: current.includes(key) ? current.filter((item) => item !== key) : [...current, key] }); }, 'save-keywords': () => { if (!commitKeywordInput().rejected) showToast('✅ 已保存关键词'); }, 'save-exclude': () => { if (!commitExcludeKeywordInput().rejected) showToast('✅ 已保存排除词'); }, 'save-adultspam-keywords': () => { commitAdultSpamKeywordInput(); showToast('✓ 已保存自定义屏蔽词'); }, 'save-adultspam-whitelist': () => { commitAdultSpamWhitelistInput(); showToast('✓ 已保存账号白名单'); }, 'load-more': () => { state.renderLimit = (state.renderLimit || state.settings.pageSize || 60) + (state.settings.pageSize || 60); refreshUI({ keepScroll: true }); }, 'toggle-expand': ({ id }) => { if (state.expandedPosts.has(id)) state.expandedPosts.delete(id); else state.expandedPosts.add(id); refreshUI({ keepScroll: true }); }, 'save-note': ({ id }) => { const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`); updatePostNote(id, input ? input.value.trim() : ''); }, 'cancel-note': () => { state.noteDrafts.delete(state.editingNoteId); state.editingNoteId = null; refreshUI({ keepScroll: true }); }, open: ({ id }) => openRecordedPost(getPostById(id)), pin: ({ id }) => togglePin(id), fav: ({ id }) => toggleFavorite(id), delete: ({ id }) => deletePost(id), 'mark-all-read': () => { const unreadPosts = filterPosts(state.posts).filter((post) => !post.clicked); if (!unreadPosts.length) { uiAlert('当前列表没有未读的帖子喂～'); return; } if (!uiConfirm('确定要把当前列表的 ' + unreadPosts.length + ' 条未读帖子全部标为已读吗？')) return; markPostsRead(unreadPosts.map((post) => post.id)); showToast('✅ 已将当前列表全部标为已读'); }, 'preview-image': ({ el }) => { const rawUrl = el.getAttribute('data-image-url') || ''; const postId = el.getAttribute('data-post-id') || ''; const post = postId ? getPostById(postId) : null; const imageUrls = post ? uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4) : [rawUrl]; const imageIndex = parseInt(el.getAttribute('data-image-index') || '0', 10); showImagePreview(rawUrl, imageUrls, imageIndex); }, 'save-layout': () => { const timelineWidth = readIntegerSetting(state.timelineWidthEl, 'timelineWidth'); const leftbarWidth = readIntegerSetting(state.leftbarWidthEl, 'leftbarWidth'); setSettingsPartial({ layoutAutoWidth: false, timelineWidth, leftbarWidth }); showToast('✓ 已切换为手动宽度并应用'); }, 'edit-note': ({ id }) => { state.editingNoteId = id; refreshUI({ keepScroll: true }); setTimeout(() => { const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`); if (input) { input.focus(); input.selectionStart = input.value.length; } }, 20); }, copy: ({ el, id }) => { const post = getPostById(id); if (!post || !post.url) return; const manualCopy = () => window.prompt(uiText('复制链接：'), post.url); try { (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(post.url).then(() => { el.textContent = uiText('已复制'); setTimeout(() => { el.textContent = uiText('复制链接'); }, 1200); }).catch(manualCopy) : manualCopy(); } catch (err) { manualCopy(); } }, });
 function dispatchPanelAction(action, actionEl, id) {
   if (dispatchSettingRemoveAction(action, actionEl)) return true;
   const handler = PANEL_ACTION_HANDLERS[action];
@@ -6857,12 +7064,15 @@ function bindPanelElements(panel) {
   }
 }
 function bindSettingsControls(panel) {
+  state.settingsControlBindings = [];
   for (const [settingKey, definition] of Object.entries(SETTINGS_SCHEMA)) {
     const [stateKey, selector, property] = definition.control || [];
     if (!stateKey || !selector || !property) continue;
     const control = panel.querySelector(selector);
     state[stateKey] = control;
     if (!control) continue;
+    const view = control.closest?.('[data-view-panel]')?.getAttribute('data-view-panel') || 'settings';
+    state.settingsControlBindings.push({ settingKey, definition, property, control, view });
     control.addEventListener('change', () => {
       const value = property === 'checked' ? !!control.checked : control.value;
       const manuallyEnabledAgeBypass = settingKey === 'bypassAgeRestriction'
@@ -6872,12 +7082,9 @@ function bindSettingsControls(panel) {
     });
   }
 }
-function syncSettingsControls() {
-  for (const [settingKey, definition] of Object.entries(SETTINGS_SCHEMA)) {
-    const [stateKey, , property] = definition.control || [];
-    if (!stateKey || !property) continue;
-    const control = state[stateKey];
-    if (!control) continue;
+function syncSettingsControls(view) {
+  for (const { settingKey, definition, property, control, view: controlView } of state.settingsControlBindings || []) {
+    if (view && controlView !== view) continue;
     const value = state.settings[settingKey] ?? definition.default;
     control[property] = property === 'checked' ? !!value : String(value);
   }
@@ -7119,6 +7326,7 @@ function createUI() {
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.accept = 'application/json,.json';
+  fileInput.multiple = true;
   fileInput.style.display = 'none';
   const downloadPill = document.createElement('button');
   downloadPill.id = 'BetterX-download-pill';
@@ -7196,6 +7404,10 @@ function createUI() {
   makeBadgeDraggable();
   makePanelResizable();
   installMobileBadgeRevealGesture();
+  root.addEventListener('input', (event) => {
+    if (!event.target.matches('.BetterX-note-input[data-id]')) return;
+    state.noteDrafts.set(event.target.getAttribute('data-id'), event.target.value);
+  });
   state.searchEl.addEventListener('input', debounce((e) => {
     state.searchQuery = e.target.value || '';
     resetPaging();
@@ -7263,8 +7475,8 @@ function createUI() {
     if (e.target.checked) showToast('已切换为屏幕右侧小蓝条');
   });
   state.importInputEl.addEventListener('change', (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) importPosts(file);
+    const files = [...(e.target.files || [])];
+    if (files.length) importPosts(files);
     e.target.value = '';
   });
   root.addEventListener('click', (e) => {
@@ -7354,11 +7566,18 @@ function startViewObserver() {
 }
 function startObserver() {
   if (state.observer) state.observer.disconnect();
+  if (state.observerCleanup) state.observerCleanup();
   startViewObserver();
   const throttledDisappear = throttle(checkDisappearedPosts, 400);
   const throttledAdultSpamCount = throttle(updateAdultSpamCount, 300);
   const throttledLayoutRefresh = throttle(applyLayoutEnhancements, 250);
   const pendingRoots = new Set();
+  let addedRootsTimer = null;
+  state.observerCleanup = () => {
+    if (addedRootsTimer !== null) clearTimeout(addedRootsTimer);
+    addedRootsTimer = null;
+    pendingRoots.clear();
+  };
   const collectArticlesFromRoot = (root, articles) => {
     if (!root || !root.isConnected || root.closest('#BetterX-root')) return;
     if (root.matches('article')) { articles.add(root); return; }
@@ -7366,7 +7585,7 @@ function startObserver() {
     if (parentArticle) { articles.add(parentArticle); return; }
     root.querySelectorAll('article').forEach((article) => articles.add(article));
   };
-  const flushAddedRoots = debounce(() => {
+  const flushPendingRoots = () => {
     const articles = new Set();
     let layoutNeedsFullRefresh = false;
     const deferAutoExpand = state.settings.autoExpandPostText && isPageScrollBusy();
@@ -7388,7 +7607,14 @@ function startObserver() {
     if (deferAutoExpand) schedulePostShowMoreExpansion();
     if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
     if (layoutNeedsFullRefresh) throttledLayoutRefresh();
-  }, 100);
+  };
+  const flushAddedRoots = () => {
+    if (addedRootsTimer !== null) return;
+    addedRootsTimer = setTimeout(() => {
+      addedRootsTimer = null;
+      flushPendingRoots();
+    }, 100);
+  };
   state.observer = new MutationObserver((mutations) => {
     let hadRemoval = false;
     const immediateAdultArticles = new Set();
@@ -7882,7 +8108,7 @@ async function boot() {
       });
     } catch (err) {}
   }
-  debugLog('v3.9.0 started');
+  debugLog('v4.0.0 started');
 }
 function waitForPageReady() {
   if (document.body) { boot(); return; }

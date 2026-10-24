@@ -21,11 +21,18 @@
 
   function startObserver() {
     if (state.observer) state.observer.disconnect();
+    if (state.observerCleanup) state.observerCleanup();
     startViewObserver();
     const throttledDisappear = throttle(checkDisappearedPosts, 400);
     const throttledAdultSpamCount = throttle(updateAdultSpamCount, 300);
     const throttledLayoutRefresh = throttle(applyLayoutEnhancements, 250);
     const pendingRoots = new Set();
+    let addedRootsTimer = null;
+    state.observerCleanup = () => {
+      if (addedRootsTimer !== null) clearTimeout(addedRootsTimer);
+      addedRootsTimer = null;
+      pendingRoots.clear();
+    };
     const collectArticlesFromRoot = (root, articles) => {
       if (!root || !root.isConnected || root.closest('#BetterX-root')) return;
       if (root.matches('article')) { articles.add(root); return; }
@@ -33,7 +40,7 @@
       if (parentArticle) { articles.add(parentArticle); return; }
       root.querySelectorAll('article').forEach((article) => articles.add(article));
     };
-    const flushAddedRoots = debounce(() => {
+    const flushPendingRoots = () => {
       const articles = new Set();
       let layoutNeedsFullRefresh = false;
       const deferAutoExpand = state.settings.autoExpandPostText && isPageScrollBusy();
@@ -56,7 +63,15 @@
       if (deferAutoExpand) schedulePostShowMoreExpansion();
       if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
       if (layoutNeedsFullRefresh) throttledLayoutRefresh();
-    }, 100);
+    };
+    // 固定本批次的截止时间；持续 mutation 不得反复重置计时，导致帖子离场前仍未抓取。
+    const flushAddedRoots = () => {
+      if (addedRootsTimer !== null) return;
+      addedRootsTimer = setTimeout(() => {
+        addedRootsTimer = null;
+        flushPendingRoots();
+      }, 100);
+    };
     state.observer = new MutationObserver((mutations) => {
       let hadRemoval = false;
       const immediateAdultArticles = new Set();

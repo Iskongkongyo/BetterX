@@ -5,12 +5,12 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      3.9.0
-// @description  管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF(多媒体可自动压缩 ZIP)、取消年龄限制(自动去除敏感/成人内容遮罩)、用户主页默认页签、记录 X 时间线中出现过的帖子，支持搜索、排序、正文折叠、备注、置顶、收藏、闪现提醒、来源识别、关键词高亮(含 AND/正则/排除词)、媒体缩略图、导入导出备份、自动清理、可拖动徽标、明暗主题、快捷键(Alt+X)、IndexedDB 持久化
-// @description:zh-CN 管理 X 帖子通知订阅状态、自动隐藏黄推/引流机器人与广告、界面简化与宽屏、一键下载图片/视频/GIF（多媒体可自动压缩 ZIP）、取消年龄限制、记录与管理浏览过的帖子，并支持搜索、排序、关键词、备份、主题与 IndexedDB 持久化。
-// @description:zh-TW 管理 X 貼文通知訂閱狀態、自動隱藏成人引流帳號與廣告、簡化介面與寬螢幕、一鍵下載圖片/影片/GIF（多媒體可自動壓縮為 ZIP）、解除年齡限制、記錄與管理瀏覽過的貼文，並支援搜尋、排序、關鍵字、備份、主題與 IndexedDB 持久化。
-// @description:ja X のポスト通知購読を管理し、成人スパムや広告を自動非表示にします。UI の簡素化・ワイド表示、画像・動画・GIF の一括ダウンロード（ZIP 対応）、年齢制限の解除、閲覧ポストの記録・検索・並べ替え・キーワード・バックアップ・テーマ・IndexedDB 永続化に対応します。
-// @description:en Manage X post-notification subscriptions, hide adult spam and ads, simplify and widen the interface, download images/videos/GIFs with optional ZIP packaging, bypass age gates, and save browsed posts with search, sorting, keywords, backups, themes, and IndexedDB persistence.
+// @version      4.0.0
+// @description  BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
+// @description:zh-CN BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
+// @description:zh-TW BetterX 是一款 X（原 Twitter）增強腳本，支援本機貼文記錄、搜尋、收藏與備註，並整合廣告與成人引流內容過濾、媒體下載、貼文通知管理及介面最佳化。
+// @description:ja BetterX は、X（旧 Twitter）向けの機能拡張ユーザースクリプトです。ポストのローカル記録・検索・お気に入り・メモに加え、広告や成人向けスパムの非表示、メディア保存、ポスト通知の管理、UI の改善に対応します。
+// @description:en BetterX is a userscript for X (formerly Twitter) with local post history, search, favorites, and notes, plus ad and adult spam filtering, media downloads, post notification management, and interface improvements.
 // @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://m.x.com/*
@@ -66,6 +66,11 @@
     ['帖子', '貼文', 'ポスト', 'Posts'], ['通知', '通知', '通知', 'Notifications'], ['设置', '設定', '設定', 'Settings'],
     ['导出筛选', '匯出篩選結果', '絞り込み結果をエクスポート', 'Export filtered'],
     ['备份全部', '備份全部', 'すべてバックアップ', 'Back up all'], ['导出备份', '匯出備份', 'バックアップをエクスポート', 'Export backup'], ['导入', '匯入', 'インポート', 'Import'],
+    ['备份已分卷', '備份已分卷', 'バックアップを分割しました', 'Backup split into parts'],
+    ['数据较大，请保存全部分卷；恢复时可同时选择这些 JSON 文件。', '資料較大，請儲存全部分卷；還原時可同時選取這些 JSON 檔案。', 'データ量が多いため、すべての分割ファイルを保存してください。復元時にこれらの JSON ファイルをまとめて選択できます。', 'Save every part. You can select these JSON files together when restoring.'],
+    ['下载分卷', '下載分卷', '分割ファイルを保存', 'Download part'], ['完成', '完成', '完了', 'Done'],
+    ['无法导出：单条记录或设置超过备份容量限制。', '無法匯出：單筆記錄或設定超過備份容量限制。', '1 件の記録または設定がバックアップ容量の上限を超えています。', 'Cannot export: a record or the settings exceed the backup size limit.'],
+    ['此前已导入的分卷会保留，可重新选择文件继续恢复。', '先前已匯入的分卷會保留，可重新選取檔案繼續還原。', '読み込み済みの分割ファイルは保持されます。ファイルを選択し直して復元を続けられます。', 'Previously imported parts are kept. Select files again to continue restoring.'],
     ['清空', '清空', '消去', 'Clear'], ['快速筛选', '快速篩選', 'クイックフィルター', 'Quick filters'],
     ['搜索', '搜尋', '検索', 'Search'], ['搜索帖子', '搜尋貼文', 'ポストを検索', 'Search posts'],
     ['搜索作者、正文或备注…', '搜尋作者、內文或備註…', '投稿者・本文・メモを検索…', 'Search author, text, or notes…'],
