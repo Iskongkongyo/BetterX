@@ -704,6 +704,7 @@
 
   const downloadJobs = new Map();
   const pendingDownloadStarts = new Set();
+  const pendingDownloadSelections = new Set();
   const downloadTransferQueue = [];
   let activeDownloadTransfers = 0;
   let downloadUiRaf = 0;
@@ -893,18 +894,20 @@
       if (!button) return;
       const active = isActiveDownloadJob(job);
       const lookingUp = pendingDownloadStarts.has(statusId);
-      const downloadedBefore = !active && !lookingUp && isDownloadedPostRecorded(statusId);
+      const selecting = pendingDownloadSelections.has(statusId);
+      const downloadedBefore = !active && !lookingUp && !selecting && isDownloadedPostRecorded(statusId);
       const progress = getDownloadJobProgress(job);
-      control.dataset.downloadState = job ? job.status : lookingUp ? 'looking-up' : 'idle';
+      control.dataset.downloadState = lookingUp ? 'looking-up' : selecting ? 'selecting' : job ? job.status : 'idle';
       button.classList.toggle('is-progress', active || lookingUp);
       button.classList.toggle('is-downloaded', downloadedBefore);
       button.style.setProperty('--xv-download-progress', `${progress.percent * 3.6}deg`);
       renderDownloadButtonContent(button,
-        lookingUp ? uiText('获取中') : job && !downloadedBefore ? uiText(describeDownloadJob(job, true)) : '⬇',
+        lookingUp ? uiText('获取中') : selecting ? uiText('选择中') : job && !downloadedBefore ? uiText(describeDownloadJob(job, true)) : '⬇',
         downloadedBefore);
-      button.title = lookingUp ? uiText('正在获取视频地址…') : job && !downloadedBefore
+      button.title = lookingUp ? uiText('正在获取视频地址…') : selecting ? uiText('正在选择下载内容') : job && !downloadedBefore
         ? uiText(describeDownloadJob(job, false))
-        : uiText(downloadedBefore ? '已下载过媒体；点击可再次下载' : '下载图片/视频/GIF');
+        : downloadedBefore ? `${uiText('已下载过媒体；点击可再次下载')} · ${uiText(DOWNLOAD_BUTTON_HINT)}`
+          : uiText(DOWNLOAD_BUTTON_HINT);
       button.setAttribute('aria-label', button.title);
       if (cancel) cancel.hidden = !active;
       localizeBetterXTree(control);
@@ -913,8 +916,8 @@
     if (!state.downloadPillEl) return;
     const jobs = [...downloadJobs.values()];
     const activeJobs = jobs.filter(isActiveDownloadJob);
-    state.downloadPillEl.hidden = jobs.length === 0;
-    if (!jobs.length) {
+    state.downloadPillEl.hidden = !!state.settings.silentDownload || jobs.length === 0;
+    if (state.downloadPillEl.hidden) {
       if (state.downloadPopoverEl) state.downloadPopoverEl.hidden = true;
       return;
     }
@@ -941,7 +944,11 @@
   }
 
   function toggleDownloadPopover(force) {
-    if (!state.downloadPopoverEl || !downloadJobs.size) return;
+    if (!state.downloadPopoverEl) return;
+    if (state.settings.silentDownload || !downloadJobs.size) {
+      state.downloadPopoverEl.hidden = true;
+      return;
+    }
     const next = typeof force === 'boolean' ? force : state.downloadPopoverEl.hidden;
     state.downloadPopoverEl.hidden = !next;
     if (next) renderDownloadTaskPopover();
@@ -1255,36 +1262,56 @@
     }, previous.statusId, previous.postText, previous.postDate);
   }
 
-  async function handleDownloadClick(article, author, statusId) {
+  async function handleDownloadClick(article, author, statusId, options) {
     const id = String(statusId || '');
+    const selectMedia = options?.selectMedia === true;
+    if (pendingDownloadSelections.has(id)) return;
     if (pendingDownloadStarts.has(id)) { showToast('正在获取视频地址…'); return; }
     const existing = downloadJobs.get(id);
     if (isActiveDownloadJob(existing)) { toggleDownloadPopover(true); return; }
-    if (isDownloadedPostRecorded(statusId)
+    if (!selectMedia && isDownloadedPostRecorded(statusId)
       && !uiConfirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
-    let items = collectDownloadItems(article, statusId);
-    if (needsOnDemandVideoLookup(article, statusId)) {
-      pendingDownloadStarts.add(id);
-      scheduleDownloadUiRefresh();
-      showToast('正在获取视频地址…');
-      try {
-        const found = await requestTweetDetailMedia(statusId);
-        if (found) items = collectDownloadItems(article, statusId);
-      } catch (error) {
-        debugLog('download media lookup failed:', error);
-      } finally {
-        pendingDownloadStarts.delete(id);
+    if (selectMedia) pendingDownloadSelections.add(id);
+    try {
+      const postText = extractText(article);
+      const postDate = article.querySelector('time')?.getAttribute('datetime') || '';
+      let items = collectDownloadItems(article, statusId);
+      if (needsOnDemandVideoLookup(article, statusId)) {
+        pendingDownloadStarts.add(id);
         scheduleDownloadUiRefresh();
+        showToast('正在获取视频地址…');
+        try {
+          const found = await requestTweetDetailMedia(statusId);
+          // X 可能在查询期间复用文章节点；不能把新帖的 DOM 媒体放进旧帖任务。
+          const currentId = extractStatusIdFromUrl(getStatusLink(article));
+          if (currentId && currentId !== id) return;
+          if (found) items = collectDownloadItems(article, statusId);
+        } catch (error) {
+          debugLog('download media lookup failed:', error);
+        } finally {
+          pendingDownloadStarts.delete(id);
+          scheduleDownloadUiRefresh();
+        }
       }
+      if (state.settings.mediaDownload === false) return;
+      if (!items.length) {
+        showToast(getMissingMediaMessage(article), IS_VIOLENTMONKEY ? 7000 : undefined);
+        return;
+      }
+      if (selectMedia) {
+        scheduleDownloadUiRefresh();
+        items = await showDownloadMediaPicker(items, article);
+        if (!items?.length || state.settings.mediaDownload === false) return;
+        if (isDownloadedPostRecorded(statusId)
+          && !uiConfirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
+      }
+      const activeAfterLookup = downloadJobs.get(id);
+      if (isActiveDownloadJob(activeAfterLookup)) { toggleDownloadPopover(true); return; }
+      startDownloadJob(items, author, statusId, postText, postDate);
+    } finally {
+      pendingDownloadSelections.delete(id);
+      scheduleDownloadUiRefresh();
     }
-    if (!items.length) {
-      showToast(getMissingMediaMessage(article), IS_VIOLENTMONKEY ? 7000 : undefined);
-      return;
-    }
-    const activeAfterLookup = downloadJobs.get(id);
-    if (isActiveDownloadJob(activeAfterLookup)) { toggleDownloadPopover(true); return; }
-    const postDate = article.querySelector('time')?.getAttribute('datetime') || '';
-    startDownloadJob(items, author, statusId, extractText(article), postDate);
   }
 
   function isDownloadExcludedArticle(article) {
@@ -1349,28 +1376,26 @@
         return;
       }
       const existingControls = article.querySelector('.BetterX-download-controls');
+      const statusId = extractStatusIdFromUrl(getStatusLink(article));
+      if (!statusId) { existingControls?.remove(); return; }
       if (existingControls) {
+        existingControls.dataset.statusId = statusId;
         placeDownloadControls(article, existingControls);
         return;
       }
-      const statusId = extractStatusIdFromUrl(getStatusLink(article));
       // 没有帖子 ID 的通知/推荐卡片无法稳定命名和隔离任务，不注入下载控件。
-      if (!statusId) return;
       const hasDomMedia = article.querySelector('[data-testid="tweetPhoto"], [data-testid="videoComponent"], [data-testid="videoPlayer"], img[src*="pbs.twimg.com/media/"], video[poster]');
       const hasReg = statusId && (mediaRegistry.has(String(statusId)) || cardRegistry.has(String(statusId)));
       if (!hasDomMedia && !hasReg) return;
-      const author = extractAuthor(article);
       const controls = document.createElement('span');
       controls.className = 'BetterX-download-controls';
       controls.dataset.statusId = String(statusId || '');
       const btn = document.createElement('button');
       btn.className = 'BetterX-dl-btn';
       btn.type = 'button';
-      btn.title = '下载图片/视频/GIF';
+      btn.title = uiText(DOWNLOAD_BUTTON_HINT);
       btn.textContent = '⬇';
-      btn.addEventListener('click', (event) => {
-        event.preventDefault(); event.stopPropagation(); handleDownloadClick(article, author, statusId);
-      }, true);
+      bindDownloadButtonGestures(btn, article, controls);
       const cancel = document.createElement('button');
       cancel.className = 'BetterX-dl-cancel';
       cancel.type = 'button';
@@ -1378,7 +1403,7 @@
       cancel.textContent = '×';
       cancel.hidden = true;
       cancel.addEventListener('click', (event) => {
-        event.preventDefault(); event.stopPropagation(); cancelDownloadJob(statusId);
+        event.preventDefault(); event.stopPropagation(); cancelDownloadJob(controls.dataset.statusId);
       }, true);
       controls.append(btn, cancel);
       localizeBetterXTree(controls);
@@ -1388,6 +1413,7 @@
   }
 
   function removeDownloadButtons() {
+    closeDownloadMediaPicker();
     document.querySelectorAll('.BetterX-download-controls, .BetterX-dl-btn').forEach((el) => el.remove());
   }
 

@@ -6,7 +6,7 @@
 <h1 align="center">更好的 X（BetterX）</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.0.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.1.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
@@ -56,7 +56,7 @@
 
 - **内容净化**：隐藏黄推、成人引流机器人和广告，支持强度、白名单与自定义屏蔽词。英文短词、数字和通用引流词只作辅助判断，需结合独立的成人内容证据；自定义屏蔽词仍按用户规则直接匹配，账号白名单优先。
 - **界面简化与宽屏**：可隐藏侧栏、推广、消息栏 / Grok，并调整时间线宽度。
-- **媒体下载**：一键下载图片、视频和 GIF 内容，多媒体可自动打包 ZIP，并支持自定义文件名。GIF 内容默认保存为 MP4，也可选择在浏览器内转换为 GIF；命名变量随界面语言显示，已有模板继续兼容。
+- **媒体下载**：点击下载全部图片、视频和 GIF，长按约 0.5 秒或 Shift+点击可按缩略图勾选下载内容。多媒体可自动打包 ZIP，并支持自定义文件名。GIF 默认保存为 MP4，也可在浏览器内转换为 GIF；命名变量随界面语言显示，已有模板继续兼容。可开启“下载时保持静默”，隐藏应用徽标旁的任务提示。
 - **媒体显示优化**：支持多媒体网格视图，并可在本地解除年龄限制遮罩。
 - **主页与帖子增强**：支持主页默认页签、帖子“最近 / 热门”排序，以及自动展开长文。
 - **通知订阅管理**：可查看、同步并直接开关用户的帖子通知。
@@ -97,7 +97,8 @@
 | 关键词与排除词 | 在“设置 → 关键词与排除词”中添加 |
 | 内容净化 | 在“设置 → 内容净化”中调整黄推过滤、白名单等 |
 | 界面与宽屏 | 在“设置 → 界面简化与宽屏”中调整 |
-| 下载功能 | 在“设置 → 下载功能”中管理下载、GIF内容下载格式、ZIP 与命名规则 |
+| 下载功能 | 在“设置 → 下载功能”中管理下载、静默提示、GIF内容下载格式、ZIP 与命名规则 |
+| 选择下载 | 长按帖子下载按钮约 0.5 秒，或 Shift+点击，勾选媒体后点击“下载所选” |
 | 主页增强 | 在“设置 → 常用功能”中设置默认页签、帖子排序和长文展开 |
 | 其他设置 | Firefox 兼容、徽标、记录上限、主题等可在对应设置项中调整 |
 
@@ -154,6 +155,7 @@ BetterX 在部分功能实现与兼容性设计中参考了以下 MIT 用户脚�
 - [X (Twitter) 黄推清道夫](https://greasyfork.org/zh-CN/scripts/588348-x-twitter-%E9%BB%84%E6%8E%A8%E6%B8%85%E9%81%93%E5%A4%AB) — 参考 DOM-only 隐藏、风险原因和含蓄引流模板思路。
 - [X/Twitter Clean-up & Wide Layout Display](https://greasyfork.org/zh-CN/scripts/545419-x-twitter-clean-up-wide-layout-display) — 参考界面净化、侧栏控制与时间线加宽功能。
 - [Azuki 的 X/Twitter 媒体批量下载器](https://greasyfork.org/zh-CN/scripts/528890) — 参考通过脚本管理器请求单帖详情、补取真实视频媒体地址的兼容思路。
+- [微博/X图片批量下载器](https://github.com/gbandszxc/weibo-image-downloader) — 参考长按下载按钮、缩略图勾选及确认下载的交互设计。
 
 ---
 

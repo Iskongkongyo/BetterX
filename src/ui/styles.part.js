@@ -8,7 +8,7 @@
   function installStyles() {
     addStyle(`
       #BetterX-root {
-        position: fixed; left: 16px; bottom: 16px; z-index: 2147483000;
+        position: fixed; display: flex; left: 16px; bottom: 16px; z-index: 2147483000;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         --xv-panel-bg: rgba(21,24,28,0.98);
         --xv-text: #e7e9ea;
@@ -292,6 +292,37 @@
       }
       .BetterX-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 18px; }
       .BetterX-dialog-actions .BetterX-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; }
+      .BetterX-media-picker-overlay, .BetterX-media-picker-overlay * { box-sizing: border-box; }
+      .BetterX-media-picker {
+        display: flex; flex-direction: column; width: min(92vw, 560px); max-height: 82dvh; overflow: hidden;
+      }
+      .BetterX-media-picker .BetterX-dialog-title { flex: 0 0 auto; }
+      .BetterX-media-picker-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+      .BetterX-media-picker-count { color: var(--xv-muted); font-size: 13px; }
+      .BetterX-media-picker-grid {
+        display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;
+        overflow: auto; overscroll-behavior: contain; min-height: 0; padding: 3px;
+      }
+      .BetterX-media-picker-item {
+        position: relative; display: flex; flex-direction: column; min-width: 0; cursor: pointer;
+        border: 2px solid var(--xv-border); border-radius: 10px; overflow: hidden; background: var(--xv-chip-bg);
+      }
+      .BetterX-media-picker-item:has(input:checked) { border-color: var(--xv-accent); }
+      .BetterX-media-picker-item:focus-within { outline: 2px solid var(--xv-accent); outline-offset: 1px; }
+      .BetterX-media-picker-item input {
+        position: absolute; top: 7px; right: 7px; z-index: 2; width: 18px; height: 18px; margin: 0;
+        accent-color: var(--xv-accent); cursor: pointer;
+      }
+      .BetterX-media-picker-thumb { position: relative; display: block; aspect-ratio: 1; overflow: hidden; }
+      .BetterX-media-picker-placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: var(--xv-muted); font-size: 12px; }
+      .BetterX-media-picker-thumb img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; }
+      .BetterX-media-picker-caption { padding: 5px 6px; color: var(--xv-text); font-size: 12px; text-align: center; }
+      .BetterX-media-picker .BetterX-dialog-actions { flex: 0 0 auto; }
+      .BetterX-media-picker button:disabled { opacity: .45; cursor: default; }
+      @media (max-width: 420px) {
+        .BetterX-media-picker { padding: 14px; }
+        .BetterX-media-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
       .BetterX-language-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
       .BetterX-language-option {
         display: grid; grid-template-columns: 38px minmax(0, 1fr) 18px; align-items: center; gap: 9px;

@@ -137,6 +137,7 @@
       assert(duringUpdates > 0, 'Continuous updates starved capture');
       assert(transientCaptures > 0, 'The transient article was never captured');
       assert((await api.dbGetAllPosts()).some(post => post.id === '999999'), 'The transient post was not persisted');
+      busy.remove();
       return { capturesDuringUpdates: duringUpdates, transientCaptures };
     });
 
@@ -240,6 +241,140 @@
       for (const article of [...articles,positive]) article.remove();
       return {benignPosts:texts.length,modes:2,benignCaptured:true,adultPromotionFiltered:true,userOverridesVerified:true};
     });
+    await check('desktop icon position survives viewport changes and cancelled drags', async () => {
+      const frame = document.createElement('iframe');
+      frame.style.cssText = 'width:900px;height:600px;border:0';
+      frame.srcdoc = '<!doctype html><html lang="zh-CN"><script>window.GM_getValue=(_key,fallback)=>fallback;</script><script src="/userscript.js"></script><body></body></html>';
+      document.body.append(frame);
+      let local;
+      try {
+        await new Promise(resolve => frame.addEventListener('load', resolve, {once:true}));
+        const win = frame.contentWindow;
+        local = win.__test;
+        local.installStyles();
+        local.createUI();
+        local.setSettingsPartial({useMobileBadgeOnDesktop:true,badgePos:{left:800,bottom:80}});
+        const badge = local.state.badgeEl;
+        const emit = (type, dx=0, dy=0, pointerId=1) => badge.dispatchEvent(new win.PointerEvent(type, {
+          bubbles:true, pointerId, button:0, isPrimary:true, clientX:830+dx, clientY:490+dy,
+        }));
+        emit('pointerdown'); emit('pointermove',10,-20); emit('pointerup',10,-20);
+        await local.state.dbWriteQueue;
+        const saved = (await local.dbGetSetting('settings')).badgePos;
+        assert(Number.isFinite(saved.right), 'The saved edge was lost during IndexedDB persistence');
+        const initial = badge.getBoundingClientRect();
+        const right = win.innerWidth - initial.right;
+        assert(Math.abs(initial.left-810)<1, 'Desktop drag did not reach the intended location');
+        frame.style.width = '1600px';
+        await sleep(50);
+        local.repositionBadge();
+        assert(Math.abs(win.innerWidth-badge.getBoundingClientRect().right-right)<1,
+          'Widening the desktop viewport moved the icon away from its saved right edge');
+        local.setSettingsPartial({useMobileBadgeOnDesktop:false});
+        assert(Math.abs(win.innerWidth-badge.getBoundingClientRect().right-right)<1,
+          'Switching to a text badge measured the old icon content');
+        local.setSettingsPartial({useMobileBadgeOnDesktop:true});
+        frame.style.width = '390px'; await sleep(50); local.repositionBadge();
+        assert(local.state.rootEl.classList.contains('BetterX-mobile'), 'The mobile breakpoint was not entered');
+        frame.style.width = '1600px'; await sleep(50); local.repositionBadge();
+        assert(Math.abs(win.innerWidth-badge.getBoundingClientRect().right-right)<1,
+          'A temporary mobile viewport overwrote the desktop location');
+        // Simulate a reload by applying only the persisted position to a new UI.
+        local.state.rootEl.remove(); local.createUI();
+        local.setSettingsPartial({badgePos:saved});
+        assert(Math.abs(win.innerWidth-local.state.badgeEl.getBoundingClientRect().right-right)<1,
+          'Reloading at a different viewport width lost the saved edge');
+        const currentBadge = local.state.badgeEl;
+        const point = currentBadge.getBoundingClientRect();
+        for (const [type, dx] of [['pointerdown',0],['pointermove',-150],['pointercancel',-150]]) {
+          currentBadge.dispatchEvent(new win.PointerEvent(type, {bubbles:true,pointerId:2,button:0,isPrimary:true,clientX:point.left+20+dx,clientY:point.top+20}));
+        }
+        assert(JSON.stringify(local.state.settings.badgePos)===JSON.stringify(saved), 'A cancelled drag overwrote the saved position');
+        assert(Math.abs(currentBadge.getBoundingClientRect().left-point.left)<1, 'A cancelled drag did not restore the saved position');
+        const pointer = (type, id, button, x) => currentBadge.dispatchEvent(new win.PointerEvent(type, {
+          bubbles:true,pointerId:id,button,isPrimary:true,clientX:x,clientY:point.top+20,
+        }));
+        pointer('pointerdown',3,2,point.left+20); pointer('pointermove',3,2,point.left-100); pointer('pointerup',3,2,point.left-100);
+        assert(JSON.stringify(local.state.settings.badgePos)===JSON.stringify(saved), 'The secondary mouse button moved the icon');
+        pointer('pointerdown',4,0,point.left+20); pointer('pointermove',5,0,point.left-100); pointer('pointerup',5,0,point.left-100);
+        assert(Math.abs(currentBadge.getBoundingClientRect().left-point.left)<1, 'Another pointer moved the active drag');
+        pointer('pointercancel',4,0,point.left+20);
+        local.setSettingsPartial({badgePos:{left:20,bottom:80,right:1516}});
+        frame.style.width='900px'; await sleep(50); local.repositionBadge();
+        assert(Math.abs(currentBadge.getBoundingClientRect().left-20)<1, 'The saved left edge was not preserved');
+        local.setSettingsPartial({badgePos:{left:810,bottom:100,right:26}});
+        frame.style.width='680px'; await sleep(50); local.repositionBadge();
+        assert(Math.abs(win.innerWidth-currentBadge.getBoundingClientRect().right-26)<1, 'A narrow desktop viewport lost the right edge');
+        frame.style.width='390px'; await sleep(50);
+        local.setSettingsPartial({useMobileBadgeHandle:true,mobileBadgeHandleTop:150});
+        const touch = (type, id, y) => currentBadge.dispatchEvent(new win.PointerEvent(type, {
+          bubbles:true,pointerId:id,button:0,isPrimary:true,pointerType:'touch',clientX:385,clientY:y,
+        }));
+        touch('pointerdown',6,180); await sleep(480); touch('pointermove',6,330); touch('pointercancel',6,330);
+        assert(local.state.settings.mobileBadgeHandleTop===150 && local.state.rootEl.style.top==='150px',
+          'Cancelling a mobile handle drag did not retain the saved position');
+        touch('pointerdown',7,180); await sleep(480); touch('pointermove',7,330); touch('pointerup',7,330);
+        assert(local.state.settings.mobileBadgeHandleTop>150, 'A completed mobile handle drag was not saved');
+        assert(local.state.settings.badgePos.right===26, 'Dragging the mobile handle overwrote the desktop position');
+        return {savedRight:right,viewportWidths:[900,1600,390,1600,900,680,390],indexedDbAndCancelVerified:true,mobileHandleVerified:true};
+      } finally {
+        if (local) { await local.state.dbWriteQueue; (await local.openDb()).close(); }
+        frame.remove();
+      }
+    });
+
+    await check('quiet downloads hide only the badge task indicator and restore it immediately', async () => {
+      api.setSettingsPartial({silentDownload:false});
+      const job = {id:'quiet-download',status:'downloading',baseName:'sample',createdAt:1,updatedAt:1,
+        itemProgress:[{loaded:25,total:100,totalKnown:true}],items:[{}]};
+      api.downloadJobs.set(job.id,job);
+      const controls = document.createElement('div');
+      controls.className = 'BetterX-download-controls'; controls.dataset.statusId = job.id;
+      controls.innerHTML = '<button class="BetterX-dl-btn"></button><button class="BetterX-dl-cancel"></button>';
+      document.querySelector('main').append(controls);
+      const visible = element => !element.hidden && getComputedStyle(element).display !== 'none';
+      try {
+        api.refreshDownloadUi();
+        assert(visible(api.state.downloadPillEl), 'The default download indicator was hidden');
+        api.toggleDownloadPopover(true);
+        assert(visible(api.state.downloadPopoverEl), 'The task popover did not open');
+        api.setPanelView('settings'); api.togglePanel(true);
+        const toggle = document.querySelector('#BetterX-silent-download');
+        assert(toggle && !toggle.checked, 'The quiet toggle is missing or enabled by default');
+        toggle.checked = true; toggle.dispatchEvent(new Event('change',{bubbles:true}));
+        await api.state.dbWriteQueue; await sleep(40);
+        assert(api.state.settings.silentDownload===true, 'The quiet toggle did not update settings');
+        assert((await api.dbGetSetting('settings')).silentDownload===true, 'Quiet mode was not saved in IndexedDB');
+        assert(!visible(api.state.downloadPillEl) && !visible(api.state.downloadPopoverEl), 'Quiet mode left badge task UI visible');
+        api.toggleDownloadPopover(true);
+        assert(!visible(api.state.downloadPopoverEl), 'The task popover could reopen while quiet');
+        assert(!controls.querySelector('.BetterX-dl-cancel').hidden, 'Quiet mode removed the post cancel control');
+        job.itemProgress[0].loaded=75; api.refreshDownloadUi();
+        assert(controls.querySelector('.BetterX-dl-btn').textContent==='75%', 'Post download progress stopped updating');
+        assert(api.downloadJobs.get(job.id)===job && job.status==='downloading', 'Quiet mode changed the active job');
+        toggle.checked=false; toggle.dispatchEvent(new Event('change',{bubbles:true})); await sleep(40);
+        assert(visible(api.state.downloadPillEl), 'Turning quiet mode off did not restore the current task');
+        assert(api.state.downloadPillEl.textContent.includes('75%'), 'The restored indicator has stale progress');
+        assert(!visible(api.state.downloadPopoverEl), 'Turning quiet mode off reopened the old popover');
+        api.applySettingsSnapshot({...api.state.settings,silentDownload:true}); await sleep(40);
+        assert(!visible(api.state.downloadPillEl), 'Restored settings did not hide the indicator');
+        api.applySettingsSnapshot({...api.state.settings,silentDownload:false}); await sleep(40);
+        assert(visible(api.state.downloadPillEl), 'Restored settings did not show the indicator');
+        job.status='done'; api.refreshDownloadUi();
+        api.setSettingsPartial({silentDownload:true}); await sleep(40);
+        assert(!visible(api.state.downloadPillEl), 'Quiet mode showed the completed task');
+        api.state.rootEl.classList.add('BetterX-mobile'); api.refreshDownloadUi();
+        assert(!visible(api.state.downloadPillEl), 'Quiet mode left the mobile task indicator visible');
+        api.setSettingsPartial({silentDownload:false}); api.togglePanel(false); await sleep(40);
+        assert(visible(api.state.downloadPillEl), 'The mobile indicator did not return when quiet mode was disabled');
+        return {defaultEnabled:false,inFlightToggle:true,postProgressAndCancelPreserved:true,restoredSettingsVerified:true};
+      } finally {
+        api.downloadJobs.delete(job.id); controls.remove();
+        api.state.rootEl.classList.remove('BetterX-mobile');
+        api.setSettingsPartial({silentDownload:false}); api.togglePanel(false); api.refreshDownloadUi();
+      }
+    });
+    await window.__runDownloadSelectionTests(api, check);
   } catch (error) {
     results.push({ name: 'browser setup', passed: false, error: String(error.stack || error) });
   }

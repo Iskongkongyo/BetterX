@@ -6,7 +6,7 @@ import {
 } from './strip-comments.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const outputPath = resolve(root, '更好的X（BetterX）v4.0.0.js');
+const outputPath = resolve(root, '更好的X（BetterX）v4.1.0.js');
 const parts = [
   'src/00-bootstrap-i18n.part.js',
   'src/core/config-state.part.js',
@@ -14,6 +14,7 @@ const parts = [
   'src/core/storage-posts.part.js',
   'src/core/network-harvest.part.js',
   'src/download/download.part.js',
+  'src/download/media-picker.part.js',
   'src/features/media-age-dialogs.part.js',
   'src/features/ads-layout.part.js',
   'src/features/adult-spam.part.js',
@@ -73,8 +74,8 @@ const output = chunks.map((chunk, index) => {
 if (!output.startsWith('// ==UserScript==')) {
   throw new Error('Build aborted: userscript metadata header is missing.');
 }
-if (!output.includes('// @version      4.0.0')) {
-  throw new Error('Build aborted: expected version 4.0.0.');
+if (!output.includes('// @version      4.1.0')) {
+  throw new Error('Build aborted: expected version 4.1.0.');
 }
 if (!output.trimEnd().endsWith('})();')) {
   throw new Error('Build aborted: userscript wrapper is incomplete.');

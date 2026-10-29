@@ -481,7 +481,12 @@
     if (!state.rootEl || !pos || typeof pos.left !== 'number' || typeof pos.bottom !== 'number') return;
     const badgeWidth = state.badgeEl ? Math.max(1, state.badgeEl.offsetWidth) : 60;
     const badgeHeight = state.badgeEl ? Math.max(1, state.badgeEl.offsetHeight) : 60;
-    state.rootEl.style.left = Math.max(4, Math.min(window.innerWidth - badgeWidth - 4, pos.left)) + 'px';
+    // 靠右停放时记住右侧间距，避免更换屏幕、缩放或调整窗口后留在屏幕中间。
+    const anchorRight = Number.isFinite(pos.right) && pos.right < pos.left;
+    state.rootEl.style.left = anchorRight ? 'auto'
+      : Math.max(4, Math.min(window.innerWidth - badgeWidth - 4, pos.left)) + 'px';
+    state.rootEl.style.right = anchorRight
+      ? Math.max(4, Math.min(window.innerWidth - badgeWidth - 4, pos.right)) + 'px' : 'auto';
     state.rootEl.style.bottom = Math.max(4, Math.min(window.innerHeight - badgeHeight - 4, pos.bottom)) + 'px';
   }
 
@@ -680,6 +685,8 @@
     const useIconBadge = isMobile || !!state.settings.useMobileBadgeOnDesktop;
     state.badgeEl.classList.toggle('mobile-mode', useIconBadge);
     state.badgeEl.classList.toggle('desktop-icon-mode', !isMobile && useIconBadge);
+    // 先切换内容，再测量；从圆形图标切回文字徽标时宽度也应正确。
+    refreshBadge();
     if (isMobile) {
       state.rootEl.classList.add('BetterX-mobile');
       if (collapseMobileBadge) {
@@ -708,7 +715,6 @@
     }
     updateBadgeToggleLabel();
     updatePanelPlacement();
-    refreshBadge();
     scheduleDownloadUiRefresh();
   }
 
@@ -716,6 +722,7 @@
     const badge = state.badgeEl;
     if (!badge) return;
     let startX = 0, startY = 0, origLeft = 0, origBottom = 0, dragging = false, moved = false;
+    let desktopPointerId = null;
     let mobilePointerId = null, mobileStartX = 0, mobileStartY = 0, mobileLongPressTimer = null;
     let mobileDragging = false, mobileCaptured = false;
 
@@ -730,6 +737,7 @@
     });
 
     badge.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.isPrimary === false || dragging || mobilePointerId !== null) return;
       if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) {
         if (!state.rootEl.classList.contains('BetterX-mobile-badge-collapsed')) return;
         mobilePointerId = e.pointerId;
@@ -752,9 +760,10 @@
         return;
       }
       dragging = true; moved = false;
+      desktopPointerId = e.pointerId;
       badge.classList.add('is-dragging');
       startX = e.clientX; startY = e.clientY;
-      const rect = state.rootEl.getBoundingClientRect();
+      const rect = badge.getBoundingClientRect();
       origLeft = rect.left;
       origBottom = window.innerHeight - rect.bottom;
       try { badge.setPointerCapture(e.pointerId); } catch (err) {}
@@ -773,7 +782,8 @@
         state.rootEl.style.top = Math.round(top) + 'px';
         return;
       }
-      if (!dragging) return;
+      if (!dragging || desktopPointerId !== e.pointerId) return;
+      if (state.rootEl.classList.contains('BetterX-mobile')) { end(e); return; }
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
       if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
@@ -783,15 +793,18 @@
       const left = Math.max(4, Math.min(window.innerWidth - badgeWidth - 4, origLeft + dx));
       const bottom = Math.max(4, Math.min(window.innerHeight - badgeHeight - 4, origBottom - dy));
       state.rootEl.style.left = left + 'px';
+      state.rootEl.style.right = 'auto';
       state.rootEl.style.bottom = bottom + 'px';
       updatePanelPlacement();
     });
     const end = (e) => {
       if (e && mobilePointerId === e.pointerId) {
         clearMobileLongPress();
-        if (mobileDragging) {
+        if (mobileDragging && e.type === 'pointerup') {
           state.settings.mobileBadgeHandleTop = getMobileBadgeHandleTop(parseFloat(state.rootEl.style.top));
           queueSettingsPersist(['mobileBadgeHandleTop']);
+        } else if (mobileDragging) {
+          repositionBadge();
         }
         if (mobileCaptured) {
           try { badge.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -802,18 +815,24 @@
         badge.classList.remove('is-mobile-dragging');
         return;
       }
-      if (!dragging) return;
+      if (!dragging || desktopPointerId !== e.pointerId) return;
       dragging = false;
+      desktopPointerId = null;
       badge.classList.remove('is-dragging');
-      if (moved) {
-        const rect = state.rootEl.getBoundingClientRect();
-        state.settings.badgePos = { left: rect.left, bottom: window.innerHeight - rect.bottom };
+      if (e.type !== 'pointerup' || state.rootEl.classList.contains('BetterX-mobile')) {
+        repositionBadge();
+      } else if (moved) {
+        const rect = badge.getBoundingClientRect();
+        state.settings.badgePos = { left: rect.left, bottom: window.innerHeight - rect.bottom,
+          right: Math.max(0, window.innerWidth - rect.right) };
         queueSettingsPersist(['badgePos']);
         badge.addEventListener('click', (ev) => { ev.stopImmediatePropagation(); ev.preventDefault(); }, { once: true, capture: true });
       }
+      try { badge.releasePointerCapture(e.pointerId); } catch (err) {}
     };
     badge.addEventListener('pointerup', end);
     badge.addEventListener('pointercancel', end);
+    badge.addEventListener('lostpointercapture', end);
   }
 
   function revealMobileBadge() {

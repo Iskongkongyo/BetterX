@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v4.0.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v4.1.0.js', import.meta.url);
 let source = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(source, startupPattern, '找不到脚本启动标记');
@@ -115,6 +115,17 @@ assert.deepEqual(sanitized.knownFollowedHandles, ['alice']);
 assert.equal(sanitized.notificationSubscriptionsSyncedAt, 123);
 assert.deepEqual(sanitized.downloadedPostIds, ['123']);
 assert.deepEqual(sanitized.badgePos, { left: 12, bottom: 34 });
+assert.deepEqual(JSON.parse(JSON.stringify(api.sanitizeSettings({
+  badgePos: { left: 810, bottom: 100, right: 26 },
+}).badgePos)), { left: 810, bottom: 100, right: 26 }, '保存的右侧边距应在设置清理后保留');
+for (const right of [-1, Infinity, '26']) {
+  assert.deepEqual(JSON.parse(JSON.stringify(api.sanitizeSettings({
+    badgePos: { left: 12, bottom: 34, right },
+  }).badgePos)), { left: 12, bottom: 34 }, '无效的右侧边距应忽略，并保留旧版坐标');
+}
+assert.equal(api.DEFAULT_SETTINGS.silentDownload, false);
+assert.equal(api.sanitizeSettings({ silentDownload: true }).silentDownload, true);
+assert.equal(api.sanitizeSettings({ silentDownload: 'true' }).silentDownload, false);
 assert.equal(sanitized.hideAppBadge, true);
 assert.equal(sanitized.useMobileBadgeHandle, false);
 assert.equal(sanitized.mobileBadgeHandleTop, 13);
@@ -150,6 +161,7 @@ api.state.settings = {
   profileDefaultView: 'video',
   gifDownloadFormatEnabled: false,
   gifDownloadFormat: 'gif',
+  silentDownload: true,
 };
 api.syncSettingsControls();
 assert.equal(controls.get('#BetterX-theme').value, 'dark');
@@ -158,6 +170,7 @@ assert.equal(controls.get('#BetterX-hide-nfl').checked, false);
 assert.equal(controls.get('#BetterX-profile-default-view').value, 'video');
 assert.equal(controls.get('#BetterX-gif-download-format-enabled').checked, false);
 assert.equal(controls.get('#BetterX-gif-download-format').value, 'gif');
+assert.equal(controls.get('#BetterX-silent-download').checked, true);
 
 assert.equal(api.readIntegerSetting({ value: '99999' }, 'maxPosts'), 5000);
 assert.equal(api.readIntegerSetting({ value: '7' }, 'flashMs', 1000), 7000);

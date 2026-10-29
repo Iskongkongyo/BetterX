@@ -11,7 +11,7 @@
   const cardRegistry = new Map(); // statusId -> { photos:[], gifs:[], videos:[] }
   // 视频海报 -> 真实 MP4。引用帖嵌套较深时，DOM 只保留外层帖子 ID，
   // 而 GraphQL 会把媒体登记在内层帖子 ID 下；用页面可见的海报 ID 跨层关联两者。
-  const videoPosterRegistry = new Map(); // posterKey -> { type:'video'|'gif', url }
+  const videoPosterRegistry = new Map(); // posterKey -> { type:'video'|'gif', url, thumbnailUrl }
   const tweetDetailMediaLookupJobs = new Map(); // statusId -> Promise<boolean>
   // 当全局网络采集没有命中视频时按需查询单帖详情；不依赖浏览器或兼容模式。
   const TWEET_DETAIL_QUERY_ID = 'zAz9764BcLZOJ0JU2wrd1A';
@@ -86,6 +86,7 @@
     setBoundedRegistryEntry(videoPosterRegistry, posterKey, {
       type: media.type === 'animated_gif' ? 'gif' : 'video',
       url: mp4Url,
+      thumbnailUrl: safeHttpsUrl(posterUrl, ['pbs.twimg.com']),
     });
   }
 

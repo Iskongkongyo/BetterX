@@ -1033,7 +1033,8 @@
             ? Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(timestamp))) : 0;
         }
         case 'badgePos': return value && Number.isFinite(value.left) && Number.isFinite(value.bottom)
-          ? { left: value.left, bottom: value.bottom } : null;
+          ? { left: value.left, bottom: value.bottom,
+            ...(Number.isFinite(value.right) && value.right >= 0 ? { right: value.right } : {}) } : null;
         case 'safeRegex': {
           const source = safeString(value, MAX_REGEX_SOURCE_LENGTH);
           return isSafeRegexSource(source) ? source : fallback;
@@ -1171,7 +1172,7 @@
   function resetPaging() { state.renderLimit = state.settings.pageSize || 60; }
 
   const SETTINGS_EFFECT_ORDER = [
-    'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'mediaDownload',
+    'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'mediaDownload', 'downloadUi',
     'ageBypass', 'mediaGrid', 'autoExpand', 'firefoxCompatibility', 'badge', 'panelWidth',
   ];
   const SETTINGS_EFFECT_HANDLERS = {
@@ -1197,6 +1198,9 @@
     },
     mediaDownload() {
       applyMediaDownload();
+    },
+    downloadUi() {
+      scheduleDownloadUiRefresh();
     },
     ageBypass() {
       applyAgeBypass();

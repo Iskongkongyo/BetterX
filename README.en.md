@@ -6,7 +6,7 @@
 <h1 align="center">BetterX</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.0.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.1.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
@@ -56,7 +56,7 @@ Have you run into any of these annoyances while browsing X?
 
 - **Content filtering**: Hides suspected adult spam and promotional bot accounts, with intensity levels, an allowlist, and custom block terms. Short English terms, numbers, and generic promotional cues require independent adult-content evidence. Custom block terms still apply directly, and the account allowlist takes precedence. Ad hiding is also available.
 - **Simplified and wide layout**: Hide the sidebar, promotions, the Messages bar / Grok, and adjust the timeline width.
-- **Media download**: Download images, videos, and GIF content, with optional ZIP packaging and custom file names. GIF content is saved as MP4 by default; select GIF to convert it in the browser. Naming variables follow the interface language, and existing templates remain supported.
+- **Media download**: Click to download all images, videos, and GIFs, or hold for about half a second (or Shift+click) to choose items by thumbnail. Multiple files can be packaged as ZIP, with custom file names. GIF content is saved as MP4 by default; select GIF to convert it in the browser. Naming variables follow the interface language, and existing templates remain supported. Enable *Keep downloads quiet* to hide the task indicator beside the app badge.
 - **Media display optimization**: Shows multiple media items in a grid, and can locally bypass the age-restriction mask.
 - **Profile & post enhancements**: Default profile tabs, *Recent / Popular* post sorting, and automatic expansion of post text.
 - **Notification subscription management**: View, sync, and toggle a user's post notifications directly.
@@ -97,7 +97,8 @@ Have you run into any of these annoyances while browsing X?
 | Keywords and exclusions | Add them under *Settings → Keywords and exclusions* |
 | Content filtering | Adjust adult-content filtering, the whitelist, etc. under *Settings → Content filtering* |
 | Simplified and wide layout | Adjust under *Settings → Simplified and wide layout* |
-| Downloads | Manage *GIF content download format*, ZIP, and naming rules under *Settings → Downloads* |
+| Downloads | Manage quiet mode, *GIF content download format*, ZIP, and naming rules under *Settings → Downloads* |
+| Select media | Hold a post's download button for about half a second, or Shift+click, then choose items and press *Download selected* |
 | Profile enhancements | Set the default tab, post sorting, and long-post expansion under *Settings → Common features* |
 | Other settings | Firefox compatibility, badge, post limit, theme, etc. can be adjusted in their respective settings |
 
@@ -154,6 +155,7 @@ BetterX references the following MIT-licensed userscripts for parts of its featu
 - [X (Twitter) 黄推清道夫](https://greasyfork.org/zh-CN/scripts/588348-x-twitter-%E9%BB%84%E6%8E%A8%E6%B8%85%E9%81%93%E5%A4%AB) (*X (Twitter) Adult-Spam Cleaner*) — Referenced ideas for DOM-only hiding, risk reasons, and subtle traffic-diversion templates.
 - [X/Twitter Clean-up & Wide Layout Display](https://greasyfork.org/zh-CN/scripts/545419-x-twitter-clean-up-wide-layout-display) — Referenced features for UI cleanup, sidebar control, and widening the timeline.
 - [Azuki 的 X/Twitter 媒体批量下载器](https://greasyfork.org/zh-CN/scripts/528890) (*Azuki's X/Twitter Media Batch Downloader*) — Referenced the compatibility approach of requesting single-post details through the script manager to obtain the real video media URL.
+- [微博/X图片批量下载器](https://github.com/gbandszxc/weibo-image-downloader) (*Weibo/X Image Batch Downloader*) — Referenced the interaction design for holding the download button, selecting thumbnails, and confirming the download.
 
 ---
 

@@ -193,7 +193,9 @@
           <summary>下载功能</summary>
           <div class="BetterX-adv-body">
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF</label>
-            <div class="BetterX-adv-label">开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。</div>
+            <div class="BetterX-adv-label">点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-silent-download" /> 下载时保持静默</label>
+            <div class="BetterX-adv-label">默认关闭；开启后隐藏应用徽标旁的下载任务提示和任务列表，帖子内的下载进度与取消按钮仍可使用。</div>
             <div class="BetterX-row BetterX-gif-format-row">
               <label class="BetterX-field inline"><input type="checkbox" id="BetterX-gif-download-format-enabled" /> GIF内容下载格式</label>
               <select class="BetterX-select" id="BetterX-gif-download-format" aria-label="GIF内容下载格式">

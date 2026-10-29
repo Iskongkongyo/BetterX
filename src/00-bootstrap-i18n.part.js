@@ -5,7 +5,7 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      4.0.0
+// @version      4.1.0
 // @description  BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
 // @description:zh-CN BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
 // @description:zh-TW BetterX 是一款 X（原 Twitter）增強腳本，支援本機貼文記錄、搜尋、收藏與備註，並整合廣告與成人引流內容過濾、媒體下載、貼文通知管理及介面最佳化。
@@ -134,6 +134,15 @@
     ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'],
     ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'],
     ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'],
+    ['下载时保持静默', '下載時保持靜默', 'ダウンロード中は通知を控える', 'Keep downloads quiet'],
+    ['点击下载全部，长按或 Shift+点击选择下载', '點擊下載全部，長按或 Shift+點擊選擇下載', 'クリックで全件保存、長押しまたは Shift+クリックで選択保存', 'Click to download all; hold or Shift+click to select media'],
+    ['选择要下载的媒体', '選擇要下載的媒體', '保存するメディアを選択', 'Select media to download'],
+    ['全选', '全選', 'すべて選択', 'Select all'], ['全不选', '全不選', 'すべて解除', 'Deselect all'],
+    ['下载所选', '下載所選', '選択したメディアを保存', 'Download selected'], ['已选', '已選', '選択済み', 'Selected'],
+    ['无预览', '無預覽', 'プレビューなし', 'No preview'], ['选择中', '選擇中', '選択中', 'Selecting'],
+    ['正在选择下载内容', '正在選擇下載內容', '保存するメディアを選択中', 'Selecting media to download'],
+    ['无法开始下载，请重试', '無法開始下載，請重試', 'ダウンロードを開始できません。再試行してください', 'Unable to start the download. Please try again.'],
+    ['默认关闭；开启后隐藏应用徽标旁的下载任务提示和任务列表，帖子内的下载进度与取消按钮仍可使用。', '預設關閉；開啟後隱藏應用徽章旁的下載工作提示和工作清單，貼文內的下載進度與取消按鈕仍可使用。', '初期設定はオフです。有効にするとアプリバッジ横のダウンロード表示とタスク一覧を隠します。ポスト内の進捗表示とキャンセルボタンは引き続き使えます。', 'Off by default. Hides the download indicator and task list beside the app badge. Download progress and cancel buttons in posts remain available.'],
     ['GIF内容下载格式', 'GIF 內容下載格式', 'GIF コンテンツの保存形式', 'GIF content download format'],
     ['默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。', '預設開啟；關閉時 GIF 內容會以原始 MP4 下載。選擇 GIF 時會在瀏覽器內轉換，耗時更長、檔案更大。', '既定で有効です。オフにすると GIF コンテンツは元の MP4 形式で保存されます。GIF を選ぶとブラウザー内で変換するため、時間がかかりファイルも大きくなります。', 'Enabled by default. When off, GIF content is saved as the original MP4. Selecting GIF converts it in the browser, which takes longer and produces larger files.'],
     ['自定义下载文件/压缩包名', '自訂下載檔案／壓縮檔名稱', 'ダウンロードファイル／ZIP 名をカスタマイズ', 'Customize downloaded file / ZIP names'],
@@ -198,7 +207,7 @@
     ['根据正文、账号名和引流特征综合判断，只在当前页面隐藏可疑帖子，不会拉黑账号。关闭后会恢复显示。', '根據內文、帳號名稱和引流特徵綜合判斷，只在目前頁面隱藏可疑貼文，不會封鎖帳號。關閉後會恢復顯示。', '本文、アカウント名、誘導の特徴から総合的に判定し、現在のページで疑わしいポストだけを非表示にします。アカウントはブロックせず、オフにすると再表示します。', 'Checks post text, account names, and spam signals, then hides suspicious posts only on the current page. It never blocks accounts; turn it off to show them again.'],
     ['自动读取 X 当前的时间线与左侧栏宽度（默认开启）', '自動讀取 X 目前的時間軸與左側欄寬度（預設開啟）', 'X の現在のタイムライン幅と左サイドバー幅を自動取得（既定でオン）', 'Automatically detect X timeline and left-sidebar widths (enabled by default)'],
     ['在消息页和设置页不会调整布局；关闭此功能即可恢复 X 原来的界面。', '在訊息頁和設定頁不會調整版面；關閉此功能即可恢復 X 原來的介面。', 'メッセージと設定ページではレイアウトを変更しません。この機能をオフにすると X 本来の表示に戻ります。', 'The layout is not changed on Messages or Settings pages. Turn this feature off to restore X’s original layout.'],
-    ['开启后帖子操作栏会显示下载进度与取消按钮；桌面端会显示下载任务胶囊，移动端则会显示带任务数气泡的蓝色下载按钮。', '開啟後貼文操作列會顯示下載進度與取消按鈕；桌面版顯示下載工作膠囊，行動版顯示帶工作數量的藍色下載按鈕。', '有効にするとポスト操作欄に進捗とキャンセルボタンを表示します。デスクトップではタスクピル、モバイルでは件数付きの青いボタンを表示します。', 'Shows download progress and cancel controls in post actions. Desktop gets a task pill; mobile gets a blue button with a task count.'],
+    ['点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。', '點擊下載按鈕儲存全部媒體；長按或 Shift+點擊可依縮圖選擇圖片、GIF 和影片。下載時貼文內會顯示進度與取消按鈕，徽章旁會顯示工作提示。', 'クリックで全メディアを保存します。長押しまたは Shift+クリックでサムネイルから画像・GIF・動画を選択できます。ダウンロード中はポスト内に進捗とキャンセルボタン、バッジ横にタスク表示が出ます。', 'Click to save all media, or hold or Shift+click to select images, GIFs and videos by thumbnail. Download progress and cancel buttons appear in posts, with a task indicator beside the app badge.'],
     ['默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。', '預設開啟；ZIP 內檔案使用下方「媒體檔名」範本。關閉後會同時下載多個媒體。', '既定でオンです。ZIP 内のファイル名には下のメディア名テンプレートを使います。オフの場合は複数ファイルを個別保存します。', 'Enabled by default. Files inside ZIP use the media filename template below. When disabled, media files download separately.'],
     ['默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設關閉；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオフです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Disabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'],
     ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 <code>{序號}</code>，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで <code>{連番}</code> がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If <code>{index}</code> is omitted for multiple media files, a number is appended automatically.'],

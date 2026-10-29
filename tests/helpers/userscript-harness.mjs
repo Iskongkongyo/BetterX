@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-export const source = await readFile(new URL('../../更好的X（BetterX）v4.0.0.js', import.meta.url), 'utf8');
+export const source = await readFile(new URL('../../更好的X（BetterX）v4.1.0.js', import.meta.url), 'utf8');
 const startup = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 
 export function instrumentUserscript(exports, setup = '') {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v4.0.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v4.1.0.js', import.meta.url);
 const originalSource = await readFile(scriptPath, 'utf8');
 const panelSource = await readFile(new URL('../src/ui/panel.part.js', import.meta.url), 'utf8');
 const panelTemplateStart = panelSource.indexOf('panel.innerHTML = ') + 'panel.innerHTML = '.length;
@@ -147,6 +147,26 @@ for (const [locale, prefix, userName, indexToken] of [
   assert.equal(api.state.downloadAdvancedStateEl.hidden, true, '默认模板的本地化别名不能误判为自定义模板');
 }
 const englishPanel = english.renderPanelHtml();
+for (const [locale, label] of [
+  ['zh-CN', '下载时保持静默'], ['zh-TW', '下載時保持靜默'],
+  ['ja', 'ダウンロード中は通知を控える'], ['en-US', 'Keep downloads quiet'],
+]) {
+  const localized = load(locale);
+  assert.equal(localized.uiText('下载时保持静默'), label);
+  assert.ok(localized.renderPanelHtml().includes(`id="BetterX-silent-download" /> ${label}`));
+  const help = '默认关闭；开启后隐藏应用徽标旁的下载任务提示和任务列表，帖子内的下载进度与取消按钮仍可使用。';
+  if (locale !== 'zh-CN') assert.notEqual(localized.uiText(help), help);
+}
+for (const [locale, title] of [
+  ['zh-CN','选择要下载的媒体'],['zh-TW','選擇要下載的媒體'],
+  ['ja','保存するメディアを選択'],['en-US','Select media to download'],
+]) {
+  const localized=load(locale);
+  assert.equal(localized.uiText('选择要下载的媒体'),title);
+  for(const key of ['全选','全不选','下载所选','已选','无预览','选择中','点击下载全部，长按或 Shift+点击选择下载']) {
+    if(locale!=='zh-CN')assert.notEqual(localized.uiText(key),key,`${locale}: ${key}`);
+  }
+}
 assert.ok(englishPanel.includes('placeholder="Example: [\\s_]+"'));
 assert.ok(englishPanel.includes('placeholder="Example: _; supports $1"'));
 assert.ok(englishPanel.includes('Capture replacements such as <code>$1</code> are supported'));
