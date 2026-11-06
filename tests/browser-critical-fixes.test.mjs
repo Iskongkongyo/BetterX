@@ -15,7 +15,7 @@ const script = instrumentUserscript(`
   createUI, installStyles, togglePanel, refreshUI, dispatchPanelAction, rebuildPostIndex,
   openDb, dbPutPost, dbGetAllPosts, dbDeleteMany, dbGetSetting, scheduleCrossTabReload, flushCrossTabReload,
   captureArticle, getAdultSpamInput, backupAll, importPosts, closeBetterXDialog,
-  startObserver, isSafeRegexSource, keywordRuleMatches,
+  startObserver, scanArticles, installNavigationListener, isSafeRegexSource, keywordRuleMatches,
   setPanelView, applySettingsSnapshot, renderNotificationSubscriptions, notificationSubscriptions,
   setSettingsPartial, applyAdultSpamFiltering,
   repositionBadge, refreshDownloadUi, toggleDownloadPopover, downloadJobs,
@@ -101,10 +101,19 @@ try {
   await send('Fetch.enable',{patterns:[{urlPattern:'https://*'}]});
   await send('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/` });
   let results;
+  let hoveredAuthorLinks = false;
   for (let attempt = 0; attempt < 200; attempt++) {
-    const response = await send('Runtime.evaluate', { expression: 'window.__browserResults', returnByValue: true });
-    results = response.result?.value;
+    const response = await send('Runtime.evaluate', {
+      expression: '({ results: window.__browserResults, hoverPoint: window.__authorLinksHoverPoint })',
+      returnByValue: true,
+    });
+    const snapshot = response.result?.value;
+    results = snapshot?.results;
     if (results) break;
+    if (snapshot?.hoverPoint && !hoveredAuthorLinks) {
+      hoveredAuthorLinks = true;
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...snapshot.hoverPoint });
+    }
     await sleep(200);
   }
   assert.ok(results, 'Browser regressions did not finish');
@@ -163,7 +172,7 @@ try {
     finally {await send('Runtime.evaluate',{expression:'window.__nativeDownload?.cleanup()'});}
   }
   console.log(JSON.stringify(results, null, 2));
-  assert.equal(results.length, 14);
+  assert.equal(results.length, 15);
   assert.ok(results.every(result => result.passed), 'One or more browser regressions failed');
   const errors = await send('Runtime.evaluate', { expression: 'window.__browserErrors', returnByValue: true });
   assert.deepEqual(errors.result.value, [], 'Browser emitted unexpected errors');

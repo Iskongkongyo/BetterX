@@ -236,6 +236,7 @@
     profilePostSortEnabled: bool(true, bind('profilePostSortEnabledEl', '#BetterX-profile-post-sort-enabled')),
     profilePostSort: setting('recent', ['enum', PROFILE_POST_SORT_OPTIONS], bind('profilePostSortEl', '#BetterX-profile-post-sort', 'value')),
     autoExpandPostText: bool(false, bind('autoExpandPostTextEl', '#BetterX-auto-expand-post-text'), ['autoExpand']),
+    authorLinksEnabled: bool(false, bind('authorLinksEnabledEl', '#BetterX-author-links-enabled'), ['authorLinks']),
     downloadTimeout: setting(360000, ['int', 5000, 600000]),
     downloadConcurrency: setting(2, ['int', DOWNLOAD_MIN_CONCURRENCY, DOWNLOAD_MAX_CONCURRENCY]),
   });

@@ -1173,7 +1173,7 @@
 
   const SETTINGS_EFFECT_ORDER = [
     'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'mediaDownload', 'downloadUi',
-    'ageBypass', 'mediaGrid', 'autoExpand', 'firefoxCompatibility', 'badge', 'panelWidth',
+    'ageBypass', 'mediaGrid', 'autoExpand', 'authorLinks', 'firefoxCompatibility', 'badge', 'panelWidth',
   ];
   const SETTINGS_EFFECT_HANDLERS = {
     keywords() {
@@ -1211,6 +1211,7 @@
     autoExpand(nextPartial) {
       if (nextPartial.autoExpandPostText) expandPostShowMore(document);
     },
+    authorLinks: refreshAuthorLinks,
     firefoxCompatibility(nextPartial) {
       if (!IS_FIREFOX) return;
       state.settings.firefoxCompatibilityPrompted = true;

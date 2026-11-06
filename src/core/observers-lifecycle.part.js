@@ -60,6 +60,7 @@
         // 向下滚动时 X 通过虚拟列表异步插入帖子；这里是首屏 scanArticles 之外的增量入口。
         if (state.settings.autoExpandPostText && !deferAutoExpand) expandPostShowMore(article);
       }
+      refreshAuthorLinks();
       if (deferAutoExpand) schedulePostShowMoreExpansion();
       if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
       if (layoutNeedsFullRefresh) throttledLayoutRefresh();
@@ -127,6 +128,7 @@
         if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
       }
       if (pendingRoots.size) flushAddedRoots();
+      else if (hadRemoval) refreshAuthorLinks();
       if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) scheduleMobileBadgeSync();
     });
     // X 是 SPA，主时间线容器会被整体替换；保留 body 作为稳定根节点，但把重活批量延后并按 article 去重。

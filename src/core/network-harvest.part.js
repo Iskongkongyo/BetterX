@@ -224,6 +224,44 @@
     }
   }
 
+  async function requestAuthorProfileLinks(screenName) {
+    const params = new URLSearchParams({
+      variables: JSON.stringify({ screen_name: screenName, withGrokTranslatedBio: true }),
+      features: JSON.stringify({
+        hidden_profile_subscriptions_enabled: true,
+        profile_label_improvements_pcf_label_in_post_enabled: true,
+        responsive_web_profile_redirect_enabled: true,
+        rweb_tipjar_consumption_enabled: false,
+        verified_phone_label_enabled: false,
+        subscriptions_verification_info_is_identity_verified_enabled: true,
+        subscriptions_verification_info_verified_since_enabled: true,
+        highlights_tweets_tab_ui_enabled: true,
+        responsive_web_twitter_article_notes_tab_enabled: true,
+        subscriptions_feature_can_gift_premium: false,
+        creator_subscriptions_tweet_preview_api_enabled: true,
+        responsive_web_graphql_timeline_navigation_enabled: true,
+      }),
+      fieldToggles: JSON.stringify({ withPayments: false, withAuxiliaryUserLabels: true }),
+    });
+    const payload = await requestXSessionJson('/i/api/graphql/AMIBMjtxEEATh4z8V9GtRg/UserByScreenName?' + params);
+    const entities = payload?.data?.user?.result?.profile_bio?.entities;
+    const links = new Map();
+    for (const field of [entities?.description, entities?.url]) {
+      if (!Array.isArray(field?.urls)) continue;
+      for (const entry of field.urls) {
+        const rawUrl = entry?.expanded_url || entry?.url;
+        if (typeof rawUrl !== 'string') continue;
+        try {
+          const { href, protocol } = new URL(rawUrl);
+          if ((protocol !== 'https:' && protocol !== 'http:') || links.has(href)) continue;
+          const label = typeof entry.display_url === 'string' ? entry.display_url.trim() : '';
+          links.set(href, { href, label: label || href });
+        } catch {}
+      }
+    }
+    return [...links.values()];
+  }
+
   function notificationUserFromRest(raw, enabled) {
     if (!raw || typeof raw !== 'object') return null;
     return sanitizeNotificationSubscription({
