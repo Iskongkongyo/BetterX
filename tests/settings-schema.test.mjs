@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v4.1.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v4.3.0.js', import.meta.url);
 let source = await readFile(scriptPath, 'utf8');
 const startupPattern = /^\s*redirectBareProfileToPreferredView\(\);\r?\n\s*installProfileDefaultViewLinkRewrite\(\);\r?\n\s*registerMenuCommands\(\);\r?\n\s*installNetworkHooks\(\);\r?\n\s*waitForPageReady\(\);/m;
 assert.match(source, startupPattern, '找不到脚本启动标记');
@@ -77,7 +77,7 @@ const migratedDefaults = api.sanitizeSettings(api.migrateSettingsDefaults({
 }));
 assert.equal(migratedDefaults.flashMs, 3000);
 assert.equal(migratedDefaults.downloadTimeout, 360000);
-assert.deepEqual(Array.from(migratedDefaults.skipSources), ['thread']);
+assert.deepEqual(Array.from(migratedDefaults.skipSources), [], '旧版明确关闭排除时也必须保留空数组');
 const migratedCustom = api.sanitizeSettings(api.migrateSettingsDefaults({
   settingsRevision: 38, flashMs: 5000, downloadTimeout: 120000, skipSources: ['likes'],
 }));
@@ -124,6 +124,31 @@ for (const right of [-1, Infinity, '26']) {
   }).badgePos)), { left: 12, bottom: 34 }, '无效的右侧边距应忽略，并保留旧版坐标');
 }
 assert.equal(api.DEFAULT_SETTINGS.silentDownload, false);
+for(const key of ['hideAds','hideNfl','hideWhatsHappening','hideWhoToFollow','hideMoney']){
+  assert.equal(api.DEFAULT_SETTINGS[key],false);
+  assert.equal(api.sanitizeSettings({[key]:false})[key],false);
+  assert.equal(api.sanitizeSettings({[key]:true})[key],true);
+  assert.equal(api.sanitizeSettings({[key]:'false'})[key],false,'无效导入值应使用默认值');
+}
+for(const revision of [0,6,38,39]){
+  const fresh=api.sanitizeSettings(api.migrateSettingsDefaults({settingsRevision:revision}));
+  for(const key of ['hideAds','hideNfl','hideWhatsHappening','hideWhoToFollow','hideMoney'])assert.equal(fresh[key],false);
+  for(const key of ['mediaDownload','downloadZip','trackDownloadedPosts'])assert.equal(fresh[key],true);
+  assert.equal(fresh.postLimitWarningDisabled,false,'默认应开启帖子上限提示');
+  assert.deepEqual(Array.from(fresh.skipSources),['thread']);
+  for(const enabled of [false,true]){
+    const input={settingsRevision:revision,postLimitWarningDisabled:!enabled,skipSources:enabled?['thread']:[]};
+    const keys=['hideAds','hideNfl','hideWhatsHappening','hideWhoToFollow','hideMoney','mediaDownload','downloadZip','trackDownloadedPosts'];
+    for(const key of keys)input[key]=enabled;
+    const restored=api.sanitizeSettings(api.migrateSettingsDefaults(input));
+    for(const key of keys)assert.equal(restored[key],enabled,`${key}: revision ${revision} must preserve ${enabled}`);
+    assert.equal(restored.postLimitWarningDisabled,!enabled);
+    assert.deepEqual(Array.from(restored.skipSources),enabled?['thread']:[]);
+  }
+}
+const oldHideChoices=api.sanitizeSettings(api.migrateSettingsDefaults({settingsRevision:39,hideAds:false,hideNfl:false}));
+assert.equal(oldHideChoices.hideAds,false,'升级不得覆盖原有广告开关');
+assert.equal(oldHideChoices.hideNfl,false,'升级不得覆盖原有 NFL 开关');
 assert.equal(api.sanitizeSettings({ silentDownload: true }).silentDownload, true);
 assert.equal(api.sanitizeSettings({ silentDownload: 'true' }).silentDownload, false);
 assert.equal(sanitized.hideAppBadge, true);

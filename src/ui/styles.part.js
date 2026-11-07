@@ -186,6 +186,9 @@
       #BetterX-root.BetterX-panel-right #BetterX-panel { left: auto; right: 0; }
       #BetterX-root.BetterX-mobile #BetterX-panel { position: fixed; right: 12px; left: auto; bottom: 84px; max-height: calc(100vh - 120px); }
       .BetterX-ad-hidden, .BetterX-nfl-hidden { display: none !important; }
+      html.BetterX-hide-whatsnew .BetterX-whatsnew-hidden,
+      html.BetterX-hide-who-to-follow .BetterX-who-to-follow-hidden,
+      html.BetterX-hide-money .BetterX-money-hidden { display: none !important; }
       .BetterX-adult-spam-hidden { display: none !important; }
       div:has(> .BetterX-author-links) { overflow: visible !important; }
       .BetterX-author-links { display: inline-flex; align-self: center; flex: none; color-scheme: light; }
@@ -334,6 +337,21 @@
       }
       .BetterX-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 18px; }
       .BetterX-dialog-actions .BetterX-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; }
+      .BetterX-notification-differences { display: flex; flex-direction: column; box-sizing: border-box; width: min(92vw, 560px); overflow: hidden; }
+      .BetterX-notification-differences .BetterX-dialog-title, .BetterX-notification-differences .BetterX-dialog-actions { flex: none; }
+      .BetterX-notification-differences .BetterX-dialog-body { flex: 0 1 auto; overflow: auto; min-height: 48px; }
+      .BetterX-notification-diff-list { flex: 1 1 auto; min-height: 48px; overflow: auto; list-style: none; padding: 0; margin: 4px 0; }
+      .BetterX-notification-diff-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--xv-border); }
+      .BetterX-notification-diff-list a { color: var(--xv-accent); overflow-wrap: anywhere; }
+      .BetterX-notification-diff-list li > span { flex: none; color: var(--xv-muted); font-size: 12px; }
+      .BetterX-notification-diff-progress { flex: none; margin-top: 8px; font-size: 13px; overflow-wrap: anywhere; color: var(--xv-muted); }
+      .BetterX-notification-diff-counts { flex: none; margin: 0 0 10px; font-size: 13px; color: var(--xv-muted); }
+      .BetterX-screenshot-menu-item {
+        display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 44px;
+        box-sizing: border-box; font: inherit; font-weight: 700; cursor: pointer;
+      }
+      .BetterX-screenshot-menu-item:hover, .BetterX-screenshot-menu-item:focus-visible { background: rgba(127,127,127,.12); outline: none; }
+      .BetterX-screenshot-menu-item svg { width: 20px; height: 20px; fill: currentColor; flex: 0 0 auto; }
       .BetterX-media-picker-overlay, .BetterX-media-picker-overlay * { box-sizing: border-box; }
       .BetterX-media-picker {
         display: flex; flex-direction: column; width: min(92vw, 560px); max-height: 82dvh; overflow: hidden;

@@ -43,7 +43,7 @@
           <div class="BetterX-dialog-title" id="BetterX-media-picker-title">选择要下载的媒体</div>
           <div class="BetterX-media-picker-toolbar">
             <span class="BetterX-media-picker-count" aria-live="polite"></span>
-            <button type="button" class="BetterX-btn" data-media-toggle>全不选</button>
+            <button type="button" class="BetterX-btn" data-media-toggle>反选</button>
           </div>
           <div class="BetterX-media-picker-grid"></div>
           <div class="BetterX-dialog-actions">
@@ -93,7 +93,6 @@
       const update = () => {
         const selected = inputs.filter((input) => input.checked).length;
         count.textContent = `${uiText('已选')} ${selected} / ${items.length}`;
-        toggle.textContent = uiText(selected === items.length ? '全不选' : '全选');
         confirm.textContent = `${uiText('下载所选')} (${selected})`;
         confirm.disabled = selected === 0;
       };
@@ -125,8 +124,7 @@
       };
       grid.addEventListener('change', update);
       toggle.addEventListener('click', () => {
-        const selectAll = !inputs.every((input) => input.checked);
-        inputs.forEach((input) => { input.checked = selectAll; });
+        inputs.forEach((input) => { input.checked = !input.checked; });
         update();
       });
       confirm.addEventListener('click', () => {

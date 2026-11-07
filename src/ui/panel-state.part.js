@@ -72,10 +72,16 @@
 
   function renderNotificationSubscriptions(force = false) {
     if (!state.notificationListEl || state.panelView !== 'notifications' || (!state.panelOpen && !force)) return;
+    const accountToken = ensureNotificationAccount();
     const syncButton = state.panelEl && state.panelEl.querySelector('[data-action="sync-notification-users"]');
     if (syncButton) {
-      syncButton.disabled = state.notificationSyncInProgress;
+      syncButton.disabled = !accountToken.viewerId || state.notificationSyncInProgress || state.notificationCleanupInProgress;
       syncButton.textContent = uiText(state.notificationSyncInProgress ? '正在同步…' : '同步订阅用户');
+    }
+    if (!accountToken.viewerId) {
+      if (state.notificationStatusEl) state.notificationStatusEl.textContent = uiText('登录 X 后可查看当前账号的通知订阅。');
+      state.notificationListEl.textContent = uiText('登录 X 后可查看当前账号的通知订阅。');
+      return;
     }
     const allItems = [...notificationSubscriptions.values()]
       .sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true)
@@ -89,10 +95,13 @@
       const filterSummary = query ? ` · 筛选到 ${items.length}/${allItems.length}` : '';
       state.notificationStatusEl.textContent = uiText(state.notificationSyncInProgress
         ? `正在读取关注列表… 已发现 ${enabledCount} 个订阅${filterSummary}`
-        : `已订阅 ${enabledCount} · 已置顶 ${pinnedCount} · 本地保留 ${allItems.length}${filterSummary} · ${formatNotificationSyncTime(state.settings.notificationSubscriptionsSyncedAt)}`);
+        : `当前 X 账号 · 已订阅 ${enabledCount} · 已置顶 ${pinnedCount} · 本地保留 ${allItems.length}（已关闭记录 ${allItems.length - enabledCount}）${filterSummary} · ${formatNotificationSyncTime(state.notificationSyncedAt)}`);
     }
     if (!allItems.length) {
-      state.notificationListEl.innerHTML = uiHtml`<div class="BetterX-empty">还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。</div>`;
+      const legacy = state.settings.notificationSubscriptions?.length && !state.settings.notificationAccounts?.[accountToken.viewerId];
+      state.notificationListEl.innerHTML = `<div class="BetterX-empty">${escapeHtml(uiText(legacy
+        ? '旧版通知记录未记录所属账号，已保留。请同步当前账号重新建立名单。'
+        : '还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。'))}</div>`;
       return;
     }
     if (!items.length) {
@@ -102,12 +111,12 @@
     state.notificationListEl.innerHTML = items.map((item) => {
       const avatar = safeImportedAssetUrl(item.avatarUrl);
       const profileUrl = `https://x.com/${encodeURIComponent(item.username)}`;
-      const pending = state.notificationMutationUsers.has(item.username.toLowerCase());
+      const pending = state.notificationMutationUsers.has(item.id) || state.notificationCleanupInProgress;
       const pinned = item.pinned === true;
       const pinMark = pinned
         ? uiHtml`<span class="BetterX-notification-pin-mark" title="已置顶" aria-label="已置顶"> 📌</span>` : '';
       const forgetButton = item.enabled ? ''
-        : uiHtml`<button class="BetterX-btn" data-action="forget-notification-user" data-username="${escapeHtml(item.username)}">移除记录</button>`;
+        : uiHtml`<button class="BetterX-btn" data-action="forget-notification-user" data-notification-viewer="${accountToken.viewerId}" data-notification-id="${item.id}" data-username="${escapeHtml(item.username)}">移除记录</button>`;
       return uiHtml`
         <div class="BetterX-notification-user ${item.enabled ? '' : 'is-disabled'} ${pinned ? 'is-pinned' : ''}">
           <a class="BetterX-notification-user-main" href="${escapeHtml(profileUrl)}" target="_blank" rel="noopener noreferrer">
@@ -115,8 +124,8 @@
             <span><b>${escapeHtml(item.displayName || item.username)}${pinMark}</b><small>@${escapeHtml(item.username)}</small></span>
           </a>
           <div class="BetterX-notification-user-actions">
-            <button class="BetterX-btn ${item.enabled ? 'danger' : 'primary'}" data-action="toggle-notification-user" data-username="${escapeHtml(item.username)}" data-enabled="${item.enabled ? 'false' : 'true'}" ${pending ? 'disabled' : ''}>${uiText(pending ? '处理中…' : (item.enabled ? '关闭通知' : '重新开启'))}</button>
-            <button class="BetterX-btn ${pinned ? 'notification-pinned' : ''}" data-action="toggle-notification-pin" data-username="${escapeHtml(item.username)}">${uiText(pinned ? '取消置顶' : '置顶')}</button>
+            <button class="BetterX-btn ${item.enabled ? 'danger' : 'primary'}" data-action="toggle-notification-user" data-notification-viewer="${accountToken.viewerId}" data-notification-id="${item.id}" data-username="${escapeHtml(item.username)}" data-enabled="${item.enabled ? 'false' : 'true'}" ${pending ? 'disabled' : ''}>${uiText(pending ? '处理中…' : (item.enabled ? '关闭通知' : '重新开启'))}</button>
+            <button class="BetterX-btn ${pinned ? 'notification-pinned' : ''}" data-action="toggle-notification-pin" data-notification-viewer="${accountToken.viewerId}" data-notification-id="${item.id}" data-username="${escapeHtml(item.username)}">${uiText(pinned ? '取消置顶' : '置顶')}</button>
             ${forgetButton}
           </div>
         </div>`;
@@ -262,6 +271,7 @@
   }
 
   function backupAll() {
+    flushAllNotificationAccounts();
     const portableSettings = { ...state.settings };
     // Firefox 启动模式属于当前浏览器的故障恢复状态，不随备份迁移。
     delete portableSettings.firefoxCompatibility;
@@ -889,11 +899,11 @@
     'set-panel-view': ({ el }) => setPanelView(el.getAttribute('data-view')),
     'sync-notification-users': () => syncNotificationSubscriptions(),
     'search-notification-users': () => applyNotificationSearch(),
-    'toggle-notification-pin': ({ el }) => toggleNotificationSubscriptionPinned(el.getAttribute('data-username') || ''),
-    'toggle-notification-user': ({ el }) => updateNotificationSubscription(
+    'toggle-notification-pin': ({ el }) => notificationActionMatchesAccount(el) && toggleNotificationSubscriptionPinned(el.getAttribute('data-username') || ''),
+    'toggle-notification-user': ({ el }) => notificationActionMatchesAccount(el) && updateNotificationSubscription(
       el.getAttribute('data-username') || '', el.getAttribute('data-enabled') === 'true'
     ),
-    'forget-notification-user': ({ el }) => removeRememberedNotificationSubscription(el.getAttribute('data-username') || ''),
+    'forget-notification-user': ({ el }) => notificationActionMatchesAccount(el) && removeRememberedNotificationSubscription(el.getAttribute('data-username') || ''),
     'menu-toggle': () => { if (state.menuEl) state.menuEl.hidden = !state.menuEl.hidden; },
     close: () => togglePanel(false),
     refresh: () => { scanArticles(document); refreshUI(); },

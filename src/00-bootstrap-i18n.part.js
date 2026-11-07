@@ -5,12 +5,12 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      4.1.0
-// @description  BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
-// @description:zh-CN BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
-// @description:zh-TW BetterX 是一款 X（原 Twitter）增強腳本，支援本機貼文記錄、搜尋、收藏與備註，並整合廣告與成人引流內容過濾、媒體下載、貼文通知管理及介面最佳化。
-// @description:ja BetterX は、X（旧 Twitter）向けの機能拡張ユーザースクリプトです。ポストのローカル記録・検索・お気に入り・メモに加え、広告や成人向けスパムの非表示、メディア保存、ポスト通知の管理、UI の改善に対応します。
-// @description:en BetterX is a userscript for X (formerly Twitter) with local post history, search, favorites, and notes, plus ad and adult spam filtering, media downloads, post notification management, and interface improvements.
+// @version      4.3.0
+// @description  BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子截图下载、帖子通知管理及界面优化等功能。
+// @description:zh-CN BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子截图下载、帖子通知管理及界面优化等功能。
+// @description:zh-TW BetterX 是一款 X（原 Twitter）增強腳本，支援本機貼文記錄、搜尋、收藏與備註，並整合廣告與成人引流內容過濾、媒體下載、貼文截圖下載、貼文通知管理及介面最佳化等功能。
+// @description:ja BetterX は、X（旧 Twitter）向けの機能拡張ユーザースクリプトです。ポストのローカル記録・検索・お気に入り・メモに加え、広告や成人向けスパムの非表示、メディア保存、ポストのスクリーンショット保存、ポスト通知の管理、UI の改善などに対応します。
+// @description:en BetterX is a userscript for X (formerly Twitter) with local post history, search, favorites, and notes, plus ad and adult spam filtering, media downloads, post screenshot downloads, post notification management, interface improvements, and more.
 // @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://m.x.com/*
@@ -135,13 +135,22 @@
     ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'],
     ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'],
     ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'],
+    ['保存帖子截图', '儲存貼文截圖', 'ポストのスクリーンショットを保存', 'Save post screenshot'],
+    ['正在生成帖子截图…', '正在產生貼文截圖…', 'ポストの画像を生成中…', 'Generating post screenshot…'],
+    ['正在生成另一张截图，请稍候', '正在產生另一張截圖，請稍候', '別の画像を生成中です。お待ちください', 'Another screenshot is being generated. Please wait.'],
+    ['帖子截图已保存', '貼文截圖已儲存', 'ポストの画像を保存しました', 'Post screenshot saved'],
+    ['帖子截图失败，请重试', '貼文截圖失敗，請重試', 'ポストの画像を保存できませんでした。再試行してください', 'Post screenshot failed. Please try again.'],
+    ['无法生成完整截图', '無法產生完整截圖', '完全な画像を生成できません', 'Unable to capture the complete post'],
+    ['部分图片未能读取或渲染失败。请重试；仍有问题时可导出诊断信息。', '部分圖片無法讀取或渲染失敗。請重試；若仍有問題，可匯出診斷資訊。', '一部の画像を読み込めないか、描画に失敗しました。再試行し、解決しない場合は診断情報を保存してください。', 'Some images could not be read, or rendering failed. Try again; if the problem persists, export the diagnostic report.'],
+    ['导出截图诊断', '匯出截圖診斷', 'スクリーンショットの診断情報を保存', 'Export screenshot diagnostics'],
     ['下载时保持静默', '下載時保持靜默', 'ダウンロード中は通知を控える', 'Keep downloads quiet'],
     ['点击下载全部，长按或 Shift+点击选择下载', '點擊下載全部，長按或 Shift+點擊選擇下載', 'クリックで全件保存、長押しまたは Shift+クリックで選択保存', 'Click to download all; hold or Shift+click to select media'],
     ['选择要下载的媒体', '選擇要下載的媒體', '保存するメディアを選択', 'Select media to download'],
-    ['全选', '全選', 'すべて選択', 'Select all'], ['全不选', '全不選', 'すべて解除', 'Deselect all'],
+    ['反选', '反選', '選択を反転', 'Invert selection'],
     ['下载所选', '下載所選', '選択したメディアを保存', 'Download selected'], ['已选', '已選', '選択済み', 'Selected'],
     ['无预览', '無預覽', 'プレビューなし', 'No preview'], ['选择中', '選擇中', '選択中', 'Selecting'],
     ['作者链接', '作者連結', '投稿者のリンク', 'Author links'],
+    ['作者链接加载失败，点击重试', '作者連結載入失敗，點擊重試', '投稿者のリンクを読み込めませんでした。クリックして再試行', 'Author links could not load; click to retry'],
     ['作品详情页显示作者链接', '在作品詳情頁顯示作者連結', 'ポストの詳細画面に投稿者のリンクを表示', 'Show author links on post details'],
     ['在作品详情页直接打开作者简介中的链接和个人网站，而不用访问作者主页。', '在作品詳情頁直接開啟作者簡介中的連結和個人網站，無需前往作者的個人檔案。', '投稿者のプロフィールを開かずに、ポストの詳細画面から自己紹介にあるリンクやウェブサイトを開けます。', 'Open the author’s bio links and website from the post details without visiting their profile.'],
     ['正在选择下载内容', '正在選擇下載內容', '保存するメディアを選択中', 'Selecting media to download'],
@@ -153,13 +162,21 @@
     ['已自定义', '已自訂', 'カスタマイズ済み', 'Customized'],
     ['下载多个媒体自动压缩 ZIP 包', '下載多個媒體時自動壓縮 ZIP', '複数メディアを ZIP にまとめる', 'Package multiple media files as ZIP'],
     ['记录已经下载过的帖子', '記錄已下載過的貼文', 'ダウンロード済みポストを記録', 'Track downloaded posts'],
-    ['媒体文件名（不含扩展名）', '媒體檔名（不含副檔名）', 'メディア名（拡張子なし）', 'Media filename (without extension)'],
+    ['媒体文件名（不含 .jpg 等扩展名）', '媒體檔名（不含 .jpg 等副檔名）', 'メディア名（.jpg などの拡張子は含めない）', 'Media filename (without extensions such as .jpg)'],
     ['ZIP 压缩包名（不含 .zip）', 'ZIP 壓縮檔名（不含 .zip）', 'ZIP 名（.zip なし）', 'ZIP filename (without .zip)'],
     ['正则替换（可选）', '正則取代（選填）', '正規表現置換（任意）', 'Regex replacement (optional)'], ['替换为', '取代為', '置換後', 'Replace with'],
     ['例如：', '例如：', '例：', 'Example: '], ['；支持 $1', '；支援 $1', '（$1 に対応）', '; supports $1'],
     ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'],
     ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'],
     ['关闭NFL', '關閉 NFL', 'NFL を非表示', 'Hide NFL'],
+    ['关闭功能', '關閉功能', '非表示機能', 'Hide features'],
+    ['以下开关默认关闭；已有选择会保留。', '以下開關預設關閉；會保留既有選擇。', '以下のスイッチは初期設定でオフです。保存済みの設定は維持されます。', 'These switches default to off. Existing choices are preserved.'],
+    ['关闭新鲜事', '關閉新鮮事', '「いまどうしてる？」を非表示', 'Hide What’s happening'],
+    ['关闭推荐关注', '關閉推薦關注', 'おすすめユーザーを非表示', 'Hide Who to follow'],
+    ['关闭Money', '關閉 Money', 'Money を非表示', 'Hide Money'],
+    ['隐藏侧栏的“有什么新鲜事”卡片；关闭此开关后会恢复显示。', '隱藏側欄的「有什麼新鮮事」卡片；關閉此開關後會恢復顯示。', 'サイドバーの「いまどうしてる？」カードを非表示にします。オフにすると再表示します。', 'Hides the What’s happening card in the sidebar. Turn this off to show it again.'],
+    ['隐藏侧栏的“推荐关注”卡片；关注者列表和帖子内容不受影响，关闭此开关后会恢复显示。', '隱藏側欄的「推薦關注」卡片；追蹤者清單和貼文內容不受影響，關閉此開關後會恢復顯示。', 'サイドバーのおすすめユーザーカードを非表示にします。フォロワー一覧やポスト本文には影響しません。オフにすると再表示します。', 'Hides the Who to follow card in the sidebar. Follower lists and post content are unaffected. Turn this off to show it again.'],
+    ['隐藏导航和菜单中的 Money 入口；关闭此开关后会恢复显示。', '隱藏導覽和選單中的 Money 入口；關閉此開關後會恢復顯示。', 'ナビゲーションやメニューの Money への入口を非表示にします。オフにすると再表示します。', 'Hides Money links in navigation and menus. Turn this off to show them again.'],
     ['帖子内媒体改为网格视图', '貼文內媒體改為網格檢視', 'ポスト内メディアをグリッド表示', 'Show post media in a grid'],
     ['取消年龄限制（用原图 / 视频进行替换）', '解除年齡限制（以原圖 / 影片取代）', '年齢制限を解除（元画像 / 動画に置換）', 'Bypass age gate (replace with original media)'],
     ['自动展开帖子里“显示更多”', '自動展開貼文中的「顯示更多」', 'ポストの「さらに表示」を自動展開', 'Automatically expand “Show more” in posts'],
@@ -211,9 +228,9 @@
     ['根据正文、账号名和引流特征综合判断，只在当前页面隐藏可疑帖子，不会拉黑账号。关闭后会恢复显示。', '根據內文、帳號名稱和引流特徵綜合判斷，只在目前頁面隱藏可疑貼文，不會封鎖帳號。關閉後會恢復顯示。', '本文、アカウント名、誘導の特徴から総合的に判定し、現在のページで疑わしいポストだけを非表示にします。アカウントはブロックせず、オフにすると再表示します。', 'Checks post text, account names, and spam signals, then hides suspicious posts only on the current page. It never blocks accounts; turn it off to show them again.'],
     ['自动读取 X 当前的时间线与左侧栏宽度（默认开启）', '自動讀取 X 目前的時間軸與左側欄寬度（預設開啟）', 'X の現在のタイムライン幅と左サイドバー幅を自動取得（既定でオン）', 'Automatically detect X timeline and left-sidebar widths (enabled by default)'],
     ['在消息页和设置页不会调整布局；关闭此功能即可恢复 X 原来的界面。', '在訊息頁和設定頁不會調整版面；關閉此功能即可恢復 X 原來的介面。', 'メッセージと設定ページではレイアウトを変更しません。この機能をオフにすると X 本来の表示に戻ります。', 'The layout is not changed on Messages or Settings pages. Turn this feature off to restore X’s original layout.'],
-    ['点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。', '點擊下載按鈕儲存全部媒體；長按或 Shift+點擊可依縮圖選擇圖片、GIF 和影片。下載時貼文內會顯示進度與取消按鈕，徽章旁會顯示工作提示。', 'クリックで全メディアを保存します。長押しまたは Shift+クリックでサムネイルから画像・GIF・動画を選択できます。ダウンロード中はポスト内に進捗とキャンセルボタン、バッジ横にタスク表示が出ます。', 'Click to save all media, or hold or Shift+click to select images, GIFs and videos by thumbnail. Download progress and cancel buttons appear in posts, with a task indicator beside the app badge.'],
+    ['点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择要下载的图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。', '點擊下載按鈕儲存全部媒體；長按或 Shift+點擊可依縮圖選擇要下載的圖片、GIF 和影片。下載時貼文內會顯示進度與取消按鈕，徽章旁會顯示工作提示。', 'クリックで全メディアを保存します。長押しまたは Shift+クリックでサムネイルから保存する画像・GIF・動画を選択できます。ダウンロード中はポスト内に進捗とキャンセルボタン、バッジ横にタスク表示が出ます。', 'Click to save all media, or hold or Shift+click to select which images, GIFs and videos to download by thumbnail. Download progress and cancel buttons appear in posts, with a task indicator beside the app badge.'],
     ['默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。', '預設開啟；ZIP 內檔案使用下方「媒體檔名」範本。關閉後會同時下載多個媒體。', '既定でオンです。ZIP 内のファイル名には下のメディア名テンプレートを使います。オフの場合は複数ファイルを個別保存します。', 'Enabled by default. Files inside ZIP use the media filename template below. When disabled, media files download separately.'],
-    ['默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設關閉；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオフです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Disabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'],
+    ['默认开启；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設開啟；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオンです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Enabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'],
     ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 <code>{序號}</code>，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで <code>{連番}</code> がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If <code>{index}</code> is omitted for multiple media files, a number is appended automatically.'],
     ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 <code>$1</code>）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（<code>$1</code> など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as <code>$1</code> are supported; invalid or risky regexes are not saved.'],
     ['隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。', '隱藏時間軸廣告、廣告卡片和「訂閱 Premium」提示。廣告貼文不會儲存到 BetterX，關閉後會重新顯示。', 'タイムライン広告、広告カード、「Premium に登録」の案内を非表示にします。広告ポストは BetterX に保存されず、オフにすると再表示します。', 'Hides timeline ads, ad cards, and Subscribe to Premium prompts. Ad posts are not saved to BetterX and reappear when this is turned off.'],
@@ -242,7 +259,28 @@
     ['BetterX：导出 Firefox 兼容诊断', 'BetterX：匯出 Firefox 相容診斷', 'BetterX：Firefox 互換診断をエクスポート', 'BetterX: Export Firefox compatibility diagnostics'],
     ['无法读取当前 X 用户 ID，请确认已经登录', '無法讀取目前 X 使用者 ID，請確認已登入', '現在の X ユーザー ID を取得できません。ログインを確認してください', 'Could not read the current X user ID. Make sure you are signed in'],
     ['本次识别', '本次識別', '今回検出', 'Found this time'], ['个，当前保留', '個，目前保留', '件、現在保持', '; currently keeping'], ['个订阅', '個訂閱', '件の購読', ' subscriptions'],
+    ['订阅用户与本地记录不一致', '訂閱使用者與本機記錄不一致', '購読ユーザーとローカル記録に差異があります', 'Subscriptions differ from local records'],
+    ['以下用户在本地仍开启了通知，但本次同步未识别到。账号可能已注销、被封禁或冻结，也可能是接口暂时遗漏。请点击用户名核实。', '以下使用者在本機仍開啟通知，但本次同步未識別到。帳號可能已註銷、遭封鎖或凍結，也可能是介面暫時遺漏。請點擊使用者名稱確認。', '以下のユーザーはローカルで通知が有効ですが、今回の同期では検出されませんでした。削除や凍結のほか、一時的な取得漏れの可能性もあります。ユーザー名からプロフィールをご確認ください。', 'These users still have notifications enabled locally but were not detected in this sync. Accounts may be deleted or suspended, or the API may have temporarily omitted them. Open their profiles to check.'],
+    ['确认后逐个尝试关闭 X 通知；仅在 X 明确返回账号不存在或已被封禁时关闭本地记录。其他失败会停止处理并保留未处理记录。', '確認後逐一嘗試關閉 X 通知；僅在 X 明確回覆帳號不存在或遭停權時關閉本機記錄。其他失敗會停止處理並保留未處理記錄。', '確認後、X の通知を一人ずつ無効にします。X がアカウントの不存在・凍結を明示した場合はローカル記録のみ無効にします。その他のエラーでは停止し、未処理の記録を保持します。', 'After confirmation, X notifications will be disabled one user at a time. Only an explicit account-not-found or suspended response disables just the local record. Other failures stop processing and leave pending records unchanged.'],
+    ['关闭以上用户通知', '關閉以上使用者通知', '上記ユーザーの通知を無効にする', 'Disable notifications for these users'],
+    ['未识别用户', '未識別使用者', '未検出のユーザー', 'Users not detected'],
+    ['本地开启', '本機開啟', 'ローカルで有効', 'Enabled locally'], ['已关闭记录', '已關閉記錄', '無効の記録', 'Disabled records'],
+    ['当前 X 账号', '目前 X 帳號', '現在の X アカウント', 'Current X account'],
+    ['登录 X 后可查看当前账号的通知订阅。', '登入 X 後可查看目前帳號的通知訂閱。', 'X にログインすると現在のアカウントの通知購読を表示できます。', 'Sign in to X to view notification subscriptions for the current account.'],
+    ['旧版通知记录未记录所属账号，已保留。请同步当前账号重新建立名单。', '舊版通知記錄未記錄所屬帳號，已保留。請同步目前帳號重新建立清單。', '旧バージョンの通知記録には所有アカウント情報がないため、保持しています。現在のアカウントを同期して一覧を作成してください。', 'Legacy notification records have no account ownership information and have been kept. Sync the current account to build its list.'],
+    ['正在关闭通知…', '正在關閉通知…', '通知を無効にしています…', 'Disabling notifications…'],
+    ['已处理', '已處理', '処理済み', 'Processed'], ['仅关闭本地记录', '僅關閉本機記錄', 'ローカル記録のみ無効', 'Local record disabled only'],
+    ['已跳过', '已略過', 'スキップ済み', 'Skipped'], ['未能关闭', '未能關閉', '無効化できませんでした', 'Could not disable'],
+    ['X 请求受限，已停止处理，请稍后重新同步。', 'X 請求受限，已停止處理，請稍後重新同步。', 'X のリクエスト制限により停止しました。時間をおいて再同期してください。', 'X rate limited the request. Processing stopped; sync again later.'],
+    ['X 账号已切换，已停止处理。', 'X 帳號已切換，已停止處理。', 'X アカウントが切り替わったため停止しました。', 'The X account changed. Processing stopped.'],
+    ['处理未完成，未关闭的用户保持原状态。', '處理未完成，未關閉的使用者維持原狀態。', '処理は未完了です。未処理のユーザーは元の状態を保持しています。', 'Processing is incomplete. Users not disabled keep their previous state.'],
+    ['已取消后续处理。', '已取消後續處理。', '残りの処理をキャンセルしました。', 'Remaining processing cancelled.'],
+    ['处理完成。', '處理完成。', '処理が完了しました。', 'Processing complete.'],
     ['同步失败：', '同步失敗：', '同期失敗：', 'Sync failed: '], ['修改失败：', '修改失敗：', '変更失敗：', 'Update failed: '],
+    ['X 未返回有效的关注列表，请稍后重试', 'X 未傳回有效的關注清單，請稍後重試', 'X から有効なフォロー一覧を取得できませんでした。後でもう一度お試しください', 'X did not return a valid following list. Please try again later'],
+    ['X 返回接口错误，请稍后重试', 'X 傳回介面錯誤，請稍後重試', 'X API でエラーが発生しました。後でもう一度お試しください', 'X returned an API error. Please try again later'],
+    ['关注列表分页信息缺失，请稍后重试', '關注清單缺少分頁資訊，請稍後重試', 'フォロー一覧のページ情報がありません。後でもう一度お試しください', 'Following list pagination is missing. Please try again later'],
+    ['关注列表分页没有前进，已停止同步', '關注清單分頁未前進，已停止同步', 'フォロー一覧のページが進まないため、同期を停止しました', 'Following list pagination did not advance. Sync stopped'],
     ['已开启', '已開啟', '有効化しました', 'Enabled'], ['的帖子通知', '的貼文通知', 'のポスト通知', ' post notifications'], ['已关闭', '已關閉', '無効化しました', 'Disabled'],
     ['下载完成：已逐个保存', '下載完成：已逐一儲存', 'ダウンロード完了：個別に保存', 'Download complete: saved separately'], ['个文件', '個檔案', 'ファイル', ' files'],
     ['，跳过', '，略過', '、スキップ', '; skipped'], ['个失败项', '個失敗項目', '件の失敗', ' failed items'],

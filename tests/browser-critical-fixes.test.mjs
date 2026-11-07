@@ -13,14 +13,32 @@ for (const candidate of candidates) { try { await access(candidate); executable 
 assert.ok(executable, 'Set BETTERX_BROWSER_PATH to a Chromium/Chrome/Edge executable to run browser regressions');
 const script = instrumentUserscript(`
   createUI, installStyles, togglePanel, refreshUI, dispatchPanelAction, rebuildPostIndex,
-  openDb, dbPutPost, dbGetAllPosts, dbDeleteMany, dbGetSetting, scheduleCrossTabReload, flushCrossTabReload,
+  openDb, dbPutPost, dbGetAllPosts, dbDeleteMany, dbGetSetting, dbPutSetting, scheduleCrossTabReload, flushCrossTabReload,
   captureArticle, getAdultSpamInput, backupAll, importPosts, closeBetterXDialog,
   startObserver, scanArticles, installNavigationListener, isSafeRegexSource, keywordRuleMatches,
+  refreshAuthorLinks, resetAuthorLinksView,
   setPanelView, applySettingsSnapshot, renderNotificationSubscriptions, notificationSubscriptions,
+  closeNotificationSyncDifferences,
+  beginNotificationMutationGuard, notificationMutationGuards,
+  ensureNotificationAccount, restoreNotificationAccounts, scheduleNotificationSubscriptionsPersist, installNotificationAccountTracking,
+  rememberNotificationSubscription, toggleNotificationSubscriptionPinned, removeRememberedNotificationSubscription,
+  syncNotificationSubscriptions, updateNotificationSubscription, flushNotificationAccountPersistence,
   setSettingsPartial, applyAdultSpamFiltering,
+  applyDismissWidgetHiding,
   repositionBadge, refreshDownloadUi, toggleDownloadPopover, downloadJobs,
   registerMedia, injectDownloadButtons, handleDownloadClick, closeDownloadMediaPicker,
   pendingDownloadSelections, pendingDownloadStarts,
+  capturePostScreenshot, runPostScreenshot, installPostScreenshotMenu, exportScreenshotDiagnostic,
+  screenshotReport: () => lastScreenshotReport,
+  stopScreenshotMenu: () => screenshotMenuCleanup?.(),
+  mockScreenshotTransport: transport => {const original=screenshotRequestBytes;screenshotRequestBytes=transport;return()=>{screenshotRequestBytes=original;};},
+  watchNotificationWork: callback => {
+    const render=renderNotificationSubscriptions, schedule=scheduleNotificationSubscriptionsPersist, capture=cacheNotificationAccount;
+    renderNotificationSubscriptions=(...args)=>{callback('renders');return render(...args);};
+    scheduleNotificationSubscriptionsPersist=(...args)=>{callback('schedules');return schedule(...args);};
+    cacheNotificationAccount=(...args)=>{callback('captures');return capture(...args);};
+    return()=>{renderNotificationSubscriptions=render;scheduleNotificationSubscriptionsPersist=schedule;cacheNotificationAccount=capture;};
+  },
   mockDownloadTransport: overrides => {
     const fetch = fetchBlobWithRetry, save = saveBlob, lookup = requestTweetDetailMedia;
     if (overrides.fetch) fetchBlobWithRetry = overrides.fetch;
@@ -35,19 +53,32 @@ const script = instrumentUserscript(`
     refreshSettingsUI = () => {callback('settings'); return settings();};
   },
   watchCapture: callback => {const original = captureArticle; captureArticle = article => {callback(article); return original(article);};}
-`, 'download = (filename, blob) => globalThis.__downloads.push({filename, blob});');
+`, `download = (filename, blob) => globalThis.__downloads.push({filename, blob});
+if(globalThis.__notificationViewerOverride!==undefined)getCurrentViewerId=()=>globalThis.__notificationViewerOverride;`);
 const fixture = await readFile(new URL('./fixtures/critical-fixes.browser.js', import.meta.url), 'utf8');
 const downloadFixture = await readFile(new URL('./fixtures/download-selection.browser.js', import.meta.url), 'utf8');
+const screenshotFixture = await readFile(new URL('./fixtures/post-screenshot.browser.js', import.meta.url), 'utf8');
+const dismissFixture = await readFile(new URL('./fixtures/dismiss-widgets.browser.js', import.meta.url), 'utf8');
+const authorFixture = await readFile(new URL('./fixtures/author-links.browser.js', import.meta.url), 'utf8');
+const badgeStartupFixture = await readFile(new URL('./fixtures/badge-startup.browser.js', import.meta.url), 'utf8');
+const badgeStartupScript = instrumentUserscript('boot', 'openDb=()=>new Promise(()=>{});');
+const notificationFixture = await readFile(new URL('./fixtures/notification-sync.browser.js', import.meta.url), 'utf8');
+const reconcileFixture = await readFile(new URL('./fixtures/notification-reconcile.browser.js', import.meta.url), 'utf8');
+const accountFixture = await readFile(new URL('./fixtures/notification-accounts.browser.js', import.meta.url), 'utf8');
+const accountFrameHtml = await readFile(new URL('./fixtures/notification-account-frame.html', import.meta.url), 'utf8');
+const mobilePostMenu = await readFile(new URL('./fixtures/mobile-post-more.html', import.meta.url), 'utf8');
 const html = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>BetterX critical regressions</title>
 <style>body{margin:0}#results{white-space:pre-wrap;overflow-wrap:anywhere}</style>
 <script>
 window.__downloads=[];window.__confirmCount=0;window.__alerts=[];window.__browserErrors=[];
+window.__mobilePostMoreHtml=${JSON.stringify(mobilePostMenu)};
 window.GM_getValue=(_key,fallback)=>fallback;window.GM_setValue=()=>{};window.GM_registerMenuCommand=()=>{};window.GM_info={script:{},scriptHandler:'Regression'};
+document.cookie='twid=u%3D123;path=/';
 window.alert=message=>__alerts.push(message);window.confirm=()=>{__confirmCount++;return true;};
 addEventListener('error',event=>__browserErrors.push(String(event.error||event.message)));addEventListener('unhandledrejection',event=>__browserErrors.push(String(event.reason)));
-</script><script src="/userscript.js"></script><body><main role="main"><div data-testid="primaryColumn"></div></main><pre id="results">RUNNING</pre><script src="/download-fixture.js"></script><script src="/fixture.js"></script></body></html>`;
+</script><script src="/userscript.js"></script><body><main role="main"><div data-testid="primaryColumn"></div></main><pre id="results">RUNNING</pre><script src="/download-fixture.js"></script><script src="/screenshot-fixture.js"></script><script src="/dismiss-fixture.js"></script><script src="/author-fixture.js"></script><script src="/badge-startup-fixture.js"></script><script src="/notification-fixture.js"></script><script src="/reconcile-fixture.js"></script><script src="/account-fixture.js"></script><script src="/fixture.js"></script></body></html>`;
 const server = createServer((req, res) => {
-  const body = req.url === '/userscript.js' ? script : req.url === '/fixture.js' ? fixture : req.url === '/download-fixture.js' ? downloadFixture : html;
+  const body = req.url === '/userscript.js' ? script : req.url?.startsWith('/account-frame.html?') ? accountFrameHtml : req.url === '/fixture.js' ? fixture : req.url === '/download-fixture.js' ? downloadFixture : req.url === '/screenshot-fixture.js' ? screenshotFixture : req.url === '/dismiss-fixture.js' ? dismissFixture : req.url === '/author-fixture.js' ? authorFixture : req.url === '/badge-startup-fixture.js' ? badgeStartupFixture : req.url === '/badge-startup.js' ? badgeStartupScript : req.url === '/notification-fixture.js' ? notificationFixture : req.url === '/reconcile-fixture.js' ? reconcileFixture : req.url === '/account-fixture.js' ? accountFixture : html;
   res.setHeader('content-type', req.url?.endsWith('.js') ? 'application/javascript; charset=utf-8' : 'text/html; charset=utf-8');
   res.end(body);
 });
@@ -75,9 +106,12 @@ try {
       const {requestId,resourceType,request} = result.params;
       // Serve deterministic preview images without contacting X or its CDN.
       const hue = [...request.url].reduce((sum,char)=>sum+char.charCodeAt(0),0)%360;
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="240" height="240" fill="hsl(${hue},45%,32%)"/><circle cx="155" cy="75" r="36" fill="hsl(${hue},65%,75%)"/><path d="M0 240 90 100 200 240" fill="hsl(${hue},55%,55%)"/></svg>`;
-      const response = resourceType === 'Image'
-        ? send('Fetch.fulfillRequest',{requestId,responseCode:200,responseHeaders:[{name:'Content-Type',value:'image/svg+xml'}],body:Buffer.from(svg).toString('base64')})
+      const testColor = request.url.match(/\/betterx-shot\/(red|green|yellow|blue)/)?.[1];
+      const colors={red:'#dc1e28',green:'#14c83c',yellow:'#fabe00',blue:'#1450e6'};
+      const svg = testColor ? `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="${colors[testColor]}"/></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="240" height="240" fill="hsl(${hue},45%,32%)"/><circle cx="155" cy="75" r="36" fill="hsl(${hue},65%,75%)"/><path d="M0 240 90 100 200 240" fill="hsl(${hue},55%,55%)"/></svg>`;
+      const response = resourceType === 'Image' || testColor
+        ? send('Fetch.fulfillRequest',{requestId,responseCode:200,responseHeaders:[{name:'Content-Type',value:'image/svg+xml'},{name:'Access-Control-Allow-Origin',value:'*'},{name:'Access-Control-Allow-Methods',value:'GET, OPTIONS'},{name:'Access-Control-Allow-Headers',value:'*'}],body:Buffer.from(svg).toString('base64')})
         : send('Fetch.failRequest',{requestId,errorReason:'Aborted'});
       response.catch(error=>transportErrors.push(String(error)));
       return;
@@ -102,21 +136,24 @@ try {
   await send('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/` });
   let results;
   let hoveredAuthorLinks = false;
-  for (let attempt = 0; attempt < 200; attempt++) {
+  for (let attempt = 0; attempt < 300; attempt++) {
     const response = await send('Runtime.evaluate', {
-      expression: '({ results: window.__browserResults, hoverPoint: window.__authorLinksHoverPoint })',
-      returnByValue: true,
+      expression: '({results:window.__browserResults,hoverPoint:window.__authorLinksHoverPoint})',returnByValue:true,
     });
     const snapshot = response.result?.value;
     results = snapshot?.results;
     if (results) break;
     if (snapshot?.hoverPoint && !hoveredAuthorLinks) {
       hoveredAuthorLinks = true;
-      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...snapshot.hoverPoint });
+      await send('Input.dispatchMouseEvent',{type:'mouseMoved',...snapshot.hoverPoint});
     }
     await sleep(200);
   }
   assert.ok(results, 'Browser regressions did not finish');
+  if(process.env.BETTERX_SCREENSHOT_DIR){
+    const preview=await send('Runtime.evaluate',{expression:'new Promise(resolve=>{if(!window.__screenshotPreview)return resolve(null);const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(__screenshotPreview);})',awaitPromise:true,returnByValue:true});
+    if(preview.result.value){await mkdir(process.env.BETTERX_SCREENSHOT_DIR,{recursive:true});await writeFile(join(process.env.BETTERX_SCREENSHOT_DIR,'post-screenshot.png'),Buffer.from(preview.result.value.split(',')[1],'base64'));}
+  }
   for (const mobile of [false,true]) {
     const name = mobile ? 'native mobile touch hold, responsive picker and short tap' : 'native desktop mouse hold and selected ZIP download';
     try {
@@ -171,8 +208,24 @@ try {
     } catch(error) {results.push({name,passed:false,error:String(error.stack||error)});}
     finally {await send('Runtime.evaluate',{expression:'window.__nativeDownload?.cleanup()'});}
   }
+  try {
+    const setup=await send('Runtime.evaluate',{expression:'window.__prepareNativeMobileScreenshot()',returnByValue:true});
+    assert.ok(!setup.exceptionDetails,JSON.stringify(setup.exceptionDetails));
+    const point=setup.result.value;
+    await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
+    await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await sleep(60);
+    const action=await send('Runtime.evaluate',{expression:'window.__nativeMobileScreenshot.menuPoint()',returnByValue:true});
+    assert.ok(!action.exceptionDetails,JSON.stringify(action.exceptionDetails));
+    await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[action.result.value]});
+    await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    const saved=await send('Runtime.evaluate',{expression:'window.__nativeMobileScreenshot.verify()',awaitPromise:true,returnByValue:true});
+    assert.equal(saved.result.value,true,'Native touch did not save the current post from its mobile sheet');
+    results.push({name:'native mobile touch opens the roleless More sheet and saves a PNG',passed:true});
+  }catch(error){results.push({name:'native mobile touch opens the roleless More sheet and saves a PNG',passed:false,error:String(error.stack||error)});}
+  finally{await send('Runtime.evaluate',{expression:'window.__nativeMobileScreenshot?.cleanup()'});}
   console.log(JSON.stringify(results, null, 2));
-  assert.equal(results.length, 15);
+  assert.equal(results.length, 39);
   assert.ok(results.every(result => result.passed), 'One or more browser regressions failed');
   const errors = await send('Runtime.evaluate', { expression: 'window.__browserErrors', returnByValue: true });
   assert.deepEqual(errors.result.value, [], 'Browser emitted unexpected errors');

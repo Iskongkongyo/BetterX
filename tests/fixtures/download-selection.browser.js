@@ -60,10 +60,23 @@
         const inputs=[...modal.querySelectorAll('input')];
         assert(inputs.length===4 && inputs.every(input=>input.checked),'Media must be selected by default');
         assert(io.requests.length===0 && !api.downloadJobs.has('410001'),'Browsing the picker started a download');
-        modal.querySelector('[data-media-toggle]').click();
+        const invert=modal.querySelector('[data-media-toggle]');
+        const confirm=modal.querySelector('[data-media-confirm]');
+        const count=modal.querySelector('.BetterX-media-picker-count');
+        assert(invert.textContent==='反选','The picker must offer inversion');
+        invert.click();
+        assert(inputs.every(input=>!input.checked) && count.textContent==='已选 0 / 4','Inverting all selected items must clear the selection and count');
         assert(modal.querySelector('[data-media-confirm]').disabled,'An empty selection must disable confirmation');
-        modal.querySelector('[data-media-toggle]').click();
-        inputs[0].click();inputs[1].click();
+        invert.click();
+        assert(inputs.every(input=>input.checked) && !confirm.disabled && count.textContent==='已选 4 / 4','Inverting an empty selection must select all and enable confirmation');
+        inputs[1].click();inputs[2].click();inputs[3].click();
+        invert.click();
+        assert(inputs.map(input=>Number(input.checked)).join('')==='0111' && count.textContent==='已选 3 / 4' && confirm.textContent==='下载所选 (3)','Partial inversion must flip every item and refresh both counts');
+        invert.click();
+        assert(inputs.map(input=>Number(input.checked)).join('')==='1000' && count.textContent==='已选 1 / 4','Inverting twice must restore the original partial selection');
+        invert.click();inputs[1].click();
+        assert(inputs.map(input=>Number(input.checked)).join('')==='0011' && !confirm.disabled && count.textContent==='已选 2 / 4','Only the chosen GIF and video should remain selected');
+        assert(invert.textContent==='反选' && io.requests.length===0,'Inverting must keep its label and wait for download confirmation');
         assert(modal.textContent.includes('GIF 3') && modal.textContent.includes('视频 4'),'Mixed media kinds were not labelled');
         modal.querySelector('[data-media-confirm]').click();
         const job=await waitForJob(api,'410001');await api.state.dbWriteQueue;
@@ -81,8 +94,42 @@
         assert(names.join('|')==='gif_1.mp4|video_2.mp4','The ZIP includes the wrong files or lost custom naming');
         assert(api.state.settings.downloadedPostIds.includes('410001'),'Successful selection was not recorded');
         assert(api.state.downloadPillEl.hidden,'Selection ignored the quiet download setting');
-        return {choices:4,selected:2,mediaRequests:2,zipEntries:names,downloadHistoryVerified:true};
+        return {choices:4,selected:2,mediaRequests:2,zipEntries:names,downloadHistoryVerified:true,inversionVerified:true};
       }finally{api.closeDownloadMediaPicker();clearJobs(api);io.restore();article.remove();}
+    });
+
+    await check('recorded posts confirm before hold/Shift-click selection and cancel without media work',async()=>{
+      configure(api);const id='410008',media=[photo('recordedPhoto'),video('recordedVideo')];
+      const article=makePost(api,id,media,false),originalConfirm=window.confirm;
+      let answer=false,prompts=0,lookups=0;
+      const io=transport(api,async()=>{lookups++;api.registerMedia(id,media);return true;});
+      try{
+        api.setSettingsPartial({trackDownloadedPosts:true,downloadedPostIds:[...(api.state.settings.downloadedPostIds||[]),id]});
+        window.confirm=message=>{
+          prompts++;
+          assert(message==='该帖子内媒体文件曾下载过，是否继续下载？','The re-download prompt changed');
+          assert(!picker() && lookups===0 && io.requests.length===0,'The prompt appeared after media work began');
+          return answer;
+        };
+        const button=article.querySelector('.BetterX-dl-btn');
+        point(button,'pointerdown');await sleep(540);point(button,'pointerup');click(button);
+        assert(prompts===1 && !picker(),'A long hold did not confirm before selection');
+        assert(lookups===0 && io.requests.length===0 && !api.downloadJobs.has(id),'Declining confirmation started media work');
+        assert(!api.pendingDownloadSelections.has(id) && !api.pendingDownloadStarts.has(id),'Declining confirmation left a pending task');
+        answer=true;
+        button.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,detail:1,shiftKey:true}));
+        await sleep(0);
+        assert(prompts===2 && lookups===1 && picker(),'Accepting confirmation did not open the selector after lookup');
+        await api.handleDownloadClick(article,{},id,{selectMedia:true});
+        assert(prompts===2,'Repeated activation prompted while selection was open');
+        picker().querySelector('[data-media-confirm]').click();
+        const job=await waitForJob(api,id);
+        assert(job.status==='done' && prompts===2 && io.requests.length===2,'Selection prompted again or lost its media');
+        return {holdPromptFirst:true,shiftClickPromptFirst:true,cancelledLookups:0,confirmOncePerAttempt:true};
+      }finally{
+        window.confirm=originalConfirm;api.closeDownloadMediaPicker();clearJobs(api);io.restore();article.remove();
+        api.setSettingsPartial({trackDownloadedPosts:false});
+      }
     });
 
     await check('selection supports touch cancellation, focus trapping, Escape, backdrop and replacement',async()=>{

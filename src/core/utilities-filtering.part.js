@@ -67,17 +67,29 @@
     return item;
   }
 
-  function getNotificationMutationGuard(key) {
-    const guard = notificationMutationGuards.get(key);
+  function getNotificationSubscriptionById(id) {
+    for (const item of notificationSubscriptions.values()) if (item.id === id) return item;
+    return null;
+  }
+
+  function noteNotificationStateChange(session, id) {
+    session.stateVersions.set(id, ++session.stateRevision);
+  }
+
+  function getNotificationMutationGuard(id) {
+    const guard = notificationMutationGuards.get(id);
     if (!guard) return null;
     if (!guard.pending && guard.expiresAt <= now()) {
-      notificationMutationGuards.delete(key);
+      notificationMutationGuards.delete(id);
       return null;
     }
     return guard;
   }
 
   function beginNotificationMutationGuard(key, enabled) {
+    const token = ensureNotificationAccount();
+    const id = getNotificationSubscriptionById(key)?.id || notificationSubscriptions.get(key)?.id || key;
+    if (token.session) noteNotificationStateChange(token.session, id);
     const timestamp = now();
     for (const [username, guard] of notificationMutationGuards) {
       if (!guard.pending && guard.expiresAt <= timestamp) notificationMutationGuards.delete(username);
@@ -87,8 +99,8 @@
       pending: true,
       expiresAt: timestamp + NOTIFICATION_MUTATION_GUARD_MS,
     };
-    if (notificationMutationGuards.has(key)) notificationMutationGuards.delete(key);
-    notificationMutationGuards.set(key, guard);
+    if (notificationMutationGuards.has(id)) notificationMutationGuards.delete(id);
+    notificationMutationGuards.set(id, guard);
     while (notificationMutationGuards.size > MAX_NOTIFICATION_SUBSCRIPTIONS) {
       notificationMutationGuards.delete(notificationMutationGuards.keys().next().value);
     }
@@ -96,16 +108,21 @@
   }
 
   function rememberNotificationSubscription(raw, enabled, options) {
+    const opts = options || {};
+    const token = opts.accountToken || ensureNotificationAccount();
+    if (!isCurrentNotificationAccount(token, false)) return false;
     const input = sanitizeNotificationSubscription({ ...raw, enabled, updatedAt: now() });
     if (!input) return false;
     const key = input.username.toLowerCase();
-    const opts = options || {};
-    const guard = getNotificationMutationGuard(key);
+    const guard = getNotificationMutationGuard(input.id);
+    // 状态版本不依赖五秒计时器，分页或采集队列再慢也不能覆盖读取后的操作。
+    if (opts.authoritative !== true && Number.isFinite(opts.readRevision)
+        && (token.session.stateVersions.get(input.id) || 0) > opts.readRevision) return false;
     // 请求尚未完成时不接受被动采集结果；成功后的保护期内只接受与刚才操作一致的状态。
     // 铃铛操作自身使用 authoritative 显式越过该限制。
     if (guard && opts.authoritative !== true
         && (guard.pending || guard.enabled !== (enabled === true))) return false;
-    const existing = notificationSubscriptions.get(key);
+    const existing = opts.batch?.byId ? opts.batch.byId.get(input.id) : getNotificationSubscriptionById(input.id);
     if (!enabled && !existing && !opts.trackDisabled) return false;
     const next = {
       ...(existing || {}),
@@ -119,20 +136,42 @@
       || existing.displayName !== next.displayName || existing.avatarUrl !== next.avatarUrl
       || existing.enabled !== next.enabled;
     if (!changed) return false;
+    if (!existing || existing.enabled !== next.enabled || existing.username !== next.username) noteNotificationStateChange(token.session, input.id);
+    // Map 保留用户名索引供界面查询；合并、锁和持久化均以稳定 ID 判定身份。
+    if (existing) notificationSubscriptions.delete(existing.username.toLowerCase());
+    const occupant = notificationSubscriptions.get(key);
+    if (occupant && occupant.id !== input.id) {
+      noteNotificationStateChange(token.session, occupant.id);
+      opts.batch?.byId?.delete(occupant.id);
+    }
     notificationSubscriptions.set(key, next);
+    opts.batch?.byId?.set(input.id, next);
     if (next.enabled) rememberFollowingRelation(next.username, true);
-    scheduleNotificationSubscriptionsPersist();
+    if (opts.batch) opts.batch.changed = true;
+    else scheduleNotificationSubscriptionsPersist();
     return true;
   }
 
+  function mergeNotificationSubscriptions(items, options = {}) {
+    const batch = { changed: false, byId: new Map([...notificationSubscriptions.values()].map((item) => [item.id, item])) };
+    const opts = { ...options, batch };
+    for (const item of items) rememberNotificationSubscription(item, true, opts);
+    return batch.changed;
+  }
+
   function removeRememberedNotificationSubscription(username) {
+    const token = ensureNotificationAccount();
+    if (!token.viewerId) return false;
     const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
+    const item = notificationSubscriptions.get(key);
     if (!notificationSubscriptions.delete(key)) return false;
+    noteNotificationStateChange(token.session, item.id);
     scheduleNotificationSubscriptionsPersist();
     return true;
   }
 
   function toggleNotificationSubscriptionPinned(username) {
+    if (!ensureNotificationAccount().viewerId) return false;
     const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
     const existing = notificationSubscriptions.get(key);
     if (!existing) return false;

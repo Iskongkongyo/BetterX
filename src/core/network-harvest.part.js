@@ -213,15 +213,30 @@
       const response = await fetchImpl.call(pageWin || window, url, {
         method: opts.method || 'GET',
         credentials: 'include',
+        ...(opts.cache ? { cache: opts.cache } : {}),
         headers,
         body: opts.body || undefined,
         signal: controller ? controller.signal : undefined,
       });
-      if (!response || !response.ok) throw new Error(`X 接口返回 ${response ? response.status : '未知状态'}`);
-      return await response.json();
+      if (!response || !response.ok) {
+        let payload = null;
+        try { payload = await response?.json(); } catch {}
+        throw makeXSessionRequestError(response?.status, payload);
+      }
+      const payload = await response.json();
+      if (Array.isArray(payload?.errors) && payload.errors.length) throw makeXSessionRequestError(response.status, payload);
+      return payload;
     } finally {
       if (timer) clearTimeout(timer);
     }
+  }
+
+  function makeXSessionRequestError(status, payload) {
+    const error = new Error(`X 接口返回 ${status || '未知状态'}`);
+    error.status = Number(status) || 0;
+    error.codes = (Array.isArray(payload?.errors) ? payload.errors : [])
+      .map((item) => Number(item?.code)).filter(Number.isFinite);
+    return error;
   }
 
   async function requestAuthorProfileLinks(screenName) {
@@ -244,9 +259,12 @@
       fieldToggles: JSON.stringify({ withPayments: false, withAuxiliaryUserLabels: true }),
     });
     const payload = await requestXSessionJson('/i/api/graphql/AMIBMjtxEEATh4z8V9GtRg/UserByScreenName?' + params);
-    const entities = payload?.data?.user?.result?.profile_bio?.entities;
+    const result = payload?.data?.user?.result;
+    const profile = result?.user || result;
+    if (!profile || (!profile.profile_bio && !profile.legacy)) throw new Error('X returned no readable author profile');
+    const entitySources = [profile.profile_bio?.entities, profile.legacy?.entities];
     const links = new Map();
-    for (const field of [entities?.description, entities?.url]) {
+    for (const field of entitySources.flatMap((entities) => [entities?.description, entities?.url])) {
       if (!Array.isArray(field?.urls)) continue;
       for (const entry of field.urls) {
         const rawUrl = entry?.expanded_url || entry?.url;
@@ -264,30 +282,61 @@
 
   function notificationUserFromRest(raw, enabled) {
     if (!raw || typeof raw !== 'object') return null;
+    const legacy = raw.legacy && typeof raw.legacy === 'object' ? raw.legacy : null;
+    const core = raw.core && typeof raw.core === 'object' ? raw.core : null;
+    const avatar = raw.avatar && typeof raw.avatar === 'object' ? raw.avatar : null;
     return sanitizeNotificationSubscription({
-      id: raw.id_str || raw.id,
-      username: raw.screen_name,
-      displayName: raw.name,
-      avatarUrl: raw.profile_image_url_https || raw.profile_image_url,
+      id: raw.rest_id || raw.id_str || raw.id || legacy?.id_str,
+      username: legacy?.screen_name || core?.screen_name || raw.screen_name || raw.username,
+      displayName: core?.name || raw.name || legacy?.name,
+      avatarUrl: avatar?.image_url || avatar?.imageUrl || legacy?.profile_image_url_https
+        || legacy?.profile_image_url || raw.profile_image_url_https || raw.profile_image_url,
       enabled,
       updatedAt: now(),
     });
   }
 
+  function getNotificationEnabledState(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const explicit = raw.notifications_settings?.notifications_enabled
+      ?? raw.legacy?.notifications_settings?.notifications_enabled;
+    if (typeof explicit === 'boolean') return explicit;
+    // 关注列表的旧字段 false 不是可靠的关闭证据，保持与被动资料读取相同的规则。
+    return raw.notifications === true || raw.legacy?.notifications === true ? true : null;
+  }
+
+  function parseNotificationFollowingPage(payload) {
+    if (!payload || typeof payload !== 'object' || !Array.isArray(payload.users)) {
+      throw new Error('X 未返回有效的关注列表，请稍后重试');
+    }
+    if (Array.isArray(payload.errors) && payload.errors.length) throw new Error('X 返回接口错误，请稍后重试');
+    const rawCursor = payload.next_cursor_str ?? payload.next_cursor;
+    const nextCursor = typeof rawCursor === 'string' ? rawCursor.trim()
+      : (Number.isSafeInteger(rawCursor) ? String(rawCursor) : '');
+    if (!nextCursor || nextCursor.length > 200) throw new Error('关注列表分页信息缺失，请稍后重试');
+    return { users: payload.users, nextCursor };
+  }
+
   async function syncNotificationSubscriptions() {
-    if (state.notificationSyncInProgress) return;
+    const accountToken = ensureNotificationAccount();
+    const readRevision = accountToken.session?.stateRevision || 0;
+    if (state.notificationSyncInProgress || state.notificationCleanupInProgress) return;
     const viewerId = getCurrentViewerId();
     if (!viewerId) {
       showToast('⚠️ 无法读取当前 X 用户 ID，请确认已经登录');
       return;
     }
     state.notificationSyncInProgress = true;
+    closeNotificationSyncDifferences();
     renderNotificationSubscriptions();
     const collected = new Map();
+    const seenCursors = new Set();
     let cursor = '-1';
     let pageCount = 0;
     try {
       do {
+        if (seenCursors.has(cursor)) throw new Error('关注列表分页没有前进，已停止同步');
+        seenCursors.add(cursor);
         const params = new URLSearchParams({
           include_profile_interstitial_type: '1',
           include_blocking: '1',
@@ -306,45 +355,53 @@
           count: '200',
           with_total_count: 'true',
         });
-        const payload = await requestXSessionJson(`/i/api/1.1/friends/following/list.json?${params}`);
-        const users = Array.isArray(payload && payload.users) ? payload.users : [];
+        // friends/following/list 是“你关注的粉丝”，不能用来枚举自己关注的全部账号。
+        const payload = await requestXSessionJson(`/i/api/1.1/friends/list.json?${params}`, { cache: 'no-store' });
+        if (!isCurrentNotificationAccount(accountToken)) return;
+        const { users, nextCursor } = parseNotificationFollowingPage(payload);
         for (const rawUser of users) {
-          const username = safeString(rawUser && rawUser.screen_name, 30).replace(/^@+/, '');
-          if (username) rememberFollowingRelation(username, true);
-          if (rawUser && rawUser.notifications === true) {
-            const item = notificationUserFromRest(rawUser, true);
-            if (item) collected.set(item.username.toLowerCase(), item);
-          }
+          const item = notificationUserFromRest(rawUser, true);
+          if (!item) continue;
+          rememberFollowingRelation(item.username, true);
+          if (getNotificationEnabledState(rawUser) === true) collected.set(item.id, item);
         }
-        cursor = safeString((payload && (payload.next_cursor_str || payload.next_cursor)) || '0', 200);
+        cursor = nextCursor;
         pageCount++;
         if (pageCount >= 50 && cursor && cursor !== '0') throw new Error('关注账号过多，已达到 50 页安全上限');
       } while (cursor && cursor !== '0');
 
       // 同步响应可能被裁剪或暂时遗漏账号，只增量合并，不据此删除本地订阅。
-      for (const [key, item] of collected) {
-        const existing = notificationSubscriptions.get(key);
-        notificationSubscriptions.set(key, { ...(existing || {}), ...item, enabled: true, updatedAt: now() });
-      }
-      state.settings.notificationSubscriptionsSyncedAt = now();
-      scheduleNotificationSubscriptionsPersist();
+      // 统一合并入口，保留本地置顶，并尊重刚刚修改铃铛时的竞态保护。
+      if (!isCurrentNotificationAccount(accountToken)) return;
+      mergeNotificationSubscriptions(collected.values(), { accountToken, readRevision });
+      state.notificationSyncedAt = now();
+      scheduleNotificationSubscriptionsPersist({ render: false });
       const enabledTotal = [...notificationSubscriptions.values()].filter((item) => item.enabled).length;
       showToast(`✅ 本次识别 ${collected.size} 个，当前保留 ${enabledTotal} 个订阅`);
+      const differences = getNotificationSyncDifferences(collected);
+      if (differences.length) showNotificationSyncDifferences(differences, viewerId, collected.size);
     } catch (err) {
+      if (!isCurrentNotificationAccount(accountToken)) return;
       console.error('[BetterX] sync notification subscriptions failed:', err);
       showToast(`⚠️ 同步失败：${safeString(err && err.message, 120) || '未知错误'}`);
     } finally {
-      state.notificationSyncInProgress = false;
+      if (isCurrentNotificationAccount(accountToken)) state.notificationSyncInProgress = false;
       renderNotificationSubscriptions();
     }
   }
 
-  async function updateNotificationSubscription(username, enabled) {
+  async function updateNotificationSubscription(username, enabled, options) {
+    const accountToken = ensureNotificationAccount();
+    if (!accountToken.viewerId) return { status: 'accountChanged' };
+    const opts = options || {};
     const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
-    const existing = notificationSubscriptions.get(key);
-    if (!existing || !/^\d{1,30}$/.test(existing.id) || state.notificationMutationUsers.has(key)) return;
+    const existing = opts.expectedId ? getNotificationSubscriptionById(opts.expectedId) : notificationSubscriptions.get(key);
+    if (!existing || !/^\d{1,30}$/.test(existing.id) || state.notificationMutationUsers.has(existing.id)
+        || (state.notificationCleanupInProgress && !opts.cleanup)
+        || (opts.expectedId && existing.id !== opts.expectedId)) return { status: 'skipped' };
+    if (opts.viewerId && accountToken.viewerId !== opts.viewerId) return { status: 'accountChanged' };
     const desiredEnabled = enabled === true;
-    const mutationGuard = beginNotificationMutationGuard(key, desiredEnabled);
+    const mutationGuard = beginNotificationMutationGuard(existing.id, desiredEnabled);
     const body = new URLSearchParams({
       include_profile_interstitial_type: '1',
       include_blocking: '1',
@@ -362,7 +419,7 @@
       id: existing.id,
       device: desiredEnabled ? 'true' : 'false',
     });
-    state.notificationMutationUsers.add(key);
+    state.notificationMutationUsers.add(existing.id);
     renderNotificationSubscriptions();
     try {
       await requestXSessionJson('/i/api/1.1/friendships/update.json', {
@@ -370,20 +427,37 @@
         form: true,
         body: body.toString(),
       });
-      rememberNotificationSubscription(existing, desiredEnabled, {
+      if (!isCurrentNotificationAccount(accountToken)) {
+        if (notificationMutationGuards.get(existing.id) === mutationGuard) notificationMutationGuards.delete(existing.id);
+        return { status: 'accountChanged' };
+      }
+      rememberNotificationSubscription(getNotificationSubscriptionById(existing.id) || existing, desiredEnabled, {
         trackDisabled: true,
         authoritative: true,
+        accountToken,
       });
       mutationGuard.pending = false;
       mutationGuard.expiresAt = now() + NOTIFICATION_MUTATION_GUARD_MS;
       renderNotificationSubscriptions();
-      showToast(desiredEnabled ? `✅ 已开启 @${existing.username} 的帖子通知` : `已关闭 @${existing.username} 的帖子通知`);
+      if (!opts.quiet) showToast(desiredEnabled ? `✅ 已开启 @${existing.username} 的帖子通知` : `已关闭 @${existing.username} 的帖子通知`);
+      return { status: desiredEnabled ? 'enabled' : 'closed', enabled: desiredEnabled };
     } catch (err) {
-      if (notificationMutationGuards.get(key) === mutationGuard) notificationMutationGuards.delete(key);
+      if (!isCurrentNotificationAccount(accountToken)) return { status: 'accountChanged' };
+      const unavailable = opts.cleanup && !desiredEnabled && getCurrentViewerId() === opts.viewerId
+        && ((err.status === 404 && err.codes?.includes(50)) || (err.status === 403 && err.codes?.includes(63)));
+      if (unavailable) {
+        rememberNotificationSubscription(getNotificationSubscriptionById(existing.id) || existing, false,
+          { trackDisabled: true, authoritative: true, accountToken });
+        mutationGuard.pending = false;
+        mutationGuard.expiresAt = now() + NOTIFICATION_MUTATION_GUARD_MS;
+        return { status: 'localOnly' };
+      }
+      if (notificationMutationGuards.get(existing.id) === mutationGuard) notificationMutationGuards.delete(existing.id);
       console.error('[BetterX] update notification subscription failed:', err);
-      showToast(`⚠️ 修改失败：${safeString(err && err.message, 120) || '未知错误'}`);
+      if (!opts.quiet) showToast(`⚠️ 修改失败：${safeString(err && err.message, 120) || '未知错误'}`);
+      return { status: 'failed', rateLimited: err.status === 429 || err.codes?.includes(88) === true };
     } finally {
-      state.notificationMutationUsers.delete(key);
+      if (isCurrentNotificationAccount(accountToken)) state.notificationMutationUsers.delete(existing.id);
       renderNotificationSubscriptions();
     }
   }
@@ -538,7 +612,8 @@
     rememberFollowingRelation(handle, following);
   }
 
-  function harvestNotificationRelationship(obj) {
+  function harvestNotificationRelationship(obj, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0, batch) {
+    if (!isCurrentNotificationAccount(accountToken, false)) return;
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
     const relationship = obj.relationship && typeof obj.relationship === 'object' ? obj.relationship : null;
     const relationshipSource = relationship && relationship.source && typeof relationship.source === 'object'
@@ -550,38 +625,15 @@
     if (relationshipSource && relationshipTarget && typeof relationshipSource.notifications_enabled === 'boolean') {
       const targetUser = notificationUserFromRest(relationshipTarget, relationshipSource.notifications_enabled);
       if (targetUser) {
-        rememberNotificationSubscription(targetUser, relationshipSource.notifications_enabled, { trackDisabled: true });
+        rememberNotificationSubscription(targetUser, relationshipSource.notifications_enabled, { trackDisabled: true, accountToken, readRevision, batch });
       }
     }
-    const legacy = obj.legacy && typeof obj.legacy === 'object' ? obj.legacy : null;
-    const core = obj.core && typeof obj.core === 'object' ? obj.core : null;
-    const settings = obj.notifications_settings && typeof obj.notifications_settings === 'object'
-      ? obj.notifications_settings
-      : null;
     // 普通关注列表中的 notifications=false 可能来自裁剪响应；只把 true 当作新增证据。
     // 明确关闭仅接受用户资料字段或铃铛修改响应，避免同步时误删本地订阅。
-    const enabled = settings && typeof settings.notifications_enabled === 'boolean'
-      ? settings.notifications_enabled
-      : (obj.notifications === true || (legacy && legacy.notifications === true) ? true : null);
+    const enabled = getNotificationEnabledState(obj);
     if (typeof enabled !== 'boolean') return;
-
-    const username = safeString(
-      (legacy && legacy.screen_name) || (core && core.screen_name) || obj.screen_name || obj.username || '',
-      30
-    ).replace(/^@+/, '');
-    const id = safeString(obj.rest_id || obj.id_str || obj.id || (legacy && legacy.id_str) || '', 30);
-    if (!/^[a-z0-9_]{1,15}$/i.test(username) || !/^\d{1,30}$/.test(id)) return;
-    const avatar = obj.avatar && typeof obj.avatar === 'object' ? obj.avatar : null;
-    rememberNotificationSubscription({
-      id,
-      username,
-      displayName: safeString((core && core.name) || obj.name || (legacy && legacy.name) || '', 100),
-      avatarUrl: safeImportedAssetUrl(
-        (avatar && (avatar.image_url || avatar.imageUrl))
-        || (legacy && (legacy.profile_image_url_https || legacy.profile_image_url))
-        || obj.profile_image_url_https || obj.profile_image_url || ''
-      ),
-    }, enabled);
+    const user = notificationUserFromRest(obj, enabled);
+    if (user) rememberNotificationSubscription(user, enabled, { accountToken, readRevision, batch });
   }
 
   function getHandleFromFollowControl(control) {
@@ -642,17 +694,17 @@
     }
   }
 
-  function enqueueNetworkHarvestObject(root) {
+  function enqueueNetworkHarvestObject(root, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0) {
     if (!root || typeof root !== 'object') return;
     if (networkHarvestQueue.length >= MAX_NETWORK_HARVEST_JOBS) {
       networkHarvestDroppedJobs++;
       return;
     }
-    networkHarvestQueue.push({ type: 'object', stack: [{ value: root, depth: 0 }], processedNodes: 0 });
+    networkHarvestQueue.push({ type: 'object', stack: [{ value: root, depth: 0 }], processedNodes: 0, accountToken, readRevision });
     scheduleNetworkHarvestDrain();
   }
 
-  function tryHarvest(txt) {
+  function tryHarvest(txt, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0) {
     if (!txt || txt.length > MAX_NETWORK_RESPONSE_BYTES || !textMayContainHarvestData(txt)) return;
     if (networkHarvestQueue.length >= MAX_NETWORK_HARVEST_JOBS
         || networkHarvestQueuedChars + txt.length > MAX_NETWORK_HARVEST_QUEUE_CHARS) {
@@ -660,15 +712,15 @@
       return;
     }
     networkHarvestQueuedChars += txt.length;
-    networkHarvestQueue.push({ type: 'text', text: txt, charLength: txt.length });
+    networkHarvestQueue.push({ type: 'text', text: txt, charLength: txt.length, accountToken, readRevision });
     scheduleNetworkHarvestDrain();
   }
 
-  function processHarvestObjectNode(value, depth, stack) {
+  function processHarvestObjectNode(value, depth, stack, accountToken, readRevision, batch) {
     if (!value || typeof value !== 'object' || depth > 40) return;
     if (!Array.isArray(value)) {
       harvestFollowingRelationship(value);
-      harvestNotificationRelationship(value);
+      harvestNotificationRelationship(value, accountToken, readRevision, batch);
       const idStr = value.id_str;
       const ext = value.extended_entities;
       if (idStr && ext && Array.isArray(ext.media)) registerMedia(idStr, ext.media);
@@ -687,6 +739,8 @@
   }
 
   function drainNetworkHarvestQueue(deadline) {
+    const accountToken = ensureNotificationAccount();
+    const batch = { changed: false };
     let nodeBudget = NETWORK_HARVEST_SLICE_NODES;
     while (networkHarvestQueue.length && nodeBudget > 0) {
       if (typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() <= 2 && nodeBudget < NETWORK_HARVEST_SLICE_NODES) break;
@@ -695,7 +749,7 @@
         networkHarvestQueuedChars = Math.max(0, networkHarvestQueuedChars - (job.charLength || 0));
         let parsed;
         try { parsed = JSON.parse(job.text); } catch (err) { networkHarvestQueue.shift(); continue; }
-        job = { type: 'object', stack: [{ value: parsed, depth: 0 }], processedNodes: 0 };
+        job = { type: 'object', stack: [{ value: parsed, depth: 0 }], processedNodes: 0, accountToken: job.accountToken, readRevision: job.readRevision };
         networkHarvestQueue[0] = job;
         nodeBudget = Math.max(1, nodeBudget - 50);
       }
@@ -703,7 +757,7 @@
         const node = job.stack.pop();
         job.processedNodes++;
         nodeBudget--;
-        try { processHarvestObjectNode(node.value, node.depth, job.stack); } catch (err) {}
+        try { processHarvestObjectNode(node.value, node.depth, job.stack, job.accountToken, job.readRevision, batch); } catch (err) {}
         if (typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() <= 2) break;
       }
       if (!job.stack.length || job.processedNodes >= MAX_NETWORK_HARVEST_NODES_PER_JOB) {
@@ -713,6 +767,7 @@
         break;
       }
     }
+    if (batch.changed && isCurrentNotificationAccount(accountToken)) scheduleNotificationSubscriptionsPersist();
   }
 
   function declaredResponseTooLarge(getHeader) {
@@ -724,19 +779,21 @@
   }
 
   function harvestXhrResponse(xhr) {
+    const accountToken = xhr?.__xvNotificationAccountToken;
+    const readRevision = xhr?.__xvNotificationReadRevision;
     const url = xhr && xhr.__xvUrl ? String(xhr.__xvUrl) : '';
     if (!/(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) return;
     try {
       if (typeof xhr.getResponseHeader === 'function'
           && declaredResponseTooLarge((name) => xhr.getResponseHeader(name))) return;
       if (xhr.responseType === '' || xhr.responseType === 'text') {
-        tryHarvest(xhr.responseText);
+        tryHarvest(xhr.responseText, accountToken, readRevision);
       } else if (xhr.responseType === 'json' && xhr.response && typeof xhr.response === 'object') {
-        enqueueNetworkHarvestObject(xhr.response);
+        enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision);
       } else if (xhr.responseType === 'arraybuffer' && xhr.response && typeof xhr.response.byteLength === 'number' && xhr.response.byteLength <= MAX_NETWORK_RESPONSE_BYTES) {
-        tryHarvest(new TextDecoder('utf-8').decode(new Uint8Array(xhr.response)));
+        tryHarvest(new TextDecoder('utf-8').decode(new Uint8Array(xhr.response)), accountToken, readRevision);
       } else if (xhr.responseType === 'blob' && xhr.response && typeof xhr.response.size === 'number' && typeof xhr.response.text === 'function' && xhr.response.size <= MAX_NETWORK_RESPONSE_BYTES) {
-        xhr.response.text().then(tryHarvest).catch(() => {});
+        xhr.response.text().then((text) => tryHarvest(text, accountToken, readRevision)).catch(() => {});
       }
     } catch (e) {}
   }
@@ -772,6 +829,8 @@
           warnNetworkRehookLimit('fetch');
         } else {
           const hooked = function (...args) {
+            const accountToken = ensureNotificationAccount();
+            const readRevision = accountToken.session?.stateRevision || 0;
             const p = origFetch.apply(this, args);
             try {
               p.then((res) => {
@@ -781,7 +840,7 @@
                     if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
                     const contentType = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
                     if (contentType && !/(?:json|javascript|text)/i.test(contentType)) return;
-                    res.clone().text().then(tryHarvest).catch(() => {});
+                    res.clone().text().then((text) => tryHarvest(text, accountToken, readRevision)).catch(() => {});
                   }
                 } catch (e) {}
               }).catch(() => {});
@@ -816,6 +875,8 @@
         } else {
           const origSend = XHR.prototype.send;
           const hookedSend = function () {
+            this.__xvNotificationAccountToken = ensureNotificationAccount();
+            this.__xvNotificationReadRevision = this.__xvNotificationAccountToken.session?.stateRevision || 0;
             try {
               this.addEventListener('load', () => harvestXhrResponse(this), { once: true });
             } catch (e) {}

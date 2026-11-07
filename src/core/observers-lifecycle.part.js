@@ -27,11 +27,13 @@
     const throttledAdultSpamCount = throttle(updateAdultSpamCount, 300);
     const throttledLayoutRefresh = throttle(applyLayoutEnhancements, 250);
     const pendingRoots = new Set();
+    const pendingDismissRoots = new Set();
     let addedRootsTimer = null;
     state.observerCleanup = () => {
       if (addedRootsTimer !== null) clearTimeout(addedRootsTimer);
       addedRootsTimer = null;
       pendingRoots.clear();
+      pendingDismissRoots.clear();
     };
     const collectArticlesFromRoot = (root, articles) => {
       if (!root || !root.isConnected || root.closest('#BetterX-root')) return;
@@ -41,6 +43,10 @@
       root.querySelectorAll('article').forEach((article) => articles.add(article));
     };
     const flushPendingRoots = () => {
+      if (dismissWidgetsActive()) {
+        for (const root of pendingDismissRoots) if (root.isConnected) sweepDismissWidgets(root);
+      }
+      pendingDismissRoots.clear();
       const articles = new Set();
       let layoutNeedsFullRefresh = false;
       const deferAutoExpand = state.settings.autoExpandPostText && isPageScrollBusy();
@@ -80,6 +86,13 @@
         const mutationElement = mutation.target instanceof HTMLElement
           ? mutation.target
           : mutation.target && mutation.target.parentElement;
+        if (state.settings.authorLinksEnabled && mutation.type === 'attributes'
+            && mutationElement?.closest('article[data-testid="tweet"]')) pendingRoots.add(mutationElement);
+        if (dismissWidgetsActive() && mutationElement
+            && !mutationElement.closest('article, [data-testid="tweet"], #BetterX-root')) {
+          const widgetRoot = mutationElement.closest(DISMISS_WIDGET_MUTATION_SCOPE);
+          if (widgetRoot) pendingDismissRoots.add(widgetRoot);
+        }
         let hasTextUpdate = mutation.type === 'characterData';
         if (!hasTextUpdate) {
           for (const node of mutation.addedNodes) {
@@ -98,6 +111,7 @@
           dismissLoggedOutPostObstructions(node);
           if (state.settings.hideAds) sweepStandaloneAds(node);
           if (state.settings.hideNfl) sweepNflEntries(node);
+          if (dismissWidgetsActive()) sweepDismissWidgets(node);
           harvestFollowingControlsFromRoot(node);
           pendingRoots.add(node);
           if (adultSpamFilteringEnabled()) collectArticlesFromRoot(node, immediateAdultArticles);
@@ -127,12 +141,13 @@
         throttledDisappear();
         if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
       }
-      if (pendingRoots.size) flushAddedRoots();
+      if (pendingRoots.size || pendingDismissRoots.size) flushAddedRoots();
       else if (hadRemoval) refreshAuthorLinks();
       if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) scheduleMobileBadgeSync();
     });
     // X 是 SPA，主时间线容器会被整体替换；保留 body 作为稳定根节点，但把重活批量延后并按 article 去重。
-    state.observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    state.observer.observe(document.body, { childList: true, subtree: true, characterData: true,
+      attributes: true, attributeFilter: ['href'] });
   }
 
   function stopCleanupTimer() {
@@ -170,6 +185,19 @@
       installCleanupTimer();
       installNetworkHookTimer();
     }
+  }
+
+  function restoreStartupAppearance() {
+    const mirrored = readSettingsMirror();
+    if (!mirrored) return;
+    // 只提前恢复外观；完整设置仍由数据库加载流程确定，不在这里写回默认值。
+    const keys = ['useMobileBadgeOnDesktop', 'hideAppBadge', 'useMobileBadgeHandle',
+      'mobileBadgeHandleTop', 'badgePos', 'theme', 'panelWidth'];
+    const appearance = sanitizeSettings({
+      ...Object.fromEntries(keys.map((key) => [key, mirrored[key]])),
+      hideAppBadgeOnDesktop: mirrored.hideAppBadgeOnDesktop,
+    });
+    for (const key of keys) state.settings[key] = appearance[key];
   }
 
   async function loadStateFromDb() {
@@ -212,15 +240,8 @@
     trimFollowedHandlesToMax();
     // document-start 的网络 Hook 可能先于 IndexedDB 完成并学到订阅状态；
     // 载入持久数据后再把这批早期结果合并回来，避免启动竞态覆盖新信息。
-    const earlyNotificationSubscriptions = new Map(notificationSubscriptions);
-    notificationSubscriptions.clear();
-    for (const item of state.settings.notificationSubscriptions || []) {
-      const sanitized = sanitizeNotificationSubscription(item);
-      if (sanitized) notificationSubscriptions.set(sanitized.username.toLowerCase(), sanitized);
-    }
-    for (const [key, item] of earlyNotificationSubscriptions) notificationSubscriptions.set(key, item);
     state.settingsLoaded = true;
-    if (earlyNotificationSubscriptions.size) scheduleNotificationSubscriptionsPersist();
+    restoreNotificationAccounts();
     if (followedHandles.size !== persistedFollowedHandles.length) scheduleFollowedHandlesPersist();
     const rawPosts = (await dbGetAllPosts()).filter(Boolean);
     const all = rawPosts.map(sanitizeImportedPost).filter(Boolean)

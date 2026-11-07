@@ -5,12 +5,12 @@
 // @name:ja      もっと便利な X（BetterX）
 // @name:en      Better X (BetterX)
 // @namespace    https://github.com/Iskongkongyo
-// @version      4.1.0
-// @description  BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
-// @description:zh-CN BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子通知管理及界面优化。
-// @description:zh-TW BetterX 是一款 X（原 Twitter）增強腳本，支援本機貼文記錄、搜尋、收藏與備註，並整合廣告與成人引流內容過濾、媒體下載、貼文通知管理及介面最佳化。
-// @description:ja BetterX は、X（旧 Twitter）向けの機能拡張ユーザースクリプトです。ポストのローカル記録・検索・お気に入り・メモに加え、広告や成人向けスパムの非表示、メディア保存、ポスト通知の管理、UI の改善に対応します。
-// @description:en BetterX is a userscript for X (formerly Twitter) with local post history, search, favorites, and notes, plus ad and adult spam filtering, media downloads, post notification management, and interface improvements.
+// @version      4.3.0
+// @description  BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子截图下载、帖子通知管理及界面优化等功能。
+// @description:zh-CN BetterX 是一款 X（原 Twitter）增强脚本，支持本地帖子记录、搜索、收藏与备注，并集成广告和黄推过滤、媒体下载、帖子截图下载、帖子通知管理及界面优化等功能。
+// @description:zh-TW BetterX 是一款 X（原 Twitter）增強腳本，支援本機貼文記錄、搜尋、收藏與備註，並整合廣告與成人引流內容過濾、媒體下載、貼文截圖下載、貼文通知管理及介面最佳化等功能。
+// @description:ja BetterX は、X（旧 Twitter）向けの機能拡張ユーザースクリプトです。ポストのローカル記録・検索・お気に入り・メモに加え、広告や成人向けスパムの非表示、メディア保存、ポストのスクリーンショット保存、ポスト通知の管理、UI の改善などに対応します。
+// @description:en BetterX is a userscript for X (formerly Twitter) with local post history, search, favorites, and notes, plus ad and adult spam filtering, media downloads, post screenshot downloads, post notification management, interface improvements, and more.
 // @author        流萤可爱捏
 // @match        https://x.com/*
 // @match        https://m.x.com/*
@@ -26,6 +26,7 @@
 // @connect      video.twimg.com
 // @connect      pbs.twimg.com
 // @connect      x.com
+// @connect      cdn.simpleicons.org
 // @run-at       document-start
 // @icon      data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAUEBAQEAwUEBAQGBQUGCA0ICAcHCBALDAkNExAUExIQEhIUFx0ZFBYcFhISGiMaHB4fISEhFBkkJyQgJh0gISD/2wBDAQUGBggHCA8ICA8gFRIVICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICD/wAARCABAAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7LoorC17XpdLsoorO08/Vr2UwWdrI20OwyS7EZ2xqo3MfTjqQCAX9S1fStHgWfVdQt7KNjtUzSBdx9BnqfYVgD4ieGJYXmspL6+jXPz29hMyHHX59oXj61mG3t9BZtSvdQhudZmQm41e+IRYYx12gnEUYJwsYIyTyScmuF1j41/CzTrlllvbjxBeodrz2dkGDEHjLHarYPTrUOXYtRuenQ+PtDktheT2mrWVn/FdXemzRRJ/vMVwB/tH5feuohmgubeO4t5UmhlUOkkbBldTyCCOCK+etO/aJ8Fi+QTz61DbuwV2vbVWMWf4g8bHgdwR06Hse/m0268PsfEXgm8ijspF+0XGlM2bK6Ujd5kWAfJYg53J8pzkqeTQpdwcGj0qivO/EHiGDVvAyPoWoXenanqF7Fbp5ZxPayo4eVWHI+VEcnqrDHUMM9R4T1efXPCtnqF2ipd/PDcKn3fNjdo3I9iykj2IpxlfR7kdbGrdZFuX81YlT5mZm2gADnJ7Vw2m202veIZPFl67m0aFLbTLZgV/cg7mnYesjbSF7KiE8nA2fGMsMlpYaTczCK0v5yLticD7PHG0sgJ9GCBT7Map+GNWOtaPDrRJ23rCeND0jjIBQD/gJBPuTWbilJy7lI8Pux4h+I/xk8UW9tZXF54f0snT4pNwSCGSMEM29gRu37idoZsccA1s6P+zF4YhzP4k8SXt47fN5FoRCi+24hnb65FdVqcgfwDD4S01o7KbVY5IHmB2+UjfNcS9ufn27s8tIK6bw1rA1PQ7MSlY7xLdfNizyCv7tjj0Dqw/D3pJq5r7OUVzrr+hxx+Afwmkglgj0y886FtjMuoTbuRkHk46H0rq/B+ixeFNOfwnbXVxc2NgFksmumDyJC+f3ZIAyFYMBx0IHauV8TeObLwf43W51DWre30ya2aO4tpZFVjIkgO6PP3nCyAlP4l6cgZ67TNX0/WdRs9X0q/ttQsrmxcJcWzhkcB0I+h5PB5FHNccoSSTezOTks00L4x20ETNCup6e6Wbuu6GNhKisSOnmBdsa56rsHatrwrpEenfEVrXT7+9u47G0uDePcTmQI80quiYB2qxIkcjAIyM8EV57+0fYrd+BEvjIyHTpobpXB+4C/lP+B3oceqCvTfgto1/oXwd0Oy1XTn06/ZHmmgcgsC7swJH8OQQdpyV6HkVcaf8Ay8v8jCW5e+Imj32qaLbGwtJLtxKbaaKPG7yJ1MMrDJH3Q+76Ke9ct4T1qytrW30aS6jjKy/Y7cn5BK8a4ULns8aLIv8AeBOOldt4u1VILMaUk/kvdITNLnHkw5wx/wB5s7VHXJJHSvJZ9PtfFvju7i1GB9P0vSjBaqSdm5kHmnevbG9QAeVAP3SxwTLp2vZmB4q+EzeLPHt5fa9rM80NtcAWliGWOGKzcBwcn1k81Sf7yr6iuq8H/Ca70jSVl0XWpLG6tLyU27SsZYjFJ5ZYdc4wuCo+VioyMjdVbxBqNx4e1221GTXHutL0kG4VbqXbuQ5Ur54UyFTgfKdwbjPQVb0L9oDwxrqywx6NqtjcWitNLHNPbxgRqDucl3GVUDJGMjg4pRlePJb/ADOyVRtXT/y+4i8U/CS11PWdU1HX7s3rXkKn7T5bokeAoJVF3BSFjUEk85B4AxWP8NdL8JeF/Ez2Xhm68ybV7WELBDKJFjSJN09yeflWWQBVHfG4DBrauPjM17r1z4Ss9DFjfwIv73U7hbkPuXdgCElWbac7S447cGsvRtJ1CDXrrV5L0W9rfGO2nvLe3WKcJ3VXHyxqX2/dXIAGCDkknJuKj0QlUUVru/PfsZPxi8QR+INH8S+E9NjW4uIYo4mIcEMIy1xcAAdCixqPdmAr1X4D60dd+CehXEupS6hcW6vazSSjlWRiNoPdQNuD3GK5n+xLDQvFurfY9Lt7MX9nby294i8wNCQux8/8sw4jYn1kO7Ocj2LRbtL/AEW3vIkESSrkRBdvlHoUPuCCK0g/dscc2m9DhviWLzSbjTPEGnT26XUk8dnGbgZWJzvxLg8NtRpDj1C++eDj13R4IfsNpqNv5aFjJLLcKXlcklmJJ5JYks3ck177eWNjqNv9n1Czgu4chvLnjDrkdDg8VAuiaKqhV0iyVVGABbpgD06UNJ7ka9D5V8Y3UvjO7sPCfh64glm1F0haRmBjESnkv2wzkAA+nqQDXh8K6H4e8U/bPEl1Yz6qs8Xk6MGWNLaJG/fToHbc23aRlsAh2+UYBH0vq3w98K6zqAvrnTzFKYfs8gtpDCs0W7dscLjIzk+tXF8FeD1WJV8MaWBEwdf9FTO4DGSccnHrUSppxaQ1Od9dvI+fvEtl4R1jVTpehPb6TqccUmoQ3Ej+VmdOPMKDGSudhGNxD4A+bNaNp410m50WGKLUEtLaVY/Ps7q4jys2cSDr0BOPwr3G88G+FL8H7R4esN5xiWOFY5Fx0w64Yfga0rfS9NtLSG0trGCOCBBHGgQYVQMAflUUqMacVHe39dROUm9WfPN1qkuopeWcet2t1bxSv9jfzVEkS/ZvMaMuD+8iJUxuDyBKgyeK9w8EK58EaZdSAK17H9tKBshPNJkC574DAZ74rTutF0a9CC80myudgIXzYEfbnrjI4q8qqiBEUKqjAAGABWyVg1P/2Q==
 // @noframes
@@ -47,7 +48,7 @@ const APP_ICON_URL = (() => {
 })();
 const UI_LANGUAGE_OVERRIDE_KEY = 'betterx_ui_language_v1';
 const SUPPORTED_UI_LANGUAGES = new Set(['zh-CN', 'zh-TW', 'ja', 'en']);
-const UI_TEXT_ENTRIES = [ ['更好的 X', '更好的 X', 'もっと便利な X', 'Better X'], ['Alt+X 开关', 'Alt+X 開關', 'Alt+X で開閉', 'Toggle with Alt+X'], ['刷新', '重新整理', '更新', 'Refresh'], ['全部已读', '全部已讀', 'すべて既読', 'Mark all read'], ['重新扫描当前页面', '重新掃描目前頁面', '現在のページを再スキャン', 'Rescan the current page'], ['把当前列表全部标为已读', '將目前列表全部標為已讀', '現在の一覧をすべて既読にする', 'Mark the current list as read'], ['切换语言', '切換語言', '言語を切替', 'Switch language'], ['切换 BetterX 界面语言', '切換 BetterX 介面語言', 'BetterX の表示言語を切り替える', 'Switch BetterX interface language'], ['选择界面语言', '選擇介面語言', '表示言語を選択', 'Choose interface language'], ['选择后页面会刷新，帖子与设置数据不会受到影响。', '選擇後頁面會重新整理，貼文與設定資料不受影響。', '選択後にページを更新します。ポストや設定データには影響しません。', 'The page will reload after selection. Your posts and settings will not be affected.'], ['正在切换语言并刷新…', '正在切換語言並重新整理…', '言語を切り替えて更新中…', 'Switching language and reloading…'], ['无法保存语言设置', '無法儲存語言設定', '言語設定を保存できませんでした', 'Could not save the language setting'], ['更多', '更多', 'その他', 'More'], ['关闭', '關閉', '閉じる', 'Close'], ['帖子', '貼文', 'ポスト', 'Posts'], ['通知', '通知', '通知', 'Notifications'], ['设置', '設定', '設定', 'Settings'], ['导出筛选', '匯出篩選結果', '絞り込み結果をエクスポート', 'Export filtered'], ['备份全部', '備份全部', 'すべてバックアップ', 'Back up all'], ['导出备份', '匯出備份', 'バックアップをエクスポート', 'Export backup'], ['导入', '匯入', 'インポート', 'Import'], ['备份已分卷', '備份已分卷', 'バックアップを分割しました', 'Backup split into parts'], ['数据较大，请保存全部分卷；恢复时可同时选择这些 JSON 文件。', '資料較大，請儲存全部分卷；還原時可同時選取這些 JSON 檔案。', 'データ量が多いため、すべての分割ファイルを保存してください。復元時にこれらの JSON ファイルをまとめて選択できます。', 'Save every part. You can select these JSON files together when restoring.'], ['下载分卷', '下載分卷', '分割ファイルを保存', 'Download part'], ['完成', '完成', '完了', 'Done'], ['无法导出：单条记录或设置超过备份容量限制。', '無法匯出：單筆記錄或設定超過備份容量限制。', '1 件の記録または設定がバックアップ容量の上限を超えています。', 'Cannot export: a record or the settings exceed the backup size limit.'], ['此前已导入的分卷会保留，可重新选择文件继续恢复。', '先前已匯入的分卷會保留，可重新選取檔案繼續還原。', '読み込み済みの分割ファイルは保持されます。ファイルを選択し直して復元を続けられます。', 'Previously imported parts are kept. Select files again to continue restoring.'], ['清空', '清空', '消去', 'Clear'], ['快速筛选', '快速篩選', 'クイックフィルター', 'Quick filters'], ['搜索', '搜尋', '検索', 'Search'], ['搜索帖子', '搜尋貼文', 'ポストを検索', 'Search posts'], ['搜索作者、正文或备注…', '搜尋作者、內文或備註…', '投稿者・本文・メモを検索…', 'Search author, text, or notes…'], ['来源筛选', '來源篩選', 'ソースで絞り込む', 'Filter by source'], ['媒体筛选', '媒體篩選', 'メディアで絞り込む', 'Filter by media'], ['排序方式', '排序方式', '並べ替え', 'Sort order'], ['智能排序', '智慧排序', 'スマート順', 'Smart sort'], ['最近浏览', '最近瀏覽', '最近表示', 'Recently viewed'], ['最近抓取', '最近擷取', '最近取得', 'Recently captured'], ['首次抓取（新→旧）', '首次擷取（新→舊）', '初回取得（新→古）', 'First captured (new→old)'], ['首次抓取（旧→新）', '首次擷取（舊→新）', '初回取得（古→新）', 'First captured (old→new)'], ['出现次数', '出現次數', '表示回数', 'Appearances'], ['按作者', '依作者', '投稿者順', 'By author'], ['按来源', '依來源', 'ソース順', 'By source'], ['全部', '全部', 'すべて', 'All'], ['未打开', '未開啟', '未表示', 'Unopened'], ['已打开', '已開啟', '表示済み', 'Opened'], ['快速消失', '快速消失', 'すぐ消えた', 'Disappeared quickly'], ['已收藏', '已收藏', 'お気に入り済み', 'Favorited'], ['已置顶', '已置頂', '固定済み', 'Pinned'], ['命中关键词', '符合關鍵字', 'キーワード一致', 'Keyword matches'], ['全部媒体', '全部媒體', 'すべてのメディア', 'All media'], ['含图片', '含圖片', '画像あり', 'With images'], ['含视频', '含影片', '動画あり', 'With video'], ['纯文字', '純文字', 'テキストのみ', 'Text only'], ['全部来源', '全部來源', 'すべてのソース', 'All sources'], ['主页', '首頁', 'ホーム', 'Home'], ['正在关注', '正在關注', 'フォロー中', 'Following'], ['为你推荐', '為你推薦', 'おすすめ', 'For You'], ['列表', '列表', 'リスト', 'List'], ['书签', '書籤', 'ブックマーク', 'Bookmarks'], ['喜欢', '喜歡', 'いいね', 'Likes'], ['未知页面', '未知頁面', '不明なページ', 'Unknown page'], ['个人主页', '個人主頁', 'プロフィール', 'Profile'], ['帖子详情', '貼文詳情', 'ポスト詳細', 'Post details'], ['搜索页', '搜尋頁', '検索ページ', 'Search page'], ['书签页', '書籤頁', 'ブックマークページ', 'Bookmarks page'], ['喜欢页', '喜歡頁', 'いいねページ', 'Likes page'], ['列表页', '列表頁', 'リストページ', 'List page'], ['总数', '總數', '合計', 'Total'], ['未读', '未讀', '未読', 'Unread'], ['图片', '圖片', '画像', 'Image'], ['视频', '影片', '動画', 'Video'], ['来源:', '來源：', 'ソース：', 'Source:'], ['历史来源:', '歷史來源：', '過去のソース：', 'Source history:'], ['抓取:', '擷取：', '取得：', 'Captured:'], ['浏览:', '瀏覽：', '表示：', 'Viewed:'], ['出现:', '出現：', '表示：', 'Seen:'], ['当前来源:', '目前來源：', '現在のソース：', 'Current source:'], ['当前选择：', '目前選擇：', '現在の選択：', 'Current:'], ['打开', '開啟', '開く', 'Open'], ['复制链接', '複製連結', 'リンクをコピー', 'Copy link'], [' 的个人主页', ' 的個人主頁', ' のプロフィール', ' profile'], ['复制链接：', '複製連結：', 'リンクをコピー：', 'Copy link: '], ['已复制', '已複製', 'コピー済み', 'Copied'], ['取消置顶', '取消置頂', '固定解除', 'Unpin'], ['置顶', '置頂', '固定', 'Pin'], ['取消收藏', '取消收藏', 'お気に入り解除', 'Unfavorite'], ['收藏', '收藏', 'お気に入り', 'Favorite'], ['删', '刪除', '削除', 'Delete'], ['展开全文', '展開全文', '全文を表示', 'Show full text'], ['收起', '收合', '折りたたむ', 'Collapse'], ['备注', '備註', 'メモ', 'Note'], ['保存备注', '儲存備註', 'メモを保存', 'Save note'], ['取消', '取消', 'キャンセル', 'Cancel'], ['在这里写备注…', '在這裡寫備註…', 'ここにメモを入力…', 'Write a note here…'], ['无正文', '無內文', '本文なし', 'No text'], ['加载更多', '載入更多', 'さらに読み込む', 'Load more'], ['帖子通知管理', '貼文通知管理', 'ポスト通知の管理', 'Post notification management'], ['搜索用户名或 @用户名…', '搜尋使用者名稱或 @使用者名稱…', 'ユーザー名または @ユーザー名を検索…', 'Search name or @username…'], ['搜索帖子通知用户', '搜尋貼文通知使用者', '通知ユーザーを検索', 'Search notification users'], ['同步订阅用户', '同步訂閱使用者', '購読ユーザーを同期', 'Sync subscribed users'], ['正在同步…', '正在同步…', '同期中…', 'Syncing…'], ['尚未读取订阅用户', '尚未讀取訂閱使用者', '購読ユーザー未取得', 'Subscribed users not loaded'], ['正在读取关注列表…', '正在讀取關注列表…', 'フォロー一覧を取得中…', 'Reading following list…'], ['已订阅', '已訂閱', '購読中', 'Subscribed'], ['本地保留', '本機保留', 'ローカル保存', 'Stored locally'], ['筛选到', '篩選到', '絞り込み', 'Filtered'], ['上次同步：', '上次同步：', '最終同期：', 'Last sync: '], ['尚未完整同步', '尚未完整同步', '完全同期前', 'Not fully synced'], ['已同步', '已同步', '同期済み', 'Synced'], ['处理中…', '處理中…', '処理中…', 'Processing…'], ['关闭通知', '關閉通知', '通知をオフ', 'Disable notifications'], ['重新开启', '重新開啟', '再度オン', 'Re-enable'], ['移除记录', '移除記錄', '記録を削除', 'Remove record'], ['设置', '設定', '設定', 'Settings'], ['大多数设置会立即生效；带“保存”或“应用”按钮的设置需要手动确认。', '大多數設定會立即生效；帶「儲存」或「套用」按鈕的設定需要手動確認。', 'ほとんどの設定はすぐ反映されます。「保存」または「適用」ボタンがある設定は手動で確定してください。', 'Most settings apply immediately. Settings with a Save or Apply button require confirmation.'], ['关键词与排除词', '關鍵字與排除詞', 'キーワードと除外語', 'Keywords and exclusions'], ['任意匹配', '任意符合', 'いずれか一致', 'Match any'], ['全部匹配', '全部符合', 'すべて一致', 'Match all'], ['保存', '儲存', '保存', 'Save'], ['输入关键词，支持正则，按回车添加', '輸入關鍵字，支援正則，按 Enter 新增', 'キーワードを入力（正規表現対応）、Enter で追加', 'Enter keywords (regex supported), press Enter to add'], ['输入排除词，支持正则，按回车添加', '輸入排除詞，支援正則，按 Enter 新增', '除外語を入力（正規表現対応）、Enter で追加', 'Enter exclusions (regex supported), press Enter to add'], ['内容净化', '內容淨化', 'コンテンツフィルター', 'Content filtering'], ['隐藏黄推 / 成人引流机器人', '隱藏成人內容／引流機器人', '成人スパムを非表示', 'Hide adult spam accounts'], ['检测强度', '偵測強度', '検出強度', 'Detection strength'], ['均衡', '均衡', '標準', 'Balanced'], ['保守', '保守', '控えめ', 'Conservative'], ['不审查已关注账号（转发内容除外）', '不審查已關注帳號（轉發內容除外）', 'フォロー中のアカウントを除外（リポストは対象）', 'Skip followed accounts (except reposts)'], ['不审查已关注账号的转发内容', '不審查已關注帳號的轉發內容', 'フォロー中アカウントのリポストも除外', 'Also skip reposts by followed accounts'], ['启用自定义规则（屏蔽词与账号白名单）', '啟用自訂規則（封鎖詞與帳號白名單）', 'カスタムルールを有効化（ブロック語・許可リスト）', 'Enable custom rules (blocked words and allowlist)'], ['输入自定义屏蔽词，按回车添加', '輸入自訂封鎖詞，按 Enter 新增', 'ブロック語を入力し Enter で追加', 'Enter a blocked word and press Enter'], ['输入账号白名单（如 @example），按回车添加', '輸入帳號白名單（如 @example），按 Enter 新增', '許可するアカウント（例 @example）を入力し Enter', 'Enter an allowed account (e.g. @example) and press Enter'], ['当前隐藏', '目前隱藏', '現在非表示', 'Currently hidden'], ['本次累计', '本次累計', '今回の累計', 'This session'], ['已扫描', '已掃描', 'スキャン済み', 'Scanned'], ['已识别关注', '已識別關注', '認識済みフォロー', 'Known following'], ['界面简化与宽屏', '介面簡化與寬螢幕', 'UI 簡素化とワイド表示', 'Simplified and wide layout'], ['启用界面简化与宽屏', '啟用介面簡化與寬螢幕', 'UI 簡素化とワイド表示を有効化', 'Enable simplified and wide layout'], ['时间线宽度(px)', '時間軸寬度(px)', 'タイムライン幅 (px)', 'Timeline width (px)'], ['左侧栏宽度(px)', '左側欄寬度(px)', '左サイドバー幅 (px)', 'Left sidebar width (px)'], ['应用宽度', '套用寬度', '幅を適用', 'Apply widths'], ['隐藏左侧栏', '隱藏左側欄', '左サイドバーを非表示', 'Hide left sidebar'], ['隐藏右侧栏', '隱藏右側欄', '右サイドバーを非表示', 'Hide right sidebar'], ['中间栏填满（启用时同时隐藏左右栏）', '中間欄填滿（啟用時同時隱藏左右欄）', '中央列を全幅表示（左右列も非表示）', 'Fill center column (also hides sidebars)'], ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'], ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'], ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'], ['下载时保持静默', '下載時保持靜默', 'ダウンロード中は通知を控える', 'Keep downloads quiet'], ['点击下载全部，长按或 Shift+点击选择下载', '點擊下載全部，長按或 Shift+點擊選擇下載', 'クリックで全件保存、長押しまたは Shift+クリックで選択保存', 'Click to download all; hold or Shift+click to select media'], ['选择要下载的媒体', '選擇要下載的媒體', '保存するメディアを選択', 'Select media to download'], ['全选', '全選', 'すべて選択', 'Select all'], ['全不选', '全不選', 'すべて解除', 'Deselect all'], ['下载所选', '下載所選', '選択したメディアを保存', 'Download selected'], ['已选', '已選', '選択済み', 'Selected'], ['无预览', '無預覽', 'プレビューなし', 'No preview'], ['选择中', '選擇中', '選択中', 'Selecting'], ['正在选择下载内容', '正在選擇下載內容', '保存するメディアを選択中', 'Selecting media to download'], ['无法开始下载，请重试', '無法開始下載，請重試', 'ダウンロードを開始できません。再試行してください', 'Unable to start the download. Please try again.'], ['默认关闭；开启后隐藏应用徽标旁的下载任务提示和任务列表，帖子内的下载进度与取消按钮仍可使用。', '預設關閉；開啟後隱藏應用徽章旁的下載工作提示和工作清單，貼文內的下載進度與取消按鈕仍可使用。', '初期設定はオフです。有効にするとアプリバッジ横のダウンロード表示とタスク一覧を隠します。ポスト内の進捗表示とキャンセルボタンは引き続き使えます。', 'Off by default. Hides the download indicator and task list beside the app badge. Download progress and cancel buttons in posts remain available.'], ['GIF内容下载格式', 'GIF 內容下載格式', 'GIF コンテンツの保存形式', 'GIF content download format'], ['默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。', '預設開啟；關閉時 GIF 內容會以原始 MP4 下載。選擇 GIF 時會在瀏覽器內轉換，耗時更長、檔案更大。', '既定で有効です。オフにすると GIF コンテンツは元の MP4 形式で保存されます。GIF を選ぶとブラウザー内で変換するため、時間がかかりファイルも大きくなります。', 'Enabled by default. When off, GIF content is saved as the original MP4. Selecting GIF converts it in the browser, which takes longer and produces larger files.'], ['自定义下载文件/压缩包名', '自訂下載檔案／壓縮檔名稱', 'ダウンロードファイル／ZIP 名をカスタマイズ', 'Customize downloaded file / ZIP names'], ['已自定义', '已自訂', 'カスタマイズ済み', 'Customized'], ['下载多个媒体自动压缩 ZIP 包', '下載多個媒體時自動壓縮 ZIP', '複数メディアを ZIP にまとめる', 'Package multiple media files as ZIP'], ['记录已经下载过的帖子', '記錄已下載過的貼文', 'ダウンロード済みポストを記録', 'Track downloaded posts'], ['媒体文件名（不含扩展名）', '媒體檔名（不含副檔名）', 'メディア名（拡張子なし）', 'Media filename (without extension)'], ['ZIP 压缩包名（不含 .zip）', 'ZIP 壓縮檔名（不含 .zip）', 'ZIP 名（.zip なし）', 'ZIP filename (without .zip)'], ['正则替换（可选）', '正則取代（選填）', '正規表現置換（任意）', 'Regex replacement (optional)'], ['替换为', '取代為', '置換後', 'Replace with'], ['例如：', '例如：', '例：', 'Example: '], ['；支持 $1', '；支援 $1', '（$1 に対応）', '; supports $1'], ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'], ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'], ['关闭NFL', '關閉 NFL', 'NFL を非表示', 'Hide NFL'], ['帖子内媒体改为网格视图', '貼文內媒體改為網格檢視', 'ポスト内メディアをグリッド表示', 'Show post media in a grid'], ['取消年龄限制（用原图 / 视频进行替换）', '解除年齡限制（以原圖 / 影片取代）', '年齢制限を解除（元画像 / 動画に置換）', 'Bypass age gate (replace with original media)'], ['自动展开帖子里“显示更多”', '自動展開貼文中的「顯示更多」', 'ポストの「さらに表示」を自動展開', 'Automatically expand “Show more” in posts'], ['进入用户主页默认查看', '進入使用者主頁時預設檢視', 'プロフィールの既定タブ', 'Default profile tab'], ['亮点', '亮點', 'ハイライト', 'Highlights'], ['用户主页帖子排序方式', '使用者主頁貼文排序方式', 'プロフィールのポスト並び順', 'Profile post sorting'], ['最近', '最近', '最新', 'Recent'], ['热门', '熱門', '人気', 'Popular'], ['选择“热门”时，会使用 X 的热门排序；视频和图片页不受影响。', '選擇「熱門」時，會使用 X 的熱門排序；影片和圖片頁不受影響。', '「人気」を選ぶと X の人気順を使います。動画・画像ページには影響しません。', 'Selecting Popular uses X’s popular sorting; video and photo pages are unaffected.'], ['其他功能', '其他功能', 'その他の機能', 'Other features'], ['兼容 Firefox（仅 Firefox）', '相容 Firefox（僅 Firefox）', 'Firefox 互換モード（Firefox のみ）', 'Firefox compatibility (Firefox only)'], ['帖子上限提示', '貼文上限提示', 'ポスト件数の上限通知', 'Post limit warning'], ['帖子记录接近“最大条数”时提醒你。关闭提醒后，也可以随时在这里重新开启。', '貼文記錄接近「最大筆數」時提醒你。關閉提醒後，也可以隨時在這裡重新開啟。', 'ポスト記録が「最大件数」に近づくと通知します。通知を閉じても、ここからいつでも再開できます。', 'Warns you when saved posts approach the maximum. If dismissed, the warning can be re-enabled here anytime.'], ['已恢复上限提示', '已恢復上限提示', '上限通知を再開しました', 'Limit warning restored'], ['已关闭上限提示', '已關閉上限提示', '上限通知を無効にしました', 'Limit warning disabled'], ['隐藏应用徽标', '隱藏應用徽章', 'アプリバッジを非表示', 'Hide app badge'], ['切换为移动端徽标（仅 PC）', '切換為行動版徽章（僅 PC）', 'モバイル用バッジに切替（PC のみ）', 'Use mobile badge (PC only)'], ['切换为半透明蓝色条（仅移动端）', '切換為半透明藍色條（僅行動裝置）', '半透明の青いバーに切替（モバイルのみ）', 'Use translucent blue bar (mobile only)'], ['高级设置', '進階設定', '詳細設定', 'Advanced settings'], ['自动清理(天)', '自動清理（日）', '自動削除（日）', 'Auto-clean (days)'], ['最大条数', '最大筆數', '最大件数', 'Maximum posts'], ['闪现阈值(秒)', '閃現門檻（秒）', '消失判定（秒）', 'Disappear threshold (sec)'], ['主题', '主題', 'テーマ', 'Theme'], ['跟随系统', '跟隨系統', 'システムに合わせる', 'Follow system'], ['深色', '深色', 'ダーク', 'Dark'], ['浅色', '淺色', 'ライト', 'Light'], ['下载超时(秒)', '下載逾時（秒）', 'タイムアウト（秒）', 'Download timeout (sec)'], ['下载并发', '下載並行數', '同時ダウンロード数', 'Concurrent downloads'], ['应用', '套用', '適用', 'Apply'], ['帖子记录即将达到上限', '貼文記錄即將達到上限', 'ポスト記録が上限に近づいています', 'Post history is nearing its limit'], ['达到上限后，新帖子仍会继续记录；最旧的未收藏、未置顶帖子会被删除。收藏和置顶帖子不会被上限删除，因此总数有时可能超过设置值。', '達到上限後仍會繼續記錄新貼文；最舊且未收藏、未置頂的貼文會被刪除。收藏與置頂貼文不受上限刪除，因此總數有時可能超過設定值。', '上限に達しても新しいポストは記録され、古い未お気に入り・未固定のポストから削除されます。お気に入りと固定済みポストは削除されないため、合計が設定値を超える場合があります。', 'New posts will still be recorded at the limit; the oldest unfavorited and unpinned posts are removed. Favorited and pinned posts are protected, so the total may sometimes exceed the configured value.'], ['你可以打开“高级设置”调大“最大条数”，或先导出备份。', '你可以開啟「進階設定」調高「最大筆數」，或先匯出備份。', '「詳細設定」で上限を増やすか、先にバックアップをエクスポートできます。', 'You can increase the maximum under Advanced settings or export a backup first.'], ['打开高级设置', '開啟進階設定', '詳細設定を開く', 'Open advanced settings'], ['不再提示', '不再提示', '今後表示しない', "Don't remind me again"], ['点亮按钮即不保存对应页面的帖子', '點亮按鈕即不儲存對應頁面的貼文', 'ボタンをオンにすると、そのページのポストを保存しません', 'Turn on a button to stop saving posts from that page'], ['下载任务', '下載工作', 'ダウンロードタスク', 'Download tasks'], ['暂无下载任务', '暫無下載工作', 'ダウンロードはありません', 'No download tasks'], ['下载', '下載', 'ダウンロード', 'Download'], ['下载中', '下載中', 'ダウンロード中', 'Downloading'], ['转 GIF', '轉 GIF', 'GIF 変換', 'GIF'], ['正在转换 GIF', '正在轉換 GIF', 'GIF に変換中', 'Converting to GIF'], ['排队中', '排隊中', '待機中', 'Queued'], ['排队', '排隊', '待機', 'Queued'], ['正在打包', '正在打包', '圧縮中', 'Packing'], ['打包', '打包', '圧縮', 'Packing'], ['正在保存', '正在儲存', '保存中', 'Saving'], ['正在取消下载', '正在取消下載', 'キャンセル中', 'Cancelling download'], ['取消中', '取消中', 'キャンセル中', 'Cancelling'], ['下载完成', '下載完成', 'ダウンロード完了', 'Download complete'], ['已取消', '已取消', 'キャンセル済み', 'Cancelled'], ['失败：', '失敗：', '失敗：', 'Failed: '], ['重试', '重試', '再試行', 'Retry'], ['查看下载任务', '查看下載工作', 'ダウンロードを表示', 'View downloads'], ['取消下载', '取消下載', 'ダウンロードをキャンセル', 'Cancel download'], ['下载图片/视频/GIF', '下載圖片/影片/GIF', '画像/動画/GIFを保存', 'Download images/videos/GIFs'], ['正在获取视频地址…', '正在取得影片網址…', '動画 URL を取得中…', 'Getting video URL…'], ['获取中', '取得中', '取得中', 'Looking up'], ['已下载过媒体；点击可再次下载', '已下載過媒體；點擊可再次下載', 'ダウンロード済みです。クリックすると再保存できます', 'Downloaded before; click to download again'], ['个任务', '個工作', '件のタスク', ' tasks'], ['查看下载任务：', '查看下載工作：', 'ダウンロードを表示：', 'View downloads: '], ['命名效果预览：', '命名效果預覽：', 'ファイル名プレビュー：', 'Filename preview: '], ['示例用户', '範例使用者', 'サンプルユーザー', 'Sample user'], ['这是用于预览下载文件名的帖子正文', '這是用於預覽下載檔名的貼文內文', 'ダウンロード名を確認するためのサンプル本文', 'Sample post text for previewing download names'], ['下载超时', '下載逾時', 'ダウンロードがタイムアウトしました', 'Download timed out'], ['网络错误', '網路錯誤', 'ネットワークエラー', 'Network error'], ['下载失败', '下載失敗', 'ダウンロード失敗', 'Download failed'], ['读取失败', '讀取失敗', '読み込み失敗', 'Read failed'], ['媒体总量超出经典 ZIP 范围，请改为逐个下载', '媒體總量超出傳統 ZIP 範圍，請改為逐一下載', 'メディア総量が従来形式の ZIP 上限を超えました。個別に保存してください', 'Media exceeds classic ZIP limits; download files separately'], ['跨域下载失败：请使用支持 GM_xmlhttpRequest 的脚本管理器', '跨網域下載失敗：請使用支援 GM_xmlhttpRequest 的使用者腳本管理器', 'クロスオリジン保存に失敗しました。GM_xmlhttpRequest 対応のユーザースクリプト管理拡張を使用してください', 'Cross-origin download failed. Use a userscript manager that supports GM_xmlhttpRequest'], ['⚠️ 未能取得视频地址：检测到 Violentmonkey。安卓 Firefox 上可能无法正确携带 X 登录态，请改用 Tampermonkey 后重试', '⚠️ 無法取得影片網址：偵測到 Violentmonkey。Android Firefox 可能無法正確攜帶 X 登入狀態，請改用 Tampermonkey 後重試', '⚠️ 動画 URL を取得できませんでした。Violentmonkey を検出しました。Android Firefox では X のログイン状態が正しく送信されない場合があるため、Tampermonkey に変更して再試行してください', '⚠️ Could not get the video URL. Violentmonkey was detected; Android Firefox may not pass the X login session correctly. Switch to Tampermonkey and try again'], ['未能取得媒体地址，请确认已登录 X 后重试', '無法取得媒體網址，請確認已登入 X 後重試', 'メディア URL を取得できませんでした。X にログインして再試行してください', 'Could not get the media URL. Make sure you are signed in to X and try again'], ['未找到可下载的媒体，若为视频请先点开或播放一下再试', '找不到可下載的媒體；若為影片，請先開啟或播放後再試', '保存できるメディアが見つかりません。動画の場合は一度開くか再生してから再試行してください', 'No downloadable media was found. For video, open or play it once and try again'], ['图片预览', '圖片預覽', '画像プレビュー', 'Image preview'], ['关闭图片预览', '關閉圖片預覽', '画像プレビューを閉じる', 'Close image preview'], ['上一张图片', '上一張圖片', '前の画像', 'Previous image'], ['下一张图片', '下一張圖片', '次の画像', 'Next image'], ['提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。', '提示：列表僅記錄你瀏覽時出現過的貼文。收藏／置頂貼文不會因數量上限或自動清理而刪除。', 'ヒント：閲覧中に表示されたポストだけを記録します。お気に入り／固定したポストは上限や自動削除の対象外です。', 'Tip: Only posts seen while browsing are saved. Favorited or pinned posts are never removed by limits or auto-cleaning.'], ['读取 X 的铃铛订阅状态；开关操作会同步修改 X 账号设置。本页不会抓取或显示订阅账号的帖子。', '讀取 X 的鈴鐺訂閱狀態；開關操作會同步修改 X 帳號設定。本頁不會擷取或顯示訂閱帳號的貼文。', 'X のベル購読状態を読み取り、切替は X アカウントにも反映されます。このページで購読アカウントのポストを取得・表示することはありません。', 'Reads X bell-subscription status; toggles also update your X account. This page does not fetch or display posts from subscribed accounts.'], ['只影响 BetterX 已记录的帖子：关键词用来高亮和筛选，排除词会隐藏匹配的帖子。', '只影響 BetterX 已記錄的貼文：關鍵字用來醒目提示和篩選，排除詞會隱藏符合的貼文。', 'BetterX に記録済みのポストだけが対象です。キーワードは強調と絞り込みに使い、除外語に一致したポストは非表示にします。', 'Only affects posts saved by BetterX: keywords highlight and filter, while exclusions hide matching posts.'], ['普通文字可直接输入；正则表达式请写成 <code>/表达式/</code>，例如 <code>/猫|狗/</code>。两种写法可以混用。', '一般文字可直接輸入；正則表達式請寫成 <code>/運算式/</code>，例如 <code>/貓|狗/</code>。兩種寫法可以混用。', '通常の文字はそのまま入力できます。正規表現は <code>/式/</code> の形で入力してください（例：<code>/猫|犬/</code>）。両方を組み合わせて使えます。', 'Enter plain text directly. Write regex as <code>/expression/</code>, for example <code>/cat|dog/</code>. Both forms can be mixed.'], ['根据正文、账号名和引流特征综合判断，只在当前页面隐藏可疑帖子，不会拉黑账号。关闭后会恢复显示。', '根據內文、帳號名稱和引流特徵綜合判斷，只在目前頁面隱藏可疑貼文，不會封鎖帳號。關閉後會恢復顯示。', '本文、アカウント名、誘導の特徴から総合的に判定し、現在のページで疑わしいポストだけを非表示にします。アカウントはブロックせず、オフにすると再表示します。', 'Checks post text, account names, and spam signals, then hides suspicious posts only on the current page. It never blocks accounts; turn it off to show them again.'], ['自动读取 X 当前的时间线与左侧栏宽度（默认开启）', '自動讀取 X 目前的時間軸與左側欄寬度（預設開啟）', 'X の現在のタイムライン幅と左サイドバー幅を自動取得（既定でオン）', 'Automatically detect X timeline and left-sidebar widths (enabled by default)'], ['在消息页和设置页不会调整布局；关闭此功能即可恢复 X 原来的界面。', '在訊息頁和設定頁不會調整版面；關閉此功能即可恢復 X 原來的介面。', 'メッセージと設定ページではレイアウトを変更しません。この機能をオフにすると X 本来の表示に戻ります。', 'The layout is not changed on Messages or Settings pages. Turn this feature off to restore X’s original layout.'], ['点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。', '點擊下載按鈕儲存全部媒體；長按或 Shift+點擊可依縮圖選擇圖片、GIF 和影片。下載時貼文內會顯示進度與取消按鈕，徽章旁會顯示工作提示。', 'クリックで全メディアを保存します。長押しまたは Shift+クリックでサムネイルから画像・GIF・動画を選択できます。ダウンロード中はポスト内に進捗とキャンセルボタン、バッジ横にタスク表示が出ます。', 'Click to save all media, or hold or Shift+click to select images, GIFs and videos by thumbnail. Download progress and cancel buttons appear in posts, with a task indicator beside the app badge.'], ['默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。', '預設開啟；ZIP 內檔案使用下方「媒體檔名」範本。關閉後會同時下載多個媒體。', '既定でオンです。ZIP 内のファイル名には下のメディア名テンプレートを使います。オフの場合は複数ファイルを個別保存します。', 'Enabled by default. Files inside ZIP use the media filename template below. When disabled, media files download separately.'], ['默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設關閉；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオフです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Disabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'], ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 <code>{序號}</code>，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで <code>{連番}</code> がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If <code>{index}</code> is omitted for multiple media files, a number is appended automatically.'], ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 <code>$1</code>）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（<code>$1</code> など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as <code>$1</code> are supported; invalid or risky regexes are not saved.'], ['隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。', '隱藏時間軸廣告、廣告卡片和「訂閱 Premium」提示。廣告貼文不會儲存到 BetterX，關閉後會重新顯示。', 'タイムライン広告、広告カード、「Premium に登録」の案内を非表示にします。広告ポストは BetterX に保存されず、オフにすると再表示します。', 'Hides timeline ads, ad cards, and Subscribe to Premium prompts. Ad posts are not saved to BetterX and reappear when this is turned off.'], ['隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。', '隱藏 X 右側欄中的 NFL 球隊、賽程和比賽入口；關閉此開關後會恢復顯示。', 'X の右サイドバーにある NFL のチーム、日程、試合への入口を非表示にします。オフにすると再表示します。', 'Hides NFL teams, schedules, and game links in X’s right sidebar. Turn it off to show them again.'], ['把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。', '把貼文裡的多個媒體改成網格：2 個並排，3 個左大右二，4 個按 2×2 排列。', 'ポスト内の複数メディアをグリッド表示にします。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Shows multiple media items in a grid: two side by side, three with one large item on the left, and four in a 2×2 layout.'], ['移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”', '移除敏感內容遮罩並顯示原圖或影片；建議在新開啟的視窗中勾選「顯示可能含有敏感內容的媒體內容」', 'センシティブな内容の覆いを外して元の画像や動画を表示します。新しく開いたウィンドウで「センシティブな内容を含む可能性のあるメディアを表示する」を有効にすることをおすすめします。', 'Removes sensitive-content covers and shows original images or videos. In the newly opened window, we recommend enabling “Display media that may contain sensitive content”.'], ['如果您没有勾选的话，麻烦您勾选上“显示可能含有敏感内容的媒体内容”，大部分成人内容会自动显示', '如果尚未勾選，請勾選「顯示可能含有敏感內容的媒體內容」，大部分成人內容便會自動顯示', 'まだ有効にしていない場合は、「センシティブな内容を含む可能性のあるメディアを表示する」を有効にしてください。ほとんどの成人向けコンテンツが自動的に表示されます。', 'If it is not already enabled, please enable “Display media that may contain sensitive content”. Most adult content will then appear automatically.'], ['自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。', '自動點開貼文內文裡的「顯示更多 / Show more」；不會展開回覆或側欄內容。', 'ポスト本文の「さらに表示 / Show more」を自動で開きます。返信やサイドバーの内容は展開しません。', 'Automatically opens “Show more” in post text. Replies and sidebar content are not expanded.'], ['进入用户主页时自动切换到所选页签；帖子详情、回复和关注者页面不受影响。', '進入使用者主頁時自動切換到所選分頁；貼文詳情、回覆和追蹤者頁面不受影響。', 'プロフィールを開くと選んだタブへ自動で切り替えます。ポスト詳細、返信、フォロワーページには影響しません。', 'Automatically switches to the selected tab when you open a profile. Post details, replies, and follower pages are unaffected.'], ['如果 X 一直停在启动图标，可尝试开启。开启后会停用部分网络数据读取；点击开关可先查看影响。', '如果 X 一直停在啟動圖示，可嘗試開啟。開啟後會停用部分網路資料讀取；點擊開關可先查看影響。', 'X が起動ロゴのまま止まる場合にお試しください。有効にすると一部のネットワークデータ読み取りを停止します。切り替える前に影響を確認できます。', 'Try this if X remains stuck on its startup logo. It disables some network-data reading; click the switch to review the impact first.'], ['在电脑上会隐藏徽标；在手机上会收成屏幕右侧的蓝色小条。点击小条、从屏幕右边缘向内滑动，或使用油猴菜单都能恢复。', '在電腦上會隱藏徽章；在手機上會收成螢幕右側的藍色小條。點擊小條、從螢幕右邊緣向內滑動，或使用腳本管理器選單都能恢復。', 'パソコンではバッジを隠し、スマートフォンでは画面右側の青いバーに収納します。バーをタップする、右端から内側へスワイプする、またはユーザースクリプトメニューから復元できます。', 'Hides the badge on desktop and collapses it into a blue bar on mobile. Tap the bar, swipe inward from the right edge, or use the userscript menu to restore it.'], ['在电脑上使用圆形图标和未读角标，仍可拖动位置。', '在電腦上使用圓形圖示和未讀角標，仍可拖曳位置。', 'パソコンで丸いアイコンと未読バッジを使います。位置は引き続きドラッグできます。', 'Uses a circular icon and unread badge on desktop; you can still drag it to a new position.'], ['把手机上的圆形徽标收成右侧蓝色小条；点击打开面板，长按后可上下移动。', '把手機上的圓形徽章收成右側藍色小條；點擊開啟面板，長按後可上下移動。', 'スマートフォンの丸いバッジを右側の青いバーに収納します。タップでパネルを開き、長押し後に上下へ動かせます。', 'Collapses the circular mobile badge into a blue bar on the right. Tap to open the panel; long-press to move it up or down.'], ['下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。自动清理(天)为0则不自动清理。', '下載並行數可設為 1～6，預設 2；提高可加速多媒體工作，但也會增加頻寬與記憶體使用。自動清理（日）設為0則不自動清理。', '同時数は1～6（既定2）。増やすと速くなりますが、帯域とメモリ使用量も増えます。自動削除（日）を0にすると自動削除しません。', 'Concurrency can be 1–6 (default 2). Higher values speed up multi-media jobs but use more bandwidth and memory. Set Auto-clean (days) to 0 to disable automatic cleaning.'], ['当前筛选条件下没有帖子。可以刷新页面、切换 X 标签页，或把筛选改回“全部”。', '目前篩選條件下沒有貼文。可重新整理頁面、切換 X 分頁，或將篩選改回「全部」。', '現在の条件に一致するポストはありません。ページや X のタブを更新するか、フィルターを「すべて」に戻してください。', 'No posts match the current filters. Refresh the page, switch X tabs, or reset the filter to All.'], ['还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。', '尚未讀取貼文通知訂閱。請點擊「同步訂閱使用者」，或瀏覽已開啟鈴鐺的使用者主頁後再查看。', 'ポスト通知の購読情報がありません。「購読ユーザーを同期」を押すか、ベルを有効にしたプロフィールを開いてください。', 'No post-notification subscriptions have been read. Click “Sync subscribed users” or visit a profile with its bell enabled.'], ['智能排序：置顶、收藏和快消失的帖子先显示，其他的按抓到的顺序排。', '智慧排序：置頂、收藏和快速消失的貼文優先，其餘依擷取順序排列。', 'スマート順：固定・お気に入り・すぐ消えたポストを優先し、残りは取得順に表示します。', 'Smart sort: pinned, favorited, and quickly disappeared posts first; others follow capture order.'], ['最近浏览：按你在屏幕上看到的帖子顺序排。适合用来找刚刷过的帖子。', '最近瀏覽：依螢幕上看到貼文的順序排列，適合尋找剛瀏覽過的貼文。', '最近表示：画面で見た順に並べ、直前に見たポストを探すのに便利です。', 'Recently viewed: orders posts by when they appeared on screen, useful for finding what you just saw.'], ['最近抓取：按脚本发现帖子的时间排。X 会提前加载，顺序不一定等于你看到的顺序。', '最近擷取：依腳本發現貼文的時間排列。X 會預先載入，因此不一定等於實際看到的順序。', '最近取得：スクリプトが見つけた時刻順です。X の先読みのため、実際に見た順とは限りません。', 'Recently captured: orders by discovery time. X preloads posts, so this may differ from viewing order.'], ['出现次数：反复刷到的帖子排在前面。', '出現次數：反覆看到的貼文排在前面。', '表示回数：繰り返し表示されたポストを先にします。', 'Appearances: repeatedly seen posts come first.'], ['按作者：把同一个作者的帖子排在一起。', '依作者：將同一作者的貼文排在一起。', '投稿者順：同じ投稿者のポストをまとめます。', 'By author: groups posts from the same author.'], ['按来源：按为你推荐、正在关注、搜索、书签、喜欢等页面分类排。', '依來源：依為你推薦、正在關注、搜尋、書籤、喜歡等頁面分類。', 'ソース順：おすすめ、フォロー中、検索、ブックマーク、いいねなどで分類します。', 'By source: groups posts by For You, Following, Search, Bookmarks, Likes, and other pages.'], ['BetterX：显示 / 隐藏应用徽标', 'BetterX：顯示 / 隱藏應用徽章', 'BetterX：アプリバッジを表示 / 非表示', 'BetterX: Show / hide app badge'], ['BetterX：强制开启 Firefox 兼容模式并刷新', 'BetterX：強制開啟 Firefox 相容模式並重新整理', 'BetterX：Firefox 互換モードを強制して更新', 'BetterX: Force Firefox compatibility and reload'], ['BetterX：恢复 Firefox 完整模式并刷新', 'BetterX：恢復 Firefox 完整模式並重新整理', 'BetterX：Firefox フルモードに戻して更新', 'BetterX: Restore full Firefox mode and reload'], ['BetterX：导出 Firefox 兼容诊断', 'BetterX：匯出 Firefox 相容診斷', 'BetterX：Firefox 互換診断をエクスポート', 'BetterX: Export Firefox compatibility diagnostics'], ['无法读取当前 X 用户 ID，请确认已经登录', '無法讀取目前 X 使用者 ID，請確認已登入', '現在の X ユーザー ID を取得できません。ログインを確認してください', 'Could not read the current X user ID. Make sure you are signed in'], ['本次识别', '本次識別', '今回検出', 'Found this time'], ['个，当前保留', '個，目前保留', '件、現在保持', '; currently keeping'], ['个订阅', '個訂閱', '件の購読', ' subscriptions'], ['同步失败：', '同步失敗：', '同期失敗：', 'Sync failed: '], ['修改失败：', '修改失敗：', '変更失敗：', 'Update failed: '], ['已开启', '已開啟', '有効化しました', 'Enabled'], ['的帖子通知', '的貼文通知', 'のポスト通知', ' post notifications'], ['已关闭', '已關閉', '無効化しました', 'Disabled'], ['下载完成：已逐个保存', '下載完成：已逐一儲存', 'ダウンロード完了：個別に保存', 'Download complete: saved separately'], ['个文件', '個檔案', 'ファイル', ' files'], ['，跳过', '，略過', '、スキップ', '; skipped'], ['个失败项', '個失敗項目', '件の失敗', ' failed items'], ['正在开启 Firefox 兼容模式并刷新…', '正在開啟 Firefox 相容模式並重新整理…', 'Firefox 互換モードを有効にして更新中…', 'Enabling Firefox compatibility and reloading…'], ['正在关闭 Firefox 兼容模式并刷新…', '正在關閉 Firefox 相容模式並重新整理…', 'Firefox 互換モードを無効にして更新中…', 'Disabling Firefox compatibility and reloading…'], ['此选项仅用于 Firefox', '此選項僅適用於 Firefox', 'この設定は Firefox 専用です', 'This option is only for Firefox'], ['已开启 Firefox 兼容模式', '已開啟 Firefox 相容模式', 'Firefox 互換モードを有効にしました', 'Firefox compatibility enabled'], ['已使用 Firefox 完整功能模式', '已使用 Firefox 完整功能模式', 'Firefox フル機能モードを使用します', 'Using full Firefox mode'], ['已导出 Firefox 兼容诊断', '已匯出 Firefox 相容診斷', 'Firefox 互換診断をエクスポートしました', 'Firefox compatibility diagnostics exported'], ['已恢复应用徽标', '已恢復應用徽章', 'アプリバッジを復元しました', 'App badge restored'], ['已显示应用徽标', '已顯示應用徽章', 'アプリバッジを表示しました', 'App badge shown'], ['已隐藏应用徽标 · Alt+X 可打开面板', '已隱藏應用徽章 · Alt+X 可開啟面板', 'アプリバッジを非表示にしました · Alt+X でパネルを開けます', 'App badge hidden · Press Alt+X to open the panel'], ['点击屏幕右侧小蓝条可显示徽标', '點擊螢幕右側小藍條可顯示徽章', '画面右の青いバーをタップしてバッジを表示', 'Tap the blue bar on the right to show the badge'], ['已切换为屏幕右侧小蓝条', '已切換為螢幕右側小藍條', '画面右の青いバーに切り替えました', 'Switched to the blue right-edge bar'], ['显示 BetterX 应用徽标', '顯示 BetterX 應用徽章', 'BetterX アプリバッジを表示', 'Show BetterX app badge'], ['打开 BetterX 面板', '開啟 BetterX 面板', 'BetterX パネルを開く', 'Open BetterX panel'], ['关闭 BetterX 面板', '關閉 BetterX 面板', 'BetterX パネルを閉じる', 'Close BetterX panel'], ['点按显示 BetterX 徽标', '點按以顯示 BetterX 徽章', 'タップして BetterX バッジを表示', 'Tap to show the BetterX badge'], ['正则无效或风险过高，未保存', '正則無效或風險過高，未儲存', '正規表現が無効または危険なため保存しませんでした', 'Regex was invalid or too risky and was not saved'], ['已保存下载命名', '已儲存下載命名', 'ダウンロード命名設定を保存しました', 'Download naming saved'], ['已将当前列表全部标为已读', '已將目前列表全部標為已讀', '現在の一覧をすべて既読にしました', 'Marked the current list as read'], ['已保存关键词', '已儲存關鍵字', 'キーワードを保存しました', 'Keywords saved'], ['已保存排除词', '已儲存排除詞', '除外語を保存しました', 'Exclusions saved'], ['已保存自定义屏蔽词', '已儲存自訂封鎖詞', 'カスタムブロック語を保存しました', 'Custom blocked words saved'], ['已保存账号白名单', '已儲存帳號白名單', 'アカウント許可リストを保存しました', 'Account allowlist saved'], ['已切换为手动宽度并应用', '已切換為手動寬度並套用', '手動幅へ切り替えて適用しました', 'Switched to manual widths and applied'], ['已应用高级设置', '已套用進階設定', '詳細設定を適用しました', 'Advanced settings applied'], ['确定要清空', '確定要清空', '消去しますか：', 'Clear'], ['条未收藏/未置顶的帖子吗？此操作不可撤销。', '筆未收藏／未置頂的貼文嗎？此操作無法復原。', '件のお気に入り／固定されていないポスト。この操作は取り消せません。', ' unfavorited/unpinned posts? This cannot be undone.'], ['导入失败：单次最多允许', '匯入失敗：單次最多允許', 'インポート失敗：一度に許可される上限は', 'Import failed: at most'], ['条帖子。', '筆貼文。', '件です。', ' posts are allowed.'], ['导入完成：新增', '匯入完成：新增', 'インポート完了：追加', 'Import complete: added'], ['条，合并', '筆，合併', '件、統合', ', merged'], ['条，跳过', '筆，略過', '件、スキップ', ', skipped'], ['条无效记录', '筆無效記錄', '件の無効な記録', ' invalid records'], ['该帖子内媒体文件曾下载过，是否继续下载？', '此貼文的媒體曾下載過，是否繼續？', 'このポストのメディアはダウンロード済みです。続行しますか？', 'Media from this post was downloaded before. Continue?'], ['是否同时恢复备份中的设置？', '是否同時還原備份中的設定？', 'バックアップ内の設定も復元しますか？', 'Restore settings from the backup too?'], ['页面尚未就绪，诊断信息已输出到控制台。', '頁面尚未就緒，診斷資訊已輸出至主控台。', 'ページの準備ができていません。診断情報をコンソールへ出力しました。', 'The page is not ready; diagnostics were written to the console.'], ['当前筛选结果为空，没有可导出的内容。', '目前篩選結果為空，沒有可匯出的內容。', '現在の絞り込み結果は空です。エクスポートする内容がありません。', 'The current filtered result is empty; there is nothing to export.'], ['导入失败：备份文件不能超过 25 MB。', '匯入失敗：備份檔不得超過 25 MB。', 'インポート失敗：バックアップは 25 MB 以下にしてください。', 'Import failed: backup files cannot exceed 25 MB.'], ['无法识别的备份文件格式。', '無法識別的備份檔格式。', '認識できないバックアップ形式です。', 'Unrecognized backup format.'], ['导入失败：文件解析出错。', '匯入失敗：檔案解析錯誤。', 'インポート失敗：ファイルを解析できませんでした。', 'Import failed: file parsing error.'], ['当前列表没有未读的帖子喂～', '目前列表沒有未讀貼文喔～', '現在の一覧に未読ポストはありません。', 'There are no unread posts in the current list.'], ['确定要把当前列表的 ', '確定要將目前列表中的 ', '現在の一覧にある', 'Mark all '], [' 条未读帖子全部标为已读吗？', ' 筆未讀貼文全部標為已讀嗎？', '件の未読ポストをすべて既読にしますか？', ' unread posts in the current list as read?'], ['⚠️ 已忽略', '⚠️ 已忽略', '⚠️ 無視しました：', '⚠️ Ignored'], ['条高风险或无效正则', '筆高風險或無效正則', '件の危険または無効な正規表現', ' risky or invalid regex rules'], ['最多保存 50 个', '最多儲存 50 個', '保存できる上限は50件です：', 'At most 50 can be saved: '], ['自定义屏蔽词', '自訂封鎖詞', 'カスタムブロック語', 'custom blocked words'], ['关键词', '關鍵字', 'キーワード', 'keywords'], ['排除词', '排除詞', '除外語', 'exclusions'], ['没有找到与“', '找不到與「', '「', 'No username or @username matched “'], ['”匹配的用户名或 @用户名。', '」相符的使用者名稱或 @使用者名稱。', '」に一致するユーザー名または @ユーザー名はありません。', '”.'], ['开启“兼容 Firefox”？', '開啟「Firefox 相容模式」？', 'Firefox 互換モードを有効にしますか？', 'Enable Firefox compatibility?'], ['开启后 BetterX 不再改写页面的', '開啟後 BetterX 將不再改寫頁面的', '有効にすると BetterX はページの', 'When enabled, BetterX will stop wrapping the page’s'], ['可避免部分 Firefox 环境或多个 X 脚本冲突时一直卡在 X 图标。', '可避免部分 Firefox 環境或多個 X 腳本衝突時一直卡在 X 圖示。', 'を変更しなくなり、一部の Firefox 環境や複数の X スクリプトが競合した際に X ロゴで停止する問題を避けられます。', ', which can prevent X from getting stuck on its logo in some Firefox setups or when multiple X scripts conflict.'], ['以下能力可能降级：', '以下功能可能受限：', '次の機能が制限される場合があります：', 'The following features may be limited:'], ['部分视频 / GIF 无法取得真实下载地址；', '部分影片 / GIF 可能無法取得實際下載網址；', '一部の動画 / GIF の実際のダウンロード URL を取得できない場合があります。', 'Some videos / GIFs may not expose a direct download URL;'], ['部分年龄限制视频无法内联显示；', '部分年齡限制影片可能無法直接顯示；', '一部の年齢制限動画をページ内表示できない場合があります。', 'Some age-restricted videos may not display inline;'], ['无法从接口响应学习关注关系，主要依靠主页按钮和“正在关注”时间线。', '無法從介面回應學習關注關係，主要依靠個人主頁按鈕與「正在關注」時間軸。', 'API 応答からフォロー関係を学習できず、プロフィールのボタンと「フォロー中」タイムラインが主な情報源になります。', 'Following relationships cannot be learned from API responses and instead rely mainly on profile buttons and the Following timeline.'], ['帖子记录、搜索、面板、内容净化、广告过滤、布局和图片 DOM 兜底不受影响。确认后页面会刷新。', '貼文記錄、搜尋、面板、內容淨化、廣告過濾、版面配置與圖片 DOM 備援不受影響。確認後頁面會重新整理。', 'ポスト記録、検索、パネル、コンテンツフィルター、広告非表示、レイアウト、画像の DOM フォールバックには影響しません。確認後にページを更新します。', 'Post history, search, the panel, content filtering, ad hiding, layout, and the image DOM fallback are unaffected. The page will reload after confirmation.'], ['开启并刷新', '開啟並重新整理', '有効にして更新', 'Enable and reload'], ['关闭“兼容 Firefox”？', '關閉「Firefox 相容模式」？', 'Firefox 互換モードを無効にしますか？', 'Disable Firefox compatibility?'], ['关闭后将恢复 v1.7 的网络媒体与关注关系采集。如果当前环境曾卡在只显示 X 图标的页面，建议继续保持开启。确认后页面会刷新。', '關閉後將恢復 v1.7 的網路媒體與關注關係擷取。如果目前環境曾卡在只顯示 X 圖示的頁面，建議繼續保持開啟。確認後頁面會重新整理。', '無効にすると v1.7 のネットワークメディア・フォロー関係の取得を再開します。X ロゴだけの画面で停止したことがある環境では、有効のままにすることをおすすめします。確認後にページを更新します。', 'Disabling restores v1.7 network media and following-relationship capture. If this setup has ever stalled on the X logo, keeping compatibility enabled is recommended. The page will reload after confirmation.'], ['关闭并刷新', '關閉並重新整理', '無効にして更新', 'Disable and reload'], ['检测到 Firefox', '偵測到 Firefox', 'Firefox を検出しました', 'Firefox detected'], ['请问你在使用 BetterX 时，能否正常进入 X？', '使用 BetterX 時，是否能正常進入 X？', 'BetterX の使用中、X を正常に開けていますか？', 'Can you open X normally while using BetterX?'], ['目前已知部分 Firefox 用户会一直卡在', '目前已知部分 Firefox 使用者會一直卡在', '一部の Firefox ユーザーでは', 'Some Firefox users may remain stuck on the'], ['只显示 X 图标', '只顯示 X 圖示', 'X ロゴだけが表示される', 'X-logo-only'], ['的启动页面，常见于广告过滤、媒体下载等多个 X 脚本同时运行的环境。', '的啟動畫面，常見於廣告過濾、媒體下載等多個 X 腳本同時執行的環境。', '起動画面で停止することがあります。広告フィルターやメディア保存など、複数の X スクリプトを同時に使う環境で起きやすい問題です。', ' startup screen, especially when multiple X scripts such as ad filters and media downloaders run together.'], ['如果遇到异常，请点击', '如果遇到異常，請點擊', '問題がある場合は', 'If you encounter this issue, click'], ['有异常', '有異常', '問題あり', 'Having problems'], ['，BetterX 会开启', '，BetterX 會開啟', 'を選ぶと、BetterX は', '; BetterX will enable'], ['“设置 → 其他功能 → 兼容 Firefox”', '「設定 → 其他功能 → Firefox 相容模式」', '「設定 → その他の機能 → Firefox 互換モード」', '“Settings → Other features → Firefox compatibility”'], ['。该模式会停用页面网络 Hook；部分视频 / GIF 下载、年龄限制视频和接口关注关系识别可能降级，其他主体功能不受影响。', '。此模式會停用頁面網路 Hook；部分影片 / GIF 下載、年齡限制影片與介面關注關係識別可能受限，其他主要功能不受影響。', '。このモードはページのネットワーク Hook を無効化します。一部の動画 / GIF の保存、年齢制限動画、API によるフォロー関係の認識は制限される場合がありますが、その他の主要機能には影響しません。', '. This disables page network hooks. Some video / GIF downloads, age-restricted videos, and API-based following detection may be limited; other main features are unaffected.'], ['目前正常', '目前正常', '現在は正常', 'Working normally'], ['确定', '確定', '確認', 'OK'], ['未知错误', '未知錯誤', '不明なエラー', 'Unknown error'], ];
+const UI_TEXT_ENTRIES = [ ['更好的 X', '更好的 X', 'もっと便利な X', 'Better X'], ['Alt+X 开关', 'Alt+X 開關', 'Alt+X で開閉', 'Toggle with Alt+X'], ['刷新', '重新整理', '更新', 'Refresh'], ['全部已读', '全部已讀', 'すべて既読', 'Mark all read'], ['重新扫描当前页面', '重新掃描目前頁面', '現在のページを再スキャン', 'Rescan the current page'], ['把当前列表全部标为已读', '將目前列表全部標為已讀', '現在の一覧をすべて既読にする', 'Mark the current list as read'], ['切换语言', '切換語言', '言語を切替', 'Switch language'], ['切换 BetterX 界面语言', '切換 BetterX 介面語言', 'BetterX の表示言語を切り替える', 'Switch BetterX interface language'], ['选择界面语言', '選擇介面語言', '表示言語を選択', 'Choose interface language'], ['选择后页面会刷新，帖子与设置数据不会受到影响。', '選擇後頁面會重新整理，貼文與設定資料不受影響。', '選択後にページを更新します。ポストや設定データには影響しません。', 'The page will reload after selection. Your posts and settings will not be affected.'], ['正在切换语言并刷新…', '正在切換語言並重新整理…', '言語を切り替えて更新中…', 'Switching language and reloading…'], ['无法保存语言设置', '無法儲存語言設定', '言語設定を保存できませんでした', 'Could not save the language setting'], ['更多', '更多', 'その他', 'More'], ['关闭', '關閉', '閉じる', 'Close'], ['帖子', '貼文', 'ポスト', 'Posts'], ['通知', '通知', '通知', 'Notifications'], ['设置', '設定', '設定', 'Settings'], ['导出筛选', '匯出篩選結果', '絞り込み結果をエクスポート', 'Export filtered'], ['备份全部', '備份全部', 'すべてバックアップ', 'Back up all'], ['导出备份', '匯出備份', 'バックアップをエクスポート', 'Export backup'], ['导入', '匯入', 'インポート', 'Import'], ['备份已分卷', '備份已分卷', 'バックアップを分割しました', 'Backup split into parts'], ['数据较大，请保存全部分卷；恢复时可同时选择这些 JSON 文件。', '資料較大，請儲存全部分卷；還原時可同時選取這些 JSON 檔案。', 'データ量が多いため、すべての分割ファイルを保存してください。復元時にこれらの JSON ファイルをまとめて選択できます。', 'Save every part. You can select these JSON files together when restoring.'], ['下载分卷', '下載分卷', '分割ファイルを保存', 'Download part'], ['完成', '完成', '完了', 'Done'], ['无法导出：单条记录或设置超过备份容量限制。', '無法匯出：單筆記錄或設定超過備份容量限制。', '1 件の記録または設定がバックアップ容量の上限を超えています。', 'Cannot export: a record or the settings exceed the backup size limit.'], ['此前已导入的分卷会保留，可重新选择文件继续恢复。', '先前已匯入的分卷會保留，可重新選取檔案繼續還原。', '読み込み済みの分割ファイルは保持されます。ファイルを選択し直して復元を続けられます。', 'Previously imported parts are kept. Select files again to continue restoring.'], ['清空', '清空', '消去', 'Clear'], ['快速筛选', '快速篩選', 'クイックフィルター', 'Quick filters'], ['搜索', '搜尋', '検索', 'Search'], ['搜索帖子', '搜尋貼文', 'ポストを検索', 'Search posts'], ['搜索作者、正文或备注…', '搜尋作者、內文或備註…', '投稿者・本文・メモを検索…', 'Search author, text, or notes…'], ['来源筛选', '來源篩選', 'ソースで絞り込む', 'Filter by source'], ['媒体筛选', '媒體篩選', 'メディアで絞り込む', 'Filter by media'], ['排序方式', '排序方式', '並べ替え', 'Sort order'], ['智能排序', '智慧排序', 'スマート順', 'Smart sort'], ['最近浏览', '最近瀏覽', '最近表示', 'Recently viewed'], ['最近抓取', '最近擷取', '最近取得', 'Recently captured'], ['首次抓取（新→旧）', '首次擷取（新→舊）', '初回取得（新→古）', 'First captured (new→old)'], ['首次抓取（旧→新）', '首次擷取（舊→新）', '初回取得（古→新）', 'First captured (old→new)'], ['出现次数', '出現次數', '表示回数', 'Appearances'], ['按作者', '依作者', '投稿者順', 'By author'], ['按来源', '依來源', 'ソース順', 'By source'], ['全部', '全部', 'すべて', 'All'], ['未打开', '未開啟', '未表示', 'Unopened'], ['已打开', '已開啟', '表示済み', 'Opened'], ['快速消失', '快速消失', 'すぐ消えた', 'Disappeared quickly'], ['已收藏', '已收藏', 'お気に入り済み', 'Favorited'], ['已置顶', '已置頂', '固定済み', 'Pinned'], ['命中关键词', '符合關鍵字', 'キーワード一致', 'Keyword matches'], ['全部媒体', '全部媒體', 'すべてのメディア', 'All media'], ['含图片', '含圖片', '画像あり', 'With images'], ['含视频', '含影片', '動画あり', 'With video'], ['纯文字', '純文字', 'テキストのみ', 'Text only'], ['全部来源', '全部來源', 'すべてのソース', 'All sources'], ['主页', '首頁', 'ホーム', 'Home'], ['正在关注', '正在關注', 'フォロー中', 'Following'], ['为你推荐', '為你推薦', 'おすすめ', 'For You'], ['列表', '列表', 'リスト', 'List'], ['书签', '書籤', 'ブックマーク', 'Bookmarks'], ['喜欢', '喜歡', 'いいね', 'Likes'], ['未知页面', '未知頁面', '不明なページ', 'Unknown page'], ['个人主页', '個人主頁', 'プロフィール', 'Profile'], ['帖子详情', '貼文詳情', 'ポスト詳細', 'Post details'], ['搜索页', '搜尋頁', '検索ページ', 'Search page'], ['书签页', '書籤頁', 'ブックマークページ', 'Bookmarks page'], ['喜欢页', '喜歡頁', 'いいねページ', 'Likes page'], ['列表页', '列表頁', 'リストページ', 'List page'], ['总数', '總數', '合計', 'Total'], ['未读', '未讀', '未読', 'Unread'], ['图片', '圖片', '画像', 'Image'], ['视频', '影片', '動画', 'Video'], ['来源:', '來源：', 'ソース：', 'Source:'], ['历史来源:', '歷史來源：', '過去のソース：', 'Source history:'], ['抓取:', '擷取：', '取得：', 'Captured:'], ['浏览:', '瀏覽：', '表示：', 'Viewed:'], ['出现:', '出現：', '表示：', 'Seen:'], ['当前来源:', '目前來源：', '現在のソース：', 'Current source:'], ['当前选择：', '目前選擇：', '現在の選択：', 'Current:'], ['打开', '開啟', '開く', 'Open'], ['复制链接', '複製連結', 'リンクをコピー', 'Copy link'], [' 的个人主页', ' 的個人主頁', ' のプロフィール', ' profile'], ['复制链接：', '複製連結：', 'リンクをコピー：', 'Copy link: '], ['已复制', '已複製', 'コピー済み', 'Copied'], ['取消置顶', '取消置頂', '固定解除', 'Unpin'], ['置顶', '置頂', '固定', 'Pin'], ['取消收藏', '取消收藏', 'お気に入り解除', 'Unfavorite'], ['收藏', '收藏', 'お気に入り', 'Favorite'], ['删', '刪除', '削除', 'Delete'], ['展开全文', '展開全文', '全文を表示', 'Show full text'], ['收起', '收合', '折りたたむ', 'Collapse'], ['备注', '備註', 'メモ', 'Note'], ['保存备注', '儲存備註', 'メモを保存', 'Save note'], ['取消', '取消', 'キャンセル', 'Cancel'], ['在这里写备注…', '在這裡寫備註…', 'ここにメモを入力…', 'Write a note here…'], ['无正文', '無內文', '本文なし', 'No text'], ['加载更多', '載入更多', 'さらに読み込む', 'Load more'], ['帖子通知管理', '貼文通知管理', 'ポスト通知の管理', 'Post notification management'], ['搜索用户名或 @用户名…', '搜尋使用者名稱或 @使用者名稱…', 'ユーザー名または @ユーザー名を検索…', 'Search name or @username…'], ['搜索帖子通知用户', '搜尋貼文通知使用者', '通知ユーザーを検索', 'Search notification users'], ['同步订阅用户', '同步訂閱使用者', '購読ユーザーを同期', 'Sync subscribed users'], ['正在同步…', '正在同步…', '同期中…', 'Syncing…'], ['尚未读取订阅用户', '尚未讀取訂閱使用者', '購読ユーザー未取得', 'Subscribed users not loaded'], ['正在读取关注列表…', '正在讀取關注列表…', 'フォロー一覧を取得中…', 'Reading following list…'], ['已订阅', '已訂閱', '購読中', 'Subscribed'], ['本地保留', '本機保留', 'ローカル保存', 'Stored locally'], ['筛选到', '篩選到', '絞り込み', 'Filtered'], ['上次同步：', '上次同步：', '最終同期：', 'Last sync: '], ['尚未完整同步', '尚未完整同步', '完全同期前', 'Not fully synced'], ['已同步', '已同步', '同期済み', 'Synced'], ['处理中…', '處理中…', '処理中…', 'Processing…'], ['关闭通知', '關閉通知', '通知をオフ', 'Disable notifications'], ['重新开启', '重新開啟', '再度オン', 'Re-enable'], ['移除记录', '移除記錄', '記録を削除', 'Remove record'], ['设置', '設定', '設定', 'Settings'], ['大多数设置会立即生效；带“保存”或“应用”按钮的设置需要手动确认。', '大多數設定會立即生效；帶「儲存」或「套用」按鈕的設定需要手動確認。', 'ほとんどの設定はすぐ反映されます。「保存」または「適用」ボタンがある設定は手動で確定してください。', 'Most settings apply immediately. Settings with a Save or Apply button require confirmation.'], ['关键词与排除词', '關鍵字與排除詞', 'キーワードと除外語', 'Keywords and exclusions'], ['任意匹配', '任意符合', 'いずれか一致', 'Match any'], ['全部匹配', '全部符合', 'すべて一致', 'Match all'], ['保存', '儲存', '保存', 'Save'], ['输入关键词，支持正则，按回车添加', '輸入關鍵字，支援正則，按 Enter 新增', 'キーワードを入力（正規表現対応）、Enter で追加', 'Enter keywords (regex supported), press Enter to add'], ['输入排除词，支持正则，按回车添加', '輸入排除詞，支援正則，按 Enter 新增', '除外語を入力（正規表現対応）、Enter で追加', 'Enter exclusions (regex supported), press Enter to add'], ['内容净化', '內容淨化', 'コンテンツフィルター', 'Content filtering'], ['隐藏黄推 / 成人引流机器人', '隱藏成人內容／引流機器人', '成人スパムを非表示', 'Hide adult spam accounts'], ['检测强度', '偵測強度', '検出強度', 'Detection strength'], ['均衡', '均衡', '標準', 'Balanced'], ['保守', '保守', '控えめ', 'Conservative'], ['不审查已关注账号（转发内容除外）', '不審查已關注帳號（轉發內容除外）', 'フォロー中のアカウントを除外（リポストは対象）', 'Skip followed accounts (except reposts)'], ['不审查已关注账号的转发内容', '不審查已關注帳號的轉發內容', 'フォロー中アカウントのリポストも除外', 'Also skip reposts by followed accounts'], ['启用自定义规则（屏蔽词与账号白名单）', '啟用自訂規則（封鎖詞與帳號白名單）', 'カスタムルールを有効化（ブロック語・許可リスト）', 'Enable custom rules (blocked words and allowlist)'], ['输入自定义屏蔽词，按回车添加', '輸入自訂封鎖詞，按 Enter 新增', 'ブロック語を入力し Enter で追加', 'Enter a blocked word and press Enter'], ['输入账号白名单（如 @example），按回车添加', '輸入帳號白名單（如 @example），按 Enter 新增', '許可するアカウント（例 @example）を入力し Enter', 'Enter an allowed account (e.g. @example) and press Enter'], ['当前隐藏', '目前隱藏', '現在非表示', 'Currently hidden'], ['本次累计', '本次累計', '今回の累計', 'This session'], ['已扫描', '已掃描', 'スキャン済み', 'Scanned'], ['已识别关注', '已識別關注', '認識済みフォロー', 'Known following'], ['界面简化与宽屏', '介面簡化與寬螢幕', 'UI 簡素化とワイド表示', 'Simplified and wide layout'], ['启用界面简化与宽屏', '啟用介面簡化與寬螢幕', 'UI 簡素化とワイド表示を有効化', 'Enable simplified and wide layout'], ['时间线宽度(px)', '時間軸寬度(px)', 'タイムライン幅 (px)', 'Timeline width (px)'], ['左侧栏宽度(px)', '左側欄寬度(px)', '左サイドバー幅 (px)', 'Left sidebar width (px)'], ['应用宽度', '套用寬度', '幅を適用', 'Apply widths'], ['隐藏左侧栏', '隱藏左側欄', '左サイドバーを非表示', 'Hide left sidebar'], ['隐藏右侧栏', '隱藏右側欄', '右サイドバーを非表示', 'Hide right sidebar'], ['中间栏填满（启用时同时隐藏左右栏）', '中間欄填滿（啟用時同時隱藏左右欄）', '中央列を全幅表示（左右列も非表示）', 'Fill center column (also hides sidebars)'], ['精简导航、Premium 推广与页脚', '精簡導覽、Premium 推廣與頁尾', 'ナビ・Premium 広告・フッターを簡素化', 'Clean navigation, Premium promos, and footer'], ['隐藏右下消息栏 / Grok', '隱藏右下訊息欄 / Grok', '右下のメッセージ欄 / Grok を非表示', 'Hide Messages bar / Grok'], ['下载功能', '下載功能', 'ダウンロード', 'Downloads'], ['一键下载图片 / 视频 / GIF', '一鍵下載圖片 / 影片 / GIF', '画像 / 動画 / GIF をワンクリック保存', 'One-click image / video / GIF downloads'], ['保存帖子截图', '儲存貼文截圖', 'ポストのスクリーンショットを保存', 'Save post screenshot'], ['正在生成帖子截图…', '正在產生貼文截圖…', 'ポストの画像を生成中…', 'Generating post screenshot…'], ['正在生成另一张截图，请稍候', '正在產生另一張截圖，請稍候', '別の画像を生成中です。お待ちください', 'Another screenshot is being generated. Please wait.'], ['帖子截图已保存', '貼文截圖已儲存', 'ポストの画像を保存しました', 'Post screenshot saved'], ['帖子截图失败，请重试', '貼文截圖失敗，請重試', 'ポストの画像を保存できませんでした。再試行してください', 'Post screenshot failed. Please try again.'], ['无法生成完整截图', '無法產生完整截圖', '完全な画像を生成できません', 'Unable to capture the complete post'], ['部分图片未能读取或渲染失败。请重试；仍有问题时可导出诊断信息。', '部分圖片無法讀取或渲染失敗。請重試；若仍有問題，可匯出診斷資訊。', '一部の画像を読み込めないか、描画に失敗しました。再試行し、解決しない場合は診断情報を保存してください。', 'Some images could not be read, or rendering failed. Try again; if the problem persists, export the diagnostic report.'], ['导出截图诊断', '匯出截圖診斷', 'スクリーンショットの診断情報を保存', 'Export screenshot diagnostics'], ['下载时保持静默', '下載時保持靜默', 'ダウンロード中は通知を控える', 'Keep downloads quiet'], ['点击下载全部，长按或 Shift+点击选择下载', '點擊下載全部，長按或 Shift+點擊選擇下載', 'クリックで全件保存、長押しまたは Shift+クリックで選択保存', 'Click to download all; hold or Shift+click to select media'], ['选择要下载的媒体', '選擇要下載的媒體', '保存するメディアを選択', 'Select media to download'], ['反选', '反選', '選択を反転', 'Invert selection'], ['下载所选', '下載所選', '選択したメディアを保存', 'Download selected'], ['已选', '已選', '選択済み', 'Selected'], ['无预览', '無預覽', 'プレビューなし', 'No preview'], ['选择中', '選擇中', '選択中', 'Selecting'], ['作者链接', '作者連結', '投稿者のリンク', 'Author links'], ['作者链接加载失败，点击重试', '作者連結載入失敗，點擊重試', '投稿者のリンクを読み込めませんでした。クリックして再試行', 'Author links could not load; click to retry'], ['作品详情页显示作者链接', '在作品詳情頁顯示作者連結', 'ポストの詳細画面に投稿者のリンクを表示', 'Show author links on post details'], ['在作品详情页直接打开作者简介中的链接和个人网站，而不用访问作者主页。', '在作品詳情頁直接開啟作者簡介中的連結和個人網站，無需前往作者的個人檔案。', '投稿者のプロフィールを開かずに、ポストの詳細画面から自己紹介にあるリンクやウェブサイトを開けます。', 'Open the author’s bio links and website from the post details without visiting their profile.'], ['正在选择下载内容', '正在選擇下載內容', '保存するメディアを選択中', 'Selecting media to download'], ['无法开始下载，请重试', '無法開始下載，請重試', 'ダウンロードを開始できません。再試行してください', 'Unable to start the download. Please try again.'], ['默认关闭；开启后隐藏应用徽标旁的下载任务提示和任务列表，帖子内的下载进度与取消按钮仍可使用。', '預設關閉；開啟後隱藏應用徽章旁的下載工作提示和工作清單，貼文內的下載進度與取消按鈕仍可使用。', '初期設定はオフです。有効にするとアプリバッジ横のダウンロード表示とタスク一覧を隠します。ポスト内の進捗表示とキャンセルボタンは引き続き使えます。', 'Off by default. Hides the download indicator and task list beside the app badge. Download progress and cancel buttons in posts remain available.'], ['GIF内容下载格式', 'GIF 內容下載格式', 'GIF コンテンツの保存形式', 'GIF content download format'], ['默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。', '預設開啟；關閉時 GIF 內容會以原始 MP4 下載。選擇 GIF 時會在瀏覽器內轉換，耗時更長、檔案更大。', '既定で有効です。オフにすると GIF コンテンツは元の MP4 形式で保存されます。GIF を選ぶとブラウザー内で変換するため、時間がかかりファイルも大きくなります。', 'Enabled by default. When off, GIF content is saved as the original MP4. Selecting GIF converts it in the browser, which takes longer and produces larger files.'], ['自定义下载文件/压缩包名', '自訂下載檔案／壓縮檔名稱', 'ダウンロードファイル／ZIP 名をカスタマイズ', 'Customize downloaded file / ZIP names'], ['已自定义', '已自訂', 'カスタマイズ済み', 'Customized'], ['下载多个媒体自动压缩 ZIP 包', '下載多個媒體時自動壓縮 ZIP', '複数メディアを ZIP にまとめる', 'Package multiple media files as ZIP'], ['记录已经下载过的帖子', '記錄已下載過的貼文', 'ダウンロード済みポストを記録', 'Track downloaded posts'], ['媒体文件名（不含 .jpg 等扩展名）', '媒體檔名（不含 .jpg 等副檔名）', 'メディア名（.jpg などの拡張子は含めない）', 'Media filename (without extensions such as .jpg)'], ['ZIP 压缩包名（不含 .zip）', 'ZIP 壓縮檔名（不含 .zip）', 'ZIP 名（.zip なし）', 'ZIP filename (without .zip)'], ['正则替换（可选）', '正則取代（選填）', '正規表現置換（任意）', 'Regex replacement (optional)'], ['替换为', '取代為', '置換後', 'Replace with'], ['例如：', '例如：', '例：', 'Example: '], ['；支持 $1', '；支援 $1', '（$1 に対応）', '; supports $1'], ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'], ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'], ['关闭NFL', '關閉 NFL', 'NFL を非表示', 'Hide NFL'], ['关闭功能', '關閉功能', '非表示機能', 'Hide features'], ['以下开关默认关闭；已有选择会保留。', '以下開關預設關閉；會保留既有選擇。', '以下のスイッチは初期設定でオフです。保存済みの設定は維持されます。', 'These switches default to off. Existing choices are preserved.'], ['关闭新鲜事', '關閉新鮮事', '「いまどうしてる？」を非表示', 'Hide What’s happening'], ['关闭推荐关注', '關閉推薦關注', 'おすすめユーザーを非表示', 'Hide Who to follow'], ['关闭Money', '關閉 Money', 'Money を非表示', 'Hide Money'], ['隐藏侧栏的“有什么新鲜事”卡片；关闭此开关后会恢复显示。', '隱藏側欄的「有什麼新鮮事」卡片；關閉此開關後會恢復顯示。', 'サイドバーの「いまどうしてる？」カードを非表示にします。オフにすると再表示します。', 'Hides the What’s happening card in the sidebar. Turn this off to show it again.'], ['隐藏侧栏的“推荐关注”卡片；关注者列表和帖子内容不受影响，关闭此开关后会恢复显示。', '隱藏側欄的「推薦關注」卡片；追蹤者清單和貼文內容不受影響，關閉此開關後會恢復顯示。', 'サイドバーのおすすめユーザーカードを非表示にします。フォロワー一覧やポスト本文には影響しません。オフにすると再表示します。', 'Hides the Who to follow card in the sidebar. Follower lists and post content are unaffected. Turn this off to show it again.'], ['隐藏导航和菜单中的 Money 入口；关闭此开关后会恢复显示。', '隱藏導覽和選單中的 Money 入口；關閉此開關後會恢復顯示。', 'ナビゲーションやメニューの Money への入口を非表示にします。オフにすると再表示します。', 'Hides Money links in navigation and menus. Turn this off to show them again.'], ['帖子内媒体改为网格视图', '貼文內媒體改為網格檢視', 'ポスト内メディアをグリッド表示', 'Show post media in a grid'], ['取消年龄限制（用原图 / 视频进行替换）', '解除年齡限制（以原圖 / 影片取代）', '年齢制限を解除（元画像 / 動画に置換）', 'Bypass age gate (replace with original media)'], ['自动展开帖子里“显示更多”', '自動展開貼文中的「顯示更多」', 'ポストの「さらに表示」を自動展開', 'Automatically expand “Show more” in posts'], ['进入用户主页默认查看', '進入使用者主頁時預設檢視', 'プロフィールの既定タブ', 'Default profile tab'], ['亮点', '亮點', 'ハイライト', 'Highlights'], ['用户主页帖子排序方式', '使用者主頁貼文排序方式', 'プロフィールのポスト並び順', 'Profile post sorting'], ['最近', '最近', '最新', 'Recent'], ['热门', '熱門', '人気', 'Popular'], ['选择“热门”时，会使用 X 的热门排序；视频和图片页不受影响。', '選擇「熱門」時，會使用 X 的熱門排序；影片和圖片頁不受影響。', '「人気」を選ぶと X の人気順を使います。動画・画像ページには影響しません。', 'Selecting Popular uses X’s popular sorting; video and photo pages are unaffected.'], ['其他功能', '其他功能', 'その他の機能', 'Other features'], ['兼容 Firefox（仅 Firefox）', '相容 Firefox（僅 Firefox）', 'Firefox 互換モード（Firefox のみ）', 'Firefox compatibility (Firefox only)'], ['帖子上限提示', '貼文上限提示', 'ポスト件数の上限通知', 'Post limit warning'], ['帖子记录接近“最大条数”时提醒你。关闭提醒后，也可以随时在这里重新开启。', '貼文記錄接近「最大筆數」時提醒你。關閉提醒後，也可以隨時在這裡重新開啟。', 'ポスト記録が「最大件数」に近づくと通知します。通知を閉じても、ここからいつでも再開できます。', 'Warns you when saved posts approach the maximum. If dismissed, the warning can be re-enabled here anytime.'], ['已恢复上限提示', '已恢復上限提示', '上限通知を再開しました', 'Limit warning restored'], ['已关闭上限提示', '已關閉上限提示', '上限通知を無効にしました', 'Limit warning disabled'], ['隐藏应用徽标', '隱藏應用徽章', 'アプリバッジを非表示', 'Hide app badge'], ['切换为移动端徽标（仅 PC）', '切換為行動版徽章（僅 PC）', 'モバイル用バッジに切替（PC のみ）', 'Use mobile badge (PC only)'], ['切换为半透明蓝色条（仅移动端）', '切換為半透明藍色條（僅行動裝置）', '半透明の青いバーに切替（モバイルのみ）', 'Use translucent blue bar (mobile only)'], ['高级设置', '進階設定', '詳細設定', 'Advanced settings'], ['自动清理(天)', '自動清理（日）', '自動削除（日）', 'Auto-clean (days)'], ['最大条数', '最大筆數', '最大件数', 'Maximum posts'], ['闪现阈值(秒)', '閃現門檻（秒）', '消失判定（秒）', 'Disappear threshold (sec)'], ['主题', '主題', 'テーマ', 'Theme'], ['跟随系统', '跟隨系統', 'システムに合わせる', 'Follow system'], ['深色', '深色', 'ダーク', 'Dark'], ['浅色', '淺色', 'ライト', 'Light'], ['下载超时(秒)', '下載逾時（秒）', 'タイムアウト（秒）', 'Download timeout (sec)'], ['下载并发', '下載並行數', '同時ダウンロード数', 'Concurrent downloads'], ['应用', '套用', '適用', 'Apply'], ['帖子记录即将达到上限', '貼文記錄即將達到上限', 'ポスト記録が上限に近づいています', 'Post history is nearing its limit'], ['达到上限后，新帖子仍会继续记录；最旧的未收藏、未置顶帖子会被删除。收藏和置顶帖子不会被上限删除，因此总数有时可能超过设置值。', '達到上限後仍會繼續記錄新貼文；最舊且未收藏、未置頂的貼文會被刪除。收藏與置頂貼文不受上限刪除，因此總數有時可能超過設定值。', '上限に達しても新しいポストは記録され、古い未お気に入り・未固定のポストから削除されます。お気に入りと固定済みポストは削除されないため、合計が設定値を超える場合があります。', 'New posts will still be recorded at the limit; the oldest unfavorited and unpinned posts are removed. Favorited and pinned posts are protected, so the total may sometimes exceed the configured value.'], ['你可以打开“高级设置”调大“最大条数”，或先导出备份。', '你可以開啟「進階設定」調高「最大筆數」，或先匯出備份。', '「詳細設定」で上限を増やすか、先にバックアップをエクスポートできます。', 'You can increase the maximum under Advanced settings or export a backup first.'], ['打开高级设置', '開啟進階設定', '詳細設定を開く', 'Open advanced settings'], ['不再提示', '不再提示', '今後表示しない', "Don't remind me again"], ['点亮按钮即不保存对应页面的帖子', '點亮按鈕即不儲存對應頁面的貼文', 'ボタンをオンにすると、そのページのポストを保存しません', 'Turn on a button to stop saving posts from that page'], ['下载任务', '下載工作', 'ダウンロードタスク', 'Download tasks'], ['暂无下载任务', '暫無下載工作', 'ダウンロードはありません', 'No download tasks'], ['下载', '下載', 'ダウンロード', 'Download'], ['下载中', '下載中', 'ダウンロード中', 'Downloading'], ['转 GIF', '轉 GIF', 'GIF 変換', 'GIF'], ['正在转换 GIF', '正在轉換 GIF', 'GIF に変換中', 'Converting to GIF'], ['排队中', '排隊中', '待機中', 'Queued'], ['排队', '排隊', '待機', 'Queued'], ['正在打包', '正在打包', '圧縮中', 'Packing'], ['打包', '打包', '圧縮', 'Packing'], ['正在保存', '正在儲存', '保存中', 'Saving'], ['正在取消下载', '正在取消下載', 'キャンセル中', 'Cancelling download'], ['取消中', '取消中', 'キャンセル中', 'Cancelling'], ['下载完成', '下載完成', 'ダウンロード完了', 'Download complete'], ['已取消', '已取消', 'キャンセル済み', 'Cancelled'], ['失败：', '失敗：', '失敗：', 'Failed: '], ['重试', '重試', '再試行', 'Retry'], ['查看下载任务', '查看下載工作', 'ダウンロードを表示', 'View downloads'], ['取消下载', '取消下載', 'ダウンロードをキャンセル', 'Cancel download'], ['下载图片/视频/GIF', '下載圖片/影片/GIF', '画像/動画/GIFを保存', 'Download images/videos/GIFs'], ['正在获取视频地址…', '正在取得影片網址…', '動画 URL を取得中…', 'Getting video URL…'], ['获取中', '取得中', '取得中', 'Looking up'], ['已下载过媒体；点击可再次下载', '已下載過媒體；點擊可再次下載', 'ダウンロード済みです。クリックすると再保存できます', 'Downloaded before; click to download again'], ['个任务', '個工作', '件のタスク', ' tasks'], ['查看下载任务：', '查看下載工作：', 'ダウンロードを表示：', 'View downloads: '], ['命名效果预览：', '命名效果預覽：', 'ファイル名プレビュー：', 'Filename preview: '], ['示例用户', '範例使用者', 'サンプルユーザー', 'Sample user'], ['这是用于预览下载文件名的帖子正文', '這是用於預覽下載檔名的貼文內文', 'ダウンロード名を確認するためのサンプル本文', 'Sample post text for previewing download names'], ['下载超时', '下載逾時', 'ダウンロードがタイムアウトしました', 'Download timed out'], ['网络错误', '網路錯誤', 'ネットワークエラー', 'Network error'], ['下载失败', '下載失敗', 'ダウンロード失敗', 'Download failed'], ['读取失败', '讀取失敗', '読み込み失敗', 'Read failed'], ['媒体总量超出经典 ZIP 范围，请改为逐个下载', '媒體總量超出傳統 ZIP 範圍，請改為逐一下載', 'メディア総量が従来形式の ZIP 上限を超えました。個別に保存してください', 'Media exceeds classic ZIP limits; download files separately'], ['跨域下载失败：请使用支持 GM_xmlhttpRequest 的脚本管理器', '跨網域下載失敗：請使用支援 GM_xmlhttpRequest 的使用者腳本管理器', 'クロスオリジン保存に失敗しました。GM_xmlhttpRequest 対応のユーザースクリプト管理拡張を使用してください', 'Cross-origin download failed. Use a userscript manager that supports GM_xmlhttpRequest'], ['⚠️ 未能取得视频地址：检测到 Violentmonkey。安卓 Firefox 上可能无法正确携带 X 登录态，请改用 Tampermonkey 后重试', '⚠️ 無法取得影片網址：偵測到 Violentmonkey。Android Firefox 可能無法正確攜帶 X 登入狀態，請改用 Tampermonkey 後重試', '⚠️ 動画 URL を取得できませんでした。Violentmonkey を検出しました。Android Firefox では X のログイン状態が正しく送信されない場合があるため、Tampermonkey に変更して再試行してください', '⚠️ Could not get the video URL. Violentmonkey was detected; Android Firefox may not pass the X login session correctly. Switch to Tampermonkey and try again'], ['未能取得媒体地址，请确认已登录 X 后重试', '無法取得媒體網址，請確認已登入 X 後重試', 'メディア URL を取得できませんでした。X にログインして再試行してください', 'Could not get the media URL. Make sure you are signed in to X and try again'], ['未找到可下载的媒体，若为视频请先点开或播放一下再试', '找不到可下載的媒體；若為影片，請先開啟或播放後再試', '保存できるメディアが見つかりません。動画の場合は一度開くか再生してから再試行してください', 'No downloadable media was found. For video, open or play it once and try again'], ['图片预览', '圖片預覽', '画像プレビュー', 'Image preview'], ['关闭图片预览', '關閉圖片預覽', '画像プレビューを閉じる', 'Close image preview'], ['上一张图片', '上一張圖片', '前の画像', 'Previous image'], ['下一张图片', '下一張圖片', '次の画像', 'Next image'], ['提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。', '提示：列表僅記錄你瀏覽時出現過的貼文。收藏／置頂貼文不會因數量上限或自動清理而刪除。', 'ヒント：閲覧中に表示されたポストだけを記録します。お気に入り／固定したポストは上限や自動削除の対象外です。', 'Tip: Only posts seen while browsing are saved. Favorited or pinned posts are never removed by limits or auto-cleaning.'], ['读取 X 的铃铛订阅状态；开关操作会同步修改 X 账号设置。本页不会抓取或显示订阅账号的帖子。', '讀取 X 的鈴鐺訂閱狀態；開關操作會同步修改 X 帳號設定。本頁不會擷取或顯示訂閱帳號的貼文。', 'X のベル購読状態を読み取り、切替は X アカウントにも反映されます。このページで購読アカウントのポストを取得・表示することはありません。', 'Reads X bell-subscription status; toggles also update your X account. This page does not fetch or display posts from subscribed accounts.'], ['只影响 BetterX 已记录的帖子：关键词用来高亮和筛选，排除词会隐藏匹配的帖子。', '只影響 BetterX 已記錄的貼文：關鍵字用來醒目提示和篩選，排除詞會隱藏符合的貼文。', 'BetterX に記録済みのポストだけが対象です。キーワードは強調と絞り込みに使い、除外語に一致したポストは非表示にします。', 'Only affects posts saved by BetterX: keywords highlight and filter, while exclusions hide matching posts.'], ['普通文字可直接输入；正则表达式请写成 <code>/表达式/</code>，例如 <code>/猫|狗/</code>。两种写法可以混用。', '一般文字可直接輸入；正則表達式請寫成 <code>/運算式/</code>，例如 <code>/貓|狗/</code>。兩種寫法可以混用。', '通常の文字はそのまま入力できます。正規表現は <code>/式/</code> の形で入力してください（例：<code>/猫|犬/</code>）。両方を組み合わせて使えます。', 'Enter plain text directly. Write regex as <code>/expression/</code>, for example <code>/cat|dog/</code>. Both forms can be mixed.'], ['根据正文、账号名和引流特征综合判断，只在当前页面隐藏可疑帖子，不会拉黑账号。关闭后会恢复显示。', '根據內文、帳號名稱和引流特徵綜合判斷，只在目前頁面隱藏可疑貼文，不會封鎖帳號。關閉後會恢復顯示。', '本文、アカウント名、誘導の特徴から総合的に判定し、現在のページで疑わしいポストだけを非表示にします。アカウントはブロックせず、オフにすると再表示します。', 'Checks post text, account names, and spam signals, then hides suspicious posts only on the current page. It never blocks accounts; turn it off to show them again.'], ['自动读取 X 当前的时间线与左侧栏宽度（默认开启）', '自動讀取 X 目前的時間軸與左側欄寬度（預設開啟）', 'X の現在のタイムライン幅と左サイドバー幅を自動取得（既定でオン）', 'Automatically detect X timeline and left-sidebar widths (enabled by default)'], ['在消息页和设置页不会调整布局；关闭此功能即可恢复 X 原来的界面。', '在訊息頁和設定頁不會調整版面；關閉此功能即可恢復 X 原來的介面。', 'メッセージと設定ページではレイアウトを変更しません。この機能をオフにすると X 本来の表示に戻ります。', 'The layout is not changed on Messages or Settings pages. Turn this feature off to restore X’s original layout.'], ['点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择要下载的图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。', '點擊下載按鈕儲存全部媒體；長按或 Shift+點擊可依縮圖選擇要下載的圖片、GIF 和影片。下載時貼文內會顯示進度與取消按鈕，徽章旁會顯示工作提示。', 'クリックで全メディアを保存します。長押しまたは Shift+クリックでサムネイルから保存する画像・GIF・動画を選択できます。ダウンロード中はポスト内に進捗とキャンセルボタン、バッジ横にタスク表示が出ます。', 'Click to save all media, or hold or Shift+click to select which images, GIFs and videos to download by thumbnail. Download progress and cancel buttons appear in posts, with a task indicator beside the app badge.'], ['默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。', '預設開啟；ZIP 內檔案使用下方「媒體檔名」範本。關閉後會同時下載多個媒體。', '既定でオンです。ZIP 内のファイル名には下のメディア名テンプレートを使います。オフの場合は複数ファイルを個別保存します。', 'Enabled by default. Files inside ZIP use the media filename template below. When disabled, media files download separately.'], ['默认开启；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。', '預設開啟；成功下載貼文內至少一個媒體後會記錄並變更下載圖示。再次點擊已記錄貼文時會先詢問是否繼續。', '既定ではオンです。メディアを1件以上保存すると記録し、アイコンを変更します。再ダウンロード時は確認します。', 'Enabled by default. After at least one media file is saved, the post is recorded and its icon changes. Re-downloading asks for confirmation.'], ['点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。', '點擊變數會插入目前編輯中的範本；同時下載貼文內多個媒體時，若未使用 <code>{序號}</code>，會自動附加序號以避免重名。', '変数をクリックすると編集中のテンプレートへ挿入します。複数メディアで <code>{連番}</code> がない場合は重複防止の番号を自動追加します。', 'Click a variable to insert it into the active template. If <code>{index}</code> is omitted for multiple media files, a number is appended automatically.'], ['正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。', '正則會在變數展開後對兩個名稱進行全域取代；支援擷取群組（如 <code>$1</code>）。無效或高風險正則不會儲存。', '変数展開後に両方の名前へ一括置換します。キャプチャ置換（<code>$1</code> など）に対応し、無効または危険な式は保存しません。', 'After variables expand, the regex replaces globally in both names. Capture replacements such as <code>$1</code> are supported; invalid or risky regexes are not saved.'], ['隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。', '隱藏時間軸廣告、廣告卡片和「訂閱 Premium」提示。廣告貼文不會儲存到 BetterX，關閉後會重新顯示。', 'タイムライン広告、広告カード、「Premium に登録」の案内を非表示にします。広告ポストは BetterX に保存されず、オフにすると再表示します。', 'Hides timeline ads, ad cards, and Subscribe to Premium prompts. Ad posts are not saved to BetterX and reappear when this is turned off.'], ['隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。', '隱藏 X 右側欄中的 NFL 球隊、賽程和比賽入口；關閉此開關後會恢復顯示。', 'X の右サイドバーにある NFL のチーム、日程、試合への入口を非表示にします。オフにすると再表示します。', 'Hides NFL teams, schedules, and game links in X’s right sidebar. Turn it off to show them again.'], ['把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。', '把貼文裡的多個媒體改成網格：2 個並排，3 個左大右二，4 個按 2×2 排列。', 'ポスト内の複数メディアをグリッド表示にします。2枚は横並び、3枚は左大＋右2枚、4枚は2×2です。', 'Shows multiple media items in a grid: two side by side, three with one large item on the left, and four in a 2×2 layout.'], ['移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”', '移除敏感內容遮罩並顯示原圖或影片；建議在新開啟的視窗中勾選「顯示可能含有敏感內容的媒體內容」', 'センシティブな内容の覆いを外して元の画像や動画を表示します。新しく開いたウィンドウで「センシティブな内容を含む可能性のあるメディアを表示する」を有効にすることをおすすめします。', 'Removes sensitive-content covers and shows original images or videos. In the newly opened window, we recommend enabling “Display media that may contain sensitive content”.'], ['如果您没有勾选的话，麻烦您勾选上“显示可能含有敏感内容的媒体内容”，大部分成人内容会自动显示', '如果尚未勾選，請勾選「顯示可能含有敏感內容的媒體內容」，大部分成人內容便會自動顯示', 'まだ有効にしていない場合は、「センシティブな内容を含む可能性のあるメディアを表示する」を有効にしてください。ほとんどの成人向けコンテンツが自動的に表示されます。', 'If it is not already enabled, please enable “Display media that may contain sensitive content”. Most adult content will then appear automatically.'], ['自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。', '自動點開貼文內文裡的「顯示更多 / Show more」；不會展開回覆或側欄內容。', 'ポスト本文の「さらに表示 / Show more」を自動で開きます。返信やサイドバーの内容は展開しません。', 'Automatically opens “Show more” in post text. Replies and sidebar content are not expanded.'], ['进入用户主页时自动切换到所选页签；帖子详情、回复和关注者页面不受影响。', '進入使用者主頁時自動切換到所選分頁；貼文詳情、回覆和追蹤者頁面不受影響。', 'プロフィールを開くと選んだタブへ自動で切り替えます。ポスト詳細、返信、フォロワーページには影響しません。', 'Automatically switches to the selected tab when you open a profile. Post details, replies, and follower pages are unaffected.'], ['如果 X 一直停在启动图标，可尝试开启。开启后会停用部分网络数据读取；点击开关可先查看影响。', '如果 X 一直停在啟動圖示，可嘗試開啟。開啟後會停用部分網路資料讀取；點擊開關可先查看影響。', 'X が起動ロゴのまま止まる場合にお試しください。有効にすると一部のネットワークデータ読み取りを停止します。切り替える前に影響を確認できます。', 'Try this if X remains stuck on its startup logo. It disables some network-data reading; click the switch to review the impact first.'], ['在电脑上会隐藏徽标；在手机上会收成屏幕右侧的蓝色小条。点击小条、从屏幕右边缘向内滑动，或使用油猴菜单都能恢复。', '在電腦上會隱藏徽章；在手機上會收成螢幕右側的藍色小條。點擊小條、從螢幕右邊緣向內滑動，或使用腳本管理器選單都能恢復。', 'パソコンではバッジを隠し、スマートフォンでは画面右側の青いバーに収納します。バーをタップする、右端から内側へスワイプする、またはユーザースクリプトメニューから復元できます。', 'Hides the badge on desktop and collapses it into a blue bar on mobile. Tap the bar, swipe inward from the right edge, or use the userscript menu to restore it.'], ['在电脑上使用圆形图标和未读角标，仍可拖动位置。', '在電腦上使用圓形圖示和未讀角標，仍可拖曳位置。', 'パソコンで丸いアイコンと未読バッジを使います。位置は引き続きドラッグできます。', 'Uses a circular icon and unread badge on desktop; you can still drag it to a new position.'], ['把手机上的圆形徽标收成右侧蓝色小条；点击打开面板，长按后可上下移动。', '把手機上的圓形徽章收成右側藍色小條；點擊開啟面板，長按後可上下移動。', 'スマートフォンの丸いバッジを右側の青いバーに収納します。タップでパネルを開き、長押し後に上下へ動かせます。', 'Collapses the circular mobile badge into a blue bar on the right. Tap to open the panel; long-press to move it up or down.'], ['下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。自动清理(天)为0则不自动清理。', '下載並行數可設為 1～6，預設 2；提高可加速多媒體工作，但也會增加頻寬與記憶體使用。自動清理（日）設為0則不自動清理。', '同時数は1～6（既定2）。増やすと速くなりますが、帯域とメモリ使用量も増えます。自動削除（日）を0にすると自動削除しません。', 'Concurrency can be 1–6 (default 2). Higher values speed up multi-media jobs but use more bandwidth and memory. Set Auto-clean (days) to 0 to disable automatic cleaning.'], ['当前筛选条件下没有帖子。可以刷新页面、切换 X 标签页，或把筛选改回“全部”。', '目前篩選條件下沒有貼文。可重新整理頁面、切換 X 分頁，或將篩選改回「全部」。', '現在の条件に一致するポストはありません。ページや X のタブを更新するか、フィルターを「すべて」に戻してください。', 'No posts match the current filters. Refresh the page, switch X tabs, or reset the filter to All.'], ['还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。', '尚未讀取貼文通知訂閱。請點擊「同步訂閱使用者」，或瀏覽已開啟鈴鐺的使用者主頁後再查看。', 'ポスト通知の購読情報がありません。「購読ユーザーを同期」を押すか、ベルを有効にしたプロフィールを開いてください。', 'No post-notification subscriptions have been read. Click “Sync subscribed users” or visit a profile with its bell enabled.'], ['智能排序：置顶、收藏和快消失的帖子先显示，其他的按抓到的顺序排。', '智慧排序：置頂、收藏和快速消失的貼文優先，其餘依擷取順序排列。', 'スマート順：固定・お気に入り・すぐ消えたポストを優先し、残りは取得順に表示します。', 'Smart sort: pinned, favorited, and quickly disappeared posts first; others follow capture order.'], ['最近浏览：按你在屏幕上看到的帖子顺序排。适合用来找刚刷过的帖子。', '最近瀏覽：依螢幕上看到貼文的順序排列，適合尋找剛瀏覽過的貼文。', '最近表示：画面で見た順に並べ、直前に見たポストを探すのに便利です。', 'Recently viewed: orders posts by when they appeared on screen, useful for finding what you just saw.'], ['最近抓取：按脚本发现帖子的时间排。X 会提前加载，顺序不一定等于你看到的顺序。', '最近擷取：依腳本發現貼文的時間排列。X 會預先載入，因此不一定等於實際看到的順序。', '最近取得：スクリプトが見つけた時刻順です。X の先読みのため、実際に見た順とは限りません。', 'Recently captured: orders by discovery time. X preloads posts, so this may differ from viewing order.'], ['出现次数：反复刷到的帖子排在前面。', '出現次數：反覆看到的貼文排在前面。', '表示回数：繰り返し表示されたポストを先にします。', 'Appearances: repeatedly seen posts come first.'], ['按作者：把同一个作者的帖子排在一起。', '依作者：將同一作者的貼文排在一起。', '投稿者順：同じ投稿者のポストをまとめます。', 'By author: groups posts from the same author.'], ['按来源：按为你推荐、正在关注、搜索、书签、喜欢等页面分类排。', '依來源：依為你推薦、正在關注、搜尋、書籤、喜歡等頁面分類。', 'ソース順：おすすめ、フォロー中、検索、ブックマーク、いいねなどで分類します。', 'By source: groups posts by For You, Following, Search, Bookmarks, Likes, and other pages.'], ['BetterX：显示 / 隐藏应用徽标', 'BetterX：顯示 / 隱藏應用徽章', 'BetterX：アプリバッジを表示 / 非表示', 'BetterX: Show / hide app badge'], ['BetterX：强制开启 Firefox 兼容模式并刷新', 'BetterX：強制開啟 Firefox 相容模式並重新整理', 'BetterX：Firefox 互換モードを強制して更新', 'BetterX: Force Firefox compatibility and reload'], ['BetterX：恢复 Firefox 完整模式并刷新', 'BetterX：恢復 Firefox 完整模式並重新整理', 'BetterX：Firefox フルモードに戻して更新', 'BetterX: Restore full Firefox mode and reload'], ['BetterX：导出 Firefox 兼容诊断', 'BetterX：匯出 Firefox 相容診斷', 'BetterX：Firefox 互換診断をエクスポート', 'BetterX: Export Firefox compatibility diagnostics'], ['无法读取当前 X 用户 ID，请确认已经登录', '無法讀取目前 X 使用者 ID，請確認已登入', '現在の X ユーザー ID を取得できません。ログインを確認してください', 'Could not read the current X user ID. Make sure you are signed in'], ['本次识别', '本次識別', '今回検出', 'Found this time'], ['个，当前保留', '個，目前保留', '件、現在保持', '; currently keeping'], ['个订阅', '個訂閱', '件の購読', ' subscriptions'], ['订阅用户与本地记录不一致', '訂閱使用者與本機記錄不一致', '購読ユーザーとローカル記録に差異があります', 'Subscriptions differ from local records'], ['以下用户在本地仍开启了通知，但本次同步未识别到。账号可能已注销、被封禁或冻结，也可能是接口暂时遗漏。请点击用户名核实。', '以下使用者在本機仍開啟通知，但本次同步未識別到。帳號可能已註銷、遭封鎖或凍結，也可能是介面暫時遺漏。請點擊使用者名稱確認。', '以下のユーザーはローカルで通知が有効ですが、今回の同期では検出されませんでした。削除や凍結のほか、一時的な取得漏れの可能性もあります。ユーザー名からプロフィールをご確認ください。', 'These users still have notifications enabled locally but were not detected in this sync. Accounts may be deleted or suspended, or the API may have temporarily omitted them. Open their profiles to check.'], ['确认后逐个尝试关闭 X 通知；仅在 X 明确返回账号不存在或已被封禁时关闭本地记录。其他失败会停止处理并保留未处理记录。', '確認後逐一嘗試關閉 X 通知；僅在 X 明確回覆帳號不存在或遭停權時關閉本機記錄。其他失敗會停止處理並保留未處理記錄。', '確認後、X の通知を一人ずつ無効にします。X がアカウントの不存在・凍結を明示した場合はローカル記録のみ無効にします。その他のエラーでは停止し、未処理の記録を保持します。', 'After confirmation, X notifications will be disabled one user at a time. Only an explicit account-not-found or suspended response disables just the local record. Other failures stop processing and leave pending records unchanged.'], ['关闭以上用户通知', '關閉以上使用者通知', '上記ユーザーの通知を無効にする', 'Disable notifications for these users'], ['未识别用户', '未識別使用者', '未検出のユーザー', 'Users not detected'], ['本地开启', '本機開啟', 'ローカルで有効', 'Enabled locally'], ['已关闭记录', '已關閉記錄', '無効の記録', 'Disabled records'], ['当前 X 账号', '目前 X 帳號', '現在の X アカウント', 'Current X account'], ['登录 X 后可查看当前账号的通知订阅。', '登入 X 後可查看目前帳號的通知訂閱。', 'X にログインすると現在のアカウントの通知購読を表示できます。', 'Sign in to X to view notification subscriptions for the current account.'], ['旧版通知记录未记录所属账号，已保留。请同步当前账号重新建立名单。', '舊版通知記錄未記錄所屬帳號，已保留。請同步目前帳號重新建立清單。', '旧バージョンの通知記録には所有アカウント情報がないため、保持しています。現在のアカウントを同期して一覧を作成してください。', 'Legacy notification records have no account ownership information and have been kept. Sync the current account to build its list.'], ['正在关闭通知…', '正在關閉通知…', '通知を無効にしています…', 'Disabling notifications…'], ['已处理', '已處理', '処理済み', 'Processed'], ['仅关闭本地记录', '僅關閉本機記錄', 'ローカル記録のみ無効', 'Local record disabled only'], ['已跳过', '已略過', 'スキップ済み', 'Skipped'], ['未能关闭', '未能關閉', '無効化できませんでした', 'Could not disable'], ['X 请求受限，已停止处理，请稍后重新同步。', 'X 請求受限，已停止處理，請稍後重新同步。', 'X のリクエスト制限により停止しました。時間をおいて再同期してください。', 'X rate limited the request. Processing stopped; sync again later.'], ['X 账号已切换，已停止处理。', 'X 帳號已切換，已停止處理。', 'X アカウントが切り替わったため停止しました。', 'The X account changed. Processing stopped.'], ['处理未完成，未关闭的用户保持原状态。', '處理未完成，未關閉的使用者維持原狀態。', '処理は未完了です。未処理のユーザーは元の状態を保持しています。', 'Processing is incomplete. Users not disabled keep their previous state.'], ['已取消后续处理。', '已取消後續處理。', '残りの処理をキャンセルしました。', 'Remaining processing cancelled.'], ['处理完成。', '處理完成。', '処理が完了しました。', 'Processing complete.'], ['同步失败：', '同步失敗：', '同期失敗：', 'Sync failed: '], ['修改失败：', '修改失敗：', '変更失敗：', 'Update failed: '], ['X 未返回有效的关注列表，请稍后重试', 'X 未傳回有效的關注清單，請稍後重試', 'X から有効なフォロー一覧を取得できませんでした。後でもう一度お試しください', 'X did not return a valid following list. Please try again later'], ['X 返回接口错误，请稍后重试', 'X 傳回介面錯誤，請稍後重試', 'X API でエラーが発生しました。後でもう一度お試しください', 'X returned an API error. Please try again later'], ['关注列表分页信息缺失，请稍后重试', '關注清單缺少分頁資訊，請稍後重試', 'フォロー一覧のページ情報がありません。後でもう一度お試しください', 'Following list pagination is missing. Please try again later'], ['关注列表分页没有前进，已停止同步', '關注清單分頁未前進，已停止同步', 'フォロー一覧のページが進まないため、同期を停止しました', 'Following list pagination did not advance. Sync stopped'], ['已开启', '已開啟', '有効化しました', 'Enabled'], ['的帖子通知', '的貼文通知', 'のポスト通知', ' post notifications'], ['已关闭', '已關閉', '無効化しました', 'Disabled'], ['下载完成：已逐个保存', '下載完成：已逐一儲存', 'ダウンロード完了：個別に保存', 'Download complete: saved separately'], ['个文件', '個檔案', 'ファイル', ' files'], ['，跳过', '，略過', '、スキップ', '; skipped'], ['个失败项', '個失敗項目', '件の失敗', ' failed items'], ['正在开启 Firefox 兼容模式并刷新…', '正在開啟 Firefox 相容模式並重新整理…', 'Firefox 互換モードを有効にして更新中…', 'Enabling Firefox compatibility and reloading…'], ['正在关闭 Firefox 兼容模式并刷新…', '正在關閉 Firefox 相容模式並重新整理…', 'Firefox 互換モードを無効にして更新中…', 'Disabling Firefox compatibility and reloading…'], ['此选项仅用于 Firefox', '此選項僅適用於 Firefox', 'この設定は Firefox 専用です', 'This option is only for Firefox'], ['已开启 Firefox 兼容模式', '已開啟 Firefox 相容模式', 'Firefox 互換モードを有効にしました', 'Firefox compatibility enabled'], ['已使用 Firefox 完整功能模式', '已使用 Firefox 完整功能模式', 'Firefox フル機能モードを使用します', 'Using full Firefox mode'], ['已导出 Firefox 兼容诊断', '已匯出 Firefox 相容診斷', 'Firefox 互換診断をエクスポートしました', 'Firefox compatibility diagnostics exported'], ['已恢复应用徽标', '已恢復應用徽章', 'アプリバッジを復元しました', 'App badge restored'], ['已显示应用徽标', '已顯示應用徽章', 'アプリバッジを表示しました', 'App badge shown'], ['已隐藏应用徽标 · Alt+X 可打开面板', '已隱藏應用徽章 · Alt+X 可開啟面板', 'アプリバッジを非表示にしました · Alt+X でパネルを開けます', 'App badge hidden · Press Alt+X to open the panel'], ['点击屏幕右侧小蓝条可显示徽标', '點擊螢幕右側小藍條可顯示徽章', '画面右の青いバーをタップしてバッジを表示', 'Tap the blue bar on the right to show the badge'], ['已切换为屏幕右侧小蓝条', '已切換為螢幕右側小藍條', '画面右の青いバーに切り替えました', 'Switched to the blue right-edge bar'], ['显示 BetterX 应用徽标', '顯示 BetterX 應用徽章', 'BetterX アプリバッジを表示', 'Show BetterX app badge'], ['打开 BetterX 面板', '開啟 BetterX 面板', 'BetterX パネルを開く', 'Open BetterX panel'], ['关闭 BetterX 面板', '關閉 BetterX 面板', 'BetterX パネルを閉じる', 'Close BetterX panel'], ['点按显示 BetterX 徽标', '點按以顯示 BetterX 徽章', 'タップして BetterX バッジを表示', 'Tap to show the BetterX badge'], ['正则无效或风险过高，未保存', '正則無效或風險過高，未儲存', '正規表現が無効または危険なため保存しませんでした', 'Regex was invalid or too risky and was not saved'], ['已保存下载命名', '已儲存下載命名', 'ダウンロード命名設定を保存しました', 'Download naming saved'], ['已将当前列表全部标为已读', '已將目前列表全部標為已讀', '現在の一覧をすべて既読にしました', 'Marked the current list as read'], ['已保存关键词', '已儲存關鍵字', 'キーワードを保存しました', 'Keywords saved'], ['已保存排除词', '已儲存排除詞', '除外語を保存しました', 'Exclusions saved'], ['已保存自定义屏蔽词', '已儲存自訂封鎖詞', 'カスタムブロック語を保存しました', 'Custom blocked words saved'], ['已保存账号白名单', '已儲存帳號白名單', 'アカウント許可リストを保存しました', 'Account allowlist saved'], ['已切换为手动宽度并应用', '已切換為手動寬度並套用', '手動幅へ切り替えて適用しました', 'Switched to manual widths and applied'], ['已应用高级设置', '已套用進階設定', '詳細設定を適用しました', 'Advanced settings applied'], ['确定要清空', '確定要清空', '消去しますか：', 'Clear'], ['条未收藏/未置顶的帖子吗？此操作不可撤销。', '筆未收藏／未置頂的貼文嗎？此操作無法復原。', '件のお気に入り／固定されていないポスト。この操作は取り消せません。', ' unfavorited/unpinned posts? This cannot be undone.'], ['导入失败：单次最多允许', '匯入失敗：單次最多允許', 'インポート失敗：一度に許可される上限は', 'Import failed: at most'], ['条帖子。', '筆貼文。', '件です。', ' posts are allowed.'], ['导入完成：新增', '匯入完成：新增', 'インポート完了：追加', 'Import complete: added'], ['条，合并', '筆，合併', '件、統合', ', merged'], ['条，跳过', '筆，略過', '件、スキップ', ', skipped'], ['条无效记录', '筆無效記錄', '件の無効な記録', ' invalid records'], ['该帖子内媒体文件曾下载过，是否继续下载？', '此貼文的媒體曾下載過，是否繼續？', 'このポストのメディアはダウンロード済みです。続行しますか？', 'Media from this post was downloaded before. Continue?'], ['是否同时恢复备份中的设置？', '是否同時還原備份中的設定？', 'バックアップ内の設定も復元しますか？', 'Restore settings from the backup too?'], ['页面尚未就绪，诊断信息已输出到控制台。', '頁面尚未就緒，診斷資訊已輸出至主控台。', 'ページの準備ができていません。診断情報をコンソールへ出力しました。', 'The page is not ready; diagnostics were written to the console.'], ['当前筛选结果为空，没有可导出的内容。', '目前篩選結果為空，沒有可匯出的內容。', '現在の絞り込み結果は空です。エクスポートする内容がありません。', 'The current filtered result is empty; there is nothing to export.'], ['导入失败：备份文件不能超过 25 MB。', '匯入失敗：備份檔不得超過 25 MB。', 'インポート失敗：バックアップは 25 MB 以下にしてください。', 'Import failed: backup files cannot exceed 25 MB.'], ['无法识别的备份文件格式。', '無法識別的備份檔格式。', '認識できないバックアップ形式です。', 'Unrecognized backup format.'], ['导入失败：文件解析出错。', '匯入失敗：檔案解析錯誤。', 'インポート失敗：ファイルを解析できませんでした。', 'Import failed: file parsing error.'], ['当前列表没有未读的帖子喂～', '目前列表沒有未讀貼文喔～', '現在の一覧に未読ポストはありません。', 'There are no unread posts in the current list.'], ['确定要把当前列表的 ', '確定要將目前列表中的 ', '現在の一覧にある', 'Mark all '], [' 条未读帖子全部标为已读吗？', ' 筆未讀貼文全部標為已讀嗎？', '件の未読ポストをすべて既読にしますか？', ' unread posts in the current list as read?'], ['⚠️ 已忽略', '⚠️ 已忽略', '⚠️ 無視しました：', '⚠️ Ignored'], ['条高风险或无效正则', '筆高風險或無效正則', '件の危険または無効な正規表現', ' risky or invalid regex rules'], ['最多保存 50 个', '最多儲存 50 個', '保存できる上限は50件です：', 'At most 50 can be saved: '], ['自定义屏蔽词', '自訂封鎖詞', 'カスタムブロック語', 'custom blocked words'], ['关键词', '關鍵字', 'キーワード', 'keywords'], ['排除词', '排除詞', '除外語', 'exclusions'], ['没有找到与“', '找不到與「', '「', 'No username or @username matched “'], ['”匹配的用户名或 @用户名。', '」相符的使用者名稱或 @使用者名稱。', '」に一致するユーザー名または @ユーザー名はありません。', '”.'], ['开启“兼容 Firefox”？', '開啟「Firefox 相容模式」？', 'Firefox 互換モードを有効にしますか？', 'Enable Firefox compatibility?'], ['开启后 BetterX 不再改写页面的', '開啟後 BetterX 將不再改寫頁面的', '有効にすると BetterX はページの', 'When enabled, BetterX will stop wrapping the page’s'], ['可避免部分 Firefox 环境或多个 X 脚本冲突时一直卡在 X 图标。', '可避免部分 Firefox 環境或多個 X 腳本衝突時一直卡在 X 圖示。', 'を変更しなくなり、一部の Firefox 環境や複数の X スクリプトが競合した際に X ロゴで停止する問題を避けられます。', ', which can prevent X from getting stuck on its logo in some Firefox setups or when multiple X scripts conflict.'], ['以下能力可能降级：', '以下功能可能受限：', '次の機能が制限される場合があります：', 'The following features may be limited:'], ['部分视频 / GIF 无法取得真实下载地址；', '部分影片 / GIF 可能無法取得實際下載網址；', '一部の動画 / GIF の実際のダウンロード URL を取得できない場合があります。', 'Some videos / GIFs may not expose a direct download URL;'], ['部分年龄限制视频无法内联显示；', '部分年齡限制影片可能無法直接顯示；', '一部の年齢制限動画をページ内表示できない場合があります。', 'Some age-restricted videos may not display inline;'], ['无法从接口响应学习关注关系，主要依靠主页按钮和“正在关注”时间线。', '無法從介面回應學習關注關係，主要依靠個人主頁按鈕與「正在關注」時間軸。', 'API 応答からフォロー関係を学習できず、プロフィールのボタンと「フォロー中」タイムラインが主な情報源になります。', 'Following relationships cannot be learned from API responses and instead rely mainly on profile buttons and the Following timeline.'], ['帖子记录、搜索、面板、内容净化、广告过滤、布局和图片 DOM 兜底不受影响。确认后页面会刷新。', '貼文記錄、搜尋、面板、內容淨化、廣告過濾、版面配置與圖片 DOM 備援不受影響。確認後頁面會重新整理。', 'ポスト記録、検索、パネル、コンテンツフィルター、広告非表示、レイアウト、画像の DOM フォールバックには影響しません。確認後にページを更新します。', 'Post history, search, the panel, content filtering, ad hiding, layout, and the image DOM fallback are unaffected. The page will reload after confirmation.'], ['开启并刷新', '開啟並重新整理', '有効にして更新', 'Enable and reload'], ['关闭“兼容 Firefox”？', '關閉「Firefox 相容模式」？', 'Firefox 互換モードを無効にしますか？', 'Disable Firefox compatibility?'], ['关闭后将恢复 v1.7 的网络媒体与关注关系采集。如果当前环境曾卡在只显示 X 图标的页面，建议继续保持开启。确认后页面会刷新。', '關閉後將恢復 v1.7 的網路媒體與關注關係擷取。如果目前環境曾卡在只顯示 X 圖示的頁面，建議繼續保持開啟。確認後頁面會重新整理。', '無効にすると v1.7 のネットワークメディア・フォロー関係の取得を再開します。X ロゴだけの画面で停止したことがある環境では、有効のままにすることをおすすめします。確認後にページを更新します。', 'Disabling restores v1.7 network media and following-relationship capture. If this setup has ever stalled on the X logo, keeping compatibility enabled is recommended. The page will reload after confirmation.'], ['关闭并刷新', '關閉並重新整理', '無効にして更新', 'Disable and reload'], ['检测到 Firefox', '偵測到 Firefox', 'Firefox を検出しました', 'Firefox detected'], ['请问你在使用 BetterX 时，能否正常进入 X？', '使用 BetterX 時，是否能正常進入 X？', 'BetterX の使用中、X を正常に開けていますか？', 'Can you open X normally while using BetterX?'], ['目前已知部分 Firefox 用户会一直卡在', '目前已知部分 Firefox 使用者會一直卡在', '一部の Firefox ユーザーでは', 'Some Firefox users may remain stuck on the'], ['只显示 X 图标', '只顯示 X 圖示', 'X ロゴだけが表示される', 'X-logo-only'], ['的启动页面，常见于广告过滤、媒体下载等多个 X 脚本同时运行的环境。', '的啟動畫面，常見於廣告過濾、媒體下載等多個 X 腳本同時執行的環境。', '起動画面で停止することがあります。広告フィルターやメディア保存など、複数の X スクリプトを同時に使う環境で起きやすい問題です。', ' startup screen, especially when multiple X scripts such as ad filters and media downloaders run together.'], ['如果遇到异常，请点击', '如果遇到異常，請點擊', '問題がある場合は', 'If you encounter this issue, click'], ['有异常', '有異常', '問題あり', 'Having problems'], ['，BetterX 会开启', '，BetterX 會開啟', 'を選ぶと、BetterX は', '; BetterX will enable'], ['“设置 → 其他功能 → 兼容 Firefox”', '「設定 → 其他功能 → Firefox 相容模式」', '「設定 → その他の機能 → Firefox 互換モード」', '“Settings → Other features → Firefox compatibility”'], ['。该模式会停用页面网络 Hook；部分视频 / GIF 下载、年龄限制视频和接口关注关系识别可能降级，其他主体功能不受影响。', '。此模式會停用頁面網路 Hook；部分影片 / GIF 下載、年齡限制影片與介面關注關係識別可能受限，其他主要功能不受影響。', '。このモードはページのネットワーク Hook を無効化します。一部の動画 / GIF の保存、年齢制限動画、API によるフォロー関係の認識は制限される場合がありますが、その他の主要機能には影響しません。', '. This disables page network hooks. Some video / GIF downloads, age-restricted videos, and API-based following detection may be limited; other main features are unaffected.'], ['目前正常', '目前正常', '現在は正常', 'Working normally'], ['确定', '確定', '確認', 'OK'], ['未知错误', '未知錯誤', '不明なエラー', 'Unknown error'], ];
 function readUiLanguageOverride() {
   try {
     if (typeof GM_getValue !== 'function') return '';
@@ -151,7 +152,7 @@ const MAX_NETWORK_REHOOKS_PER_API = 4;
 const MAX_MEDIA_REGISTRY_ENTRIES = 2000;
 const MAX_SESSION_STAT_IDS = 20000;
 const MAX_FOLLOWED_HANDLES = 5000;
-const MAX_NOTIFICATION_SUBSCRIPTIONS = 2000;
+const MAX_NOTIFICATION_SUBSCRIPTIONS = 2000; // 常规名单容量；开启订阅全部保留，关闭历史使用剩余名额。
 const NOTIFICATION_MUTATION_GUARD_MS = 5000;
 const MAX_DOWNLOADED_POST_IDS = 5000;
 const DOWNLOAD_MIN_CONCURRENCY = 1;
@@ -248,7 +249,7 @@ const setting = (defaultValue, validate, control, effects) => Object.freeze({
   default: defaultValue, validate, ...(control ? { control } : {}), ...(effects ? { effects } : {}),
 });
 const bool = (defaultValue, control, effects) => setting(defaultValue, ['boolean'], control, effects);
-const SETTINGS_SCHEMA = Object.freeze({ settingsRevision: setting(39, ['revision']), keywords: setting([], ['keywordRules', 50, 500], null, ['keywords']), excludeKeywords: setting([], ['keywordRules', 50, 500], null, ['keywords']), keywordMode: setting('plain', ['enum', ['plain', 'and']], bind('keywordModeEl', '#BetterX-keyword-mode', 'value'), ['keywords']), filter: setting('all', ['filter']), sourceFilter: setting('all', ['sourceFilter'], bind('sourceSelectEl', '#BetterX-source', 'value')), mediaFilter: setting('all', ['mediaFilter'], bind('mediaSelectEl', '#BetterX-media', 'value')), sortBy: setting('smart', ['enum', ['smart', 'recent_viewed', 'recent_captured', 'first_captured', 'time_asc', 'captures', 'author', 'source']], bind('sortEl', '#BetterX-sort', 'value')), quickFilterOpen: bool(false), autoCleanDays: setting(0, ['int', 0, 3650]), maxPosts: setting(1000, ['int', 50, 5000]), postLimitWarningDisabled: bool(false), flashMs: setting(3000, ['int', 1000, 60000]), skipSources: setting(['thread'], ['skipSources']), theme: setting('auto', ['enum', ['auto', 'dark', 'light']], bind('themeSelectEl', '#BetterX-theme', 'value'), ['theme']), pageSize: setting(60, ['int', 20, 200]), badgePos: setting(null, ['badgePos'], null, ['badge']), panelWidth: setting(520, ['int', 420, 1200], null, ['panelWidth']), hideAds: bool(true, bind('hideAdsEl', '#BetterX-hideads'), ['ads']), hideNfl: bool(true, bind('hideNflEl', '#BetterX-hide-nfl'), ['nfl']), hideAdultSpam: bool(false, bind('hideAdultSpamEl', '#BetterX-hide-adult-spam'), ['adultSpam']), adultSpamCustomRulesEnabled: bool(true, bind('adultSpamCustomRulesEl', '#BetterX-adultspam-custom-enabled'), ['adultSpam']), adultSpamLevel: setting('balanced', ['enum', ['conservative', 'balanced']], bind('adultSpamLevelEl', '#BetterX-adultspam-level', 'value'), ['adultSpam']), adultSpamSkipFollowing: bool(true, bind('adultSpamSkipFollowingEl', '#BetterX-adultspam-skip-following'), ['adultSpam']), adultSpamSkipFollowingReposts: bool(false, bind('adultSpamSkipFollowingRepostsEl', '#BetterX-adultspam-skip-following-reposts'), ['adultSpam']), knownFollowedHandles: setting([], ['handles', 5000]), notificationSubscriptions: setting([], ['notifications']), notificationSubscriptionsSyncedAt: setting(0, ['timestamp']), adultSpamKeywords: setting([], ['stringList', 50, 80], null, ['adultSpam']), adultSpamWhitelist: setting([], ['handles', 100], null, ['adultSpam']), layoutEnabled: bool(false, bind('layoutEnabledEl', '#BetterX-layout-enabled'), ['layout']), layoutAutoWidth: bool(true, bind('layoutAutoWidthEl', '#BetterX-layout-auto-width'), ['layout']), timelineWidth: setting(600, ['int', 100, 3000], null, ['layout']), leftbarWidth: setting(275, ['int', 50, 500], null, ['layout']), layoutHideLeftbar: bool(false, bind('layoutHideLeftbarEl', '#BetterX-layout-hide-leftbar'), ['layout']), layoutHideSidebar: bool(false, bind('layoutHideSidebarEl', '#BetterX-layout-hide-sidebar'), ['layout']), layoutFillCenter: bool(false, bind('layoutFillCenterEl', '#BetterX-layout-fill-center'), ['layout']), layoutCleanNavigation: bool(true, bind('layoutCleanNavigationEl', '#BetterX-layout-clean-nav'), ['layout']), layoutHideMessageGrok: bool(true, bind('layoutHideMessageGrokEl', '#BetterX-layout-hide-message'), ['layout']), layoutHideShowMore: bool(false, bind('layoutHideShowMoreEl', '#BetterX-layout-hide-showmore'), ['layout']), mediaDownload: bool(true, null, ['mediaDownload']), silentDownload: bool(false, bind('silentDownloadEl', '#BetterX-silent-download'), ['downloadUi']), gifDownloadFormatEnabled: bool(true, bind('gifDownloadFormatEnabledEl', '#BetterX-gif-download-format-enabled')), gifDownloadFormat: setting('mp4', ['enum', ['mp4', 'gif']], bind('gifDownloadFormatEl', '#BetterX-gif-download-format', 'value')), downloadZip: bool(true), downloadAdvancedOpen: bool(false), downloadFileNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]), downloadZipNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]), downloadNameRegex: setting('', ['safeRegex']), downloadNameReplacement: setting('', ['string', 180]), trackDownloadedPosts: bool(false), downloadedPostIds: setting([], ['downloadedIds']), bypassAgeRestriction: bool(false, bind('bypassAgeEl', '#BetterX-bypassage'), ['ageBypass']), restoreMediaGrid: bool(false, bind('restoreMediaGridEl', '#BetterX-restore-media-grid'), ['mediaGrid']), firefoxCompatibility: bool(false, null, ['firefoxCompatibility']), firefoxCompatibilityPrompted: bool(false), useMobileBadgeOnDesktop: bool(false, bind('useMobileBadgeOnDesktopEl', '#BetterX-desktop-mobile-badge'), ['badge']), hideAppBadge: setting(false, ['hideAppBadge'], null, ['badge']), useMobileBadgeHandle: setting(false, ['mobileBadgeHandle'], null, ['badge']), mobileBadgeHandleTop: setting(null, ['mobileBadgeTop']), profileDefaultViewEnabled: bool(true, bind('profileDefaultViewEnabledEl', '#BetterX-profile-default-view-enabled')), profileDefaultView: setting('posts', ['enum', PROFILE_DEFAULT_VIEW_OPTIONS], bind('profileDefaultViewEl', '#BetterX-profile-default-view', 'value')), profilePostSortEnabled: bool(true, bind('profilePostSortEnabledEl', '#BetterX-profile-post-sort-enabled')), profilePostSort: setting('recent', ['enum', PROFILE_POST_SORT_OPTIONS], bind('profilePostSortEl', '#BetterX-profile-post-sort', 'value')), autoExpandPostText: bool(false, bind('autoExpandPostTextEl', '#BetterX-auto-expand-post-text'), ['autoExpand']), downloadTimeout: setting(360000, ['int', 5000, 600000]), downloadConcurrency: setting(2, ['int', DOWNLOAD_MIN_CONCURRENCY, DOWNLOAD_MAX_CONCURRENCY]), });
+const SETTINGS_SCHEMA = Object.freeze({ settingsRevision: setting(39, ['revision']), keywords: setting([], ['keywordRules', 50, 500], null, ['keywords']), excludeKeywords: setting([], ['keywordRules', 50, 500], null, ['keywords']), keywordMode: setting('plain', ['enum', ['plain', 'and']], bind('keywordModeEl', '#BetterX-keyword-mode', 'value'), ['keywords']), filter: setting('all', ['filter']), sourceFilter: setting('all', ['sourceFilter'], bind('sourceSelectEl', '#BetterX-source', 'value')), mediaFilter: setting('all', ['mediaFilter'], bind('mediaSelectEl', '#BetterX-media', 'value')), sortBy: setting('smart', ['enum', ['smart', 'recent_viewed', 'recent_captured', 'first_captured', 'time_asc', 'captures', 'author', 'source']], bind('sortEl', '#BetterX-sort', 'value')), quickFilterOpen: bool(false), autoCleanDays: setting(0, ['int', 0, 3650]), maxPosts: setting(1000, ['int', 50, 5000]), postLimitWarningDisabled: bool(false), flashMs: setting(3000, ['int', 1000, 60000]), skipSources: setting(['thread'], ['skipSources']), theme: setting('auto', ['enum', ['auto', 'dark', 'light']], bind('themeSelectEl', '#BetterX-theme', 'value'), ['theme']), pageSize: setting(60, ['int', 20, 200]), badgePos: setting(null, ['badgePos'], null, ['badge']), panelWidth: setting(520, ['int', 420, 1200], null, ['panelWidth']), hideAds: bool(false, bind('hideAdsEl', '#BetterX-hideads'), ['ads']), hideNfl: bool(false, bind('hideNflEl', '#BetterX-hide-nfl'), ['nfl']), hideWhatsHappening: bool(false, bind('hideWhatsHappeningEl', '#BetterX-hide-whatsnew'), ['dismissWidgets']), hideWhoToFollow: bool(false, bind('hideWhoToFollowEl', '#BetterX-hide-who-to-follow'), ['dismissWidgets']), hideMoney: bool(false, bind('hideMoneyEl', '#BetterX-hide-money'), ['dismissWidgets']), hideAdultSpam: bool(false, bind('hideAdultSpamEl', '#BetterX-hide-adult-spam'), ['adultSpam']), adultSpamCustomRulesEnabled: bool(true, bind('adultSpamCustomRulesEl', '#BetterX-adultspam-custom-enabled'), ['adultSpam']), adultSpamLevel: setting('balanced', ['enum', ['conservative', 'balanced']], bind('adultSpamLevelEl', '#BetterX-adultspam-level', 'value'), ['adultSpam']), adultSpamSkipFollowing: bool(true, bind('adultSpamSkipFollowingEl', '#BetterX-adultspam-skip-following'), ['adultSpam']), adultSpamSkipFollowingReposts: bool(false, bind('adultSpamSkipFollowingRepostsEl', '#BetterX-adultspam-skip-following-reposts'), ['adultSpam']), knownFollowedHandles: setting([], ['handles', 5000]), notificationSubscriptions: setting([], ['notifications']), notificationSubscriptionsSyncedAt: setting(0, ['timestamp']), notificationAccounts: setting({}, ['notificationAccounts']), adultSpamKeywords: setting([], ['stringList', 50, 80], null, ['adultSpam']), adultSpamWhitelist: setting([], ['handles', 100], null, ['adultSpam']), layoutEnabled: bool(false, bind('layoutEnabledEl', '#BetterX-layout-enabled'), ['layout']), layoutAutoWidth: bool(true, bind('layoutAutoWidthEl', '#BetterX-layout-auto-width'), ['layout']), timelineWidth: setting(600, ['int', 100, 3000], null, ['layout']), leftbarWidth: setting(275, ['int', 50, 500], null, ['layout']), layoutHideLeftbar: bool(false, bind('layoutHideLeftbarEl', '#BetterX-layout-hide-leftbar'), ['layout']), layoutHideSidebar: bool(false, bind('layoutHideSidebarEl', '#BetterX-layout-hide-sidebar'), ['layout']), layoutFillCenter: bool(false, bind('layoutFillCenterEl', '#BetterX-layout-fill-center'), ['layout']), layoutCleanNavigation: bool(true, bind('layoutCleanNavigationEl', '#BetterX-layout-clean-nav'), ['layout']), layoutHideMessageGrok: bool(true, bind('layoutHideMessageGrokEl', '#BetterX-layout-hide-message'), ['layout']), layoutHideShowMore: bool(false, bind('layoutHideShowMoreEl', '#BetterX-layout-hide-showmore'), ['layout']), mediaDownload: bool(true, null, ['mediaDownload']), silentDownload: bool(false, bind('silentDownloadEl', '#BetterX-silent-download'), ['downloadUi']), gifDownloadFormatEnabled: bool(true, bind('gifDownloadFormatEnabledEl', '#BetterX-gif-download-format-enabled')), gifDownloadFormat: setting('mp4', ['enum', ['mp4', 'gif']], bind('gifDownloadFormatEl', '#BetterX-gif-download-format', 'value')), downloadZip: bool(true), downloadAdvancedOpen: bool(false), downloadFileNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]), downloadZipNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]), downloadNameRegex: setting('', ['safeRegex']), downloadNameReplacement: setting('', ['string', 180]), trackDownloadedPosts: bool(true), downloadedPostIds: setting([], ['downloadedIds']), bypassAgeRestriction: bool(false, bind('bypassAgeEl', '#BetterX-bypassage'), ['ageBypass']), restoreMediaGrid: bool(false, bind('restoreMediaGridEl', '#BetterX-restore-media-grid'), ['mediaGrid']), firefoxCompatibility: bool(false, null, ['firefoxCompatibility']), firefoxCompatibilityPrompted: bool(false), useMobileBadgeOnDesktop: bool(false, bind('useMobileBadgeOnDesktopEl', '#BetterX-desktop-mobile-badge'), ['badge']), hideAppBadge: setting(false, ['hideAppBadge'], null, ['badge']), useMobileBadgeHandle: setting(false, ['mobileBadgeHandle'], null, ['badge']), mobileBadgeHandleTop: setting(null, ['mobileBadgeTop']), profileDefaultViewEnabled: bool(true, bind('profileDefaultViewEnabledEl', '#BetterX-profile-default-view-enabled')), profileDefaultView: setting('posts', ['enum', PROFILE_DEFAULT_VIEW_OPTIONS], bind('profileDefaultViewEl', '#BetterX-profile-default-view', 'value')), profilePostSortEnabled: bool(true, bind('profilePostSortEnabledEl', '#BetterX-profile-post-sort-enabled')), profilePostSort: setting('recent', ['enum', PROFILE_POST_SORT_OPTIONS], bind('profilePostSortEl', '#BetterX-profile-post-sort', 'value')), autoExpandPostText: bool(false, bind('autoExpandPostTextEl', '#BetterX-auto-expand-post-text'), ['autoExpand']), authorLinksEnabled: bool(false, bind('authorLinksEnabledEl', '#BetterX-author-links-enabled'), ['authorLinks']), downloadTimeout: setting(360000, ['int', 5000, 600000]), downloadConcurrency: setting(2, ['int', DOWNLOAD_MIN_CONCURRENCY, DOWNLOAD_MAX_CONCURRENCY]), });
 const DEFAULT_SETTINGS = Object.freeze(Object.fromEntries(
   Object.entries(SETTINGS_SCHEMA).map(([key, definition]) => [key, definition.default])
 ));
@@ -275,11 +276,13 @@ const state = {
   panelOpen: false,
   panelView: 'vault',
   notificationSearchQuery: '',
+  notificationSyncedAt: 0,
   detectedTimelineWidth: 0,
   detectedLeftbarWidth: 0,
   mobileBadgeRaf: 0,
   suppressNextBadgeClick: false,
   notificationSyncInProgress: false,
+  notificationCleanupInProgress: false,
   notificationMutationUsers: new Set(),
   dbWriteFailureVersion: 0,
   lastDbWriteError: null,
@@ -325,15 +328,6 @@ const scheduleFollowedHandlesPersist = debounce(() => {
   state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, MAX_FOLLOWED_HANDLES);
   queueSettingsPersist(['knownFollowedHandles']);
 }, 750);
-const scheduleNotificationSubscriptionsPersist = debounce(() => {
-  if (!state.settingsLoaded) return;
-  state.settings.notificationSubscriptions = [...notificationSubscriptions.values()]
-    .sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true)
-      || Number(b.enabled) - Number(a.enabled) || (b.updatedAt || 0) - (a.updatedAt || 0))
-    .slice(0, MAX_NOTIFICATION_SUBSCRIPTIONS);
-  queueSettingsPersist(['notificationSubscriptions', 'notificationSubscriptionsSyncedAt']);
-  renderNotificationSubscriptions();
-}, 500);
 function trimFollowedHandlesToMax() {
   while (followedHandles.size > MAX_FOLLOWED_HANDLES) {
     followedHandles.delete(followedHandles.values().next().value);
@@ -418,16 +412,26 @@ function sanitizeNotificationSubscription(raw) {
   if (typeof raw.pinned === 'boolean') item.pinned = raw.pinned;
   return item;
 }
-function getNotificationMutationGuard(key) {
-  const guard = notificationMutationGuards.get(key);
+function getNotificationSubscriptionById(id) {
+  for (const item of notificationSubscriptions.values()) if (item.id === id) return item;
+  return null;
+}
+function noteNotificationStateChange(session, id) {
+  session.stateVersions.set(id, ++session.stateRevision);
+}
+function getNotificationMutationGuard(id) {
+  const guard = notificationMutationGuards.get(id);
   if (!guard) return null;
   if (!guard.pending && guard.expiresAt <= now()) {
-    notificationMutationGuards.delete(key);
+    notificationMutationGuards.delete(id);
     return null;
   }
   return guard;
 }
 function beginNotificationMutationGuard(key, enabled) {
+  const token = ensureNotificationAccount();
+  const id = getNotificationSubscriptionById(key)?.id || notificationSubscriptions.get(key)?.id || key;
+  if (token.session) noteNotificationStateChange(token.session, id);
   const timestamp = now();
   for (const [username, guard] of notificationMutationGuards) {
     if (!guard.pending && guard.expiresAt <= timestamp) notificationMutationGuards.delete(username);
@@ -437,22 +441,26 @@ function beginNotificationMutationGuard(key, enabled) {
     pending: true,
     expiresAt: timestamp + NOTIFICATION_MUTATION_GUARD_MS,
   };
-  if (notificationMutationGuards.has(key)) notificationMutationGuards.delete(key);
-  notificationMutationGuards.set(key, guard);
+  if (notificationMutationGuards.has(id)) notificationMutationGuards.delete(id);
+  notificationMutationGuards.set(id, guard);
   while (notificationMutationGuards.size > MAX_NOTIFICATION_SUBSCRIPTIONS) {
     notificationMutationGuards.delete(notificationMutationGuards.keys().next().value);
   }
   return guard;
 }
 function rememberNotificationSubscription(raw, enabled, options) {
+  const opts = options || {};
+  const token = opts.accountToken || ensureNotificationAccount();
+  if (!isCurrentNotificationAccount(token, false)) return false;
   const input = sanitizeNotificationSubscription({ ...raw, enabled, updatedAt: now() });
   if (!input) return false;
   const key = input.username.toLowerCase();
-  const opts = options || {};
-  const guard = getNotificationMutationGuard(key);
+  const guard = getNotificationMutationGuard(input.id);
+  if (opts.authoritative !== true && Number.isFinite(opts.readRevision)
+      && (token.session.stateVersions.get(input.id) || 0) > opts.readRevision) return false;
   if (guard && opts.authoritative !== true
       && (guard.pending || guard.enabled !== (enabled === true))) return false;
-  const existing = notificationSubscriptions.get(key);
+  const existing = opts.batch?.byId ? opts.batch.byId.get(input.id) : getNotificationSubscriptionById(input.id);
   if (!enabled && !existing && !opts.trackDisabled) return false;
   const next = {
     ...(existing || {}),
@@ -466,18 +474,38 @@ function rememberNotificationSubscription(raw, enabled, options) {
     || existing.displayName !== next.displayName || existing.avatarUrl !== next.avatarUrl
     || existing.enabled !== next.enabled;
   if (!changed) return false;
+  if (!existing || existing.enabled !== next.enabled || existing.username !== next.username) noteNotificationStateChange(token.session, input.id);
+  if (existing) notificationSubscriptions.delete(existing.username.toLowerCase());
+  const occupant = notificationSubscriptions.get(key);
+  if (occupant && occupant.id !== input.id) {
+    noteNotificationStateChange(token.session, occupant.id);
+    opts.batch?.byId?.delete(occupant.id);
+  }
   notificationSubscriptions.set(key, next);
+  opts.batch?.byId?.set(input.id, next);
   if (next.enabled) rememberFollowingRelation(next.username, true);
-  scheduleNotificationSubscriptionsPersist();
+  if (opts.batch) opts.batch.changed = true;
+  else scheduleNotificationSubscriptionsPersist();
   return true;
 }
+function mergeNotificationSubscriptions(items, options = {}) {
+  const batch = { changed: false, byId: new Map([...notificationSubscriptions.values()].map((item) => [item.id, item])) };
+  const opts = { ...options, batch };
+  for (const item of items) rememberNotificationSubscription(item, true, opts);
+  return batch.changed;
+}
 function removeRememberedNotificationSubscription(username) {
+  const token = ensureNotificationAccount();
+  if (!token.viewerId) return false;
   const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
+  const item = notificationSubscriptions.get(key);
   if (!notificationSubscriptions.delete(key)) return false;
+  noteNotificationStateChange(token.session, item.id);
   scheduleNotificationSubscriptionsPersist();
   return true;
 }
 function toggleNotificationSubscriptionPinned(username) {
+  if (!ensureNotificationAccount().viewerId) return false;
   const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
   const existing = notificationSubscriptions.get(key);
   if (!existing) return false;
@@ -1178,6 +1206,250 @@ function highlightText(rawText, matchedKeywords) {
   }
   out += escapeHtml(text.slice(lastIndex));
   return out.replace(/\n/g, '<br>');
+}
+const notificationAccountSessions = new Map();
+let notificationAccountToken = null;
+let notificationAccountTrackingInstalled = false;
+function sanitizeNotificationAccountProfile(raw, trimHistory = true) {
+  const users = new Map();
+  for (const rawItem of Array.isArray(raw?.subscriptions) ? raw.subscriptions : []) {
+    const item = sanitizeNotificationSubscription(rawItem);
+    if (!item) continue;
+    const previous = users.get(item.id);
+    users.set(item.id, previous
+      ? (item.updatedAt >= previous.updatedAt ? { ...previous, ...item } : { ...item, ...previous }) : item);
+  }
+  const handles = new Map();
+  for (const item of users.values()) {
+    const key = item.username.toLowerCase(), previous = handles.get(key);
+    if (!previous || item.updatedAt >= previous.updatedAt) handles.set(key, item);
+  }
+  let subscriptions = [...handles.values()];
+  if (trimHistory && subscriptions.length > MAX_NOTIFICATION_SUBSCRIPTIONS) {
+    const enabled = subscriptions.filter((item) => item.enabled);
+    const history = subscriptions.filter((item) => !item.enabled)
+      .sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true) || b.updatedAt - a.updatedAt);
+    subscriptions = [...enabled, ...history.slice(0, Math.max(0, MAX_NOTIFICATION_SUBSCRIPTIONS - enabled.length))];
+  }
+  const syncedAt = Number(raw?.syncedAt);
+  return { subscriptions, syncedAt: Number.isFinite(syncedAt) ? Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, syncedAt)) : 0 };
+}
+function sanitizeNotificationAccounts(raw) {
+  const accounts = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return accounts;
+  for (const [id, profile] of Object.entries(raw)) {
+    if (/^\d{1,30}$/.test(id) && profile && typeof profile === 'object' && !Array.isArray(profile)) {
+      accounts[id] = sanitizeNotificationAccountProfile(profile);
+    }
+  }
+  return accounts;
+}
+function applyNotificationAccountChanges(profile, changes) {
+  const base = sanitizeNotificationAccountProfile(profile);
+  const users = new Map(base.subscriptions.map((item) => [item.id, item]));
+  let syncedAt = base.syncedAt;
+  for (const change of changes) {
+    if (change.syncedAt !== undefined) { syncedAt = Math.max(syncedAt, change.syncedAt); continue; }
+    if (change.remove) { users.delete(change.id); continue; }
+    const previous = users.get(change.id);
+    if (!previous && !change.create) continue;
+    users.set(change.id, { ...(previous || change.fallback || {}), ...change.patch, id: change.id });
+  }
+  return sanitizeNotificationAccountProfile({ subscriptions: [...users.values()], syncedAt });
+}
+function captureNotificationAccountChanges(session, profile) {
+  const next = sanitizeNotificationAccountProfile(profile, false);
+  const previous = new Map(session.profile.subscriptions.map((item) => [item.id, item]));
+  const fields = ['username', 'displayName', 'avatarUrl', 'enabled', 'pinned', 'updatedAt'];
+  const changes = [];
+  for (const item of next.subscriptions) {
+    const prior = previous.get(item.id);
+    previous.delete(item.id);
+    const patch = Object.fromEntries(fields.filter((key) => prior ? prior[key] !== item[key] : item[key] !== undefined)
+      .map((key) => [key, item[key]]));
+    if (Object.keys(patch).length) {
+      const reopening = prior && !prior.enabled && item.enabled;
+      changes.push({ id: item.id, patch, create: !prior || reopening,
+        ...(reopening ? { fallback: item } : {}) });
+    }
+  }
+  for (const id of previous.keys()) changes.push({ id, remove: true });
+  if (next.syncedAt !== session.profile.syncedAt) changes.push({ syncedAt: next.syncedAt });
+  if (changes.length) {
+    const revision = ++session.generation;
+    session.pending.push(...changes.map((change) => ({ ...change, revision })));
+  }
+  session.profile = sanitizeNotificationAccountProfile(next);
+  session.dirty = session.pending.length > 0;
+}
+function cacheNotificationAccount(session) {
+  if (!session) return;
+  captureNotificationAccountChanges(session, {
+    subscriptions: [...notificationSubscriptions.values()], syncedAt: state.notificationSyncedAt,
+  });
+  if (notificationSubscriptions.size > session.profile.subscriptions.length) activateNotificationAccountProfile(session);
+}
+function activateNotificationAccountProfile(session) {
+  notificationSubscriptions.clear();
+  for (const item of session?.profile.subscriptions || []) notificationSubscriptions.set(item.username.toLowerCase(), { ...item });
+  state.notificationSyncedAt = session?.profile.syncedAt || 0;
+}
+function refreshNotificationAccountProfile(session, saved) {
+  const profile = applyNotificationAccountChanges(saved, session.pending);
+  if (session.initialized) {
+    const next = new Map(profile.subscriptions.map((item) => [item.id, item]));
+    const previous = new Set(session.profile.subscriptions.map((item) => item.id));
+    for (const item of session.profile.subscriptions) {
+      if (!next.has(item.id) || next.get(item.id).enabled !== item.enabled
+          || next.get(item.id).username !== item.username) noteNotificationStateChange(session, item.id);
+    }
+    for (const id of next.keys()) if (!previous.has(id)) noteNotificationStateChange(session, id);
+  }
+  session.profile = profile;
+  session.initialized = true;
+}
+function ensureNotificationAccount() {
+  const rawId = getCurrentViewerId();
+  const viewerId = /^\d{1,30}$/.test(rawId) ? rawId : '';
+  if (notificationAccountToken?.viewerId === viewerId) return notificationAccountToken;
+  const previous = notificationAccountToken;
+  if (previous?.session) {
+    cacheNotificationAccount(previous.session);
+    flushNotificationAccountPersistence(previous.session);
+  }
+  const early = !previous && viewerId ? [...notificationSubscriptions.values()] : [];
+  closeNotificationSyncDifferences();
+  notificationSubscriptions.clear();notificationMutationGuards.clear();state.notificationMutationUsers.clear();
+  state.notificationSyncInProgress = false;state.notificationCleanupInProgress = false;
+  state.notificationSearchQuery = '';
+  if (state.notificationSearchEl) state.notificationSearchEl.value = '';
+  let session = viewerId ? notificationAccountSessions.get(viewerId) : null;
+  if (viewerId && !session) {
+    session = { viewerId, profile: sanitizeNotificationAccountProfile(state.settings.notificationAccounts?.[viewerId]),
+      initialized: state.settingsLoaded, dirty: false, generation: 0, timer: null, pending: [], flushing: false,
+      stateRevision: 0, stateVersions: new Map() };
+    if (early.length) captureNotificationAccountChanges(session, {
+      subscriptions: [...session.profile.subscriptions, ...early], syncedAt: session.profile.syncedAt,
+    });
+    notificationAccountSessions.set(viewerId, session);
+  } else if (session && state.settingsLoaded) refreshNotificationAccountProfile(session, state.settings.notificationAccounts?.[viewerId]);
+  notificationAccountToken = { viewerId, session };
+  activateNotificationAccountProfile(session);
+  if (state.rootEl && state.panelView === 'notifications') queueMicrotask(() => renderNotificationSubscriptions());
+  return notificationAccountToken;
+}
+function isCurrentNotificationAccount(token, refresh = true) {
+  return !!token?.viewerId && (refresh ? ensureNotificationAccount() : notificationAccountToken) === token;
+}
+function scheduleNotificationSubscriptionsPersist(options = {}) {
+  const token = ensureNotificationAccount();
+  if (!token.viewerId) return;
+  const session = token.session;
+  cacheNotificationAccount(session);
+  if (session.timer) clearTimeout(session.timer);
+  session.timer = setTimeout(() => { session.timer = null;flushNotificationAccountPersistence(session); }, 500);
+  if (options.render !== false) renderNotificationSubscriptions();
+}
+function flushNotificationAccountPersistence(session) {
+  if (!session) return;
+  if (notificationAccountToken?.session === session) cacheNotificationAccount(session);
+  if (!session.dirty || !state.settingsLoaded || session.flushing) return;
+  if (session.timer) clearTimeout(session.timer);
+  session.timer = null;
+  const changes = session.pending.slice(), generation = session.generation;
+  session.flushing = true;
+  state.settings.notificationAccounts = { ...state.settings.notificationAccounts, [session.viewerId]: session.profile };
+  writeSettingsMirror(state.settings);
+  queueDbWrite(async () => {
+    let success = false;
+    try {
+      if (notificationAccountSessions.get(session.viewerId) !== session) return;
+      const saved = await dbPutNotificationAccount(session.viewerId, changes);
+      if (notificationAccountSessions.get(session.viewerId) !== session) return;
+      if (notificationAccountToken?.session === session) cacheNotificationAccount(session);
+      session.pending = session.pending.filter((change) => change.revision > generation);
+      session.dirty = session.pending.length > 0;
+      state.settings.notificationAccounts = saved.notificationAccounts;
+      restoreNotificationAccounts(false, false);
+      writeSettingsMirror({ ...saved, notificationAccounts: state.settings.notificationAccounts });
+      success = true;
+    } finally {
+      session.flushing = false;
+      if (success && session.dirty) flushNotificationAccountPersistence(session);
+    }
+  });
+}
+function flushAllNotificationAccounts() {
+  ensureNotificationAccount();
+  for (const session of notificationAccountSessions.values()) if (session.dirty) flushNotificationAccountPersistence(session);
+}
+async function dbPutNotificationAccount(viewerId, changes) {
+  const db = await openDb();
+  let saved;
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(SETTINGS_STORE, 'readwrite'), store = tx.objectStore(SETTINGS_STORE);
+    const request = store.get('settings');
+    request.onsuccess = () => {
+      const base = sanitizeSettings(migrateSettingsDefaults(request.result?.value || state.settings));
+      saved = { ...base, notificationAccounts: { ...base.notificationAccounts,
+        [viewerId]: applyNotificationAccountChanges(base.notificationAccounts[viewerId], changes) } };
+      store.put({ key: 'settings', value: saved });
+    };
+    request.onerror = () => reject(request.error);
+    tx.oncomplete = resolve;tx.onerror = () => reject(tx.error);tx.onabort = () => reject(tx.error);
+  });
+  publishCrossTabChange('settings-reload');
+  return saved;
+}
+function restoreNotificationAccounts(force = false, flushDirty = true) {
+  const previous = notificationAccountToken;
+  if (previous?.session) cacheNotificationAccount(previous.session);
+  if (force) {
+    for (const session of notificationAccountSessions.values()) if (session.timer) clearTimeout(session.timer);
+    notificationAccountSessions.clear();notificationAccountToken = null;notificationSubscriptions.clear();
+    ensureNotificationAccount();
+    return;
+  }
+  for (const session of notificationAccountSessions.values()) {
+    refreshNotificationAccountProfile(session, state.settings.notificationAccounts?.[session.viewerId]);
+    if (session.dirty) state.settings.notificationAccounts = {
+      ...state.settings.notificationAccounts, [session.viewerId]: session.profile,
+    };
+  }
+  if (previous?.session) activateNotificationAccountProfile(previous.session);
+  ensureNotificationAccount();
+  if (flushDirty) for (const session of notificationAccountSessions.values()) if (session.dirty) flushNotificationAccountPersistence(session);
+}
+function notificationActionMatchesAccount(element) {
+  const token = ensureNotificationAccount();
+  const id = element.getAttribute('data-notification-id');
+  const item = notificationSubscriptions.get((element.getAttribute('data-username') || '').toLowerCase());
+  if (token.viewerId && element.getAttribute('data-notification-viewer') === token.viewerId
+      && (!id || item?.id === id)) return true;
+  renderNotificationSubscriptions();return false;
+}
+function installNotificationAccountTracking() {
+  ensureNotificationAccount();
+  if (notificationAccountTrackingInstalled || typeof window.addEventListener !== 'function') return;
+  notificationAccountTrackingInstalled = true;
+  let timer = null;
+  const check = () => {
+    const previous = notificationAccountToken;
+    ensureNotificationAccount();
+    if (previous !== notificationAccountToken) renderNotificationSubscriptions(true);
+  };
+  const visibility = () => {
+    if (timer) clearInterval(timer);
+    timer = null;
+    if (!document.hidden) { check();timer = setInterval(check, 1000); }
+  };
+  window.addEventListener('focus', check);window.addEventListener('pageshow', visibility);
+  document.addEventListener('visibilitychange', visibility);
+  window.addEventListener('pagehide', () => {
+    if (timer) clearInterval(timer);timer = null;
+    if (notificationAccountToken?.session) { cacheNotificationAccount(notificationAccountToken.session);flushNotificationAccountPersistence(notificationAccountToken.session); }
+  });
+  visibility();
 }
 function queueDbWrite(task) {
   state.dbWriteQueue = state.dbWriteQueue
@@ -2135,6 +2407,7 @@ function sanitizeSettings(raw) {
         .map((item) => item.replace(/^@+/, '').toLowerCase())
         .filter((item) => /^[a-z0-9_]{1,15}$/.test(item)));
       case 'notifications': return notificationList();
+      case 'notificationAccounts': return sanitizeNotificationAccounts(value);
       case 'timestamp': {
         const timestamp = Number(value);
         return Number.isFinite(timestamp)
@@ -2167,7 +2440,7 @@ function migrateSettingsDefaults(raw) {
   if (revision < DEFAULT_SETTINGS.settingsRevision) {
     if (revision < 39) {
       if (input.flashMs == null || Number(input.flashMs) === 8000) input.flashMs = DEFAULT_SETTINGS.flashMs;
-      if (input.skipSources == null || (Array.isArray(input.skipSources) && input.skipSources.length === 0)) {
+      if (input.skipSources == null) {
         input.skipSources = [...DEFAULT_SETTINGS.skipSources];
       }
     }
@@ -2180,8 +2453,8 @@ function migrateSettingsDefaults(raw) {
       input.adultSpamLevel = DEFAULT_SETTINGS.adultSpamLevel;
     }
     if (revision < 7) {
-      if (input.hideAds == null || input.hideAds === false) input.hideAds = true;
-      if (input.mediaDownload == null || input.mediaDownload === false) input.mediaDownload = true;
+      if (input.hideAds == null) input.hideAds = DEFAULT_SETTINGS.hideAds;
+      if (input.mediaDownload == null) input.mediaDownload = DEFAULT_SETTINGS.mediaDownload;
     }
     if (revision < 15 && (!input.sortBy || input.sortBy === 'default')) input.sortBy = 'smart';
     if (revision < 16 && input.downloadZip == null) input.downloadZip = DEFAULT_SETTINGS.downloadZip;
@@ -2258,7 +2531,7 @@ async function persistSettings(changedKeys, settingsSnapshot) {
   if (persisted !== sanitized) writeSettingsMirror(persisted);
 }
 function resetPaging() { state.renderLimit = state.settings.pageSize || 60; }
-const SETTINGS_EFFECT_ORDER = [ 'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'mediaDownload', 'downloadUi', 'ageBypass', 'mediaGrid', 'autoExpand', 'firefoxCompatibility', 'badge', 'panelWidth', ]; const SETTINGS_EFFECT_HANDLERS = { keywords() { bumpKeywordCache(); }, adultSpam() { adultSpamRulesVersion++; adultSpamCache = new WeakMap(); applyAdultSpamFiltering(); }, layout() { applyLayoutEnhancements(); }, theme() { applyTheme(); }, ads() { applyAdHiding(); }, nfl() { applyNflHiding(); }, mediaDownload() { applyMediaDownload(); }, downloadUi() { scheduleDownloadUiRefresh(); }, ageBypass() { applyAgeBypass(); }, mediaGrid() { applyMediaGridLayout(); }, autoExpand(nextPartial) { if (nextPartial.autoExpandPostText) expandPostShowMore(document); }, firefoxCompatibility(nextPartial) { if (!IS_FIREFOX) return; state.settings.firefoxCompatibilityPrompted = true; writeFirefoxCompatibilityMode(nextPartial.firefoxCompatibility ? 'compat' : 'normal'); }, badge() { repositionBadge(); }, panelWidth() { updatePanelPlacement(); }, };
+const SETTINGS_EFFECT_ORDER = [ 'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'dismissWidgets', 'mediaDownload', 'downloadUi', 'ageBypass', 'mediaGrid', 'autoExpand', 'authorLinks', 'firefoxCompatibility', 'badge', 'panelWidth', ]; const SETTINGS_EFFECT_HANDLERS = { keywords() { bumpKeywordCache(); }, adultSpam() { adultSpamRulesVersion++; adultSpamCache = new WeakMap(); applyAdultSpamFiltering(); }, layout() { applyLayoutEnhancements(); }, theme() { applyTheme(); }, ads() { applyAdHiding(); }, nfl() { applyNflHiding(); }, dismissWidgets() { applyDismissWidgetHiding(); }, mediaDownload() { applyMediaDownload(); }, downloadUi() { scheduleDownloadUiRefresh(); }, ageBypass() { applyAgeBypass(); }, mediaGrid() { applyMediaGridLayout(); }, autoExpand(nextPartial) { if (nextPartial.autoExpandPostText) expandPostShowMore(document); }, authorLinks: refreshAuthorLinks, firefoxCompatibility(nextPartial) { if (!IS_FIREFOX) return; state.settings.firefoxCompatibilityPrompted = true; writeFirefoxCompatibilityMode(nextPartial.firefoxCompatibility ? 'compat' : 'normal'); }, badge() { repositionBadge(); }, panelWidth() { updatePanelPlacement(); }, };
 function runSettingsEffects(nextPartial) {
   const requestedEffects = new Set();
   for (const settingKey of Object.keys(nextPartial)) {
@@ -2292,11 +2565,7 @@ function applySettingsSnapshot(rawSettings, options) {
   followedHandles.clear();
   for (const handle of next.knownFollowedHandles || []) followedHandles.add(handle);
   trimFollowedHandlesToMax();
-  notificationSubscriptions.clear();
-  for (const rawItem of next.notificationSubscriptions || []) {
-    const item = sanitizeNotificationSubscription(rawItem);
-    if (item) notificationSubscriptions.set(item.username.toLowerCase(), item);
-  }
+  restoreNotificationAccounts(opts.force === true);
   runSettingsEffects(changed);
   if (followedChanged) {
     adultSpamRulesVersion++;
@@ -2586,41 +2855,123 @@ async function requestXSessionJson(pathOrUrl, options) {
     const response = await fetchImpl.call(pageWin || window, url, {
       method: opts.method || 'GET',
       credentials: 'include',
+      ...(opts.cache ? { cache: opts.cache } : {}),
       headers,
       body: opts.body || undefined,
       signal: controller ? controller.signal : undefined,
     });
-    if (!response || !response.ok) throw new Error(`X 接口返回 ${response ? response.status : '未知状态'}`);
-    return await response.json();
+    if (!response || !response.ok) {
+      let payload = null;
+      try { payload = await response?.json(); } catch {}
+      throw makeXSessionRequestError(response?.status, payload);
+    }
+    const payload = await response.json();
+    if (Array.isArray(payload?.errors) && payload.errors.length) throw makeXSessionRequestError(response.status, payload);
+    return payload;
   } finally {
     if (timer) clearTimeout(timer);
   }
 }
+function makeXSessionRequestError(status, payload) {
+  const error = new Error(`X 接口返回 ${status || '未知状态'}`);
+  error.status = Number(status) || 0;
+  error.codes = (Array.isArray(payload?.errors) ? payload.errors : [])
+    .map((item) => Number(item?.code)).filter(Number.isFinite);
+  return error;
+}
+async function requestAuthorProfileLinks(screenName) {
+  const params = new URLSearchParams({
+    variables: JSON.stringify({ screen_name: screenName, withGrokTranslatedBio: true }),
+    features: JSON.stringify({
+      hidden_profile_subscriptions_enabled: true,
+      profile_label_improvements_pcf_label_in_post_enabled: true,
+      responsive_web_profile_redirect_enabled: true,
+      rweb_tipjar_consumption_enabled: false,
+      verified_phone_label_enabled: false,
+      subscriptions_verification_info_is_identity_verified_enabled: true,
+      subscriptions_verification_info_verified_since_enabled: true,
+      highlights_tweets_tab_ui_enabled: true,
+      responsive_web_twitter_article_notes_tab_enabled: true,
+      subscriptions_feature_can_gift_premium: false,
+      creator_subscriptions_tweet_preview_api_enabled: true,
+      responsive_web_graphql_timeline_navigation_enabled: true,
+    }),
+    fieldToggles: JSON.stringify({ withPayments: false, withAuxiliaryUserLabels: true }),
+  });
+  const payload = await requestXSessionJson('/i/api/graphql/AMIBMjtxEEATh4z8V9GtRg/UserByScreenName?' + params);
+  const result = payload?.data?.user?.result;
+  const profile = result?.user || result;
+  if (!profile || (!profile.profile_bio && !profile.legacy)) throw new Error('X returned no readable author profile');
+  const entitySources = [profile.profile_bio?.entities, profile.legacy?.entities];
+  const links = new Map();
+  for (const field of entitySources.flatMap((entities) => [entities?.description, entities?.url])) {
+    if (!Array.isArray(field?.urls)) continue;
+    for (const entry of field.urls) {
+      const rawUrl = entry?.expanded_url || entry?.url;
+      if (typeof rawUrl !== 'string') continue;
+      try {
+        const { href, protocol } = new URL(rawUrl);
+        if ((protocol !== 'https:' && protocol !== 'http:') || links.has(href)) continue;
+        const label = typeof entry.display_url === 'string' ? entry.display_url.trim() : '';
+        links.set(href, { href, label: label || href });
+      } catch {}
+    }
+  }
+  return [...links.values()];
+}
 function notificationUserFromRest(raw, enabled) {
   if (!raw || typeof raw !== 'object') return null;
+  const legacy = raw.legacy && typeof raw.legacy === 'object' ? raw.legacy : null;
+  const core = raw.core && typeof raw.core === 'object' ? raw.core : null;
+  const avatar = raw.avatar && typeof raw.avatar === 'object' ? raw.avatar : null;
   return sanitizeNotificationSubscription({
-    id: raw.id_str || raw.id,
-    username: raw.screen_name,
-    displayName: raw.name,
-    avatarUrl: raw.profile_image_url_https || raw.profile_image_url,
+    id: raw.rest_id || raw.id_str || raw.id || legacy?.id_str,
+    username: legacy?.screen_name || core?.screen_name || raw.screen_name || raw.username,
+    displayName: core?.name || raw.name || legacy?.name,
+    avatarUrl: avatar?.image_url || avatar?.imageUrl || legacy?.profile_image_url_https
+      || legacy?.profile_image_url || raw.profile_image_url_https || raw.profile_image_url,
     enabled,
     updatedAt: now(),
   });
 }
+function getNotificationEnabledState(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const explicit = raw.notifications_settings?.notifications_enabled
+    ?? raw.legacy?.notifications_settings?.notifications_enabled;
+  if (typeof explicit === 'boolean') return explicit;
+  return raw.notifications === true || raw.legacy?.notifications === true ? true : null;
+}
+function parseNotificationFollowingPage(payload) {
+  if (!payload || typeof payload !== 'object' || !Array.isArray(payload.users)) {
+    throw new Error('X 未返回有效的关注列表，请稍后重试');
+  }
+  if (Array.isArray(payload.errors) && payload.errors.length) throw new Error('X 返回接口错误，请稍后重试');
+  const rawCursor = payload.next_cursor_str ?? payload.next_cursor;
+  const nextCursor = typeof rawCursor === 'string' ? rawCursor.trim()
+    : (Number.isSafeInteger(rawCursor) ? String(rawCursor) : '');
+  if (!nextCursor || nextCursor.length > 200) throw new Error('关注列表分页信息缺失，请稍后重试');
+  return { users: payload.users, nextCursor };
+}
 async function syncNotificationSubscriptions() {
-  if (state.notificationSyncInProgress) return;
+  const accountToken = ensureNotificationAccount();
+  const readRevision = accountToken.session?.stateRevision || 0;
+  if (state.notificationSyncInProgress || state.notificationCleanupInProgress) return;
   const viewerId = getCurrentViewerId();
   if (!viewerId) {
     showToast('⚠️ 无法读取当前 X 用户 ID，请确认已经登录');
     return;
   }
   state.notificationSyncInProgress = true;
+  closeNotificationSyncDifferences();
   renderNotificationSubscriptions();
   const collected = new Map();
+  const seenCursors = new Set();
   let cursor = '-1';
   let pageCount = 0;
   try {
     do {
+      if (seenCursors.has(cursor)) throw new Error('关注列表分页没有前进，已停止同步');
+      seenCursors.add(cursor);
       const params = new URLSearchParams({
         include_profile_interstitial_type: '1',
         include_blocking: '1',
@@ -2639,42 +2990,48 @@ async function syncNotificationSubscriptions() {
         count: '200',
         with_total_count: 'true',
       });
-      const payload = await requestXSessionJson(`/i/api/1.1/friends/following/list.json?${params}`);
-      const users = Array.isArray(payload && payload.users) ? payload.users : [];
+      const payload = await requestXSessionJson(`/i/api/1.1/friends/list.json?${params}`, { cache: 'no-store' });
+      if (!isCurrentNotificationAccount(accountToken)) return;
+      const { users, nextCursor } = parseNotificationFollowingPage(payload);
       for (const rawUser of users) {
-        const username = safeString(rawUser && rawUser.screen_name, 30).replace(/^@+/, '');
-        if (username) rememberFollowingRelation(username, true);
-        if (rawUser && rawUser.notifications === true) {
-          const item = notificationUserFromRest(rawUser, true);
-          if (item) collected.set(item.username.toLowerCase(), item);
-        }
+        const item = notificationUserFromRest(rawUser, true);
+        if (!item) continue;
+        rememberFollowingRelation(item.username, true);
+        if (getNotificationEnabledState(rawUser) === true) collected.set(item.id, item);
       }
-      cursor = safeString((payload && (payload.next_cursor_str || payload.next_cursor)) || '0', 200);
+      cursor = nextCursor;
       pageCount++;
       if (pageCount >= 50 && cursor && cursor !== '0') throw new Error('关注账号过多，已达到 50 页安全上限');
     } while (cursor && cursor !== '0');
-    for (const [key, item] of collected) {
-      const existing = notificationSubscriptions.get(key);
-      notificationSubscriptions.set(key, { ...(existing || {}), ...item, enabled: true, updatedAt: now() });
-    }
-    state.settings.notificationSubscriptionsSyncedAt = now();
-    scheduleNotificationSubscriptionsPersist();
+    if (!isCurrentNotificationAccount(accountToken)) return;
+    mergeNotificationSubscriptions(collected.values(), { accountToken, readRevision });
+    state.notificationSyncedAt = now();
+    scheduleNotificationSubscriptionsPersist({ render: false });
     const enabledTotal = [...notificationSubscriptions.values()].filter((item) => item.enabled).length;
     showToast(`✅ 本次识别 ${collected.size} 个，当前保留 ${enabledTotal} 个订阅`);
+    const differences = getNotificationSyncDifferences(collected);
+    if (differences.length) showNotificationSyncDifferences(differences, viewerId, collected.size);
   } catch (err) {
+    if (!isCurrentNotificationAccount(accountToken)) return;
     console.error('[BetterX] sync notification subscriptions failed:', err);
     showToast(`⚠️ 同步失败：${safeString(err && err.message, 120) || '未知错误'}`);
   } finally {
-    state.notificationSyncInProgress = false;
+    if (isCurrentNotificationAccount(accountToken)) state.notificationSyncInProgress = false;
     renderNotificationSubscriptions();
   }
 }
-async function updateNotificationSubscription(username, enabled) {
+async function updateNotificationSubscription(username, enabled, options) {
+  const accountToken = ensureNotificationAccount();
+  if (!accountToken.viewerId) return { status: 'accountChanged' };
+  const opts = options || {};
   const key = safeString(username, 30).replace(/^@+/, '').toLowerCase();
-  const existing = notificationSubscriptions.get(key);
-  if (!existing || !/^\d{1,30}$/.test(existing.id) || state.notificationMutationUsers.has(key)) return;
+  const existing = opts.expectedId ? getNotificationSubscriptionById(opts.expectedId) : notificationSubscriptions.get(key);
+  if (!existing || !/^\d{1,30}$/.test(existing.id) || state.notificationMutationUsers.has(existing.id)
+      || (state.notificationCleanupInProgress && !opts.cleanup)
+      || (opts.expectedId && existing.id !== opts.expectedId)) return { status: 'skipped' };
+  if (opts.viewerId && accountToken.viewerId !== opts.viewerId) return { status: 'accountChanged' };
   const desiredEnabled = enabled === true;
-  const mutationGuard = beginNotificationMutationGuard(key, desiredEnabled);
+  const mutationGuard = beginNotificationMutationGuard(existing.id, desiredEnabled);
   const body = new URLSearchParams({
     include_profile_interstitial_type: '1',
     include_blocking: '1',
@@ -2692,7 +3049,7 @@ async function updateNotificationSubscription(username, enabled) {
     id: existing.id,
     device: desiredEnabled ? 'true' : 'false',
   });
-  state.notificationMutationUsers.add(key);
+  state.notificationMutationUsers.add(existing.id);
   renderNotificationSubscriptions();
   try {
     await requestXSessionJson('/i/api/1.1/friendships/update.json', {
@@ -2700,20 +3057,37 @@ async function updateNotificationSubscription(username, enabled) {
       form: true,
       body: body.toString(),
     });
-    rememberNotificationSubscription(existing, desiredEnabled, {
+    if (!isCurrentNotificationAccount(accountToken)) {
+      if (notificationMutationGuards.get(existing.id) === mutationGuard) notificationMutationGuards.delete(existing.id);
+      return { status: 'accountChanged' };
+    }
+    rememberNotificationSubscription(getNotificationSubscriptionById(existing.id) || existing, desiredEnabled, {
       trackDisabled: true,
       authoritative: true,
+      accountToken,
     });
     mutationGuard.pending = false;
     mutationGuard.expiresAt = now() + NOTIFICATION_MUTATION_GUARD_MS;
     renderNotificationSubscriptions();
-    showToast(desiredEnabled ? `✅ 已开启 @${existing.username} 的帖子通知` : `已关闭 @${existing.username} 的帖子通知`);
+    if (!opts.quiet) showToast(desiredEnabled ? `✅ 已开启 @${existing.username} 的帖子通知` : `已关闭 @${existing.username} 的帖子通知`);
+    return { status: desiredEnabled ? 'enabled' : 'closed', enabled: desiredEnabled };
   } catch (err) {
-    if (notificationMutationGuards.get(key) === mutationGuard) notificationMutationGuards.delete(key);
+    if (!isCurrentNotificationAccount(accountToken)) return { status: 'accountChanged' };
+    const unavailable = opts.cleanup && !desiredEnabled && getCurrentViewerId() === opts.viewerId
+      && ((err.status === 404 && err.codes?.includes(50)) || (err.status === 403 && err.codes?.includes(63)));
+    if (unavailable) {
+      rememberNotificationSubscription(getNotificationSubscriptionById(existing.id) || existing, false,
+        { trackDisabled: true, authoritative: true, accountToken });
+      mutationGuard.pending = false;
+      mutationGuard.expiresAt = now() + NOTIFICATION_MUTATION_GUARD_MS;
+      return { status: 'localOnly' };
+    }
+    if (notificationMutationGuards.get(existing.id) === mutationGuard) notificationMutationGuards.delete(existing.id);
     console.error('[BetterX] update notification subscription failed:', err);
-    showToast(`⚠️ 修改失败：${safeString(err && err.message, 120) || '未知错误'}`);
+    if (!opts.quiet) showToast(`⚠️ 修改失败：${safeString(err && err.message, 120) || '未知错误'}`);
+    return { status: 'failed', rateLimited: err.status === 429 || err.codes?.includes(88) === true };
   } finally {
-    state.notificationMutationUsers.delete(key);
+    if (isCurrentNotificationAccount(accountToken)) state.notificationMutationUsers.delete(existing.id);
     renderNotificationSubscriptions();
   }
 }
@@ -2852,7 +3226,8 @@ function harvestFollowingRelationship(obj) {
   if (typeof following !== 'boolean') return;
   rememberFollowingRelation(handle, following);
 }
-function harvestNotificationRelationship(obj) {
+function harvestNotificationRelationship(obj, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0, batch) {
+  if (!isCurrentNotificationAccount(accountToken, false)) return;
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
   const relationship = obj.relationship && typeof obj.relationship === 'object' ? obj.relationship : null;
   const relationshipSource = relationship && relationship.source && typeof relationship.source === 'object'
@@ -2864,35 +3239,13 @@ function harvestNotificationRelationship(obj) {
   if (relationshipSource && relationshipTarget && typeof relationshipSource.notifications_enabled === 'boolean') {
     const targetUser = notificationUserFromRest(relationshipTarget, relationshipSource.notifications_enabled);
     if (targetUser) {
-      rememberNotificationSubscription(targetUser, relationshipSource.notifications_enabled, { trackDisabled: true });
+      rememberNotificationSubscription(targetUser, relationshipSource.notifications_enabled, { trackDisabled: true, accountToken, readRevision, batch });
     }
   }
-  const legacy = obj.legacy && typeof obj.legacy === 'object' ? obj.legacy : null;
-  const core = obj.core && typeof obj.core === 'object' ? obj.core : null;
-  const settings = obj.notifications_settings && typeof obj.notifications_settings === 'object'
-    ? obj.notifications_settings
-    : null;
-  const enabled = settings && typeof settings.notifications_enabled === 'boolean'
-    ? settings.notifications_enabled
-    : (obj.notifications === true || (legacy && legacy.notifications === true) ? true : null);
+  const enabled = getNotificationEnabledState(obj);
   if (typeof enabled !== 'boolean') return;
-  const username = safeString(
-    (legacy && legacy.screen_name) || (core && core.screen_name) || obj.screen_name || obj.username || '',
-    30
-  ).replace(/^@+/, '');
-  const id = safeString(obj.rest_id || obj.id_str || obj.id || (legacy && legacy.id_str) || '', 30);
-  if (!/^[a-z0-9_]{1,15}$/i.test(username) || !/^\d{1,30}$/.test(id)) return;
-  const avatar = obj.avatar && typeof obj.avatar === 'object' ? obj.avatar : null;
-  rememberNotificationSubscription({
-    id,
-    username,
-    displayName: safeString((core && core.name) || obj.name || (legacy && legacy.name) || '', 100),
-    avatarUrl: safeImportedAssetUrl(
-      (avatar && (avatar.image_url || avatar.imageUrl))
-      || (legacy && (legacy.profile_image_url_https || legacy.profile_image_url))
-      || obj.profile_image_url_https || obj.profile_image_url || ''
-    ),
-  }, enabled);
+  const user = notificationUserFromRest(obj, enabled);
+  if (user) rememberNotificationSubscription(user, enabled, { accountToken, readRevision, batch });
 }
 function getHandleFromFollowControl(control) {
   if (!control || !control.getAttribute) return '';
@@ -2947,16 +3300,16 @@ function scheduleNetworkHarvestDrain() {
     setTimeout(() => run({ didTimeout: false, timeRemaining: () => 8 }), 16);
   }
 }
-function enqueueNetworkHarvestObject(root) {
+function enqueueNetworkHarvestObject(root, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0) {
   if (!root || typeof root !== 'object') return;
   if (networkHarvestQueue.length >= MAX_NETWORK_HARVEST_JOBS) {
     networkHarvestDroppedJobs++;
     return;
   }
-  networkHarvestQueue.push({ type: 'object', stack: [{ value: root, depth: 0 }], processedNodes: 0 });
+  networkHarvestQueue.push({ type: 'object', stack: [{ value: root, depth: 0 }], processedNodes: 0, accountToken, readRevision });
   scheduleNetworkHarvestDrain();
 }
-function tryHarvest(txt) {
+function tryHarvest(txt, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0) {
   if (!txt || txt.length > MAX_NETWORK_RESPONSE_BYTES || !textMayContainHarvestData(txt)) return;
   if (networkHarvestQueue.length >= MAX_NETWORK_HARVEST_JOBS
       || networkHarvestQueuedChars + txt.length > MAX_NETWORK_HARVEST_QUEUE_CHARS) {
@@ -2964,14 +3317,14 @@ function tryHarvest(txt) {
     return;
   }
   networkHarvestQueuedChars += txt.length;
-  networkHarvestQueue.push({ type: 'text', text: txt, charLength: txt.length });
+  networkHarvestQueue.push({ type: 'text', text: txt, charLength: txt.length, accountToken, readRevision });
   scheduleNetworkHarvestDrain();
 }
-function processHarvestObjectNode(value, depth, stack) {
+function processHarvestObjectNode(value, depth, stack, accountToken, readRevision, batch) {
   if (!value || typeof value !== 'object' || depth > 40) return;
   if (!Array.isArray(value)) {
     harvestFollowingRelationship(value);
-    harvestNotificationRelationship(value);
+    harvestNotificationRelationship(value, accountToken, readRevision, batch);
     const idStr = value.id_str;
     const ext = value.extended_entities;
     if (idStr && ext && Array.isArray(ext.media)) registerMedia(idStr, ext.media);
@@ -2988,6 +3341,8 @@ function processHarvestObjectNode(value, depth, stack) {
   }
 }
 function drainNetworkHarvestQueue(deadline) {
+  const accountToken = ensureNotificationAccount();
+  const batch = { changed: false };
   let nodeBudget = NETWORK_HARVEST_SLICE_NODES;
   while (networkHarvestQueue.length && nodeBudget > 0) {
     if (typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() <= 2 && nodeBudget < NETWORK_HARVEST_SLICE_NODES) break;
@@ -2996,7 +3351,7 @@ function drainNetworkHarvestQueue(deadline) {
       networkHarvestQueuedChars = Math.max(0, networkHarvestQueuedChars - (job.charLength || 0));
       let parsed;
       try { parsed = JSON.parse(job.text); } catch (err) { networkHarvestQueue.shift(); continue; }
-      job = { type: 'object', stack: [{ value: parsed, depth: 0 }], processedNodes: 0 };
+      job = { type: 'object', stack: [{ value: parsed, depth: 0 }], processedNodes: 0, accountToken: job.accountToken, readRevision: job.readRevision };
       networkHarvestQueue[0] = job;
       nodeBudget = Math.max(1, nodeBudget - 50);
     }
@@ -3004,7 +3359,7 @@ function drainNetworkHarvestQueue(deadline) {
       const node = job.stack.pop();
       job.processedNodes++;
       nodeBudget--;
-      try { processHarvestObjectNode(node.value, node.depth, job.stack); } catch (err) {}
+      try { processHarvestObjectNode(node.value, node.depth, job.stack, job.accountToken, job.readRevision, batch); } catch (err) {}
       if (typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() <= 2) break;
     }
     if (!job.stack.length || job.processedNodes >= MAX_NETWORK_HARVEST_NODES_PER_JOB) {
@@ -3014,6 +3369,7 @@ function drainNetworkHarvestQueue(deadline) {
       break;
     }
   }
+  if (batch.changed && isCurrentNotificationAccount(accountToken)) scheduleNotificationSubscriptionsPersist();
 }
 function declaredResponseTooLarge(getHeader) {
   try {
@@ -3023,19 +3379,21 @@ function declaredResponseTooLarge(getHeader) {
   } catch (err) { return false; }
 }
 function harvestXhrResponse(xhr) {
+  const accountToken = xhr?.__xvNotificationAccountToken;
+  const readRevision = xhr?.__xvNotificationReadRevision;
   const url = xhr && xhr.__xvUrl ? String(xhr.__xvUrl) : '';
   if (!/(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) return;
   try {
     if (typeof xhr.getResponseHeader === 'function'
         && declaredResponseTooLarge((name) => xhr.getResponseHeader(name))) return;
     if (xhr.responseType === '' || xhr.responseType === 'text') {
-      tryHarvest(xhr.responseText);
+      tryHarvest(xhr.responseText, accountToken, readRevision);
     } else if (xhr.responseType === 'json' && xhr.response && typeof xhr.response === 'object') {
-      enqueueNetworkHarvestObject(xhr.response);
+      enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision);
     } else if (xhr.responseType === 'arraybuffer' && xhr.response && typeof xhr.response.byteLength === 'number' && xhr.response.byteLength <= MAX_NETWORK_RESPONSE_BYTES) {
-      tryHarvest(new TextDecoder('utf-8').decode(new Uint8Array(xhr.response)));
+      tryHarvest(new TextDecoder('utf-8').decode(new Uint8Array(xhr.response)), accountToken, readRevision);
     } else if (xhr.responseType === 'blob' && xhr.response && typeof xhr.response.size === 'number' && typeof xhr.response.text === 'function' && xhr.response.size <= MAX_NETWORK_RESPONSE_BYTES) {
-      xhr.response.text().then(tryHarvest).catch(() => {});
+      xhr.response.text().then((text) => tryHarvest(text, accountToken, readRevision)).catch(() => {});
     }
   } catch (e) {}
 }
@@ -3064,6 +3422,8 @@ function installNetworkHooks() {
         warnNetworkRehookLimit('fetch');
       } else {
         const hooked = function (...args) {
+          const accountToken = ensureNotificationAccount();
+          const readRevision = accountToken.session?.stateRevision || 0;
           const p = origFetch.apply(this, args);
           try {
             p.then((res) => {
@@ -3073,7 +3433,7 @@ function installNetworkHooks() {
                   if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
                   const contentType = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
                   if (contentType && !/(?:json|javascript|text)/i.test(contentType)) return;
-                  res.clone().text().then(tryHarvest).catch(() => {});
+                  res.clone().text().then((text) => tryHarvest(text, accountToken, readRevision)).catch(() => {});
                 }
               } catch (e) {}
             }).catch(() => {});
@@ -3108,6 +3468,8 @@ function installNetworkHooks() {
       } else {
         const origSend = XHR.prototype.send;
         const hookedSend = function () {
+          this.__xvNotificationAccountToken = ensureNotificationAccount();
+          this.__xvNotificationReadRevision = this.__xvNotificationAccountToken.session?.stateRevision || 0;
           try {
             this.addEventListener('load', () => harvestXhrResponse(this), { once: true });
           } catch (e) {}
@@ -4294,7 +4656,7 @@ async function handleDownloadClick(article, author, statusId, options) {
   if (pendingDownloadStarts.has(id)) { showToast('正在获取视频地址…'); return; }
   const existing = downloadJobs.get(id);
   if (isActiveDownloadJob(existing)) { toggleDownloadPopover(true); return; }
-  if (!selectMedia && isDownloadedPostRecorded(statusId)
+  if (isDownloadedPostRecorded(statusId)
     && !uiConfirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
   if (selectMedia) pendingDownloadSelections.add(id);
   try {
@@ -4326,8 +4688,6 @@ async function handleDownloadClick(article, author, statusId, options) {
       scheduleDownloadUiRefresh();
       items = await showDownloadMediaPicker(items, article);
       if (!items?.length || state.settings.mediaDownload === false) return;
-      if (isDownloadedPostRecorded(statusId)
-        && !uiConfirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
     }
     const activeAfterLookup = downloadJobs.get(id);
     if (isActiveDownloadJob(activeAfterLookup)) { toggleDownloadPopover(true); return; }
@@ -4478,7 +4838,7 @@ function showDownloadMediaPicker(items, article) {
           <div class="BetterX-dialog-title" id="BetterX-media-picker-title">选择要下载的媒体</div>
           <div class="BetterX-media-picker-toolbar">
             <span class="BetterX-media-picker-count" aria-live="polite"></span>
-            <button type="button" class="BetterX-btn" data-media-toggle>全不选</button>
+            <button type="button" class="BetterX-btn" data-media-toggle>反选</button>
           </div>
           <div class="BetterX-media-picker-grid"></div>
           <div class="BetterX-dialog-actions">
@@ -4528,7 +4888,6 @@ function showDownloadMediaPicker(items, article) {
     const update = () => {
       const selected = inputs.filter((input) => input.checked).length;
       count.textContent = `${uiText('已选')} ${selected} / ${items.length}`;
-      toggle.textContent = uiText(selected === items.length ? '全不选' : '全选');
       confirm.textContent = `${uiText('下载所选')} (${selected})`;
       confirm.disabled = selected === 0;
     };
@@ -4560,8 +4919,7 @@ function showDownloadMediaPicker(items, article) {
     };
     grid.addEventListener('change', update);
     toggle.addEventListener('click', () => {
-      const selectAll = !inputs.every((input) => input.checked);
-      inputs.forEach((input) => { input.checked = selectAll; });
+      inputs.forEach((input) => { input.checked = !input.checked; });
       update();
     });
     confirm.addEventListener('click', () => {
@@ -4657,6 +5015,970 @@ function bindDownloadButtonGestures(button, article, controls) {
     if (suppressClick) { suppressClick = false; return; }
     activate(!!event.shiftKey);
   }, true);
+}
+const AUTHOR_LINKS_ROUTE = /^\/([a-z0-9_]{1,15})\/status\/(\d+)(\/photo\/\d+)?\/?$/i;
+const AUTHOR_LINKS_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const AUTHOR_LINKS_EMPTY_TTL_MS = 60 * 60 * 1000;
+const AUTHOR_LINKS_RETRY_DELAYS = [1000, 4000];
+const AUTHOR_GROK_BUTTON = 'button:is([aria-label*="Grok" i], [data-testid*="grok" i])';
+const AUTHOR_LINK_SITE_LOGOS = [
+  ['pixiv.net', 'pixiv/0096FA'],
+  ['weibo.com', 'sinaweibo/FF8200'],
+  ['weibo.cn', 'sinaweibo/FF8200'],
+  ['bilibili.com', 'bilibili/00AEEC'],
+  ['b23.tv', 'bilibili/00AEEC'],
+  ['youtube.com', 'youtube/FF0033'],
+  ['youtu.be', 'youtube/FF0033'],
+  ['instagram.com', 'instagram/FF0069'],
+  ['tiktok.com', 'tiktok/FE2C55'],
+  ['twitch.tv', 'twitch/9146FF'],
+  ['patreon.com', 'patreon/FF424D'],
+  ['ko-fi.com', 'kofi/FF5A16'],
+  ['linktr.ee', 'linktree/43E660'],
+  ['bsky.app', 'bluesky/0285FF'],
+  ['github.com', 'github/6E7781'],
+];
+const authorLinksRequests = new Map();
+const authorLinksCache = new Map();
+let authorLinksView = null;
+let authorLinksLifecycleInstalled = false;
+async function loadAuthorProfileLinks(screenName) {
+  screenName = screenName.toLowerCase();
+  const pending = authorLinksRequests.get(screenName);
+  if (pending) return pending;
+  const key = 'betterx_author_links:' + screenName;
+  try {
+    const cached = authorLinksCache.get(screenName) || GM_getValue(key, null);
+    if (Number.isFinite(cached?.expiresAt) && cached.expiresAt > now() && Array.isArray(cached.links)) {
+      return cached.links;
+    }
+  } catch {}
+  authorLinksCache.delete(screenName);
+  const request = requestAuthorProfileLinks(screenName).then((links) => {
+    const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
+    authorLinksCache.set(screenName, cached);
+    if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
+    try { GM_setValue(key, cached); } catch {}
+    return links;
+  }).finally(() => authorLinksRequests.delete(screenName));
+  authorLinksRequests.set(screenName, request);
+  return request;
+}
+function isAuthorLinksCaret(caret, screenName, statusId, photo) {
+  const article = caret?.closest('article[data-testid="tweet"]');
+  if (!article?.isConnected || !caret.isConnected || caret.closest('[hidden], [aria-hidden="true"]')) return false;
+  const scope = photo ? '#layers, [role="dialog"]' : '[data-testid="primaryColumn"]';
+  if (!article.closest(scope) || (!photo && article.closest('#layers, [role="dialog"]'))) return false;
+  const header = article.querySelector('[data-testid="User-Name"]');
+  const author = header?.querySelector('a[href]');
+  if (author?.pathname.toLowerCase().replace(/\/$/, '') !== '/' + screenName) return false;
+  const timestamp = header.querySelector('a[href*="/status/"]');
+  if (timestamp) return extractStatusIdFromUrl(timestamp.href) === statusId;
+  const permalink = 'a[href$="/status/' + statusId + '"], a[href*="/status/' + statusId + '?"], a[href*="/status/' + statusId + '/photo/"]';
+  return [...article.querySelectorAll(permalink)].some((link) => !link.closest('.BetterX-author-links') && link.closest('article') === article);
+}
+function findAuthorLinksCaret(screenName, statusId, photo) {
+  const scope = photo ? ':is(#layers, [role="dialog"])' : '[data-testid="primaryColumn"]';
+  for (const article of document.querySelectorAll(scope + ' article[data-testid="tweet"]')) {
+    const caret = article.querySelector('button[data-testid="caret"]');
+    if (isAuthorLinksCaret(caret, screenName, statusId, photo)) return caret;
+  }
+  return null;
+}
+function getAuthorLinksSlot(caret) {
+  const article = caret.closest('article');
+  const name = article.querySelector('[data-testid="User-Name"]');
+  let actionSlot = caret;
+  for (let slot = caret; slot.parentElement !== article; slot = slot.parentElement) {
+    const row = slot.parentElement;
+    const { display, flexDirection } = getComputedStyle(row);
+    if (!display.endsWith('flex') || flexDirection !== 'row') continue;
+    if (getAuthorLinksTarget(slot) !== slot) return slot;
+    if (row.contains(name)) break;
+    actionSlot = slot;
+  }
+  return actionSlot;
+}
+function getAuthorLinksTarget(caretSlot) {
+  for (let slot = caretSlot.previousElementSibling; slot; slot = slot.previousElementSibling) {
+    if (slot.matches(AUTHOR_GROK_BUTTON) || slot.querySelector(AUTHOR_GROK_BUTTON)) return slot;
+  }
+  return caretSlot;
+}
+function placeAuthorLinksControl(view, target) {
+  const { control, caret, caretSlot } = view;
+  const button = control.firstElementChild;
+  const { width, height } = caret.getBoundingClientRect();
+  const nativeIcon = caret.querySelector('svg');
+  if (nativeIcon) {
+    const iconSize = nativeIcon.getBoundingClientRect().width;
+    if (iconSize) button.style.setProperty('--xv-author-links-icon-size', iconSize + 'px');
+    button.style.setProperty('--xv-author-links-color', getComputedStyle(nativeIcon).color);
+  }
+  button.style.width = width ? `${width}px` : '';
+  button.style.height = height ? `${height}px` : '';
+  const rowGap = parseFloat(getComputedStyle(target.parentElement).columnGap);
+  const extraGap = rowGap > 0 ? 0 : 8;
+  control.style.marginInlineEnd = extraGap + 'px';
+  if (target.previousElementSibling !== control) target.before(control);
+  view.target = target;
+  if (target === caretSlot || !width) return;
+  const grok = target.matches(AUTHOR_GROK_BUTTON) ? target : target.querySelector(AUTHOR_GROK_BUTTON);
+  if (!grok.getBoundingClientRect().width) return;
+  const centerX = (node) => {
+    const rect = (node.querySelector('svg') || node).getBoundingClientRect();
+    return rect.left + rect.width / 2;
+  };
+  const grokX = centerX(grok);
+  const nativeSpacing = Math.abs(centerX(caret) - grokX);
+  const linksSpacing = Math.abs(grokX - centerX(button));
+  control.style.marginInlineEnd = (extraGap + Math.max(0, nativeSpacing - linksSpacing)) + 'px';
+}
+function createAuthorLinkIcon(href, menu) {
+  const icon = document.createElement('span');
+  icon.className = 'BetterX-author-link-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>';
+  const host = new URL(href).hostname.replace(/\.$/, '');
+  const logo = AUTHOR_LINK_SITE_LOGOS.find(([domain]) => host === domain || host.endsWith('.' + domain))?.[1];
+  if (logo) menu.addEventListener('beforetoggle', () => {
+    try {
+      GM_xmlhttpRequest({
+        method: 'GET', url: 'https://cdn.simpleicons.org/' + logo, anonymous: true, timeout: 8000,
+        onload: ({ status, responseText }) => {
+          if (status !== 200 || !responseText || !icon.isConnected) return;
+          const image = document.createElement('img');
+          image.alt = '';
+          image.addEventListener('load', () => icon.replaceChildren(image), { once: true });
+          image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(responseText);
+        },
+      });
+    } catch {}
+  }, { once: true });
+  return icon;
+}
+function createAuthorLinksControl(links, view) {
+  const failed = view.status === 'error';
+  const label = uiText(failed ? '作者链接加载失败，点击重试' : '作者链接');
+  const control = document.createElement('span');
+  control.className = 'BetterX-author-links';
+  control.addEventListener('click', (event) => {
+    const route = getAuthorLinksRoute();
+    if (!isActiveAuthorLinksView(view) || !isAuthorLinksCaret(view.caret, route.screenName, route.statusId, route.photo)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      refreshAuthorLinks();
+    }
+  }, true);
+  control.addEventListener('click', (event) => event.stopPropagation());
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  button.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 13a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.7 1.7m2.7 5a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.7-1.7"/></svg>';
+  if (failed) {
+    button.addEventListener('click', (event) => {
+      if (event.defaultPrevented || !isActiveAuthorLinksView(view)) return;
+      view.attempts = 0;
+      startAuthorLinksRequest(view);
+    });
+    control.append(button);
+    return control;
+  }
+  const menu = document.createElement('div');
+  menu.id = 'BetterX-author-links-menu';
+  menu.setAttribute('popover', 'auto');
+  button.setAttribute('popovertarget', menu.id);
+  for (const { href, label } of links) {
+    const link = document.createElement('a');
+    link.href = href;
+    link.title = href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    const text = document.createElement('span');
+    text.textContent = label;
+    link.append(createAuthorLinkIcon(href, menu), text);
+    menu.append(link);
+  }
+  control.append(button, menu);
+  return control;
+}
+function getAuthorLinksRoute() {
+  const route = state.settings.authorLinksEnabled && (location.pathname || '').match(AUTHOR_LINKS_ROUTE);
+  if (!route) return null;
+  const [, handle, statusId, photoPath] = route;
+  const screenName = handle.toLowerCase();
+  return { screenName, statusId, photo: Boolean(photoPath), key: screenName + '/' + statusId };
+}
+function isActiveAuthorLinksView(view) {
+  return authorLinksView === view && getAuthorLinksRoute()?.key === view.key;
+}
+function removeAuthorLinksControl(view) {
+  view.control?.remove();
+  view.control = null;
+  view.caret = null;
+  view.caretSlot = null;
+  view.target = null;
+}
+function resetAuthorLinksView() {
+  if (!authorLinksView) return;
+  clearTimeout(authorLinksView.retryTimer);
+  removeAuthorLinksControl(authorLinksView);
+  authorLinksView = null;
+}
+function startAuthorLinksRequest(view) {
+  if (!isActiveAuthorLinksView(view) || view.status === 'loading') return;
+  clearTimeout(view.retryTimer);
+  view.retryTimer = null;
+  view.status = 'loading';
+  view.attempts++;
+  removeAuthorLinksControl(view);
+  loadAuthorProfileLinks(view.screenName).then((links) => {
+    if (!isActiveAuthorLinksView(view)) return;
+    view.links = links;
+    view.status = links.length ? 'ready' : 'empty';
+    refreshAuthorLinks();
+  }).catch((error) => {
+    if (!isActiveAuthorLinksView(view)) return;
+    view.status = 'error';
+    debugLog('author links request failed:', error);
+    const delay = AUTHOR_LINKS_RETRY_DELAYS[view.attempts - 1];
+    if (delay !== undefined) view.retryTimer = setTimeout(() => {
+      view.retryTimer = null;
+      startAuthorLinksRequest(view);
+    }, delay);
+    refreshAuthorLinks();
+  });
+}
+function refreshAuthorLinks() {
+  const route = getAuthorLinksRoute();
+  if (!route) { resetAuthorLinksView(); return; }
+  if (!authorLinksLifecycleInstalled && typeof window.addEventListener === 'function') {
+    authorLinksLifecycleInstalled = true;
+    window.addEventListener('pagehide', resetAuthorLinksView);
+    window.addEventListener('pageshow', refreshAuthorLinks);
+  }
+  const { screenName, statusId, photo, key } = route;
+  if (authorLinksView?.key !== key) {
+    resetAuthorLinksView();
+    authorLinksView = { ...route, status: 'idle', attempts: 0, retryTimer: null, links: [], control: null, caret: null, caretSlot: null, target: null };
+  }
+  const view = authorLinksView;
+  if (view.status === 'idle') startAuthorLinksRequest(view);
+  if (view.status !== 'ready' && view.status !== 'error') return;
+  if (view.photo !== photo || !view.control?.isConnected || !view.caretSlot?.contains(view.caret)
+      || !isAuthorLinksCaret(view.caret, screenName, statusId, photo)) {
+    removeAuthorLinksControl(view);
+    view.photo = photo;
+    view.caret = findAuthorLinksCaret(screenName, statusId, photo);
+    if (!view.caret) return;
+    view.caretSlot = getAuthorLinksSlot(view.caret);
+    view.control = createAuthorLinksControl(view.links, view);
+  }
+  const target = getAuthorLinksTarget(view.caretSlot);
+  if (target !== view.target || target.previousElementSibling !== view.control) {
+    placeAuthorLinksControl(view, target);
+  }
+}
+const NOTIFICATION_CLEANUP_INTERVAL_MS = 1500;
+let notificationDifferenceDialog = null;
+function getNotificationSyncDifferences(collected) {
+  const syncedIds = new Set([...collected.values()].map((item) => item.id));
+  const seen = new Set();
+  const missing = [];
+  for (const current of notificationSubscriptions.values()) {
+    if (!current.enabled || syncedIds.has(current.id) || seen.has(current.id)) continue;
+    seen.add(current.id);
+    missing.push({ ...current });
+  }
+  return missing.sort((a, b) => a.username.localeCompare(b.username));
+}
+function waitNotificationCleanupInterval(signal) {
+  if (signal?.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', done);
+      resolve();
+    };
+    const timer = setTimeout(done, NOTIFICATION_CLEANUP_INTERVAL_MS);
+    signal?.addEventListener('abort', done, { once: true });
+  });
+}
+async function runNotificationDifferenceCleanup(items, viewerId, options = {}) {
+  const accountToken = ensureNotificationAccount();
+  const result = { closed: 0, localOnly: 0, skipped: 0, failed: 0, processed: 0, reason: 'done' };
+  if (state.notificationCleanupInProgress || state.notificationSyncInProgress) return { ...result, reason: 'busy' };
+  state.notificationCleanupInProgress = true;
+  renderNotificationSubscriptions();
+  let requested = false;
+  try {
+    for (const item of items) {
+      if (options.signal?.aborted) { result.reason = 'cancelled'; break; }
+      if (!viewerId || !isCurrentNotificationAccount(accountToken) || accountToken.viewerId !== viewerId) { result.reason = 'accountChanged'; break; }
+      let current = notificationSubscriptions.get(item.username.toLowerCase());
+      if (requested && current?.enabled && current.id === item.id) await waitNotificationCleanupInterval(options.signal);
+      if (options.signal?.aborted) { result.reason = 'cancelled'; break; }
+      if (!isCurrentNotificationAccount(accountToken) || accountToken.viewerId !== viewerId) { result.reason = 'accountChanged'; break; }
+      current = notificationSubscriptions.get(item.username.toLowerCase());
+      let status = { status: 'skipped' };
+      if (current?.enabled && current.id === item.id && !(current.updatedAt > item.updatedAt)) {
+        requested = true;
+        status = await updateNotificationSubscription(item.username, false, {
+          cleanup: true, quiet: true, expectedId: item.id, viewerId,
+        });
+      }
+      result.processed++;
+      if (status.status === 'closed') result.closed++;
+      else if (status.status === 'localOnly') result.localOnly++;
+      else if (status.status === 'skipped') result.skipped++;
+      else if (status.status === 'accountChanged') result.reason = 'accountChanged';
+      else {
+        result.failed++;
+        result.reason = status.rateLimited ? 'rateLimited' : 'failed';
+      }
+      options.onProgress?.(item, status.status, { ...result });
+      if (result.reason !== 'done') break;
+    }
+    if (options.signal?.aborted && result.reason === 'done') result.reason = 'cancelled';
+    return result;
+  } finally {
+    if (isCurrentNotificationAccount(accountToken)) state.notificationCleanupInProgress = false;
+    renderNotificationSubscriptions();
+  }
+}
+function closeNotificationSyncDifferences() {
+  notificationDifferenceDialog?.close();
+}
+function notificationCleanupSummary(result, total) {
+  return `${uiText('已处理')} ${result.processed} / ${total} · ${uiText('已关闭')} ${result.closed} · ${uiText('仅关闭本地记录')} ${result.localOnly}`;
+}
+function showNotificationSyncDifferences(items, viewerId, syncedCount) {
+  if (!state.rootEl || !items.length || state.notificationCleanupInProgress) return;
+  closeNotificationSyncDifferences();
+  const previousFocus = document.activeElement;
+  const controller = new AbortController();
+  const overlay = document.createElement('div');
+  overlay.id = 'BetterX-notification-differences';
+  overlay.className = 'BetterX-dialog-overlay';
+  overlay.innerHTML = uiHtml`
+      <div class="BetterX-dialog BetterX-notification-differences" role="dialog" aria-modal="true" aria-labelledby="BetterX-notification-diff-title">
+        <div class="BetterX-dialog-title" id="BetterX-notification-diff-title">订阅用户与本地记录不一致</div>
+        <p class="BetterX-notification-diff-counts"></p>
+        <div class="BetterX-dialog-body">
+          <p>以下用户在本地仍开启了通知，但本次同步未识别到。账号可能已注销、被封禁或冻结，也可能是接口暂时遗漏。请点击用户名核实。</p>
+          <p>确认后逐个尝试关闭 X 通知；仅在 X 明确返回账号不存在或已被封禁时关闭本地记录。其他失败会停止处理并保留未处理记录。</p>
+        </div>
+        <ul class="BetterX-notification-diff-list"></ul>
+        <div class="BetterX-notification-diff-progress" role="status" aria-live="polite"></div>
+        <div class="BetterX-dialog-actions">
+          <button type="button" class="BetterX-btn" data-notification-diff-cancel>取消</button>
+          <button type="button" class="BetterX-btn primary" data-notification-diff-confirm>关闭以上用户通知</button>
+        </div>
+      </div>`;
+  const list = overlay.querySelector('.BetterX-notification-diff-list');
+  const enabledCount = [...notificationSubscriptions.values()].filter((item) => item.enabled).length;
+  overlay.querySelector('.BetterX-notification-diff-counts').textContent = `${uiText('本次识别')} ${syncedCount ?? 0} · ${uiText('本地开启')} ${enabledCount} · ${uiText('已关闭记录')} ${notificationSubscriptions.size - enabledCount}`;
+  const progress = overlay.querySelector('.BetterX-notification-diff-progress');
+  const confirm = overlay.querySelector('[data-notification-diff-confirm]');
+  const cancel = overlay.querySelector('[data-notification-diff-cancel]');
+  const rows = new Map();
+  for (const item of items) {
+    const row = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = `https://x.com/${encodeURIComponent(item.username)}`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.className = 'BetterX-i18n-user-text';
+    link.textContent = item.displayName ? `${item.displayName} (@${item.username})` : `@${item.username}`;
+    const status = document.createElement('span');
+    row.append(link, status);list.append(row);rows.set(item.id, status);
+  }
+  progress.textContent = `${uiText('未识别用户')} ${items.length}`;
+  const close = () => {
+    controller.abort();
+    document.removeEventListener('keydown', onKeyDown, true);
+    window.removeEventListener('pagehide', close);
+    overlay.remove();
+    if (notificationDifferenceDialog?.overlay === overlay) notificationDifferenceDialog = null;
+    if (previousFocus?.isConnected && !previousFocus.disabled) previousFocus.focus({ preventScroll: true });
+  };
+  const onKeyDown = (event) => {
+    if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); close(); }
+    else if (event.key === 'Tab') {
+      const controls = [...overlay.querySelectorAll('a, button:not(:disabled):not([hidden])')];
+      const first = controls[0], last = controls[controls.length - 1];
+      if ((event.shiftKey && document.activeElement === first) || (!event.shiftKey && document.activeElement === last)
+          || !overlay.contains(document.activeElement)) {
+        event.preventDefault();(event.shiftKey ? last : first)?.focus();
+      }
+    }
+  };
+  cancel.addEventListener('click', close);
+  overlay.addEventListener('click', (event) => { event.stopPropagation();if (event.target === overlay) close(); });
+  confirm.addEventListener('click', async () => {
+    if (confirm.disabled || state.notificationSyncInProgress || state.notificationCleanupInProgress) return;
+    confirm.disabled = true;confirm.textContent = uiText('正在关闭通知…');
+    cancel.focus({ preventScroll: true });
+    try {
+      const result = await runNotificationDifferenceCleanup(items, viewerId, {
+        signal: controller.signal,
+        onProgress(item, status, result) {
+          if (!overlay.isConnected) return;
+          const label = status === 'closed' ? '已关闭' : status === 'localOnly' ? '仅关闭本地记录'
+            : status === 'skipped' ? '已跳过' : '未能关闭';
+          rows.get(item.id).textContent = uiText(label);
+          progress.textContent = notificationCleanupSummary(result, items.length);
+        },
+      });
+      const reason = result.reason === 'rateLimited' ? 'X 请求受限，已停止处理，请稍后重新同步。'
+        : result.reason === 'accountChanged' ? 'X 账号已切换，已停止处理。'
+        : result.reason === 'failed' || result.reason === 'busy' ? '处理未完成，未关闭的用户保持原状态。'
+        : result.reason === 'cancelled' ? '已取消后续处理。' : '处理完成。';
+      const summary = `${notificationCleanupSummary(result, items.length)} · ${uiText(reason)}`;
+      if (overlay.isConnected) { progress.textContent = summary;confirm.hidden = true;cancel.textContent = uiText('关闭'); }
+      else showToast(summary);
+    } catch (error) {
+      debugLog('notification cleanup failed:', error);
+      if (overlay.isConnected) progress.textContent = uiText('处理未完成，未关闭的用户保持原状态。');
+    } finally {
+      if (overlay.isConnected) { confirm.hidden = true;cancel.textContent = uiText('关闭'); }
+    }
+  });
+  notificationDifferenceDialog = { overlay, close };
+  document.addEventListener('keydown', onKeyDown, true);
+  window.addEventListener('pagehide', close);
+  state.rootEl.append(overlay);cancel.focus({ preventScroll: true });
+}
+const SCREENSHOT_MAX_PIXELS = 16 * 1024 * 1024;
+const SCREENSHOT_MAX_DIMENSION = 16384;
+const SCREENSHOT_MAX_ASSET_BYTES = 12 * 1024 * 1024;
+let screenshotInFlight = false;
+let lastScreenshotReport = null;
+function screenshotImageType(bytes, declared) {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) return 'image/jpeg';
+  const head = new TextDecoder().decode(bytes.subarray(0, 2048)).replace(/^\uFEFF/, '').trim();
+  if (/^GIF8[79]a/.test(head)) return 'image/gif';
+  if (/^RIFF[\s\S]{4}WEBP/.test(head)) return 'image/webp';
+  if (/^(?:<\?xml[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(head)) return 'image/svg+xml';
+  return /^image\/(?:avif|bmp|x-icon)$/i.test(declared || '') ? declared : '';
+}
+function screenshotAssetUrl(raw) {
+  if (typeof raw !== 'string' || !raw.trim()) return '';
+  if (/^data:image\//i.test(raw || '')) return raw;
+  try {
+    const url = new URL(raw, location.href);
+    if (url.protocol === 'blob:' && url.origin === location.origin) return url.href;
+    if (url.origin === location.origin && /^https?:$/.test(url.protocol)) return url.href;
+    return safeHttpsUrl(url.href, ['twimg.com']);
+  } catch { return ''; }
+}
+function screenshotScale(width, height) {
+  return Math.min(2, SCREENSHOT_MAX_DIMENSION / width, SCREENSHOT_MAX_DIMENSION / height,
+    Math.sqrt(SCREENSHOT_MAX_PIXELS / (width * height)));
+}
+function screenshotAbortError() {
+  const error = new Error('Screenshot cancelled or timed out');
+  error.name = 'AbortError';
+  return error;
+}
+function screenshotRequestBytes(url, signal) {
+  if (signal.aborted) return Promise.reject(screenshotAbortError());
+  if (typeof GM_xmlhttpRequest !== 'function' || /^blob:/.test(url)) {
+    return screenshotFetchBytes(url, signal);
+  }
+  return new Promise((resolve, reject) => {
+    let request, settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      signal.removeEventListener('abort', abort);
+      callback(value);
+    };
+    const abort = () => {
+      finish(reject, screenshotAbortError());
+      try { request?.abort(); } catch {}
+    };
+    signal.addEventListener('abort', abort, { once: true });
+    try {
+      request = GM_xmlhttpRequest({
+        method: 'GET', url, responseType: 'arraybuffer', timeout: 12000, anonymous: true,
+        onload: async (response) => {
+          if (settled) return;
+          try {
+            if (!(response.status >= 200 && response.status < 300)) throw new Error(`HTTP ${response.status}`);
+            if (response.finalUrl && !screenshotAssetUrl(response.finalUrl)) throw new Error('Unexpected image redirect');
+            const raw = response.response;
+            if (!raw || typeof raw !== 'object') throw new Error('Empty image response');
+            const buffer = typeof raw.arrayBuffer === 'function' ? await raw.arrayBuffer() : raw;
+            const bytes = ArrayBuffer.isView(buffer)
+              ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) : new Uint8Array(buffer);
+            if (!bytes.length || bytes.length > SCREENSHOT_MAX_ASSET_BYTES) throw new Error('Invalid image size');
+            const type = ((response.responseHeaders || '').match(/content-type:\s*([^;\r\n]+)/i) || [])[1] || '';
+            finish(resolve, { bytes, type: type.trim().toLowerCase() });
+          } catch (error) { finish(reject, error); }
+        },
+        onprogress: (event) => {
+          if (event.loaded > SCREENSHOT_MAX_ASSET_BYTES) {
+            finish(reject, new Error('Image exceeds size limit'));
+            try { request?.abort(); } catch {}
+          }
+        },
+        onerror: () => finish(reject, new Error('Image request failed')),
+        ontimeout: () => finish(reject, new Error('Image request timed out')),
+        onabort: () => finish(reject, screenshotAbortError()),
+      });
+      if (signal.aborted) abort();
+    } catch (error) { finish(reject, error); }
+  });
+}
+async function screenshotFetchBytes(url, signal) {
+  const response = await fetch(url, { signal, credentials: 'omit', redirect: 'error' });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (Number(response.headers.get('content-length')) > SCREENSHOT_MAX_ASSET_BYTES) throw new Error('Image exceeds size limit');
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > SCREENSHOT_MAX_ASSET_BYTES) throw new Error('Invalid image size');
+  return { bytes, type: (response.headers.get('content-type') || '').split(';')[0].toLowerCase() };
+}
+function screenshotLoadImage(source, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) { reject(screenshotAbortError()); return; }
+    const image = new Image();
+    const finish = (callback, value) => {
+      image.onload = image.onerror = null;
+      signal.removeEventListener('abort', abort);
+      callback(value);
+    };
+    const abort = () => { image.src = ''; finish(reject, screenshotAbortError()); };
+    image.onload = () => finish(resolve, image);
+    image.onerror = () => finish(reject, new Error('Image decode failed'));
+    signal.addEventListener('abort', abort, { once: true });
+    image.src = source;
+  });
+}
+function screenshotRasterImage(image) {
+  const width = image.naturalWidth || image.videoWidth || image.width;
+  const height = image.naturalHeight || image.videoHeight || image.height;
+  if (!width || !height) throw new Error('Image has no decoded pixels');
+  const scale = Math.min(1, 2048 / Math.max(width, height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  try {
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  } finally { canvas.width = canvas.height = 1; }
+}
+async function screenshotEmbedAsset(raw, context, kind) {
+  const url = screenshotAssetUrl(raw);
+  if (!url) throw new Error('Unsupported image URL');
+  if (context.assets.has(url)) return context.assets.get(url);
+  const task = (async () => {
+    const entry = { kind, host: /^data:/.test(url) ? 'data' : new URL(url).hostname, ok: false };
+    context.report.resources.push(entry);
+    try {
+      let source = url;
+      if (!/^data:image\//.test(url)) {
+        let result;
+        try { result = await screenshotRequestBytes(url, context.signal); }
+        catch (error) {
+          if (context.signal.aborted || typeof GM_xmlhttpRequest !== 'function') throw error;
+          entry.fallback = 'cors-fetch';
+          result = await screenshotFetchBytes(url, context.signal);
+        }
+        const type = screenshotImageType(result.bytes, result.type);
+        if (!type) throw new Error('Response is not a supported image');
+        entry.bytes = result.bytes.length;
+        entry.type = type;
+        context.bytes += result.bytes.length;
+        if (context.bytes > 36 * 1024 * 1024) throw new Error('Screenshot images exceed size limit');
+        const blob = new Blob([result.bytes], { type });
+        source = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Image encoding failed'));
+          reader.readAsDataURL(blob);
+        });
+      }
+      const image = await screenshotLoadImage(source, context.signal);
+      const png = screenshotRasterImage(image);
+      context.encodedBytes += png.length;
+      if (context.encodedBytes > 48 * 1024 * 1024) throw new Error('Encoded screenshot images exceed size limit');
+      entry.ok = true;
+      return png;
+    } catch (error) {
+      entry.error = String(error.message || error).slice(0, 160);
+      context.assets.delete(url);
+      throw error;
+    }
+  })();
+  context.assets.set(url, task);
+  return task;
+}
+function copyScreenshotStyle(source, target, context, pseudo) {
+  const computed = getComputedStyle(source, pseudo || null);
+  for (const property of computed) {
+    const value = computed.getPropertyValue(property);
+    if (property === 'content' || property === 'cursor' || !value) continue;
+    target.style.setProperty(property, value, computed.getPropertyPriority(property));
+    if (!/url\(/i.test(value)) continue;
+    const matches = [...value.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi)];
+    const external = [];
+    let localValue = value;
+    for (const match of matches) {
+      const raw = (match[1] || match[2] || match[3] || '').trim();
+      const reference = screenshotLocalReference(raw);
+      if (reference) {
+        localValue = localValue.replace(match[0], `url("${reference}")`);
+        context.definitions.add(reference.slice(1));
+      } else external.push(match);
+    }
+    target.style.setProperty(property, localValue);
+    if (!external.length) continue;
+    context.jobs.push(async () => {
+      let embedded = localValue;
+      for (const match of external) {
+        const raw = (match[1] || match[2] || match[3] || '').trim();
+        if (!raw || raw.startsWith('#')) continue;
+        const png = await screenshotEmbedAsset(raw, context, 'css');
+        embedded = embedded.replace(match[0], `url("${png}")`);
+      }
+      target.style.setProperty(property, embedded);
+    });
+  }
+  target.style.setProperty('animation', 'none', 'important');
+  target.style.setProperty('transition', 'none', 'important');
+  target.style.setProperty('caret-color', 'transparent', 'important');
+  target.style.setProperty('content-visibility', 'visible', 'important');
+  return computed;
+}
+function screenshotLocalReference(raw) {
+  if (raw.startsWith('#')) return raw;
+  try {
+    const url = new URL(raw, location.href), page = new URL(location.href);
+    if (url.hash && url.origin === page.origin && url.pathname === page.pathname && url.search === page.search) return url.hash;
+  } catch {}
+  return '';
+}
+function screenshotPseudo(source, type, context) {
+  if (!(source instanceof HTMLElement)) return null;
+  const content = getComputedStyle(source, type).content;
+  if (!content || content === 'none' || content === 'normal' || !/^["']/.test(content)) return null;
+  const node = document.createElement('span');
+  node.textContent = content.slice(1, -1).replace(/\\([0-9a-f]{1,6})\s?/gi, (_all, hex) => {
+    const value = parseInt(hex, 16); return value && value <= 0x10ffff ? String.fromCodePoint(value) : '';
+  }).replace(/\\([\s\S])/g, '$1');
+  copyScreenshotStyle(source, node, context, type);
+  return node;
+}
+function cloneScreenshotNode(source, context, inheritSvg = false) {
+  if (source.nodeType === 3) return document.createTextNode(source.nodeValue || '');
+  if (source.nodeType !== 1 || /^(SCRIPT|STYLE|LINK|IFRAME|NOSCRIPT|SOURCE)$/.test(source.tagName)) return null;
+  if (source.matches('.BetterX-download-controls, [data-betterx-screenshot-menu], [role="tooltip"]')) return null;
+  if (++context.nodes > 3000) throw new Error('Post is too complex to capture');
+  const style = getComputedStyle(source);
+  if (style.display === 'none') return null;
+  const tag = source.tagName.toUpperCase();
+  const replaceMedia = tag === 'VIDEO' || tag === 'CANVAS';
+  const clone = replaceMedia ? document.createElement('img') : source.cloneNode(false);
+  for (const attribute of [...clone.attributes]) {
+    if (['href', 'xlink:href'].includes(attribute.name) && clone.namespaceURI === 'http://www.w3.org/2000/svg'
+        && !['USE', 'IMAGE'].includes(tag) && screenshotLocalReference(attribute.value)) {
+      const reference = screenshotLocalReference(attribute.value);
+      clone.setAttribute(attribute.name, reference);
+      context.definitions.add(reference.slice(1));
+      continue;
+    }
+    if (/^on/i.test(attribute.name) || ['src', 'srcset', 'sizes', 'href', 'xlink:href', 'loading', 'autofocus'].includes(attribute.name)) clone.removeAttribute(attribute.name);
+  }
+  copyScreenshotStyle(source, clone, context);
+  if (style.visibility === 'hidden' || Number(style.opacity) === 0) return clone;
+  if (inheritSvg && !source.hasAttribute('class')) {
+    for (const property of ['color', 'fill', 'stroke', 'fill-opacity', 'stroke-opacity', 'stroke-width']) {
+      if (!source.hasAttribute(property) && !source.style.getPropertyValue(property)) clone.style.setProperty(property, 'inherit');
+    }
+  }
+  if (tag === 'IMG' || tag === 'IMAGE' || replaceMedia) {
+    let raw = tag === 'IMG' ? source.currentSrc || source.src
+      : tag === 'IMAGE' ? source.getAttribute('href') || source.getAttribute('xlink:href') : '';
+    let pixels = '';
+    if ((tag === 'IMG' && source.complete) || tag === 'CANVAS' || (tag === 'VIDEO' && source.readyState >= 2)) {
+      try { pixels = screenshotRasterImage(source); } catch {}
+    }
+    if (pixels) {
+      context.encodedBytes += pixels.length;
+      if (context.encodedBytes > 48 * 1024 * 1024) throw new Error('Encoded screenshot images exceed size limit');
+    }
+    if (tag === 'VIDEO' && !pixels) {
+      const thumbnail = [...(source.parentElement?.querySelectorAll('img[src]') || [])]
+        .find(image => getVideoPosterKey(image.currentSrc || image.src));
+      raw = source.poster || thumbnail?.currentSrc || thumbnail?.src || '';
+      context.report.videoPosters++;
+    }
+    clone.removeAttribute('crossorigin');
+    context.jobs.push(async () => {
+      const image = pixels || await screenshotEmbedAsset(raw, context, tag.toLowerCase());
+      if (tag === 'IMAGE') clone.setAttribute('href', image);
+      else clone.setAttribute('src', image);
+    });
+    return clone;
+  }
+  if (tag === 'USE') {
+    const href = source.getAttribute('href') || source.getAttribute('xlink:href') || '';
+    if (href.startsWith('#')) {
+      const referenced = document.getElementById(href.slice(1));
+      if (referenced && !context.references.has(referenced)) {
+        context.references.add(referenced);
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        copyScreenshotStyle(source, group, context);
+        const content = cloneScreenshotNode(referenced, context, true);
+        if (content?.tagName.toUpperCase() === 'SYMBOL') {
+          const inner = document.createElementNS(group.namespaceURI, 'g');
+          inner.style.cssText = content.style.cssText;
+          inner.append(...content.childNodes); group.appendChild(inner);
+        } else if (content) group.appendChild(content);
+        context.references.delete(referenced);
+        return group;
+      }
+    }
+    return null;
+  }
+  const before = screenshotPseudo(source, '::before', context);
+  if (before) clone.appendChild(before);
+  for (const child of source.childNodes) {
+    const cloned = cloneScreenshotNode(child, context, inheritSvg);
+    if (cloned) clone.appendChild(cloned);
+  }
+  const after = screenshotPseudo(source, '::after', context);
+  if (after) clone.appendChild(after);
+  if (source.scrollLeft || source.scrollTop) {
+    for (const child of clone.children) {
+      child.style.transform = `translate(${-source.scrollLeft}px, ${-source.scrollTop}px) ${child.style.transform === 'none' ? '' : child.style.transform}`;
+    }
+  }
+  return clone;
+}
+function screenshotBackground(article) {
+  for (let element = article; element; element = element.parentElement) {
+    const color = getComputedStyle(element).backgroundColor;
+    if (color && color !== 'transparent' && !/^rgba\([^)]*,\s*0\)$/.test(color)) return color;
+  }
+  return getComputedStyle(article).color === 'rgb(231, 233, 234)' ? '#000000' : '#ffffff';
+}
+async function capturePostScreenshot(article, expectedId) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45000);
+  const report = { version: '4.3.0', startedAt: new Date().toISOString(), browser: navigator.userAgent,
+    resources: [], videoPosters: 0, ok: false };
+  lastScreenshotReport = report;
+  const context = { signal: controller.signal, report, assets: new Map(), jobs: [], references: new Set(), definitions: new Set(), nodes: 0, bytes: 0, encodedBytes: 0 };
+  let canvas;
+  try {
+    if (!article?.isConnected || (expectedId && extractStatusIdFromUrl(getStatusLink(article)) !== expectedId)) throw new Error('Post is no longer available');
+    const rect = article.getBoundingClientRect();
+    const width = Math.ceil(rect.width), height = Math.ceil(rect.height);
+    if (!(width > 0 && height > 0)) throw new Error('Post has no visible layout');
+    const author = extractAuthor(article);
+    const background = screenshotBackground(article);
+    const clone = cloneScreenshotNode(article, context);
+    const definitions = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    for (const id of context.definitions) {
+      const definition = document.getElementById(id);
+      if (definition && !article.contains(definition)) {
+        const cloned = cloneScreenshotNode(definition, context);
+        if (cloned) definitions.appendChild(cloned);
+      }
+      if (context.definitions.size > 100) throw new Error('Too many SVG references');
+    }
+    const scale = screenshotScale(width, height);
+    report.width = width; report.height = height; report.scale = scale;
+    if (!clone || scale < 0.1) throw new Error('Post exceeds screenshot limits');
+    Object.assign(clone.style, { position: 'relative', margin: '0', left: '0', top: '0', right: 'auto', bottom: 'auto',
+      width: `${width}px`, height: `${height}px`, boxSizing: 'border-box', transform: 'none', backgroundColor: background });
+    let cursor = 0;
+    const worker = async () => {
+      while (cursor < context.jobs.length) {
+        if (controller.signal.aborted) throw screenshotAbortError();
+        await context.jobs[cursor++]();
+      }
+    };
+    const outcomes = await Promise.allSettled(Array.from({ length: Math.min(4, context.jobs.length) }, worker));
+    const failure = outcomes.find((result) => result.status === 'rejected');
+    if (failure) throw failure.reason;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', width); svg.setAttribute('height', height);
+    svg.appendChild(definitions);
+    const foreign = document.createElementNS(svg.namespaceURI, 'foreignObject');
+    foreign.setAttribute('width', '100%'); foreign.setAttribute('height', '100%');
+    foreign.appendChild(clone); svg.appendChild(foreign);
+    const xml = new XMLSerializer().serializeToString(svg);
+    const image = await screenshotLoadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(xml)}`, controller.signal);
+    canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.floor(width * scale)); canvas.height = Math.max(1, Math.floor(height * scale));
+    const drawing = canvas.getContext('2d');
+    drawing.fillStyle = background; drawing.fillRect(0, 0, canvas.width, canvas.height);
+    drawing.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('PNG encoding failed')), 'image/png'));
+    report.ok = true; report.outputBytes = blob.size;
+    const name = String(author.username || 'x').replace(/[^a-z0-9_-]/gi, '').slice(0, 40) || 'x';
+    const id = expectedId || extractStatusIdFromUrl(getStatusLink(article)) || Date.now();
+    return { blob, filename: `BetterX_${name}_${id}.png`, report };
+  } catch (error) {
+    report.error = String(error.message || error).slice(0, 200);
+    controller.abort();
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    if (canvas) canvas.width = canvas.height = 1;
+    context.assets.clear(); context.jobs.length = 0;
+  }
+}
+function exportScreenshotDiagnostic() {
+  if (!lastScreenshotReport) return;
+  saveBlob(new Blob([JSON.stringify(lastScreenshotReport, null, 2)], { type: 'application/json' }), 'BetterX_screenshot_diagnostic.json');
+}
+async function runPostScreenshot(article, statusId) {
+  if (screenshotInFlight) { showToast('正在生成另一张截图，请稍候'); return; }
+  screenshotInFlight = true;
+  showToast('正在生成帖子截图…', 0);
+  try {
+    const result = await capturePostScreenshot(article, statusId);
+    saveBlob(result.blob, result.filename);
+    showToast('帖子截图已保存');
+    return result;
+  } catch (error) {
+    console.error('[BetterX] screenshot failed:', lastScreenshotReport);
+    showToast('帖子截图失败，请重试');
+    showBetterXDialog({ title: '无法生成完整截图',
+      bodyHtml: `<p>${escapeHtml(uiText('部分图片未能读取或渲染失败。请重试；仍有问题时可导出诊断信息。'))}</p>`,
+      primaryText: '重试', secondaryText: '关闭', tertiaryText: '导出截图诊断',
+      onPrimary: () => runPostScreenshot(article, statusId), onTertiary: exportScreenshotDiagnostic });
+  } finally { screenshotInFlight = false; }
+}
+let screenshotMenuCleanup = null;
+let screenshotMenuInstalled = false;
+let screenshotClosingMenu = false;
+const SCREENSHOT_MENU_SELECTOR = '[role="menu"], [data-testid="sheetDialog"]';
+function visibleScreenshotMenus() {
+  return [...document.querySelectorAll(SCREENSHOT_MENU_SELECTOR)].filter(menu => {
+    if (menu.closest('#BetterX-root, [hidden], [aria-hidden="true"]')) return false;
+    const rect = menu.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && getComputedStyle(menu).visibility !== 'hidden';
+  });
+}
+function findScreenshotMenuTrigger(target) {
+  const element = target?.nodeType === 1 ? target : target?.parentElement;
+  if (!element || element.closest('#BetterX-root')) return null;
+  const button = element.closest('[data-testid="caret"], button[aria-haspopup="menu"]');
+  if (!button || !button.closest('article')) return null;
+  if (button.matches('[data-testid="caret"]')) return button;
+  const label = (button.getAttribute('aria-label') || '').trim().toLowerCase();
+  const use = button.querySelector('svg use');
+  return ['more', '更多', '詳細', '详细'].includes(label)
+    || (use?.getAttribute('href') || use?.getAttribute('xlink:href')) === '#icon-more' ? button : null;
+}
+function scheduleScreenshotMenu(trigger, previousMenus) {
+  screenshotMenuCleanup?.();
+  const article = trigger.closest('article');
+  const statusId = extractStatusIdFromUrl(getStatusLink(article));
+  if (!statusId || isDownloadExcludedArticle(article)) return;
+  const priorMenus = previousMenus || new Set(visibleScreenshotMenus());
+  let menu = null, item = null, timer = null, stopped = false;
+  const retries = [];
+  const observer = new MutationObserver(() => inject());
+  const cleanup = () => {
+    if (stopped) return;
+    stopped = true;
+    observer.disconnect();
+    clearTimeout(timer);
+    retries.forEach(clearTimeout);
+    retries.length = 0;
+    if (screenshotMenuCleanup === cleanup) screenshotMenuCleanup = null;
+  };
+  const inject = () => {
+    if (stopped || !trigger.isConnected) { cleanup(); return; }
+    if (menu && !menu.isConnected) { cleanup(); return; }
+    if (!menu) {
+      const triggerRect = trigger.getBoundingClientRect();
+      const candidates = visibleScreenshotMenus().filter(candidate => !priorMenus.has(candidate)
+        || candidate.id === trigger.getAttribute('aria-controls'));
+      candidates.sort((a, b) => {
+        const distance = candidate => { const rect = candidate.getBoundingClientRect(); return Math.hypot(rect.left - triggerRect.left, rect.top - triggerRect.top); };
+        return distance(a) - distance(b);
+      });
+      menu = candidates[0] || null;
+      if (!menu) return;
+      observer.disconnect();
+      observer.observe(menu, { childList: true, subtree: true, attributes: true,
+        attributeFilter: ['class', 'style', 'hidden', 'aria-hidden'] });
+    }
+    if (item?.isConnected) return;
+    const nativeItem = menu.querySelector('[role="menuitem"]:not([data-betterx-screenshot-menu])');
+    if (!nativeItem) return;
+    menu.querySelectorAll('[data-betterx-screenshot-menu]').forEach(element => element.remove());
+    item = document.createElement('div');
+    item.setAttribute('role', 'menuitem'); item.tabIndex = 0;
+    item.setAttribute('data-betterx-screenshot-menu', '');
+    item.className = 'BetterX-screenshot-menu-item';
+    item.style.color = getComputedStyle(nativeItem).color;
+    item.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l2 2h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-2Zm3 4a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg><span></span>`;
+    item.querySelector('span').textContent = uiText('保存帖子截图');
+    const activate = (event) => {
+      event.preventDefault(); event.stopPropagation();
+      cleanup();
+      screenshotClosingMenu = true;
+      try { trigger.click(); } finally { screenshotClosingMenu = false; }
+      runPostScreenshot(article, statusId);
+    };
+    item.addEventListener('click', activate);
+    item.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') activate(event);
+    });
+    nativeItem.parentElement.insertBefore(item, nativeItem);
+    retries.forEach(clearTimeout);
+    retries.length = 0;
+  };
+  screenshotMenuCleanup = cleanup;
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true,
+    attributeFilter: ['class', 'style', 'hidden', 'aria-hidden', 'role', 'data-testid'] });
+  timer = setTimeout(cleanup, 5000);
+  for (const delay of [60, 180, 420, 900]) retries.push(setTimeout(inject, delay));
+  queueMicrotask(inject);
+}
+function installPostScreenshotMenu() {
+  if (screenshotMenuInstalled) return;
+  screenshotMenuInstalled = true;
+  let press = null;
+  const open = event => {
+    if (screenshotClosingMenu || (event.type === 'keydown' && (!['Enter', ' '].includes(event.key) || event.repeat))) return;
+    if (event.type === 'pointerdown' && (event.button !== 0 || event.isPrimary === false)) return;
+    const trigger = findScreenshotMenuTrigger(event.target);
+    if (!trigger) return;
+    if (event.type === 'click' && press?.trigger === trigger && Date.now() - press.at < 2000 && screenshotMenuCleanup) {
+      press = null;
+      return;
+    }
+    const previous = new Set(visibleScreenshotMenus());
+    if (event.type !== 'click') press = { trigger, at: Date.now(), id: event.pointerId,
+      down: event.type === 'pointerdown', x: event.clientX, y: event.clientY };
+    scheduleScreenshotMenu(trigger, previous);
+  };
+  document.addEventListener('pointerdown', open, true);
+  document.addEventListener('pointermove', event => {
+    if (!press?.down || press.id !== event.pointerId) return;
+    if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) {
+      screenshotMenuCleanup?.(); press = null;
+    }
+  }, true);
+  document.addEventListener('pointerup', event => { if (press?.id === event.pointerId) press.down = false; }, true);
+  document.addEventListener('pointercancel', event => {
+    if (press?.id === event.pointerId) { screenshotMenuCleanup?.(); press = null; }
+  }, true);
+  document.addEventListener('click', open, true);
+  document.addEventListener('keydown', open, true);
+  window.addEventListener('pagehide', () => { screenshotMenuCleanup?.(); press = null; });
 }
 function getArticlesFromScope(scope) {
   const root = (scope && scope.querySelectorAll) ? scope : document;
@@ -5122,7 +6444,7 @@ function switchFirefoxCompatibilityFromMenu(enabled) {
 function buildFirefoxCompatibilityDiagnostic() {
   const diagnostic = {
     generatedAt: new Date().toISOString(),
-    scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '4.1.0',
+    scriptVersion: (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '4.3.0',
     userscriptManager: USERSCRIPT_MANAGER || 'unknown',
     userAgent: navigator.userAgent || '',
     page: `${location.origin || ''}${location.pathname || ''}`,
@@ -5565,6 +6887,101 @@ function applyLayoutEnhancements() {
   });
   if (style.textContent !== css) style.textContent = css;
   applyLayoutDomCleanup();
+}
+const DISMISS_WIDGET_RULES = [
+  { key: 'hideWhatsHappening', className: 'BetterX-whatsnew-hidden', rootClass: 'BetterX-hide-whatsnew',
+    selector: 'section[role="region"]', resolve: getWhatsHappeningContainer, bindings: new WeakMap() },
+  { key: 'hideWhoToFollow', className: 'BetterX-who-to-follow-hidden', rootClass: 'BetterX-hide-who-to-follow',
+    selector: 'aside[role="complementary"]', resolve: getWhoToFollowContainer, bindings: new WeakMap() },
+  { key: 'hideMoney', className: 'BetterX-money-hidden', rootClass: 'BetterX-hide-money',
+    selector: 'a[href*="/i/money"]', resolve: getMoneyEntry, bindings: new WeakMap() },
+];
+const DISMISS_WIDGET_MUTATION_SCOPE = DISMISS_WIDGET_RULES
+  .flatMap(rule => [rule.selector, `.${rule.className}`]).join(', ');
+const DISMISS_WIDGET_MARKED_SELECTOR = DISMISS_WIDGET_RULES.map(rule => `.${rule.className}`).join(', ');
+function dismissWidgetsActive() {
+  return DISMISS_WIDGET_RULES.some(rule => state.settings[rule.key]);
+}
+function isOutsidePostContent(element) {
+  return !element.closest('article, [data-testid="tweet"], #BetterX-root, [data-testid="primaryColumn"]');
+}
+function getExclusiveWidgetContainer(marker) {
+  let container = marker;
+  for (let depth = 0; depth < 2; depth++) {
+    const parent = container.parentElement;
+    if (!parent?.matches('div') || parent.children.length !== 1
+        || parent.matches('[role], [data-testid="sidebarColumn"], [data-testid="primaryColumn"], [data-testid="cellInnerDiv"]')
+        || [...parent.childNodes].some(node => node.nodeType === 3 && node.textContent.trim())) break;
+    container = parent;
+  }
+  return container;
+}
+function getWhatsHappeningContainer(region) {
+  if (!region.matches('section[role="region"]') || !isOutsidePostContent(region)) return null;
+  if (region.querySelector('article, [data-testid="tweet"]') || !region.querySelector('[data-testid="trend"]')
+      || !region.querySelector('a[href="/explore/tabs/for-you"], a[href^="/explore/tabs/for-you?"]')) return null;
+  return getExclusiveWidgetContainer(region);
+}
+function getWhoToFollowContainer(aside) {
+  if (!aside.matches('aside[role="complementary"]') || !isOutsidePostContent(aside)) return null;
+  if (aside.querySelector('article, [data-testid="tweet"]') || !aside.querySelector('[data-testid="UserCell"]')
+      || !aside.querySelector('a[href="/i/connect_people"], a[href^="/i/connect_people?"]')) return null;
+  return getExclusiveWidgetContainer(aside);
+}
+function getMoneyEntry(link) {
+  if (!link.matches('a[href]') || !isOutsidePostContent(link)) return null;
+  try {
+    const url = new URL(link.getAttribute('href'), location.origin);
+    const sameSite = url.origin === location.origin
+      || (url.protocol === 'https:' && ['x.com', 'm.x.com', 'twitter.com', 'www.x.com', 'www.twitter.com'].includes(url.hostname));
+    return sameSite && url.pathname.replace(/\/+$/, '') === '/i/money' ? link : null;
+  } catch { return null; }
+}
+function collectDismissMatches(scope, selector) {
+  const matches = new Set(scope.querySelectorAll(selector));
+  if (scope.matches?.(selector)) matches.add(scope);
+  const ancestor = scope.closest?.(selector);
+  if (ancestor) matches.add(ancestor);
+  return matches;
+}
+function sweepDismissWidgets(root = document) {
+  const scope = root?.querySelectorAll ? root : document;
+  if (scope.closest?.('article, [data-testid="tweet"], #BetterX-root, [data-testid="primaryColumn"]')) {
+    for (const element of collectDismissMatches(scope, DISMISS_WIDGET_MARKED_SELECTOR)) {
+      for (const rule of DISMISS_WIDGET_RULES) {
+        if (element.classList.contains(rule.className)) {
+          element.classList.remove(rule.className);
+          rule.bindings.delete(element);
+        }
+      }
+    }
+    return;
+  }
+  for (const rule of DISMISS_WIDGET_RULES) {
+    if (!state.settings[rule.key]) continue;
+    for (const container of collectDismissMatches(scope, `.${rule.className}`)) {
+      const marker = rule.bindings.get(container);
+      if (marker?.isConnected && container.contains(marker) && rule.resolve(marker) === container) continue;
+      container.classList.remove(rule.className);
+      rule.bindings.delete(container);
+    }
+    for (const marker of collectDismissMatches(scope, rule.selector)) {
+      const container = rule.resolve(marker);
+      if (!container) continue;
+      rule.bindings.set(container, marker);
+      if (!container.classList.contains(rule.className)) container.classList.add(rule.className);
+    }
+  }
+}
+function applyDismissWidgetHiding() {
+  for (const rule of DISMISS_WIDGET_RULES) {
+    document.documentElement.classList.toggle(rule.rootClass, !!state.settings[rule.key]);
+    if (!state.settings[rule.key]) {
+      document.querySelectorAll(`.${rule.className}`).forEach(element => element.classList.remove(rule.className));
+      rule.bindings = new WeakMap();
+    }
+  }
+  if (dismissWidgetsActive()) sweepDismissWidgets();
 }
 const ADULT_SPAM_STRONG_TERMS = [ '抽插', '淫叫', '母狗', '肉便器', '母猪', '反差婊', '小穴', '穴穴', '性奴', '蜜穴', '爆菊', '性交', '爆操', '福利姬', '里番', '裸照', '裸体', '阴茎', '做愛','嫩穴', '做爱', '自慰', '精液', '打飞机', '果照', '约炮', '裸聊','美鲍', '援交', '包夜', '成人视频', '成人影片', '黄片', '黄网', '色情网站', '看片网站', 'porn', 'nudes', 'onlyfans leak','网黄', 'sex video', 'sex videos', 'wataa', 'Wataa', '私处', '尤物', '人妻', '口交', '内射', '阴道', '淫趴', '屁眼', '迷奸', '小烧货', '骚货', 'sao货', '破处', '陪睡', '后入', '肛交', '催情','约啪','跳蛋','Chudai','chudai', '露B','潮喷','龟头','射精','肉棒','鸡巴','被操','榨精','撸管','深喉', '足交','乳交','烧姬','淫窝','车震', '约p','阴唇','秒射','飞机杯','屁穴','性爱','鸡鸡','磨豆腐','双头龙','没她骚','爱几把', ]; const ADULT_SPAM_WEAK_TERMS = [ 'ts', 'TS', 'ntr', 'NTR', '91', '69', '3p', '4i', 'p眼', 'G点', '皮炎', '子宫', '手冲', '外围', '无套', '全套服务', '发情', '性欲', '晨勃', '糖心', '麻豆', '50度灰', '字母圈', '戴套', '偷拍', '艹', '幹', '同城可约', '附近可约', '私密视频', '大尺度视频', '成人直播', '上门约', '约爱', '福不黑', '我的福', '顶不住', '瓜', '线下', '同城', '妈妈', '儿子', '一夜', '进入身', 'sao', '全国牵', 't.cn', '👆', '👉', '联系', '主页', '快手', '抖音', '免费', '我好看', '寻', ]; const ADULT_SPAM_SENSITIVE_TERMS = [ '一发入魂', '调教', '高潮', '翘臀', '奶子', '反差', '巨乳', '嫩妹', '尿尿', '痴女', '黑丝', '白丝', '玉足', '喷了', '涩涩', '私房', '纯欲', '蜜桃臀', '可瑟瑟', '固炮', '炮友', '找主人', '大一学生', '白虎', '烧鸡', '好色', '色色', '熟女', '少妇', '嫩模', '学生妹', '商k', '白给', '处男', '野战', '射出来','魅魔','性瘾','打桩','喷出来','射出来','戴套','福照','无码','蛋蛋', '有码','情趣','丝袜','刺激','娇喘','罩杯','早泄','失禁','毛毛','绝顶', '肉欲','黑森林','制服','赤裸','粉嫩','水多','喷水','呻吟','吸吮','成人', ]; const ADULT_SPAM_BOT_BAIT_TERMS = [ '陪我聊聊天', '有没有单男', '有没有单女', '我是真人', '互关', '互粉', '互fo', '体制内老师', '体制内护士', '体制内医生', '在线等哥哥', '在线等弟弟', ]; const ADULT_SPAM_SUGGESTIVE_TERMS = [ '福利视频', '萝莉资源', '少女资源', '嫩模资源', '看片入口', '成人视频资源', '可瑟瑟', '推特第一骚', ]; const ADULT_SPAM_MARKETING_TERMS = [ '免费领取', '点击领取', '立即加入', '频道入口', '群组入口', '资源合集', '试看', '解锁', '置顶获取', '主页获取', '进群', '电报群', ]; const ADULT_SPAM_CONTACT_TERMS = [ '私信', '私聊', '联系我', '加我', '主页', '简介', '置顶', 'telegram', 'whatsapp', '电报', '飞机群', 'tg群', '订阅' ]; const ADULT_SPAM_CONTEXT_EXEMPTIONS = [ '黄推机器人', '举报黄推', '屏蔽黄推', '黄推太多', '垃圾黄推', '清理黄推', '色情诈骗', '反诈', '曝光骗子', ]; const ADULT_SPAM_NAME_RE = /(?:福利姬|约炮|裸聊|看片|成人视频|黄网|反差婊|巨乳|痴女|(?:^|[^a-z0-9])(?:porn|nudes|onlyfans|sex(?:y|cam)?|xxx)(?![a-z0-9]))/i; const ADULT_SPAM_EXACT_AMBIGUOUS_RE = /^(?:骚|逼|肏|doi|spa|全套|处女|chu男|cchu男|c男)$/i; const ADULT_SPAM_AMBIGUOUS_RES = [ /(?<!离)骚(?!操作|扰|包|话|客|气)/, /(?<!牛|装|傻|苦|逗|懵|被)逼(?!迫|真|近|问|债|婚|供|退)/, /处女(?!作|航|座|秀)/, ]; const ADULT_SPAM_BOT_HANDLE_RES = [ /^[a-z]{4,10}\d{5,12}$/i, /^[a-z]+_[a-z]+\d{4,}$/i, /^[A-Z][a-z]+[A-Z][a-z]+\d{2,}$/, /^(?=[a-z]*[bcdfghjklmnpqrstvwxyz]{4})[a-z]+\d+$/i, ]; const ADULT_SPAM_TEMPLATE_RES = [ /快领我回家|扣1白给|推特第一骚|我约过她|姐姐在等你|视频要吗|满足我|可瑟瑟/, /懂[得的].{0,3}(?:来|私|入|dd|联系|撩|进|加)/i, /(?:找|来|想要).{0,5}(?:哥哥|主人).{0,5}(?:调教|私聊|联系|带走)/, /(?:在线等|蹲一个|急需一位).{0,6}(?:哥哥|弟弟|单男|主人)/, /(?:主页|简介).{0,5}(?:打飞|打飞机|打✈️?|有资源|有福利|可约)|(?:打飞|打飞机|打✈️?).{0,5}(?:主页|简介)/, /(?:刷了半天|就她|点开|快看).{0,5}(?:主页|简介)/, /(?:👉|⬆|↑|✈️?).{0,4}@[a-z0-9_]+|@[a-z0-9_]+.{0,4}(?:👉|⬆|↑|✈️?)/i, /(?:包夜|上门|外围|服务|按摩).{0,5}(?:全套|spa)|(?:全套|spa).{0,5}(?:包夜|上门|外围|服务)/i, /(?:酒店|约|想|一起).{0,5}doi|doi.{0,5}(?:酒店|约|一起)/i, /(?:c\s*\/?\s*chu男|chu男|c男)/i, ]; const ADULT_SPAM_COMBO_RES = [ /(?:同城|附近).{0,5}(?:可约|约炮|上门)/, /(?:私信|私聊|联系|加我).{0,8}(?:约炮|裸聊|看片|黄网|成人视频)/, /(?:约炮|裸聊|看片|黄网|成人视频).{0,8}(?:私信|私聊|联系|加我|主页|电报)/, /(?:萝莉|少女|嫩模|空姐|学生妹|少妇).{0,6}(?:资源|上门|可约|视频|福利)/, /(?:免费|最新|海量).{0,6}(?:成人视频|黄片|色情视频|看片资源)/, /(?:成人视频|黄片|色情视频).{0,5}(?:资源|入口|合集|频道|群)/, ]; const ADULT_SPAM_REPOST_CONTEXT_RE = /(?:已转帖|已轉帖|转帖|轉帖|转发|轉發|reposted|retweeted|リポスト|재게시|리트윗)/i;
 function normalizeAdultSpamText(value) {
@@ -6081,6 +7498,7 @@ function expandPostShowMore(scope) {
 }
 function scanArticles(root) {
   const scope = root && root.querySelectorAll ? root : document;
+  if (scope === document) refreshAuthorLinks();
   if (state.settings.hideAds) sweepStandaloneAds(scope);
   getArticlesFromScope(scope).forEach(captureArticle);
   if (state.settings.mediaDownload) injectDownloadButtons(scope);
@@ -6559,10 +7977,16 @@ function formatNotificationSyncTime(timestamp) {
 }
 function renderNotificationSubscriptions(force = false) {
   if (!state.notificationListEl || state.panelView !== 'notifications' || (!state.panelOpen && !force)) return;
+  const accountToken = ensureNotificationAccount();
   const syncButton = state.panelEl && state.panelEl.querySelector('[data-action="sync-notification-users"]');
   if (syncButton) {
-    syncButton.disabled = state.notificationSyncInProgress;
+    syncButton.disabled = !accountToken.viewerId || state.notificationSyncInProgress || state.notificationCleanupInProgress;
     syncButton.textContent = uiText(state.notificationSyncInProgress ? '正在同步…' : '同步订阅用户');
+  }
+  if (!accountToken.viewerId) {
+    if (state.notificationStatusEl) state.notificationStatusEl.textContent = uiText('登录 X 后可查看当前账号的通知订阅。');
+    state.notificationListEl.textContent = uiText('登录 X 后可查看当前账号的通知订阅。');
+    return;
   }
   const allItems = [...notificationSubscriptions.values()]
     .sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true)
@@ -6576,10 +8000,13 @@ function renderNotificationSubscriptions(force = false) {
     const filterSummary = query ? ` · 筛选到 ${items.length}/${allItems.length}` : '';
     state.notificationStatusEl.textContent = uiText(state.notificationSyncInProgress
       ? `正在读取关注列表… 已发现 ${enabledCount} 个订阅${filterSummary}`
-      : `已订阅 ${enabledCount} · 已置顶 ${pinnedCount} · 本地保留 ${allItems.length}${filterSummary} · ${formatNotificationSyncTime(state.settings.notificationSubscriptionsSyncedAt)}`);
+      : `当前 X 账号 · 已订阅 ${enabledCount} · 已置顶 ${pinnedCount} · 本地保留 ${allItems.length}（已关闭记录 ${allItems.length - enabledCount}）${filterSummary} · ${formatNotificationSyncTime(state.notificationSyncedAt)}`);
   }
   if (!allItems.length) {
-    state.notificationListEl.innerHTML = uiHtml`<div class="BetterX-empty">还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。</div>`;
+    const legacy = state.settings.notificationSubscriptions?.length && !state.settings.notificationAccounts?.[accountToken.viewerId];
+    state.notificationListEl.innerHTML = `<div class="BetterX-empty">${escapeHtml(uiText(legacy
+      ? '旧版通知记录未记录所属账号，已保留。请同步当前账号重新建立名单。'
+      : '还没有读取到帖子通知订阅。点击“同步订阅用户”，或浏览已开启铃铛的用户主页后再查看。'))}</div>`;
     return;
   }
   if (!items.length) {
@@ -6589,12 +8016,12 @@ function renderNotificationSubscriptions(force = false) {
   state.notificationListEl.innerHTML = items.map((item) => {
     const avatar = safeImportedAssetUrl(item.avatarUrl);
     const profileUrl = `https://x.com/${encodeURIComponent(item.username)}`;
-    const pending = state.notificationMutationUsers.has(item.username.toLowerCase());
+    const pending = state.notificationMutationUsers.has(item.id) || state.notificationCleanupInProgress;
     const pinned = item.pinned === true;
     const pinMark = pinned
       ? uiHtml`<span class="BetterX-notification-pin-mark" title="已置顶" aria-label="已置顶"> 📌</span>` : '';
     const forgetButton = item.enabled ? ''
-      : uiHtml`<button class="BetterX-btn" data-action="forget-notification-user" data-username="${escapeHtml(item.username)}">移除记录</button>`;
+      : uiHtml`<button class="BetterX-btn" data-action="forget-notification-user" data-notification-viewer="${accountToken.viewerId}" data-notification-id="${item.id}" data-username="${escapeHtml(item.username)}">移除记录</button>`;
     return uiHtml`
         <div class="BetterX-notification-user ${item.enabled ? '' : 'is-disabled'} ${pinned ? 'is-pinned' : ''}">
           <a class="BetterX-notification-user-main" href="${escapeHtml(profileUrl)}" target="_blank" rel="noopener noreferrer">
@@ -6602,8 +8029,8 @@ function renderNotificationSubscriptions(force = false) {
             <span><b>${escapeHtml(item.displayName || item.username)}${pinMark}</b><small>@${escapeHtml(item.username)}</small></span>
           </a>
           <div class="BetterX-notification-user-actions">
-            <button class="BetterX-btn ${item.enabled ? 'danger' : 'primary'}" data-action="toggle-notification-user" data-username="${escapeHtml(item.username)}" data-enabled="${item.enabled ? 'false' : 'true'}" ${pending ? 'disabled' : ''}>${uiText(pending ? '处理中…' : (item.enabled ? '关闭通知' : '重新开启'))}</button>
-            <button class="BetterX-btn ${pinned ? 'notification-pinned' : ''}" data-action="toggle-notification-pin" data-username="${escapeHtml(item.username)}">${uiText(pinned ? '取消置顶' : '置顶')}</button>
+            <button class="BetterX-btn ${item.enabled ? 'danger' : 'primary'}" data-action="toggle-notification-user" data-notification-viewer="${accountToken.viewerId}" data-notification-id="${item.id}" data-username="${escapeHtml(item.username)}" data-enabled="${item.enabled ? 'false' : 'true'}" ${pending ? 'disabled' : ''}>${uiText(pending ? '处理中…' : (item.enabled ? '关闭通知' : '重新开启'))}</button>
+            <button class="BetterX-btn ${pinned ? 'notification-pinned' : ''}" data-action="toggle-notification-pin" data-notification-viewer="${accountToken.viewerId}" data-notification-id="${item.id}" data-username="${escapeHtml(item.username)}">${uiText(pinned ? '取消置顶' : '置顶')}</button>
             ${forgetButton}
           </div>
         </div>`;
@@ -6737,6 +8164,7 @@ function savePostExport(posts, metadata, baseName) {
   });
 }
 function backupAll() {
+  flushAllNotificationAccounts();
   const portableSettings = { ...state.settings };
   delete portableSettings.firefoxCompatibility;
   delete portableSettings.firefoxCompatibilityPrompted;
@@ -7315,7 +8743,7 @@ function dispatchSettingRemoveAction(action, actionEl) {
   });
   return true;
 }
-const PANEL_ACTION_HANDLERS = Object.freeze({ 'set-panel-view': ({ el }) => setPanelView(el.getAttribute('data-view')), 'sync-notification-users': () => syncNotificationSubscriptions(), 'search-notification-users': () => applyNotificationSearch(), 'toggle-notification-pin': ({ el }) => toggleNotificationSubscriptionPinned(el.getAttribute('data-username') || ''), 'toggle-notification-user': ({ el }) => updateNotificationSubscription( el.getAttribute('data-username') || '', el.getAttribute('data-enabled') === 'true' ), 'forget-notification-user': ({ el }) => removeRememberedNotificationSubscription(el.getAttribute('data-username') || ''), 'menu-toggle': () => { if (state.menuEl) state.menuEl.hidden = !state.menuEl.hidden; }, close: () => togglePanel(false), refresh: () => { scanArticles(document); refreshUI(); }, 'switch-language': () => showLanguageDialog(), export: () => exportPosts(), backup: () => backupAll(), import: () => state.importInputEl.click(), 'clear-non-fav': () => clearNonFavoritePosts(), 'set-filter': ({ el }) => setSettingsPartial({ filter: el.getAttribute('data-filter') }), 'toggle-skip': ({ el }) => { const key = el.getAttribute('data-skip'); const current = state.settings.skipSources || []; setSettingsPartial({ skipSources: current.includes(key) ? current.filter((item) => item !== key) : [...current, key] }); }, 'save-keywords': () => { if (!commitKeywordInput().rejected) showToast('✅ 已保存关键词'); }, 'save-exclude': () => { if (!commitExcludeKeywordInput().rejected) showToast('✅ 已保存排除词'); }, 'save-adultspam-keywords': () => { commitAdultSpamKeywordInput(); showToast('✓ 已保存自定义屏蔽词'); }, 'save-adultspam-whitelist': () => { commitAdultSpamWhitelistInput(); showToast('✓ 已保存账号白名单'); }, 'load-more': () => { state.renderLimit = (state.renderLimit || state.settings.pageSize || 60) + (state.settings.pageSize || 60); refreshUI({ keepScroll: true }); }, 'toggle-expand': ({ id }) => { if (state.expandedPosts.has(id)) state.expandedPosts.delete(id); else state.expandedPosts.add(id); refreshUI({ keepScroll: true }); }, 'save-note': ({ id }) => { const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`); updatePostNote(id, input ? input.value.trim() : ''); }, 'cancel-note': () => { state.noteDrafts.delete(state.editingNoteId); state.editingNoteId = null; refreshUI({ keepScroll: true }); }, open: ({ id }) => openRecordedPost(getPostById(id)), pin: ({ id }) => togglePin(id), fav: ({ id }) => toggleFavorite(id), delete: ({ id }) => deletePost(id), 'mark-all-read': () => { const unreadPosts = filterPosts(state.posts).filter((post) => !post.clicked); if (!unreadPosts.length) { uiAlert('当前列表没有未读的帖子喂～'); return; } if (!uiConfirm('确定要把当前列表的 ' + unreadPosts.length + ' 条未读帖子全部标为已读吗？')) return; markPostsRead(unreadPosts.map((post) => post.id)); showToast('✅ 已将当前列表全部标为已读'); }, 'preview-image': ({ el }) => { const rawUrl = el.getAttribute('data-image-url') || ''; const postId = el.getAttribute('data-post-id') || ''; const post = postId ? getPostById(postId) : null; const imageUrls = post ? uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4) : [rawUrl]; const imageIndex = parseInt(el.getAttribute('data-image-index') || '0', 10); showImagePreview(rawUrl, imageUrls, imageIndex); }, 'save-layout': () => { const timelineWidth = readIntegerSetting(state.timelineWidthEl, 'timelineWidth'); const leftbarWidth = readIntegerSetting(state.leftbarWidthEl, 'leftbarWidth'); setSettingsPartial({ layoutAutoWidth: false, timelineWidth, leftbarWidth }); showToast('✓ 已切换为手动宽度并应用'); }, 'edit-note': ({ id }) => { state.editingNoteId = id; refreshUI({ keepScroll: true }); setTimeout(() => { const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`); if (input) { input.focus(); input.selectionStart = input.value.length; } }, 20); }, copy: ({ el, id }) => { const post = getPostById(id); if (!post || !post.url) return; const manualCopy = () => window.prompt(uiText('复制链接：'), post.url); try { (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(post.url).then(() => { el.textContent = uiText('已复制'); setTimeout(() => { el.textContent = uiText('复制链接'); }, 1200); }).catch(manualCopy) : manualCopy(); } catch (err) { manualCopy(); } }, });
+const PANEL_ACTION_HANDLERS = Object.freeze({ 'set-panel-view': ({ el }) => setPanelView(el.getAttribute('data-view')), 'sync-notification-users': () => syncNotificationSubscriptions(), 'search-notification-users': () => applyNotificationSearch(), 'toggle-notification-pin': ({ el }) => notificationActionMatchesAccount(el) && toggleNotificationSubscriptionPinned(el.getAttribute('data-username') || ''), 'toggle-notification-user': ({ el }) => notificationActionMatchesAccount(el) && updateNotificationSubscription( el.getAttribute('data-username') || '', el.getAttribute('data-enabled') === 'true' ), 'forget-notification-user': ({ el }) => notificationActionMatchesAccount(el) && removeRememberedNotificationSubscription(el.getAttribute('data-username') || ''), 'menu-toggle': () => { if (state.menuEl) state.menuEl.hidden = !state.menuEl.hidden; }, close: () => togglePanel(false), refresh: () => { scanArticles(document); refreshUI(); }, 'switch-language': () => showLanguageDialog(), export: () => exportPosts(), backup: () => backupAll(), import: () => state.importInputEl.click(), 'clear-non-fav': () => clearNonFavoritePosts(), 'set-filter': ({ el }) => setSettingsPartial({ filter: el.getAttribute('data-filter') }), 'toggle-skip': ({ el }) => { const key = el.getAttribute('data-skip'); const current = state.settings.skipSources || []; setSettingsPartial({ skipSources: current.includes(key) ? current.filter((item) => item !== key) : [...current, key] }); }, 'save-keywords': () => { if (!commitKeywordInput().rejected) showToast('✅ 已保存关键词'); }, 'save-exclude': () => { if (!commitExcludeKeywordInput().rejected) showToast('✅ 已保存排除词'); }, 'save-adultspam-keywords': () => { commitAdultSpamKeywordInput(); showToast('✓ 已保存自定义屏蔽词'); }, 'save-adultspam-whitelist': () => { commitAdultSpamWhitelistInput(); showToast('✓ 已保存账号白名单'); }, 'load-more': () => { state.renderLimit = (state.renderLimit || state.settings.pageSize || 60) + (state.settings.pageSize || 60); refreshUI({ keepScroll: true }); }, 'toggle-expand': ({ id }) => { if (state.expandedPosts.has(id)) state.expandedPosts.delete(id); else state.expandedPosts.add(id); refreshUI({ keepScroll: true }); }, 'save-note': ({ id }) => { const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`); updatePostNote(id, input ? input.value.trim() : ''); }, 'cancel-note': () => { state.noteDrafts.delete(state.editingNoteId); state.editingNoteId = null; refreshUI({ keepScroll: true }); }, open: ({ id }) => openRecordedPost(getPostById(id)), pin: ({ id }) => togglePin(id), fav: ({ id }) => toggleFavorite(id), delete: ({ id }) => deletePost(id), 'mark-all-read': () => { const unreadPosts = filterPosts(state.posts).filter((post) => !post.clicked); if (!unreadPosts.length) { uiAlert('当前列表没有未读的帖子喂～'); return; } if (!uiConfirm('确定要把当前列表的 ' + unreadPosts.length + ' 条未读帖子全部标为已读吗？')) return; markPostsRead(unreadPosts.map((post) => post.id)); showToast('✅ 已将当前列表全部标为已读'); }, 'preview-image': ({ el }) => { const rawUrl = el.getAttribute('data-image-url') || ''; const postId = el.getAttribute('data-post-id') || ''; const post = postId ? getPostById(postId) : null; const imageUrls = post ? uniqueStrings((post.mediaThumbs || []).map(safeImportedAssetUrl).filter(Boolean)).slice(0, 4) : [rawUrl]; const imageIndex = parseInt(el.getAttribute('data-image-index') || '0', 10); showImagePreview(rawUrl, imageUrls, imageIndex); }, 'save-layout': () => { const timelineWidth = readIntegerSetting(state.timelineWidthEl, 'timelineWidth'); const leftbarWidth = readIntegerSetting(state.leftbarWidthEl, 'leftbarWidth'); setSettingsPartial({ layoutAutoWidth: false, timelineWidth, leftbarWidth }); showToast('✓ 已切换为手动宽度并应用'); }, 'edit-note': ({ id }) => { state.editingNoteId = id; refreshUI({ keepScroll: true }); setTimeout(() => { const input = state.listEl.querySelector(`.BetterX-note-input[data-id="${id}"]`); if (input) { input.focus(); input.selectionStart = input.value.length; } }, 20); }, copy: ({ el, id }) => { const post = getPostById(id); if (!post || !post.url) return; const manualCopy = () => window.prompt(uiText('复制链接：'), post.url); try { (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(post.url).then(() => { el.textContent = uiText('已复制'); setTimeout(() => { el.textContent = uiText('复制链接'); }, 1200); }).catch(manualCopy) : manualCopy(); } catch (err) { manualCopy(); } }, });
 function dispatchPanelAction(action, actionEl, id) {
   if (dispatchSettingRemoveAction(action, actionEl)) return true;
   const handler = PANEL_ACTION_HANDLERS[action];
@@ -7588,7 +9016,7 @@ function createUI() {
   const panel = document.createElement('div');
   panel.id = 'BetterX-panel';
   panel.style.display = 'none';
-  panel.innerHTML = uiHtml`<div class="BetterX-panel-resize-handle BetterX-panel-resize-left" data-resize-edge="left" aria-hidden="true"></div> <div class="BetterX-panel-resize-handle BetterX-panel-resize-right" data-resize-edge="right" aria-hidden="true"></div> <div class="BetterX-header"> <div class="BetterX-title"> <div class="BetterX-title-main"> ${APP_ICON_URL ? `<img class="BetterX-title-icon" src="${escapeHtml(APP_ICON_URL)}" alt="" draggable="false" />` : ''} <span>更好的 X</span> </div> <div class="BetterX-title-sub">BetterX · Alt+X 开关</div> </div> <div class="BetterX-header-actions"> <button class="BetterX-btn BetterX-vault-action" data-action="refresh" title="重新扫描当前页面">刷新</button> <button class="BetterX-btn BetterX-vault-action" data-action="mark-all-read" title="把当前列表全部标为已读">全部已读</button> <button class="BetterX-btn" data-action="switch-language" title="切换 BetterX 界面语言">切换语言</button> <div class="BetterX-menu-wrap"> <button class="BetterX-btn BetterX-icon-btn" data-action="menu-toggle" aria-label="更多" title="更多">⋯</button> <div class="BetterX-menu" id="BetterX-menu" hidden> <button class="BetterX-menu-item" data-action="export">📤 导出筛选</button> <button class="BetterX-menu-item" data-action="backup">💾 备份全部</button> <button class="BetterX-menu-item" data-action="import">📥 导入</button> <button class="BetterX-menu-item danger" data-action="clear-non-fav">🗑️ 清空</button> </div> </div> <button class="BetterX-btn BetterX-icon-btn" data-action="close" aria-label="关闭" title="关闭">✕</button> </div> </div> <div class="BetterX-tabs" role="tablist" aria-label="BetterX 面板"> <button class="BetterX-tab active" type="button" role="tab" aria-selected="true" data-action="set-panel-view" data-view="vault">帖子</button> <button class="BetterX-tab" type="button" role="tab" aria-selected="false" data-action="set-panel-view" data-view="notifications">通知</button> <button class="BetterX-tab" type="button" role="tab" aria-selected="false" data-action="set-panel-view" data-view="settings">设置</button> </div> <section class="BetterX-view BetterX-vault-view" data-view-panel="vault"> <div class="BetterX-vault-toolbar"> <div class="BetterX-tip">提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。</div> <div class="BetterX-summary" id="BetterX-summary"></div> <details class="BetterX-advanced BetterX-vault-filter-card" id="BetterX-quick-filter"> <summary><span class="BetterX-vault-filter-title">快速筛选</span><span class="BetterX-vault-filter-state" id="BetterX-quick-filter-state"></span></summary> <div class="BetterX-adv-body BetterX-vault-filter-body"> <div class="BetterX-filter-bar" id="BetterX-filter-bar"></div> <div class="BetterX-search-tools"> <input type="text" class="BetterX-input" id="BetterX-search" placeholder="搜索作者、正文或备注…" aria-label="搜索帖子" /> <div class="BetterX-toolbar-row"> <select class="BetterX-select" id="BetterX-source" aria-label="来源筛选"></select> <select class="BetterX-select" id="BetterX-media" aria-label="媒体筛选"></select> <select class="BetterX-select" id="BetterX-sort" aria-label="排序方式"> <option value="smart">智能排序</option> <option value="recent_viewed">最近浏览</option> <option value="recent_captured">最近抓取</option> <option value="first_captured">首次抓取（新→旧）</option> <option value="time_asc">首次抓取（旧→新）</option> <option value="captures">出现次数</option> <option value="author">按作者</option> <option value="source">按来源</option> </select> </div> <div class="BetterX-sort-hint" id="BetterX-sort-hint" role="status"></div> </div> </div> </details> </div> <div class="BetterX-list" id="BetterX-list"></div> </section> <section class="BetterX-view BetterX-notifications-view" data-view-panel="notifications" hidden> <div class="BetterX-notification-toolbar"> <div class="BetterX-settings-intro"> <strong>帖子通知管理</strong> <span>读取 X 的铃铛订阅状态；开关操作会同步修改 X 账号设置。本页不会抓取或显示订阅账号的帖子。</span> </div> <div class="BetterX-row BetterX-notification-search-row"> <input type="search" class="BetterX-input" id="BetterX-notification-search" placeholder="搜索用户名或 @用户名…" aria-label="搜索帖子通知用户" maxlength="120" /> <button class="BetterX-btn" data-action="search-notification-users">搜索</button> <button class="BetterX-btn primary" data-action="sync-notification-users">同步订阅用户</button> </div> <br/> <div class="BetterX-content-status" id="BetterX-notification-status">尚未读取订阅用户</div> </div> <div class="BetterX-notification-list" id="BetterX-notification-list"></div> </section> <section class="BetterX-view BetterX-settings-view" data-view-panel="settings" hidden> <div class="BetterX-settings-scroll"> <div class="BetterX-settings-intro"> <strong>设置</strong> <span>大多数设置会立即生效；带“保存”或“应用”按钮的设置需要手动确认。</span> </div> <div class="BetterX-controls"> <details class="BetterX-advanced BetterX-settings-card"> <summary>关键词与排除词</summary> <div class="BetterX-adv-body"> <div class="BetterX-adv-label">只影响 BetterX 已记录的帖子：关键词用来高亮和筛选，排除词会隐藏匹配的帖子。</div> <div class="BetterX-adv-label">普通文字可直接输入；正则表达式请写成 <code>/表达式/</code>，例如 <code>/猫|狗/</code>。两种写法可以混用。</div> <div class="BetterX-tag-editor BetterX-keyword-section"> <div class="BetterX-row BetterX-keyword-input-row"> <input type="text" class="BetterX-input" id="BetterX-keywords" placeholder="输入关键词，支持正则，按回车添加" maxlength="500" /> <select class="BetterX-select" id="BetterX-keyword-mode"> <option value="plain">任意匹配</option> <option value="and">全部匹配</option> </select> <button class="BetterX-btn primary" data-action="save-keywords">保存</button> </div> <div class="BetterX-keyword-tags BetterX-main-keyword-tags" id="BetterX-keyword-tags"></div> </div> <div class="BetterX-tag-editor BetterX-keyword-section"> <div class="BetterX-row BetterX-keyword-input-row"> <input type="text" class="BetterX-input" id="BetterX-exclude" placeholder="输入排除词，支持正则，按回车添加" maxlength="500" /> <button class="BetterX-btn primary" data-action="save-exclude">保存</button> </div> <div class="BetterX-keyword-tags BetterX-main-keyword-tags" id="BetterX-exclude-keyword-tags"></div> </div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>内容净化</summary> <div class="BetterX-adv-body"> <div class="BetterX-row BetterX-adultspam-master-row"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-adult-spam" /> 隐藏黄推 / 成人引流机器人</label> <select class="BetterX-select" id="BetterX-adultspam-level" title="检测强度"> <option value="balanced">均衡</option> <option value="conservative">保守</option> </select> </div> <div class="BetterX-dependent-options" id="BetterX-adultspam-auto-options"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-skip-following" /> 不审查已关注账号（转发内容除外）</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-skip-following-reposts" /> 不审查已关注账号的转发内容</label> <div class="BetterX-adv-label">根据正文、账号名和引流特征综合判断，只在当前页面隐藏可疑帖子，不会拉黑账号。关闭后会恢复显示。</div> </div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-custom-enabled" /> 启用自定义规则（屏蔽词与账号白名单）</label> <div class="BetterX-dependent-options" id="BetterX-adultspam-custom-options"> <div class="BetterX-tag-editor"> <div class="BetterX-row"> <input type="text" class="BetterX-input" id="BetterX-adultspam-keywords" placeholder="输入自定义屏蔽词，按回车添加" maxlength="500" /> <button class="BetterX-btn primary" data-action="save-adultspam-keywords">保存</button> </div> <div class="BetterX-keyword-tags" id="BetterX-adultspam-keyword-tags"></div> </div> <div class="BetterX-tag-editor"> <div class="BetterX-row"> <input type="text" class="BetterX-input" id="BetterX-adultspam-whitelist" placeholder="输入账号白名单（如 @example），按回车添加" maxlength="500" /> <button class="BetterX-btn primary" data-action="save-adultspam-whitelist">保存</button> </div> <div class="BetterX-keyword-tags" id="BetterX-adultspam-whitelist-tags"></div> </div> </div> <div class="BetterX-content-status" id="BetterX-adultspam-count">当前隐藏 0 · 本次累计 0 · 已扫描 0 · 已识别关注 0</div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>界面简化与宽屏</summary> <div class="BetterX-adv-body"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-enabled" /> 启用界面简化与宽屏</label> <div class="BetterX-dependent-options" id="BetterX-layout-options"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-auto-width" /> 自动读取 X 当前的时间线与左侧栏宽度（默认开启）</label> <div class="BetterX-row BetterX-control-row"> <label class="BetterX-field">时间线宽度(px) <input type="number" min="100" max="3000" class="BetterX-input small" id="BetterX-timeline-width" /> </label> <label class="BetterX-field">左侧栏宽度(px) <input type="number" min="50" max="500" class="BetterX-input small" id="BetterX-leftbar-width" /> </label> <button class="BetterX-btn primary" data-action="save-layout">应用宽度</button> </div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-leftbar" /> 隐藏左侧栏</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-sidebar" /> 隐藏右侧栏</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-fill-center" /> 中间栏填满（启用时同时隐藏左右栏）</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-clean-nav" /> 精简导航、Premium 推广与页脚</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-message" /> 隐藏右下消息栏 / Grok</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-showmore" /> 隐藏帖子“显示更多”（可能影响长文展开，默认关闭）</label> <div class="BetterX-adv-label">在消息页和设置页不会调整布局；关闭此功能即可恢复 X 原来的界面。</div> </div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>下载功能</summary> <div class="BetterX-adv-body"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF</label> <div class="BetterX-adv-label">点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-silent-download" /> 下载时保持静默</label> <div class="BetterX-adv-label">默认关闭；开启后隐藏应用徽标旁的下载任务提示和任务列表，帖子内的下载进度与取消按钮仍可使用。</div> <div class="BetterX-row BetterX-gif-format-row"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-gif-download-format-enabled" /> GIF内容下载格式</label> <select class="BetterX-select" id="BetterX-gif-download-format" aria-label="GIF内容下载格式"> <option value="mp4">MP4</option> <option value="gif">GIF</option> </select> </div> <div class="BetterX-adv-label">默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。</div> <label class="BetterX-field inline BetterX-download-zip-option"><input type="checkbox" id="BetterX-dlzip" /> 下载多个媒体自动压缩 ZIP 包</label> <div class="BetterX-adv-label BetterX-download-zip-option">默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。</div> <label class="BetterX-field inline BetterX-download-history-option"><input type="checkbox" id="BetterX-track-downloaded-posts" /> 记录已经下载过的帖子</label> <div class="BetterX-adv-label BetterX-download-history-option">默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。</div> <details class="BetterX-advanced BetterX-download-advanced" id="BetterX-download-advanced"> <summary> <span class="BetterX-download-advanced-summary"> <span class="BetterX-download-advanced-title">高级设置</span> <small class="BetterX-download-advanced-subtitle">自定义下载文件/压缩包名</small> </span> <span class="BetterX-download-advanced-state" id="BetterX-download-advanced-state" hidden>已自定义</span> </summary> <div class="BetterX-adv-body"> <label class="BetterX-field">媒体文件名（不含扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadFileNameTemplate))}" /></label> <label class="BetterX-field">ZIP 压缩包名（不含 .zip）<input class="BetterX-input" id="BetterX-download-zip-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadZipNameTemplate))}" /></label> <div class="BetterX-adv-label">点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。</div> <div class="BetterX-chip-row BetterX-download-name-tokens"> ${DOWNLOAD_NAME_TOKENS.map(({ token, key }) => { const label = escapeHtml(localizeDownloadNameToken(token, key)); return `<button type="button" class="BetterX-chip" data-action="insert-download-name-token" data-token="${label}">${label}</button>`; }).join('')} </div> <label class="BetterX-field">正则替换（可选）<input class="BetterX-input" id="BetterX-download-name-regex" maxlength="180" spellcheck="false" placeholder="例如：[\\s_]+" /></label> <label class="BetterX-field">替换为<input class="BetterX-input" id="BetterX-download-name-replacement" maxlength="180" spellcheck="false" placeholder="例如：_；支持 $1" /></label> <div class="BetterX-adv-label">正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。</div> <div class="BetterX-adv-label BetterX-download-name-preview" id="BetterX-download-name-preview"></div> <div class="BetterX-row"><button class="BetterX-btn primary" data-action="save-download-naming">保存自定义命名设置</button></div> </div> </details> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>常用功能</summary> <div class="BetterX-adv-body"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-nfl" /> 关闭NFL</label> <div class="BetterX-adv-label">隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（含“订阅 Premium”）</label> <div class="BetterX-adv-label">隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label> <div class="BetterX-adv-label">把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label> <div class="BetterX-adv-label">移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-auto-expand-post-text" /> 自动展开帖子里“显示更多”</label> <div class="BetterX-adv-label">自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。</div> <div class="BetterX-row BetterX-profile-default-view-row"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-profile-default-view-enabled" /> 进入用户主页默认查看</label> <select class="BetterX-select" id="BetterX-profile-default-view" aria-label="进入用户主页默认查看"> <option value="posts">帖子</option> <option value="all">全部</option> <option value="highlights">亮点</option> <option value="video">视频</option> <option value="photo">图片</option> </select> </div> <div class="BetterX-adv-label">进入用户主页时自动切换到所选页签；帖子详情、回复和关注者页面不受影响。</div> <div class="BetterX-row BetterX-profile-default-view-row"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-profile-post-sort-enabled" /> 用户主页帖子排序方式</label> <select class="BetterX-select" id="BetterX-profile-post-sort" aria-label="用户主页帖子排序方式"> <option value="recent">最近</option> <option value="popular">热门</option> </select> </div> <div class="BetterX-adv-label">选择“热门”时，会使用 X 的热门排序；视频和图片页不受影响。</div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>其他功能</summary> <div class="BetterX-adv-body"> <label class="BetterX-field inline BetterX-firefox-only-setting"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label> <div class="BetterX-adv-label BetterX-firefox-only-setting">如果 X 一直停在启动图标，可尝试开启。开启后会停用部分网络数据读取；点击开关可先查看影响。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-post-limit-warning" /> 帖子上限提示</label> <div class="BetterX-adv-label">帖子记录接近“最大条数”时提醒你。关闭提醒后，也可以随时在这里重新开启。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标</label> <div class="BetterX-adv-label">在电脑上会隐藏徽标；在手机上会收成屏幕右侧的蓝色小条。点击小条、从屏幕右边缘向内滑动，或使用油猴菜单都能恢复。</div> <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label> <div class="BetterX-adv-label BetterX-desktop-only-setting">在电脑上使用圆形图标和未读角标，仍可拖动位置。</div> <label class="BetterX-field inline BetterX-mobile-only-setting"><input type="checkbox" id="BetterX-mobile-badge-handle" /> 切换为半透明蓝色条（仅移动端）</label> <div class="BetterX-adv-label BetterX-mobile-only-setting">把手机上的圆形徽标收成右侧蓝色小条；点击打开面板，长按后可上下移动。</div> </div> </details> <details class="BetterX-advanced BetterX-settings-card" id="BetterX-advanced-settings"> <summary>高级设置</summary> <div class="BetterX-adv-body"> <div class="BetterX-adv-label">点亮按钮即不保存对应页面的帖子</div> <div class="BetterX-chip-row" id="BetterX-skip-sources"></div> <div class="BetterX-row"> <label class="BetterX-field">自动清理(天) <input type="number" min="0" class="BetterX-input small" id="BetterX-autoclean" /> </label> <label class="BetterX-field">最大条数 <input type="number" min="50" class="BetterX-input small" id="BetterX-maxposts" /> </label> <label class="BetterX-field">闪现阈值(秒) <input type="number" min="1" class="BetterX-input small" id="BetterX-flashms" /> </label> <label class="BetterX-field">主题 <select class="BetterX-select" id="BetterX-theme"> <option value="auto">跟随系统</option> <option value="dark">深色</option> <option value="light">浅色</option> </select> </label> </div> <div class="BetterX-row BetterX-control-row"> <label class="BetterX-field">下载超时(秒) <input type="number" min="5" class="BetterX-input small" id="BetterX-dltimeout" /> </label> <label class="BetterX-field">下载并发 <input type="number" min="1" max="6" step="1" class="BetterX-input small" id="BetterX-dlconcurrency" /> </label> <button class="BetterX-btn primary" data-action="save-advanced">应用</button> </div> <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。自动清理(天)为0则不自动清理。</div> </div> </details> </div> </div> </section>`;
+  panel.innerHTML = uiHtml`<div class="BetterX-panel-resize-handle BetterX-panel-resize-left" data-resize-edge="left" aria-hidden="true"></div> <div class="BetterX-panel-resize-handle BetterX-panel-resize-right" data-resize-edge="right" aria-hidden="true"></div> <div class="BetterX-header"> <div class="BetterX-title"> <div class="BetterX-title-main"> ${APP_ICON_URL ? `<img class="BetterX-title-icon" src="${escapeHtml(APP_ICON_URL)}" alt="" draggable="false" />` : ''} <span>更好的 X</span> </div> <div class="BetterX-title-sub">BetterX · Alt+X 开关</div> </div> <div class="BetterX-header-actions"> <button class="BetterX-btn BetterX-vault-action" data-action="refresh" title="重新扫描当前页面">刷新</button> <button class="BetterX-btn BetterX-vault-action" data-action="mark-all-read" title="把当前列表全部标为已读">全部已读</button> <button class="BetterX-btn" data-action="switch-language" title="切换 BetterX 界面语言">切换语言</button> <div class="BetterX-menu-wrap"> <button class="BetterX-btn BetterX-icon-btn" data-action="menu-toggle" aria-label="更多" title="更多">⋯</button> <div class="BetterX-menu" id="BetterX-menu" hidden> <button class="BetterX-menu-item" data-action="export">📤 导出筛选</button> <button class="BetterX-menu-item" data-action="backup">💾 备份全部</button> <button class="BetterX-menu-item" data-action="import">📥 导入</button> <button class="BetterX-menu-item danger" data-action="clear-non-fav">🗑️ 清空</button> </div> </div> <button class="BetterX-btn BetterX-icon-btn" data-action="close" aria-label="关闭" title="关闭">✕</button> </div> </div> <div class="BetterX-tabs" role="tablist" aria-label="BetterX 面板"> <button class="BetterX-tab active" type="button" role="tab" aria-selected="true" data-action="set-panel-view" data-view="vault">帖子</button> <button class="BetterX-tab" type="button" role="tab" aria-selected="false" data-action="set-panel-view" data-view="notifications">通知</button> <button class="BetterX-tab" type="button" role="tab" aria-selected="false" data-action="set-panel-view" data-view="settings">设置</button> </div> <section class="BetterX-view BetterX-vault-view" data-view-panel="vault"> <div class="BetterX-vault-toolbar"> <div class="BetterX-tip">提示：列表仅记录你浏览时出现过的帖子。收藏/置顶的帖子不会被上限删除或自动清理。</div> <div class="BetterX-summary" id="BetterX-summary"></div> <details class="BetterX-advanced BetterX-vault-filter-card" id="BetterX-quick-filter"> <summary><span class="BetterX-vault-filter-title">快速筛选</span><span class="BetterX-vault-filter-state" id="BetterX-quick-filter-state"></span></summary> <div class="BetterX-adv-body BetterX-vault-filter-body"> <div class="BetterX-filter-bar" id="BetterX-filter-bar"></div> <div class="BetterX-search-tools"> <input type="text" class="BetterX-input" id="BetterX-search" placeholder="搜索作者、正文或备注…" aria-label="搜索帖子" /> <div class="BetterX-toolbar-row"> <select class="BetterX-select" id="BetterX-source" aria-label="来源筛选"></select> <select class="BetterX-select" id="BetterX-media" aria-label="媒体筛选"></select> <select class="BetterX-select" id="BetterX-sort" aria-label="排序方式"> <option value="smart">智能排序</option> <option value="recent_viewed">最近浏览</option> <option value="recent_captured">最近抓取</option> <option value="first_captured">首次抓取（新→旧）</option> <option value="time_asc">首次抓取（旧→新）</option> <option value="captures">出现次数</option> <option value="author">按作者</option> <option value="source">按来源</option> </select> </div> <div class="BetterX-sort-hint" id="BetterX-sort-hint" role="status"></div> </div> </div> </details> </div> <div class="BetterX-list" id="BetterX-list"></div> </section> <section class="BetterX-view BetterX-notifications-view" data-view-panel="notifications" hidden> <div class="BetterX-notification-toolbar"> <div class="BetterX-settings-intro"> <strong>帖子通知管理</strong> <span>读取 X 的铃铛订阅状态；开关操作会同步修改 X 账号设置。本页不会抓取或显示订阅账号的帖子。</span> </div> <div class="BetterX-row BetterX-notification-search-row"> <input type="search" class="BetterX-input" id="BetterX-notification-search" placeholder="搜索用户名或 @用户名…" aria-label="搜索帖子通知用户" maxlength="120" /> <button class="BetterX-btn" data-action="search-notification-users">搜索</button> <button class="BetterX-btn primary" data-action="sync-notification-users">同步订阅用户</button> </div> <br/> <div class="BetterX-content-status" id="BetterX-notification-status">尚未读取订阅用户</div> </div> <div class="BetterX-notification-list" id="BetterX-notification-list"></div> </section> <section class="BetterX-view BetterX-settings-view" data-view-panel="settings" hidden> <div class="BetterX-settings-scroll"> <div class="BetterX-settings-intro"> <strong>设置</strong> <span>大多数设置会立即生效；带“保存”或“应用”按钮的设置需要手动确认。</span> </div> <div class="BetterX-controls"> <details class="BetterX-advanced BetterX-settings-card"> <summary>关键词与排除词</summary> <div class="BetterX-adv-body"> <div class="BetterX-adv-label">只影响 BetterX 已记录的帖子：关键词用来高亮和筛选，排除词会隐藏匹配的帖子。</div> <div class="BetterX-adv-label">普通文字可直接输入；正则表达式请写成 <code>/表达式/</code>，例如 <code>/猫|狗/</code>。两种写法可以混用。</div> <div class="BetterX-tag-editor BetterX-keyword-section"> <div class="BetterX-row BetterX-keyword-input-row"> <input type="text" class="BetterX-input" id="BetterX-keywords" placeholder="输入关键词，支持正则，按回车添加" maxlength="500" /> <select class="BetterX-select" id="BetterX-keyword-mode"> <option value="plain">任意匹配</option> <option value="and">全部匹配</option> </select> <button class="BetterX-btn primary" data-action="save-keywords">保存</button> </div> <div class="BetterX-keyword-tags BetterX-main-keyword-tags" id="BetterX-keyword-tags"></div> </div> <div class="BetterX-tag-editor BetterX-keyword-section"> <div class="BetterX-row BetterX-keyword-input-row"> <input type="text" class="BetterX-input" id="BetterX-exclude" placeholder="输入排除词，支持正则，按回车添加" maxlength="500" /> <button class="BetterX-btn primary" data-action="save-exclude">保存</button> </div> <div class="BetterX-keyword-tags BetterX-main-keyword-tags" id="BetterX-exclude-keyword-tags"></div> </div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>内容净化</summary> <div class="BetterX-adv-body"> <div class="BetterX-row BetterX-adultspam-master-row"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-adult-spam" /> 隐藏黄推 / 成人引流机器人</label> <select class="BetterX-select" id="BetterX-adultspam-level" title="检测强度"> <option value="balanced">均衡</option> <option value="conservative">保守</option> </select> </div> <div class="BetterX-dependent-options" id="BetterX-adultspam-auto-options"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-skip-following" /> 不审查已关注账号（转发内容除外）</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-skip-following-reposts" /> 不审查已关注账号的转发内容</label> <div class="BetterX-adv-label">根据正文、账号名和引流特征综合判断，只在当前页面隐藏可疑帖子，不会拉黑账号。关闭后会恢复显示。</div> </div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-adultspam-custom-enabled" /> 启用自定义规则（屏蔽词与账号白名单）</label> <div class="BetterX-dependent-options" id="BetterX-adultspam-custom-options"> <div class="BetterX-tag-editor"> <div class="BetterX-row"> <input type="text" class="BetterX-input" id="BetterX-adultspam-keywords" placeholder="输入自定义屏蔽词，按回车添加" maxlength="500" /> <button class="BetterX-btn primary" data-action="save-adultspam-keywords">保存</button> </div> <div class="BetterX-keyword-tags" id="BetterX-adultspam-keyword-tags"></div> </div> <div class="BetterX-tag-editor"> <div class="BetterX-row"> <input type="text" class="BetterX-input" id="BetterX-adultspam-whitelist" placeholder="输入账号白名单（如 @example），按回车添加" maxlength="500" /> <button class="BetterX-btn primary" data-action="save-adultspam-whitelist">保存</button> </div> <div class="BetterX-keyword-tags" id="BetterX-adultspam-whitelist-tags"></div> </div> </div> <div class="BetterX-content-status" id="BetterX-adultspam-count">当前隐藏 0 · 本次累计 0 · 已扫描 0 · 已识别关注 0</div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>界面简化与宽屏</summary> <div class="BetterX-adv-body"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-enabled" /> 启用界面简化与宽屏</label> <div class="BetterX-dependent-options" id="BetterX-layout-options"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-auto-width" /> 自动读取 X 当前的时间线与左侧栏宽度（默认开启）</label> <div class="BetterX-row BetterX-control-row"> <label class="BetterX-field">时间线宽度(px) <input type="number" min="100" max="3000" class="BetterX-input small" id="BetterX-timeline-width" /> </label> <label class="BetterX-field">左侧栏宽度(px) <input type="number" min="50" max="500" class="BetterX-input small" id="BetterX-leftbar-width" /> </label> <button class="BetterX-btn primary" data-action="save-layout">应用宽度</button> </div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-leftbar" /> 隐藏左侧栏</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-sidebar" /> 隐藏右侧栏</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-fill-center" /> 中间栏填满（启用时同时隐藏左右栏）</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-clean-nav" /> 精简导航、Premium 推广与页脚</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-message" /> 隐藏右下消息栏 / Grok</label> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-layout-hide-showmore" /> 隐藏帖子“显示更多”（可能影响长文展开，默认关闭）</label> <div class="BetterX-adv-label">在消息页和设置页不会调整布局；关闭此功能即可恢复 X 原来的界面。</div> </div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>下载功能</summary> <div class="BetterX-adv-body"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF</label> <div class="BetterX-adv-label">点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择要下载的图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-silent-download" /> 下载时保持静默</label> <div class="BetterX-adv-label">默认关闭；开启后隐藏应用徽标旁的下载任务提示和任务列表，帖子内的下载进度与取消按钮仍可使用。</div> <div class="BetterX-row BetterX-gif-format-row"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-gif-download-format-enabled" /> GIF内容下载格式</label> <select class="BetterX-select" id="BetterX-gif-download-format" aria-label="GIF内容下载格式"> <option value="mp4">MP4</option> <option value="gif">GIF</option> </select> </div> <div class="BetterX-adv-label">默认开启；关闭时 GIF 内容按原始 MP4 下载。选择 GIF 时会在浏览器内转换，耗时更长、文件更大。</div> <label class="BetterX-field inline BetterX-download-zip-option"><input type="checkbox" id="BetterX-dlzip" /> 下载多个媒体自动压缩 ZIP 包</label> <div class="BetterX-adv-label BetterX-download-zip-option">默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。</div> <label class="BetterX-field inline BetterX-download-history-option"><input type="checkbox" id="BetterX-track-downloaded-posts" /> 记录已经下载过的帖子</label> <div class="BetterX-adv-label BetterX-download-history-option">默认开启；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。</div> <details class="BetterX-advanced BetterX-download-advanced" id="BetterX-download-advanced"> <summary> <span class="BetterX-download-advanced-summary"> <span class="BetterX-download-advanced-title">高级设置</span> <small class="BetterX-download-advanced-subtitle">自定义下载文件/压缩包名</small> </span> <span class="BetterX-download-advanced-state" id="BetterX-download-advanced-state" hidden>已自定义</span> </summary> <div class="BetterX-adv-body"> <label class="BetterX-field">媒体文件名（不含 .jpg 等扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadFileNameTemplate))}" /></label> <label class="BetterX-field">ZIP 压缩包名（不含 .zip）<input class="BetterX-input" id="BetterX-download-zip-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadZipNameTemplate))}" /></label> <div class="BetterX-adv-label">点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。</div> <div class="BetterX-chip-row BetterX-download-name-tokens"> ${DOWNLOAD_NAME_TOKENS.map(({ token, key }) => { const label = escapeHtml(localizeDownloadNameToken(token, key)); return `<button type="button" class="BetterX-chip" data-action="insert-download-name-token" data-token="${label}">${label}</button>`; }).join('')} </div> <label class="BetterX-field">正则替换（可选）<input class="BetterX-input" id="BetterX-download-name-regex" maxlength="180" spellcheck="false" placeholder="例如：[\\s_]+" /></label> <label class="BetterX-field">替换为<input class="BetterX-input" id="BetterX-download-name-replacement" maxlength="180" spellcheck="false" placeholder="例如：_；支持 $1" /></label> <div class="BetterX-adv-label">正则会在变量展开后，对两个名称进行全局替换；支持捕获组替换（如 <code>$1</code>）。无效或高风险的正则不会保存。</div> <div class="BetterX-adv-label BetterX-download-name-preview" id="BetterX-download-name-preview"></div> <div class="BetterX-row"><button class="BetterX-btn primary" data-action="save-download-naming">保存自定义命名设置</button></div> </div> </details> </div> </details> <details class="BetterX-advanced BetterX-settings-card" id="BetterX-dismiss-features"> <summary>关闭功能</summary> <div class="BetterX-adv-body"> <div class="BetterX-adv-label">以下开关默认关闭；已有选择会保留。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-nfl" /> 关闭NFL</label> <div class="BetterX-adv-label">隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（含“订阅 Premium”）</label> <div class="BetterX-adv-label">隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-whatsnew" /> 关闭新鲜事</label> <div class="BetterX-adv-label">隐藏侧栏的“有什么新鲜事”卡片；关闭此开关后会恢复显示。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-who-to-follow" /> 关闭推荐关注</label> <div class="BetterX-adv-label">隐藏侧栏的“推荐关注”卡片；关注者列表和帖子内容不受影响，关闭此开关后会恢复显示。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-money" /> 关闭Money</label> <div class="BetterX-adv-label">隐藏导航和菜单中的 Money 入口；关闭此开关后会恢复显示。</div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>常用功能</summary> <div class="BetterX-adv-body"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label> <div class="BetterX-adv-label">把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label> <div class="BetterX-adv-label">移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-auto-expand-post-text" /> 自动展开帖子里“显示更多”</label> <div class="BetterX-adv-label">自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-author-links-enabled" /> 作品详情页显示作者链接</label> <div class="BetterX-adv-label">在作品详情页直接打开作者简介中的链接和个人网站，而不用访问作者主页。</div> <div class="BetterX-row BetterX-profile-default-view-row"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-profile-default-view-enabled" /> 进入用户主页默认查看</label> <select class="BetterX-select" id="BetterX-profile-default-view" aria-label="进入用户主页默认查看"> <option value="posts">帖子</option> <option value="all">全部</option> <option value="highlights">亮点</option> <option value="video">视频</option> <option value="photo">图片</option> </select> </div> <div class="BetterX-adv-label">进入用户主页时自动切换到所选页签；帖子详情、回复和关注者页面不受影响。</div> <div class="BetterX-row BetterX-profile-default-view-row"> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-profile-post-sort-enabled" /> 用户主页帖子排序方式</label> <select class="BetterX-select" id="BetterX-profile-post-sort" aria-label="用户主页帖子排序方式"> <option value="recent">最近</option> <option value="popular">热门</option> </select> </div> <div class="BetterX-adv-label">选择“热门”时，会使用 X 的热门排序；视频和图片页不受影响。</div> </div> </details> <details class="BetterX-advanced BetterX-settings-card"> <summary>其他功能</summary> <div class="BetterX-adv-body"> <label class="BetterX-field inline BetterX-firefox-only-setting"><input type="checkbox" id="BetterX-firefox-compat" /> 兼容 Firefox（仅 Firefox）</label> <div class="BetterX-adv-label BetterX-firefox-only-setting">如果 X 一直停在启动图标，可尝试开启。开启后会停用部分网络数据读取；点击开关可先查看影响。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-post-limit-warning" /> 帖子上限提示</label> <div class="BetterX-adv-label">帖子记录接近“最大条数”时提醒你。关闭提醒后，也可以随时在这里重新开启。</div> <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-app-badge" /> 隐藏应用徽标</label> <div class="BetterX-adv-label">在电脑上会隐藏徽标；在手机上会收成屏幕右侧的蓝色小条。点击小条、从屏幕右边缘向内滑动，或使用油猴菜单都能恢复。</div> <label class="BetterX-field inline BetterX-desktop-only-setting"><input type="checkbox" id="BetterX-desktop-mobile-badge" /> 切换为移动端徽标（仅 PC）</label> <div class="BetterX-adv-label BetterX-desktop-only-setting">在电脑上使用圆形图标和未读角标，仍可拖动位置。</div> <label class="BetterX-field inline BetterX-mobile-only-setting"><input type="checkbox" id="BetterX-mobile-badge-handle" /> 切换为半透明蓝色条（仅移动端）</label> <div class="BetterX-adv-label BetterX-mobile-only-setting">把手机上的圆形徽标收成右侧蓝色小条；点击打开面板，长按后可上下移动。</div> </div> </details> <details class="BetterX-advanced BetterX-settings-card" id="BetterX-advanced-settings"> <summary>高级设置</summary> <div class="BetterX-adv-body"> <div class="BetterX-adv-label">点亮按钮即不保存对应页面的帖子</div> <div class="BetterX-chip-row" id="BetterX-skip-sources"></div> <div class="BetterX-row"> <label class="BetterX-field">自动清理(天) <input type="number" min="0" class="BetterX-input small" id="BetterX-autoclean" /> </label> <label class="BetterX-field">最大条数 <input type="number" min="50" class="BetterX-input small" id="BetterX-maxposts" /> </label> <label class="BetterX-field">闪现阈值(秒) <input type="number" min="1" class="BetterX-input small" id="BetterX-flashms" /> </label> <label class="BetterX-field">主题 <select class="BetterX-select" id="BetterX-theme"> <option value="auto">跟随系统</option> <option value="dark">深色</option> <option value="light">浅色</option> </select> </label> </div> <div class="BetterX-row BetterX-control-row"> <label class="BetterX-field">下载超时(秒) <input type="number" min="5" class="BetterX-input small" id="BetterX-dltimeout" /> </label> <label class="BetterX-field">下载并发 <input type="number" min="1" max="6" step="1" class="BetterX-input small" id="BetterX-dlconcurrency" /> </label> <button class="BetterX-btn primary" data-action="save-advanced">应用</button> </div> <div class="BetterX-adv-label">下载并发可设为 1～6，默认 2；调高会加快多媒体任务，但也会增加带宽与内存占用。自动清理(天)为0则不自动清理。</div> </div> </details> </div> </div> </section>`;
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.accept = 'application/json,.json';
@@ -7809,7 +9237,7 @@ function addStyle(css) {
   (document.head || document.documentElement).appendChild(style);
 }
 function installStyles() {
-  addStyle(`#BetterX-root { position: fixed; display: flex; left: 16px; bottom: 16px; z-index: 2147483000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; --xv-panel-bg: rgba(21,24,28,0.98); --xv-text: #e7e9ea; --xv-border: rgba(255,255,255,0.12); --xv-chip-bg: rgba(255,255,255,0.06); --xv-input-bg: rgba(255,255,255,0.06); --xv-muted: rgba(231,233,234,0.62); --xv-item-bg: rgba(255,255,255,0.03); --xv-accent: #1d9bf0; } #BetterX-root.BetterX-light { --xv-panel-bg: rgba(255,255,255,0.99); --xv-text: #0f1419; --xv-border: rgba(0,0,0,0.12); --xv-chip-bg: rgba(0,0,0,0.05); --xv-input-bg: rgba(0,0,0,0.04); --xv-muted: rgba(15,20,25,0.6); --xv-item-bg: rgba(0,0,0,0.02); } #BetterX-badge { background: var(--xv-accent); color: #fff; border: none; border-radius: 999px; padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.35); touch-action: none; user-select: none; } #BetterX-badge:hover { filter: brightness(1.08); } #BetterX-root.BetterX-desktop-badge-hidden:not(.BetterX-mobile) #BetterX-badge { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; } #BetterX-badge.mobile-mode { width: 52px; height: 52px; padding: 0; border-radius: 50%; font-size: 22px; display: flex; align-items: center; justify-content: center; position: relative; } .BetterX-mobile-icon { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.72); box-shadow: 0 2px 8px rgba(0,0,0,.22); pointer-events: none; user-select: none; -webkit-user-drag: none; } #BetterX-badge.mobile-mode.desktop-icon-mode { width: 64px; height: 64px; } #BetterX-badge.mobile-mode.desktop-icon-mode .BetterX-mobile-icon { width: 54px; height: 54px; } #BetterX-badge.desktop-icon-mode { cursor: grab; } #BetterX-badge.desktop-icon-mode.is-dragging { cursor: grabbing; } #BetterX-badge.desktop-icon-mode .BetterX-mobile-icon-fallback { font-size: 30px; } .BetterX-mobile-icon-fallback { line-height: 1; } #BetterX-root.BetterX-mobile .BetterX-desktop-only-setting { display: none !important; } .BetterX-firefox-only-setting[hidden] { display: none !important; } .BetterX-mobile-only-setting { display: none !important; } #BetterX-root.BetterX-mobile label.BetterX-mobile-only-setting { display: flex !important; } #BetterX-root.BetterX-mobile div.BetterX-mobile-only-setting { display: block !important; } .BetterX-mobile-dot { position: absolute; top: -2px; right: -2px; background: #f4212e; color: #fff; min-width: 18px; height: 18px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; padding: 0 4px; } #BetterX-root.BetterX-mobile { left: auto; right: 16px; bottom: 84px; } #BetterX-root.BetterX-mobile #BetterX-badge { opacity: var(--xv-mobile-badge-opacity, 1); transition: opacity 170ms ease-out, filter .15s; } #BetterX-root.BetterX-mobile:not(.BetterX-mobile-badge-collapsed) #BetterX-badge { touch-action: manipulation; } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge { width: 15px; height: 76px; min-height: 76px; padding: 0; border-radius: 999px 0 0 999px; background: #1d9bf0; box-shadow: -1px 2px 8px rgba(0,0,0,.2); opacity: .56 !important; position: relative; z-index: 2; } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge::after { content: '‹'; display: block; color: rgba(255,255,255,.92); font-size: 16px; font-weight: 400; line-height: 1; transform: translateX(-1px); } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge.is-mobile-dragging { opacity: .88 !important; transition: none; cursor: ns-resize; } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-icon, #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-icon-fallback, #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-dot, #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-download-pill { display: none !important; } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-inactive #BetterX-badge, #BetterX-root.BetterX-mobile.BetterX-mobile-badge-inactive #BetterX-download-pill { pointer-events: none; } article .BetterX-media-grid-box { padding-bottom: 0 !important; height: auto !important; min-height: 0 !important; } article nav.BetterX-media-grid { position: relative !important; inset: auto !important; width: 100% !important; height: auto !important; overflow: visible !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-prevButtonWrapper"], article nav.BetterX-media-grid [data-testid="ScrollSnap-nextButtonWrapper"] { display: none !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-SwipeableList"] { width: 100% !important; height: auto !important; overflow: visible !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] { display: grid !important; width: 100% !important; height: auto !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; margin: 0 !important; padding: 0 !important; overflow: hidden !important; border-radius: 16px; scroll-snap-type: none !important; } article nav.BetterX-media-grid-count-2 [data-testid="ScrollSnap-List"] { grid-template-rows: minmax(0, 1fr); aspect-ratio: 16 / 9; } article nav.BetterX-media-grid-count-3 [data-testid="ScrollSnap-List"], article nav.BetterX-media-grid-count-4 [data-testid="ScrollSnap-List"] { grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9; } article nav.BetterX-media-grid-count-3 [data-testid="ScrollSnap-List"] > [role="presentation"]:first-child { grid-row: span 2; } article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] { display: block !important; width: auto !important; min-width: 0 !important; height: 100% !important; margin: 0 !important; overflow: hidden !important; scroll-snap-align: none !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div, article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div > div { width: 100% !important; height: 100% !important; min-height: 0 !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div { aspect-ratio: auto !important; } #BetterX-download-pill { position: absolute; left: calc(100% + 8px); bottom: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 42px; height: 36px; padding: 0 12px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; background: var(--xv-panel-bg); color: var(--xv-text); box-shadow: 0 4px 16px rgba(0,0,0,.28); font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; backdrop-filter: blur(10px); } .BetterX-download-pill-icon { font-size: 17px; line-height: 1; } .BetterX-download-pill-label { line-height: 1; } .BetterX-download-pill-count { display: none; } #BetterX-download-pill:hover { border-color: var(--xv-accent); } #BetterX-download-pill.is-progress { border-color: transparent; background: linear-gradient(var(--xv-panel-bg), var(--xv-panel-bg)) padding-box, conic-gradient(var(--xv-accent) var(--xv-download-progress, 0deg), var(--xv-border) 0) border-box; } #BetterX-root.BetterX-panel-right #BetterX-download-pill { left: auto; right: calc(100% + 8px); } #BetterX-download-popover { position: absolute; left: calc(100% + 8px); bottom: 44px; width: min(360px, calc(100vw - 32px)); box-sizing: border-box; max-width: calc(100vw - 16px); max-height: min(420px, calc(100vh - 120px)); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 10px; border: 1px solid var(--xv-border); border-radius: 14px; background: var(--xv-panel-bg); color: var(--xv-text); box-shadow: 0 12px 42px rgba(0,0,0,.42); backdrop-filter: blur(12px); } #BetterX-root.BetterX-panel-right #BetterX-download-popover { left: auto; right: calc(100% + 8px); } #BetterX-download-pill[hidden], #BetterX-download-popover[hidden], .BetterX-dl-cancel[hidden] { display: none !important; } .BetterX-download-popover-title { padding: 2px 4px 8px; font-size: 13px; font-weight: 800; } .BetterX-download-empty { padding: 14px 8px; color: var(--xv-muted); text-align: center; font-size: 12px; } .BetterX-download-task { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 8px; margin-top: 5px; border: 1px solid var(--xv-border); border-radius: 10px; background: linear-gradient(90deg, rgba(29,155,240,.14) var(--xv-task-progress, 0%), transparent 0), var(--xv-item-bg); } .BetterX-download-task-main { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 3px; } .BetterX-download-task-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; } .BetterX-download-task-main span { min-width: 0; overflow-wrap: anywhere; color: var(--xv-muted); font-size: 11px; } .BetterX-download-task-actions { display: flex; flex: 0 0 auto; gap: 4px; } .BetterX-download-task-actions button { padding: 4px 7px; border: 1px solid var(--xv-border); border-radius: 7px; background: var(--xv-chip-bg); color: var(--xv-text); font-size: 11px; cursor: pointer; } .BetterX-download-task-actions button:hover { border-color: var(--xv-accent); } #BetterX-panel { position: absolute; bottom: calc(100% + 10px); left: 0; width: min(94vw, 480px); max-height: calc(100vh - 96px); background: var(--xv-panel-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 16px; box-shadow: 0 12px 48px rgba(0,0,0,0.5); backdrop-filter: blur(12px); display: flex; flex-direction: column; overflow: hidden; } #BetterX-root.BetterX-panel-right #BetterX-panel { left: auto; right: 0; } #BetterX-root.BetterX-mobile #BetterX-panel { position: fixed; right: 12px; left: auto; bottom: 84px; max-height: calc(100vh - 120px); } .BetterX-ad-hidden, .BetterX-nfl-hidden { display: none !important; } .BetterX-adult-spam-hidden { display: none !important; } .BetterX-download-controls { display: inline-flex; align-items: center; justify-content: center; gap: 1px; flex: 0 0 auto; } .BetterX-download-controls.floating { position: absolute; top: 8px; right: 8px; z-index: 5; padding: 2px; border-radius: 999px; background: rgba(0,0,0,.62); } .BetterX-dl-btn, .BetterX-dl-cancel { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; margin: 0; padding: 0 8px; border: none; background: transparent; color: rgb(83,100,113); font-size: 19px; font-weight: 700; line-height: 1; cursor: pointer; border-radius: 999px; transition: background .15s, color .15s, min-width .15s; } .BetterX-download-controls:not([data-download-state="idle"]) .BetterX-dl-btn { font-size: 12px; } .BetterX-dl-btn:hover { background: rgba(29,155,240,0.12); color: rgb(29,155,240); } .BetterX-dl-btn.is-progress { color: rgb(29,155,240); background: conic-gradient(rgba(29,155,240,.24) var(--xv-download-progress, 0deg), transparent 0); } .BetterX-dl-btn.is-downloaded { color: rgb(29,155,240); text-shadow: 0 0 8px rgba(29,155,240,.28); } .BetterX-dl-btn.is-downloaded:hover { color: rgb(29,155,240); background: rgba(29,155,240,.14); } .BetterX-dl-btn.is-downloaded svg { width: 22px; height: 22px; fill: currentColor; } .BetterX-dl-cancel { min-width: 24px; width: 24px; padding: 0; color: rgb(244,33,46); font-size: 17px; } .BetterX-dl-cancel:hover { background: rgba(244,33,46,.12); } .BetterX-download-controls.in-group { align-self: center; } .BetterX-download-controls.guest-actions { min-width: 0; flex: 1 1 0%; align-self: center; } .BetterX-download-controls.guest-actions .BetterX-dl-btn, .BetterX-download-controls.guest-actions .BetterX-dl-cancel { transform: none !important; animation: none !important; } .BetterX-download-controls.floating .BetterX-dl-btn, .BetterX-download-controls.floating .BetterX-dl-cancel { color: #fff; } .BetterX-download-controls.floating .BetterX-dl-btn.is-downloaded { color: rgb(29,155,240); } .BetterX-download-controls.floating .BetterX-dl-btn:hover { background: rgba(29,155,240,.88); } .BetterX-download-controls.floating .BetterX-dl-cancel:hover { background: rgba(244,33,46,.88); } article[data-testid="notification"] .BetterX-download-controls { display: none !important; } .BetterX-mask-hidden { display: none !important; } .BetterX-unlocked.BetterX-native-media-grid { display: grid; gap: 2px; margin: 8px 0; width: 100%; max-width: 100%; border-radius: 16px; overflow: hidden; background: #000; } .BetterX-unlocked .BetterX-unlocked-tile, .BetterX-unlocked .BetterX-unlocked-media { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; } .BetterX-unlocked .BetterX-unlocked-photo { cursor: pointer; } .BetterX-unlocked.xv-n1 { grid-template-columns: 1fr; background: transparent; } .BetterX-unlocked.xv-n1 .BetterX-unlocked-tile { height: auto; background: #000; } .BetterX-unlocked.xv-n1 img, .BetterX-unlocked.xv-n1 video { display: block; margin: 0 auto; width: auto; height: auto; max-width: 100%; max-height: 510px; object-fit: contain; background: #000; } .BetterX-unlocked.xv-multi img, .BetterX-unlocked.xv-multi video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; } .BetterX-unlocked.xv-n2 { grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); aspect-ratio: 16 / 9; } .BetterX-unlocked.xv-n3 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9; } .BetterX-unlocked.xv-n3 > *:first-child { grid-row: span 2; } .BetterX-unlocked.xv-n4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9; } .BetterX-unlocked.xv-nm { grid-template-columns: 1fr 1fr; } .BetterX-unlocked.xv-nm .BetterX-unlocked-tile { aspect-ratio: 1 / 1; } #BetterX-toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(10px); background: rgba(21,24,28,0.98); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 2147483600; box-shadow: 0 6px 24px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: 80vw; } #BetterX-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); } .BetterX-dialog-overlay { position: fixed; inset: 0; z-index: 2147483646; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(0,0,0,.64); backdrop-filter: blur(4px); color: var(--xv-text); } .BetterX-dialog { position: relative; width: min(92vw, 460px); max-height: min(82vh, 640px); overflow: auto; padding: 20px; border: 1px solid var(--xv-border); border-radius: 16px; background: var(--xv-panel-bg); box-shadow: 0 18px 64px rgba(0,0,0,.55); } .BetterX-dialog.has-close-icon .BetterX-dialog-title { padding-right: 38px; } .BetterX-dialog-close { position: absolute; top: 12px; right: 12px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--xv-muted); cursor: pointer; } .BetterX-dialog-close[hidden] { display: none !important; } .BetterX-dialog-close:hover { background: var(--xv-chip-bg); color: var(--xv-text); } .BetterX-dialog-close:focus-visible { outline: 2px solid var(--xv-accent); outline-offset: 2px; } .BetterX-dialog-close svg { width: 20px; height: 20px; fill: currentColor; } .BetterX-dialog-title { font-size: 18px; line-height: 1.35; font-weight: 800; margin-bottom: 12px; } .BetterX-dialog-body { font-size: 14px; line-height: 1.65; color: var(--xv-text); } .BetterX-dialog-body p { margin: 0 0 10px; } .BetterX-dialog-body ul { margin: 0 0 12px; padding-left: 22px; } .BetterX-dialog-body li { margin: 4px 0; } .BetterX-dialog-body code { padding: 1px 5px; border-radius: 5px; background: var(--xv-chip-bg); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .92em; } .BetterX-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 18px; } .BetterX-dialog-actions .BetterX-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; } .BetterX-media-picker-overlay, .BetterX-media-picker-overlay * { box-sizing: border-box; } .BetterX-media-picker { display: flex; flex-direction: column; width: min(92vw, 560px); max-height: 82dvh; overflow: hidden; } .BetterX-media-picker .BetterX-dialog-title { flex: 0 0 auto; } .BetterX-media-picker-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; } .BetterX-media-picker-count { color: var(--xv-muted); font-size: 13px; } .BetterX-media-picker-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; overflow: auto; overscroll-behavior: contain; min-height: 0; padding: 3px; } .BetterX-media-picker-item { position: relative; display: flex; flex-direction: column; min-width: 0; cursor: pointer; border: 2px solid var(--xv-border); border-radius: 10px; overflow: hidden; background: var(--xv-chip-bg); } .BetterX-media-picker-item:has(input:checked) { border-color: var(--xv-accent); } .BetterX-media-picker-item:focus-within { outline: 2px solid var(--xv-accent); outline-offset: 1px; } .BetterX-media-picker-item input { position: absolute; top: 7px; right: 7px; z-index: 2; width: 18px; height: 18px; margin: 0; accent-color: var(--xv-accent); cursor: pointer; } .BetterX-media-picker-thumb { position: relative; display: block; aspect-ratio: 1; overflow: hidden; } .BetterX-media-picker-placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: var(--xv-muted); font-size: 12px; } .BetterX-media-picker-thumb img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; } .BetterX-media-picker-caption { padding: 5px 6px; color: var(--xv-text); font-size: 12px; text-align: center; } .BetterX-media-picker .BetterX-dialog-actions { flex: 0 0 auto; } .BetterX-media-picker button:disabled { opacity: .45; cursor: default; } @media (max-width: 420px) { .BetterX-media-picker { padding: 14px; } .BetterX-media-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } .BetterX-language-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .BetterX-language-option { display: grid; grid-template-columns: 38px minmax(0, 1fr) 18px; align-items: center; gap: 9px; min-height: 48px; padding: 8px 10px; border: 1px solid var(--xv-border); border-radius: 10px; background: var(--xv-chip-bg); color: var(--xv-text); text-align: left; cursor: pointer; } .BetterX-language-option:hover, .BetterX-language-option:focus-visible { border-color: var(--xv-accent); outline: none; } .BetterX-language-option.is-current { border-color: var(--xv-accent); box-shadow: inset 0 0 0 1px var(--xv-accent); } .BetterX-language-code { color: var(--xv-muted); font-size: 11px; font-weight: 800; } .BetterX-language-check { color: var(--xv-accent); font-size: 16px; font-weight: 900; text-align: right; } .BetterX-language-note { margin: 12px 0 0 !important; color: var(--xv-muted); font-size: 12px; } #BetterX-panel * { box-sizing: border-box; } .BetterX-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 14px 14px 8px; } .BetterX-title-main { font-size: 15px; font-weight: 800; } .BetterX-title-sub { font-size: 11px; color: var(--xv-muted); margin-top: 2px; } .BetterX-header-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; } .BetterX-tip { padding: 0 14px 8px; font-size: 13px; color: var(--xv-muted); } .BetterX-btn { background: var(--xv-chip-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; } .BetterX-btn:hover { border-color: var(--xv-accent); } .BetterX-btn.primary { background: var(--xv-accent); color: #fff; border-color: var(--xv-accent); } .BetterX-btn.danger { color: #f4212e; } .BetterX-btn.danger:hover { border-color: #f4212e; } .BetterX-summary { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; } .BetterX-stat { background: var(--xv-chip-bg); border-radius: 8px; padding: 4px 8px; font-size: 11px; color: var(--xv-muted); } .BetterX-stat b { color: var(--xv-text); font-size: 12px; } .BetterX-filter-bar, .BetterX-chip-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; } .BetterX-chip-row { padding: 6px 0 0; } .BetterX-chip { background: var(--xv-chip-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer; } .BetterX-chip.active { background: var(--xv-accent); color: #fff; border-color: var(--xv-accent); } .BetterX-controls { padding: 0 14px 10px; display: flex; flex-direction: column; gap: 8px; } .BetterX-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; } .BetterX-control-row { align-items: flex-end; } .BetterX-control-row > .BetterX-btn, .BetterX-control-row > .BetterX-field > .BetterX-input { height: 32px; } .BetterX-control-row > .BetterX-field.inline { height: 32px; justify-content: center; align-self: flex-end; } .BetterX-row .BetterX-input { flex: 1 1 120px; } .BetterX-input { background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 7px 10px; font-size: 13px; width: 100%; } .BetterX-input.small { width: 90px; flex: 0 0 auto; } .BetterX-select { background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; } .BetterX-select option { color: #000; } .BetterX-light .BetterX-select option { color: #0f1419; } .BetterX-advanced { border: 1px solid var(--xv-border); border-radius: 8px; padding: 6px 10px; } .BetterX-advanced > summary { cursor: pointer; font-size: 13px; color: var(--xv-muted); } .BetterX-adv-body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; } .BetterX-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--xv-muted); } .BetterX-field.inline { flex-direction: row; align-items: center; gap: 6px; } .BetterX-download-zip-option { margin-left: 0; } .BetterX-adv-label { font-size: 12px; color: var(--xv-muted); } .BetterX-content-status { font-size: 11px; color: var(--xv-muted); padding: 5px 8px; border-radius: 7px; background: var(--xv-chip-bg); } .BetterX-list { overflow-y: auto; padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 10px; } .BetterX-empty { padding: 24px 8px; text-align: center; color: var(--xv-muted); font-size: 13px; } .BetterX-loadmore { margin-top: 4px; background: var(--xv-chip-bg); color: var(--xv-text); border: 1px dashed var(--xv-border); border-radius: 8px; padding: 8px; font-size: 12px; cursor: pointer; } .BetterX-item { background: var(--xv-item-bg); border: 1px solid var(--xv-border); border-radius: 12px; padding: 10px 12px; } .BetterX-item.is-flash-lost { border-color: rgba(244,33,46,0.5); } .BetterX-item.is-pinned { border-color: rgba(29,155,240,0.6); } .BetterX-item-top { display: flex; justify-content: space-between; gap: 8px; } .BetterX-author-head { display: flex; align-items: center; gap: 8px; } .BetterX-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; } .BetterX-author-line { font-size: 13px; font-weight: 700; word-break: break-word; line-height: 1.35; } .BetterX-author-profile { color: inherit; text-decoration: none; } .BetterX-author-profile:hover { color: var(--xv-accent); text-decoration: underline; } .BetterX-author-handle { color: var(--xv-muted); font-weight: 400; font-size: 12px; } .BetterX-author-time { color: var(--xv-muted); font-weight: 400; font-size: 12px; white-space: nowrap; } .BetterX-submeta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; font-size: 10px; color: var(--xv-muted); } .BetterX-actions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; align-content: flex-start; } .BetterX-text { margin: 8px 0 4px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; } .BetterX-text.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; } .BetterX-expand-btn { background: none; border: none; color: var(--xv-accent); font-size: 12px; cursor: pointer; padding: 0; } .BetterX-hl { background: #ffd400; color: #000; border-radius: 3px; padding: 0 1px; } .BetterX-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } .BetterX-thumb-button { padding: 0; border: 0; border-radius: 8px; background: none; cursor: zoom-in; line-height: 0; } .BetterX-thumb-button:focus-visible { outline: 2px solid var(--xv-accent); outline-offset: 2px; } .BetterX-thumb { display: block; width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--xv-border); transition: transform .16s ease, box-shadow .16s ease; } .BetterX-thumb-button:hover .BetterX-thumb { transform: scale(1.04); box-shadow: 0 3px 12px rgba(0, 0, 0, .28); } .BetterX-image-preview { position: fixed; inset: 0; z-index: 2147483647; display: flex; align-items: center; justify-content: center; box-sizing: border-box; overflow: hidden; overscroll-behavior: contain; touch-action: none; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: rgba(0, 0, 0, .86); cursor: zoom-out; } .BetterX-image-preview-box { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; cursor: default; touch-action: none; user-select: none; } .BetterX-image-preview-box img { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; box-shadow: 0 12px 46px rgba(0, 0, 0, .55); transform: translate3d(0, 0, 0) scale(1); transform-origin: center center; will-change: transform; cursor: zoom-in; touch-action: none; user-select: none; -webkit-user-drag: none; } .BetterX-image-preview-box.is-zoomed img { cursor: grab; } .BetterX-image-preview-box.is-panning img { cursor: grabbing; } .BetterX-image-preview-close { position: fixed; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 3; display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid rgba(255,255,255,.52); border-radius: 50%; background: rgba(20,20,20,.9); color: #fff; text-align: center; text-indent: 0; cursor: pointer; box-shadow: 0 3px 14px rgba(0,0,0,.38); touch-action: manipulation; } .BetterX-image-preview-close > span { display: block; margin: 0; padding: 0; font: 700 27px/1 Arial, sans-serif; line-height: 1; transform: translateY(-1px); } .BetterX-image-preview-nav { position: fixed; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255,255,255,.48); border-radius: 50%; background: rgba(20,20,20,.78); color: #fff; text-align: center; text-indent: 0; cursor: pointer; box-shadow: 0 3px 14px rgba(0,0,0,.34); touch-action: manipulation; transition: opacity .14s ease, background .14s ease, transform .14s ease; } .BetterX-image-preview-nav > span { display: block; font: 700 34px/1 Arial, sans-serif; line-height: 1; transform: translateY(-1px); } .BetterX-image-preview-nav:hover:not(:disabled) { background: rgba(20,20,20,.94); transform: scale(1.06); } .BetterX-image-preview-nav:disabled { opacity: .24; cursor: default; } .BetterX-image-preview-nav[hidden] { display: none !important; } @media (hover: none), (pointer: coarse) { .BetterX-image-preview-nav { display: none !important; } } .BetterX-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; } .BetterX-tag { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: var(--xv-chip-bg); color: var(--xv-muted); } .BetterX-tag.fav { background: rgba(255,212,0,0.15); color: #ffd400; } .BetterX-tag.pin { background: rgba(29,155,240,0.15); color: var(--xv-accent); } .BetterX-tag.flash { background: rgba(244,33,46,0.15); color: #f4212e; } .BetterX-tag.opened { background: rgba(0,186,124,0.15); color: #00ba7c; } .BetterX-tag.keyword { background: rgba(255,212,0,0.15); color: #ffd400; } .BetterX-note-area { margin-top: 4px; } .BetterX-note-btn { font-size: 11px; padding: 3px 8px; } .BetterX-note-text { margin-top: 4px; font-size: 12px; color: var(--xv-text); background: var(--xv-chip-bg); border-radius: 6px; padding: 6px 8px; word-break: break-word; } .BetterX-note-input { width: 100%; min-height: 60px; resize: vertical; background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 7px; font-size: 12px; } .BetterX-note-actions { display: flex; gap: 6px; margin-top: 6px; } .BetterX-bottom-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; color: var(--xv-muted); } .BetterX-list::-webkit-scrollbar { width: 8px; } .BetterX-list::-webkit-scrollbar-thumb { background: var(--xv-border); border-radius: 8px; } .BetterX-panel-top { flex: 0 0 auto; } .BetterX-list { flex: 1 1 auto; min-height: 120px; } .BetterX-header { padding-bottom: 10px; border-bottom: 1px solid var(--xv-border); } .BetterX-section-label { padding: 8px 14px 2px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--xv-muted); } .BetterX-controls .BetterX-section-label { padding: 4px 0 0; } .BetterX-controls { border-top: 1px solid var(--xv-border); padding-top: 12px; } .BetterX-menu-wrap { position: relative; display: inline-flex; } .BetterX-icon-btn { padding: 5px 10px; font-weight: 700; line-height: 1; } .BetterX-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; display: flex; flex-direction: column; gap: 2px; padding: 6px; min-width: 150px; background: var(--xv-panel-bg); border: 1px solid var(--xv-border); border-radius: 12px; box-shadow: 0 10px 32px rgba(0,0,0,0.45); backdrop-filter: blur(12px); } .BetterX-menu[hidden] { display: none; } .BetterX-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; color: var(--xv-text); border: none; border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; white-space: nowrap; transition: background .15s; } .BetterX-menu-item:hover { background: var(--xv-chip-bg); } .BetterX-menu-item.danger { color: #f4212e; } .BetterX-menu-item.danger:hover { background: rgba(244,33,46,0.12); } .BetterX-btn { transition: background .15s, border-color .15s, color .15s; } .BetterX-btn:hover { background: var(--xv-chip-bg); } .BetterX-btn.primary:hover { background: var(--xv-accent); filter: brightness(1.08); } .BetterX-chip { transition: background .15s, border-color .15s, color .15s; } .BetterX-input, .BetterX-select, .BetterX-note-input { transition: border-color .15s, box-shadow .15s; } .BetterX-input:focus, .BetterX-select:focus, .BetterX-note-input:focus { outline: none; border-color: var(--xv-accent); box-shadow: 0 0 0 2px rgba(29,155,240,0.25); } .BetterX-item { transition: border-color .15s, background .15s; } .BetterX-item:hover { border-color: rgba(29,155,240,0.5); } .BetterX-advanced { transition: border-color .15s; } .BetterX-advanced[open] { border-color: rgba(29,155,240,0.4); } .BetterX-advanced > summary { list-style: none; display: flex; align-items: center; gap: 6px; font-weight: 600; user-select: none; } .BetterX-advanced > summary::-webkit-details-marker { display: none; } .BetterX-advanced > summary::before { content: '▸'; font-size: 10px; color: var(--xv-muted); transition: transform .15s; } .BetterX-advanced[open] > summary::before { transform: rotate(90deg); } #BetterX-panel { position: fixed; top: 12px; bottom: 12px; width: min(94vw, 520px); height: auto; max-height: none; } #BetterX-root:not(.BetterX-mobile) #BetterX-panel { min-width: min(420px, calc(100vw - 24px)); max-width: calc(100vw - 24px); } .BetterX-panel-resize-handle { position: absolute; top: 0; bottom: 0; width: 7px; z-index: 8; cursor: ew-resize; touch-action: none; user-select: none; } .BetterX-panel-resize-left { left: 0; } .BetterX-panel-resize-right { right: 0; } .BetterX-panel-resize-handle:hover { background: rgba(29,155,240,.25); } #BetterX-root.BetterX-mobile .BetterX-panel-resize-handle { display: none; } .BetterX-header { flex: 0 0 auto; align-items: center; min-height: 58px; padding: 11px 14px; border-bottom: none; background: var(--xv-panel-bg); } .BetterX-title { min-width: 0; } .BetterX-title-main { display: flex; align-items: center; gap: 8px; font-size: 17px; letter-spacing: -.01em; } .BetterX-title-icon { width: 26px; height: 26px; flex: 0 0 26px; border-radius: 7px; object-fit: cover; box-shadow: 0 1px 5px rgba(0,0,0,.28); pointer-events: none; user-select: none; -webkit-user-drag: none; } .BetterX-title-sub { font-size: 11px; } .BetterX-header-actions { flex-wrap: nowrap; align-items: center; } .BetterX-header-actions .BetterX-btn { display: inline-flex; align-items: center; justify-content: center; height: 30px; min-height: 30px; } .BetterX-header-actions .BetterX-icon-btn { width: 30px; padding: 0; } #BetterX-panel.is-settings-view .BetterX-vault-action { display: none; } .BetterX-btn:disabled, .BetterX-input:disabled, .BetterX-select:disabled { cursor: not-allowed; opacity: .48; filter: none; } .BetterX-tabs { flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 0 14px 10px; padding: 3px; border-radius: 11px; background: var(--xv-chip-bg); } .BetterX-tab { display: flex; align-items: center; justify-content: center; min-height: 32px; border: 0; border-radius: 8px; background: transparent; text-align: center; color: var(--xv-muted); font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; } .BetterX-tab:hover { color: var(--xv-text); } .BetterX-tab.active { color: #fff; background: var(--xv-accent); box-shadow: 0 2px 8px rgba(29,155,240,.22); } .BetterX-view { flex: 1 1 auto; min-height: 0; } .BetterX-view[hidden] { display: none !important; } .BetterX-vault-view { display: flex; flex-direction: column; } .BetterX-notifications-view { display: flex; flex-direction: column; min-height: 0; } .BetterX-notification-toolbar { flex: 0 0 auto; padding: 0 14px 12px; border-bottom: 1px solid var(--xv-border); } .BetterX-notification-search-row { margin: 10px 0 0; gap: 8px; } .BetterX-notification-search-row .BetterX-input { flex: 1 1 240px; min-width: 0; } .BetterX-notification-actions { margin: 8px 0; flex-wrap: wrap; } .BetterX-notification-list { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 14px 18px; } .BetterX-notification-user { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--xv-border); } .BetterX-notification-user.is-pinned { box-shadow: inset 3px 0 0 var(--xv-accent); padding-left: 8px; } .BetterX-notification-user.is-disabled { opacity: .68; } .BetterX-notification-user.is-disabled.is-pinned { opacity: .82; } .BetterX-notification-pin-mark { font-size: 12px; vertical-align: 1px; } .BetterX-btn.notification-pinned { color: var(--xv-accent); border-color: var(--xv-accent); font-weight: 700; } .BetterX-notification-user-main { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--xv-text); text-decoration: none; } .BetterX-notification-user-main img, .BetterX-notification-avatar-fallback { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; object-fit: cover; } .BetterX-notification-avatar-fallback { display: grid; place-items: center; background: var(--xv-chip-bg); color: var(--xv-muted); font-weight: 800; } .BetterX-notification-user-main span span, .BetterX-notification-user-main > span { min-width: 0; } .BetterX-notification-user-main b, .BetterX-notification-user-main small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .BetterX-notification-user-main small { color: var(--xv-muted); font-size: 12px; } .BetterX-notification-user-actions { display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; } .BetterX-vault-toolbar { flex: 0 0 auto; border-top: 1px solid var(--xv-border); border-bottom: 1px solid var(--xv-border); background: var(--xv-panel-bg); } .BetterX-tip { margin: 9px 14px 7px; padding: 7px 9px; border-radius: 8px; background: rgba(29,155,240,.08); color: var(--xv-muted); font-size: 12px; line-height: 1.45; } .BetterX-summary { flex-wrap: wrap; overflow-x: visible; padding: 0 14px 8px; } .BetterX-summary::-webkit-scrollbar, .BetterX-filter-bar::-webkit-scrollbar { display: none; } .BetterX-stat { flex: 0 0 auto; border: 1px solid transparent; padding: 4px 8px; font-size: 12px; } .BetterX-stat b { font-size: 13px; } .BetterX-section-label { padding: 2px 14px 5px; font-size: 11px; text-transform: uppercase; } .BetterX-filter-bar { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; min-width: 0; width: 100%; scrollbar-width: none; padding: 0 14px 9px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; } .BetterX-filter-bar.is-dragging { cursor: grabbing; user-select: none; } .BetterX-filter-bar.is-dragging .BetterX-chip { pointer-events: none; } .BetterX-chip { flex: 0 0 auto; min-height: 28px; padding: 4px 11px; } .BetterX-search-tools { display: grid; gap: 7px; padding: 0 14px 11px; } .BetterX-search-tools > .BetterX-input { height: 36px; padding-left: 12px; border-radius: 10px; } .BetterX-toolbar-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; } .BetterX-toolbar-row .BetterX-select { width: 100%; min-width: 0; height: 32px; border-radius: 9px; font-size: 13px; } .BetterX-sort-hint { min-height: 18px; padding: 0 2px; color: var(--xv-text); font-family: SimHei, "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; font-size: 12px; font-weight: 600; line-height: 1.5; } .BetterX-vault-filter-card { margin: 0 14px 10px; min-width: 0; } .BetterX-vault-filter-card > summary { min-width: 0; max-width: 100%; overflow: hidden; } .BetterX-vault-filter-title { flex: 0 0 auto; } .BetterX-vault-filter-state { flex: 1 1 auto; min-width: 0; max-width: 100%; margin-left: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--xv-muted); font-size: 11px; font-weight: 500; } .BetterX-vault-filter-card .BetterX-adv-body { min-width: 0; } .BetterX-vault-filter-card .BetterX-filter-bar { padding: 0 0 3px; } .BetterX-vault-filter-card .BetterX-search-tools { padding: 0; min-width: 0; } .BetterX-list { flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding: 10px 12px 14px; gap: 8px; overscroll-behavior: contain; } .BetterX-settings-view { display: flex; flex-direction: column; border-top: 1px solid var(--xv-border); } .BetterX-settings-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 18px; scrollbar-color: var(--xv-border) transparent; } .BetterX-settings-intro { display: flex; flex-direction: column; gap: 2px; padding: 0 2px 10px; } .BetterX-settings-intro strong { font-size: 15px; } .BetterX-settings-intro span { color: var(--xv-muted); font-size: 12px; line-height: 1.45; } .BetterX-settings-view .BetterX-controls { gap: 9px; padding: 0; border-top: 0; } .BetterX-settings-card, .BetterX-vault-filter-card { padding: 0; overflow: hidden; border-radius: 12px; background: var(--xv-item-bg); } .BetterX-settings-card > summary, .BetterX-vault-filter-card > summary { min-height: 43px; padding: 0 12px; color: var(--xv-text); font-size: 14px; } .BetterX-settings-card[open], .BetterX-vault-filter-card[open] { border-color: rgba(29,155,240,.34); } .BetterX-settings-card[open] > summary, .BetterX-vault-filter-card[open] > summary { border-bottom: 1px solid var(--xv-border); } .BetterX-settings-card > .BetterX-adv-body, .BetterX-vault-filter-card > .BetterX-adv-body { gap: 10px; padding: 12px; } .BetterX-settings-card .BetterX-field, .BetterX-settings-card .BetterX-adv-label { font-size: 13px; line-height: 1.45; } .BetterX-download-name-tokens { gap: 6px; } .BetterX-download-name-tokens .BetterX-chip { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--xv-text); font-weight: 650; } .BetterX-download-name-preview { color: var(--xv-text); font-weight: 650; } .BetterX-download-advanced { width: 100%; box-sizing: border-box; padding: 0; background: var(--xv-input-bg); } .BetterX-download-advanced > summary { min-height: 48px; padding: 6px 10px; } .BetterX-download-advanced[open] > summary { border-bottom: 1px solid var(--xv-border); } .BetterX-download-advanced > .BetterX-adv-body { padding: 10px; } .BetterX-download-advanced-summary { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 1px; } .BetterX-download-advanced-title { color: var(--xv-text); font-size: 13px; } .BetterX-download-advanced-subtitle { color: var(--xv-muted); font-size: 11px; font-weight: 500; line-height: 1.35; } .BetterX-download-advanced-state { flex: 0 0 auto; padding: 2px 6px; border-radius: 999px; background: rgba(29,155,240,.12); color: var(--xv-accent); font-size: 10px; font-weight: 650; } .BetterX-settings-card .BetterX-content-status { font-size: 12px; line-height: 1.4; } .BetterX-dependent-options { display: flex; flex-direction: column; gap: 9px; } .BetterX-dependent-options.is-disabled { opacity: .5; } .BetterX-field.is-disabled { opacity: .5; } .BetterX-adultspam-master-row { flex-wrap: nowrap; justify-content: space-between; } .BetterX-adultspam-master-row > .BetterX-field { flex: 1 1 auto; min-width: 0; } .BetterX-adultspam-master-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; } .BetterX-profile-default-view-row, .BetterX-gif-format-row { flex-wrap: nowrap; justify-content: space-between; } .BetterX-profile-default-view-row > .BetterX-field, .BetterX-gif-format-row > .BetterX-field { flex: 1 1 auto; min-width: 0; } .BetterX-profile-default-view-row > .BetterX-select, .BetterX-gif-format-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; } .BetterX-tag-editor { display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 8px; border: 1px solid var(--xv-border); border-radius: 10px; background: var(--xv-input-bg); } .BetterX-keyword-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; } .BetterX-keyword-tags:empty { display: none; } .BetterX-main-keyword-tags { padding: 0 2px; } .BetterX-keyword-section > .BetterX-row { width: 100%; } .BetterX-keyword-tag { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; min-height: 26px; padding: 3px 5px 3px 9px; border: 1px solid rgba(29,155,240,.35); border-radius: 999px; background: rgba(29,155,240,.12); color: var(--xv-text); font-size: 12px; line-height: 1.3; } .BetterX-keyword-tag-label { overflow-wrap: anywhere; } .BetterX-keyword-tag-remove { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 19px; height: 19px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--xv-muted); cursor: pointer; font-size: 17px; line-height: 1; } .BetterX-keyword-tag-remove:hover { background: rgba(244,33,46,.14); color: #f4212e; } .BetterX-tag-editor > .BetterX-input { width: 100%; margin: 0; background: transparent; } .BetterX-settings-view .BetterX-field.inline { position: relative; min-height: 28px; padding-left: 46px; color: var(--xv-text); line-height: 1.35; } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: absolute; left: 0; top: 50%; width: 38px; height: 22px; margin: 0; border: 1px solid var(--xv-border); border-radius: 999px; background: var(--xv-input-bg); transform: translateY(-50%); cursor: pointer; transition: .16s ease; } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]::after { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--xv-muted); box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: .16s ease; } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:checked { border-color: var(--xv-accent); background: var(--xv-accent); } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:checked::after { left: 18px; background: #fff; } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:focus-visible { outline: 2px solid rgba(29,155,240,.45); outline-offset: 2px; } .BetterX-settings-view .BetterX-control-row > .BetterX-field.inline { align-self: flex-end; justify-content: center; height: 32px; } .BetterX-item { position: relative; flex: 0 0 auto; padding: 11px 12px; border-radius: 13px; overflow: hidden; } .BetterX-empty, .BetterX-loadmore { flex: 0 0 auto; } .BetterX-item.is-unread::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--xv-accent); } .BetterX-avatar { width: 32px; height: 32px; } .BetterX-author { min-width: 120px; } .BetterX-author-line { font-size: 14px; } .BetterX-submeta, .BetterX-tag, .BetterX-bottom-meta { font-size: 11px; } .BetterX-text { font-size: 14px; line-height: 1.55; } .BetterX-note-btn { font-size: 12px; } .BetterX-item-top { align-items: flex-start; } .BetterX-actions { max-width: 58%; } .BetterX-actions .BetterX-btn { min-height: 28px; padding: 4px 8px; } .BetterX-bottom-meta { padding-top: 7px; border-top: 1px solid var(--xv-border); } @media (max-width: 640px) { #BetterX-root.BetterX-mobile #BetterX-panel { inset: 8px; width: auto; height: calc(100dvh - 16px); max-height: none; border-radius: 18px; } #BetterX-root.BetterX-mobile #BetterX-download-pill { left: auto; right: 0; bottom: calc(100% + 10px); width: 52px; min-width: 52px; height: 52px; padding: 0; overflow: visible; border: 0; background: var(--xv-accent); color: var(--xv-accent); box-shadow: 0 4px 16px rgba(0,0,0,.35); opacity: var(--xv-mobile-badge-opacity, 1); transition: opacity 170ms ease-out, filter .15s; } #BetterX-root.BetterX-mobile #BetterX-download-pill.is-progress { border: 0; background: var(--xv-accent); } #BetterX-root.BetterX-mobile .BetterX-download-pill-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #fff; color: var(--xv-accent); font-size: 24px; font-weight: 900; box-shadow: 0 1px 5px rgba(0,0,0,.18); } #BetterX-root.BetterX-mobile .BetterX-download-pill-label { display: none; } #BetterX-root.BetterX-mobile .BetterX-download-pill-count { position: absolute; display: block; top: -2px; right: -2px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #f4212e; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; } #BetterX-root.BetterX-mobile .BetterX-download-pill-count[hidden] { display: none !important; } #BetterX-root.BetterX-mobile #BetterX-download-popover { position: absolute; left: auto; right: 0; bottom: calc(200% + 20px); width: min(360px, calc(100vw - 16px)); max-width: calc(100vw - 16px); max-height: min(52dvh, 420px); } #BetterX-root.BetterX-mobile.is-open:not(.BetterX-mobile-badge-collapsed) #BetterX-badge, #BetterX-root.BetterX-mobile.is-open #BetterX-download-pill { opacity: 0; pointer-events: none; } .BetterX-header { min-height: 54px; padding: 9px 11px; } .BetterX-title-icon { display: none; } .BetterX-title-sub { display: none; } .BetterX-header-actions { gap: 4px; } .BetterX-header-actions .BetterX-btn { padding: 5px 7px; } .BetterX-tabs { margin: 0 10px 8px; } .BetterX-tip { margin: 7px 10px 6px; } .BetterX-summary, .BetterX-filter-bar { padding-left: 10px; padding-right: 10px; } .BetterX-section-label { padding-left: 10px; padding-right: 10px; } .BetterX-search-tools { padding: 0 10px 9px; } .BetterX-vault-filter-card { margin: 0 10px 8px; } .BetterX-vault-filter-card .BetterX-filter-bar, .BetterX-vault-filter-card .BetterX-search-tools { padding-left: 0; padding-right: 0; } .BetterX-toolbar-row { grid-template-columns: 1fr 1fr; } .BetterX-toolbar-row .BetterX-select:last-child { grid-column: 1 / -1; } .BetterX-list { padding: 8px 9px 12px; } .BetterX-notification-toolbar { padding: 0 10px 10px; } .BetterX-notification-search-row { flex-wrap: nowrap; } .BetterX-notification-search-row .BetterX-btn { flex: 0 0 auto; } .BetterX-notification-list { padding: 8px 10px 14px; } .BetterX-notification-user { align-items: center; flex-direction: row; flex-wrap: wrap; } .BetterX-notification-user-main { width: auto; flex: 1 1 96px; min-width: 0; } .BetterX-notification-user-actions { width: auto; max-width: 100%; flex: 0 1 auto; justify-content: flex-start; } .BetterX-settings-scroll { padding: 10px 10px 16px; } .BetterX-item-top { flex-direction: column; } .BetterX-actions { max-width: none; justify-content: flex-start; } .BetterX-thumb { width: 64px; height: 64px; } .BetterX-image-preview { padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); } .BetterX-image-preview-close { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); width: 40px; height: 40px; } }`);
+  addStyle(`#BetterX-root { position: fixed; display: flex; left: 16px; bottom: 16px; z-index: 2147483000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; --xv-panel-bg: rgba(21,24,28,0.98); --xv-text: #e7e9ea; --xv-border: rgba(255,255,255,0.12); --xv-chip-bg: rgba(255,255,255,0.06); --xv-input-bg: rgba(255,255,255,0.06); --xv-muted: rgba(231,233,234,0.62); --xv-item-bg: rgba(255,255,255,0.03); --xv-accent: #1d9bf0; } #BetterX-root.BetterX-light { --xv-panel-bg: rgba(255,255,255,0.99); --xv-text: #0f1419; --xv-border: rgba(0,0,0,0.12); --xv-chip-bg: rgba(0,0,0,0.05); --xv-input-bg: rgba(0,0,0,0.04); --xv-muted: rgba(15,20,25,0.6); --xv-item-bg: rgba(0,0,0,0.02); } #BetterX-badge { background: var(--xv-accent); color: #fff; border: none; border-radius: 999px; padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.35); touch-action: none; user-select: none; } #BetterX-badge:hover { filter: brightness(1.08); } #BetterX-root.BetterX-desktop-badge-hidden:not(.BetterX-mobile) #BetterX-badge { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; } #BetterX-badge.mobile-mode { width: 52px; height: 52px; padding: 0; border-radius: 50%; font-size: 22px; display: flex; align-items: center; justify-content: center; position: relative; } .BetterX-mobile-icon { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.72); box-shadow: 0 2px 8px rgba(0,0,0,.22); pointer-events: none; user-select: none; -webkit-user-drag: none; } #BetterX-badge.mobile-mode.desktop-icon-mode { width: 64px; height: 64px; } #BetterX-badge.mobile-mode.desktop-icon-mode .BetterX-mobile-icon { width: 54px; height: 54px; } #BetterX-badge.desktop-icon-mode { cursor: grab; } #BetterX-badge.desktop-icon-mode.is-dragging { cursor: grabbing; } #BetterX-badge.desktop-icon-mode .BetterX-mobile-icon-fallback { font-size: 30px; } .BetterX-mobile-icon-fallback { line-height: 1; } #BetterX-root.BetterX-mobile .BetterX-desktop-only-setting { display: none !important; } .BetterX-firefox-only-setting[hidden] { display: none !important; } .BetterX-mobile-only-setting { display: none !important; } #BetterX-root.BetterX-mobile label.BetterX-mobile-only-setting { display: flex !important; } #BetterX-root.BetterX-mobile div.BetterX-mobile-only-setting { display: block !important; } .BetterX-mobile-dot { position: absolute; top: -2px; right: -2px; background: #f4212e; color: #fff; min-width: 18px; height: 18px; border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; padding: 0 4px; } #BetterX-root.BetterX-mobile { left: auto; right: 16px; bottom: 84px; } #BetterX-root.BetterX-mobile #BetterX-badge { opacity: var(--xv-mobile-badge-opacity, 1); transition: opacity 170ms ease-out, filter .15s; } #BetterX-root.BetterX-mobile:not(.BetterX-mobile-badge-collapsed) #BetterX-badge { touch-action: manipulation; } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge { width: 15px; height: 76px; min-height: 76px; padding: 0; border-radius: 999px 0 0 999px; background: #1d9bf0; box-shadow: -1px 2px 8px rgba(0,0,0,.2); opacity: .56 !important; position: relative; z-index: 2; } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge::after { content: '‹'; display: block; color: rgba(255,255,255,.92); font-size: 16px; font-weight: 400; line-height: 1; transform: translateX(-1px); } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-badge.is-mobile-dragging { opacity: .88 !important; transition: none; cursor: ns-resize; } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-icon, #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-icon-fallback, #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed .BetterX-mobile-dot, #BetterX-root.BetterX-mobile.BetterX-mobile-badge-collapsed #BetterX-download-pill { display: none !important; } #BetterX-root.BetterX-mobile.BetterX-mobile-badge-inactive #BetterX-badge, #BetterX-root.BetterX-mobile.BetterX-mobile-badge-inactive #BetterX-download-pill { pointer-events: none; } article .BetterX-media-grid-box { padding-bottom: 0 !important; height: auto !important; min-height: 0 !important; } article nav.BetterX-media-grid { position: relative !important; inset: auto !important; width: 100% !important; height: auto !important; overflow: visible !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-prevButtonWrapper"], article nav.BetterX-media-grid [data-testid="ScrollSnap-nextButtonWrapper"] { display: none !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-SwipeableList"] { width: 100% !important; height: auto !important; overflow: visible !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] { display: grid !important; width: 100% !important; height: auto !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; margin: 0 !important; padding: 0 !important; overflow: hidden !important; border-radius: 16px; scroll-snap-type: none !important; } article nav.BetterX-media-grid-count-2 [data-testid="ScrollSnap-List"] { grid-template-rows: minmax(0, 1fr); aspect-ratio: 16 / 9; } article nav.BetterX-media-grid-count-3 [data-testid="ScrollSnap-List"], article nav.BetterX-media-grid-count-4 [data-testid="ScrollSnap-List"] { grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9; } article nav.BetterX-media-grid-count-3 [data-testid="ScrollSnap-List"] > [role="presentation"]:first-child { grid-row: span 2; } article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] { display: block !important; width: auto !important; min-width: 0 !important; height: 100% !important; margin: 0 !important; overflow: hidden !important; scroll-snap-align: none !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div, article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div > div { width: 100% !important; height: 100% !important; min-height: 0 !important; } article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div { aspect-ratio: auto !important; } #BetterX-download-pill { position: absolute; left: calc(100% + 8px); bottom: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 42px; height: 36px; padding: 0 12px; border: 1px solid rgba(255,255,255,.16); border-radius: 999px; background: var(--xv-panel-bg); color: var(--xv-text); box-shadow: 0 4px 16px rgba(0,0,0,.28); font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; backdrop-filter: blur(10px); } .BetterX-download-pill-icon { font-size: 17px; line-height: 1; } .BetterX-download-pill-label { line-height: 1; } .BetterX-download-pill-count { display: none; } #BetterX-download-pill:hover { border-color: var(--xv-accent); } #BetterX-download-pill.is-progress { border-color: transparent; background: linear-gradient(var(--xv-panel-bg), var(--xv-panel-bg)) padding-box, conic-gradient(var(--xv-accent) var(--xv-download-progress, 0deg), var(--xv-border) 0) border-box; } #BetterX-root.BetterX-panel-right #BetterX-download-pill { left: auto; right: calc(100% + 8px); } #BetterX-download-popover { position: absolute; left: calc(100% + 8px); bottom: 44px; width: min(360px, calc(100vw - 32px)); box-sizing: border-box; max-width: calc(100vw - 16px); max-height: min(420px, calc(100vh - 120px)); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 10px; border: 1px solid var(--xv-border); border-radius: 14px; background: var(--xv-panel-bg); color: var(--xv-text); box-shadow: 0 12px 42px rgba(0,0,0,.42); backdrop-filter: blur(12px); } #BetterX-root.BetterX-panel-right #BetterX-download-popover { left: auto; right: calc(100% + 8px); } #BetterX-download-pill[hidden], #BetterX-download-popover[hidden], .BetterX-dl-cancel[hidden] { display: none !important; } .BetterX-download-popover-title { padding: 2px 4px 8px; font-size: 13px; font-weight: 800; } .BetterX-download-empty { padding: 14px 8px; color: var(--xv-muted); text-align: center; font-size: 12px; } .BetterX-download-task { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 8px; margin-top: 5px; border: 1px solid var(--xv-border); border-radius: 10px; background: linear-gradient(90deg, rgba(29,155,240,.14) var(--xv-task-progress, 0%), transparent 0), var(--xv-item-bg); } .BetterX-download-task-main { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 3px; } .BetterX-download-task-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; } .BetterX-download-task-main span { min-width: 0; overflow-wrap: anywhere; color: var(--xv-muted); font-size: 11px; } .BetterX-download-task-actions { display: flex; flex: 0 0 auto; gap: 4px; } .BetterX-download-task-actions button { padding: 4px 7px; border: 1px solid var(--xv-border); border-radius: 7px; background: var(--xv-chip-bg); color: var(--xv-text); font-size: 11px; cursor: pointer; } .BetterX-download-task-actions button:hover { border-color: var(--xv-accent); } #BetterX-panel { position: absolute; bottom: calc(100% + 10px); left: 0; width: min(94vw, 480px); max-height: calc(100vh - 96px); background: var(--xv-panel-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 16px; box-shadow: 0 12px 48px rgba(0,0,0,0.5); backdrop-filter: blur(12px); display: flex; flex-direction: column; overflow: hidden; } #BetterX-root.BetterX-panel-right #BetterX-panel { left: auto; right: 0; } #BetterX-root.BetterX-mobile #BetterX-panel { position: fixed; right: 12px; left: auto; bottom: 84px; max-height: calc(100vh - 120px); } .BetterX-ad-hidden, .BetterX-nfl-hidden { display: none !important; } html.BetterX-hide-whatsnew .BetterX-whatsnew-hidden, html.BetterX-hide-who-to-follow .BetterX-who-to-follow-hidden, html.BetterX-hide-money .BetterX-money-hidden { display: none !important; } .BetterX-adult-spam-hidden { display: none !important; } div:has(> .BetterX-author-links) { overflow: visible !important; } .BetterX-author-links { display: inline-flex; align-self: center; flex: none; color-scheme: light; } body:has(#BetterX-root:not(.BetterX-light)) .BetterX-author-links { color-scheme: dark; } .BetterX-author-links > button { anchor-name: --betterx-author-links; position: relative; display: grid; place-items: center; width: 18.75px; height: 20px; padding: 0; overflow: visible; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: var(--xv-author-links-color, light-dark(#536471, #71767b)); } .BetterX-author-links > button::before { content: ''; position: absolute; top: 50%; left: 50%; translate: -50% -50%; width: calc(var(--xv-author-links-icon-size, 18.75px) + 16px); aspect-ratio: 1; border-radius: 50%; pointer-events: none; } .BetterX-author-links > button:is(:hover, :focus-visible) { color: rgb(29, 155, 240); } .BetterX-author-links > button:is(:hover, :focus-visible)::before { background: rgba(29, 155, 240, .1); } .BetterX-author-links > button svg { position: relative; width: var(--xv-author-links-icon-size, 18.75px); height: auto; } #BetterX-author-links-menu { position: fixed; position-anchor: --betterx-author-links; position-area: block-end span-inline-start; justify-self: end; position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline; inset: auto; margin: 4px 0; padding: 4px; width: max-content; max-width: min(320px, calc(100vw - 16px)); max-height: min(50vh, 300px); box-sizing: border-box; overflow: auto; border: 0; border-radius: 12px; background: light-dark(#fff, #15181c); color: light-dark(#0f1419, #e7e9ea); box-shadow: 0 0 0 1px light-dark(rgba(0,0,0,.1), rgba(255,255,255,.18)), 0 6px 20px rgba(0,0,0,.24); } #BetterX-author-links-menu a { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 8px; color: inherit; font-size: 14px; line-height: 1.4; text-decoration: none; } #BetterX-author-links-menu a > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .BetterX-author-link-icon { display: inline-flex; width: 16px; height: 16px; flex: none; } .BetterX-author-link-icon > svg, .BetterX-author-link-icon > img { width: 100%; height: 100%; } #BetterX-author-links-menu a:hover, #BetterX-author-links-menu a:focus-visible { background: rgba(29,155,240,.12); } .BetterX-download-controls { display: inline-flex; align-items: center; justify-content: center; gap: 1px; flex: 0 0 auto; } .BetterX-download-controls.floating { position: absolute; top: 8px; right: 8px; z-index: 5; padding: 2px; border-radius: 999px; background: rgba(0,0,0,.62); } .BetterX-dl-btn, .BetterX-dl-cancel { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; margin: 0; padding: 0 8px; border: none; background: transparent; color: rgb(83,100,113); font-size: 19px; font-weight: 700; line-height: 1; cursor: pointer; border-radius: 999px; transition: background .15s, color .15s, min-width .15s; } .BetterX-download-controls:not([data-download-state="idle"]) .BetterX-dl-btn { font-size: 12px; } .BetterX-dl-btn:hover { background: rgba(29,155,240,0.12); color: rgb(29,155,240); } .BetterX-dl-btn.is-progress { color: rgb(29,155,240); background: conic-gradient(rgba(29,155,240,.24) var(--xv-download-progress, 0deg), transparent 0); } .BetterX-dl-btn.is-downloaded { color: rgb(29,155,240); text-shadow: 0 0 8px rgba(29,155,240,.28); } .BetterX-dl-btn.is-downloaded:hover { color: rgb(29,155,240); background: rgba(29,155,240,.14); } .BetterX-dl-btn.is-downloaded svg { width: 22px; height: 22px; fill: currentColor; } .BetterX-dl-cancel { min-width: 24px; width: 24px; padding: 0; color: rgb(244,33,46); font-size: 17px; } .BetterX-dl-cancel:hover { background: rgba(244,33,46,.12); } .BetterX-download-controls.in-group { align-self: center; } .BetterX-download-controls.guest-actions { min-width: 0; flex: 1 1 0%; align-self: center; } .BetterX-download-controls.guest-actions .BetterX-dl-btn, .BetterX-download-controls.guest-actions .BetterX-dl-cancel { transform: none !important; animation: none !important; } .BetterX-download-controls.floating .BetterX-dl-btn, .BetterX-download-controls.floating .BetterX-dl-cancel { color: #fff; } .BetterX-download-controls.floating .BetterX-dl-btn.is-downloaded { color: rgb(29,155,240); } .BetterX-download-controls.floating .BetterX-dl-btn:hover { background: rgba(29,155,240,.88); } .BetterX-download-controls.floating .BetterX-dl-cancel:hover { background: rgba(244,33,46,.88); } article[data-testid="notification"] .BetterX-download-controls { display: none !important; } .BetterX-mask-hidden { display: none !important; } .BetterX-unlocked.BetterX-native-media-grid { display: grid; gap: 2px; margin: 8px 0; width: 100%; max-width: 100%; border-radius: 16px; overflow: hidden; background: #000; } .BetterX-unlocked .BetterX-unlocked-tile, .BetterX-unlocked .BetterX-unlocked-media { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; } .BetterX-unlocked .BetterX-unlocked-photo { cursor: pointer; } .BetterX-unlocked.xv-n1 { grid-template-columns: 1fr; background: transparent; } .BetterX-unlocked.xv-n1 .BetterX-unlocked-tile { height: auto; background: #000; } .BetterX-unlocked.xv-n1 img, .BetterX-unlocked.xv-n1 video { display: block; margin: 0 auto; width: auto; height: auto; max-width: 100%; max-height: 510px; object-fit: contain; background: #000; } .BetterX-unlocked.xv-multi img, .BetterX-unlocked.xv-multi video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; } .BetterX-unlocked.xv-n2 { grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); aspect-ratio: 16 / 9; } .BetterX-unlocked.xv-n3 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9; } .BetterX-unlocked.xv-n3 > *:first-child { grid-row: span 2; } .BetterX-unlocked.xv-n4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); aspect-ratio: 16 / 9; } .BetterX-unlocked.xv-nm { grid-template-columns: 1fr 1fr; } .BetterX-unlocked.xv-nm .BetterX-unlocked-tile { aspect-ratio: 1 / 1; } #BetterX-toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(10px); background: rgba(21,24,28,0.98); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 2147483600; box-shadow: 0 6px 24px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: 80vw; } #BetterX-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); } .BetterX-dialog-overlay { position: fixed; inset: 0; z-index: 2147483646; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(0,0,0,.64); backdrop-filter: blur(4px); color: var(--xv-text); } .BetterX-dialog { position: relative; width: min(92vw, 460px); max-height: min(82vh, 640px); overflow: auto; padding: 20px; border: 1px solid var(--xv-border); border-radius: 16px; background: var(--xv-panel-bg); box-shadow: 0 18px 64px rgba(0,0,0,.55); } .BetterX-dialog.has-close-icon .BetterX-dialog-title { padding-right: 38px; } .BetterX-dialog-close { position: absolute; top: 12px; right: 12px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--xv-muted); cursor: pointer; } .BetterX-dialog-close[hidden] { display: none !important; } .BetterX-dialog-close:hover { background: var(--xv-chip-bg); color: var(--xv-text); } .BetterX-dialog-close:focus-visible { outline: 2px solid var(--xv-accent); outline-offset: 2px; } .BetterX-dialog-close svg { width: 20px; height: 20px; fill: currentColor; } .BetterX-dialog-title { font-size: 18px; line-height: 1.35; font-weight: 800; margin-bottom: 12px; } .BetterX-dialog-body { font-size: 14px; line-height: 1.65; color: var(--xv-text); } .BetterX-dialog-body p { margin: 0 0 10px; } .BetterX-dialog-body ul { margin: 0 0 12px; padding-left: 22px; } .BetterX-dialog-body li { margin: 4px 0; } .BetterX-dialog-body code { padding: 1px 5px; border-radius: 5px; background: var(--xv-chip-bg); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .92em; } .BetterX-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 18px; } .BetterX-dialog-actions .BetterX-btn { min-width: 104px; padding: 9px 14px; font-size: 14px; } .BetterX-notification-differences { display: flex; flex-direction: column; box-sizing: border-box; width: min(92vw, 560px); overflow: hidden; } .BetterX-notification-differences .BetterX-dialog-title, .BetterX-notification-differences .BetterX-dialog-actions { flex: none; } .BetterX-notification-differences .BetterX-dialog-body { flex: 0 1 auto; overflow: auto; min-height: 48px; } .BetterX-notification-diff-list { flex: 1 1 auto; min-height: 48px; overflow: auto; list-style: none; padding: 0; margin: 4px 0; } .BetterX-notification-diff-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--xv-border); } .BetterX-notification-diff-list a { color: var(--xv-accent); overflow-wrap: anywhere; } .BetterX-notification-diff-list li > span { flex: none; color: var(--xv-muted); font-size: 12px; } .BetterX-notification-diff-progress { flex: none; margin-top: 8px; font-size: 13px; overflow-wrap: anywhere; color: var(--xv-muted); } .BetterX-notification-diff-counts { flex: none; margin: 0 0 10px; font-size: 13px; color: var(--xv-muted); } .BetterX-screenshot-menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 44px; box-sizing: border-box; font: inherit; font-weight: 700; cursor: pointer; } .BetterX-screenshot-menu-item:hover, .BetterX-screenshot-menu-item:focus-visible { background: rgba(127,127,127,.12); outline: none; } .BetterX-screenshot-menu-item svg { width: 20px; height: 20px; fill: currentColor; flex: 0 0 auto; } .BetterX-media-picker-overlay, .BetterX-media-picker-overlay * { box-sizing: border-box; } .BetterX-media-picker { display: flex; flex-direction: column; width: min(92vw, 560px); max-height: 82dvh; overflow: hidden; } .BetterX-media-picker .BetterX-dialog-title { flex: 0 0 auto; } .BetterX-media-picker-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; } .BetterX-media-picker-count { color: var(--xv-muted); font-size: 13px; } .BetterX-media-picker-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; overflow: auto; overscroll-behavior: contain; min-height: 0; padding: 3px; } .BetterX-media-picker-item { position: relative; display: flex; flex-direction: column; min-width: 0; cursor: pointer; border: 2px solid var(--xv-border); border-radius: 10px; overflow: hidden; background: var(--xv-chip-bg); } .BetterX-media-picker-item:has(input:checked) { border-color: var(--xv-accent); } .BetterX-media-picker-item:focus-within { outline: 2px solid var(--xv-accent); outline-offset: 1px; } .BetterX-media-picker-item input { position: absolute; top: 7px; right: 7px; z-index: 2; width: 18px; height: 18px; margin: 0; accent-color: var(--xv-accent); cursor: pointer; } .BetterX-media-picker-thumb { position: relative; display: block; aspect-ratio: 1; overflow: hidden; } .BetterX-media-picker-placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: var(--xv-muted); font-size: 12px; } .BetterX-media-picker-thumb img { position: relative; display: block; width: 100%; height: 100%; object-fit: cover; } .BetterX-media-picker-caption { padding: 5px 6px; color: var(--xv-text); font-size: 12px; text-align: center; } .BetterX-media-picker .BetterX-dialog-actions { flex: 0 0 auto; } .BetterX-media-picker button:disabled { opacity: .45; cursor: default; } @media (max-width: 420px) { .BetterX-media-picker { padding: 14px; } .BetterX-media-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } .BetterX-language-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .BetterX-language-option { display: grid; grid-template-columns: 38px minmax(0, 1fr) 18px; align-items: center; gap: 9px; min-height: 48px; padding: 8px 10px; border: 1px solid var(--xv-border); border-radius: 10px; background: var(--xv-chip-bg); color: var(--xv-text); text-align: left; cursor: pointer; } .BetterX-language-option:hover, .BetterX-language-option:focus-visible { border-color: var(--xv-accent); outline: none; } .BetterX-language-option.is-current { border-color: var(--xv-accent); box-shadow: inset 0 0 0 1px var(--xv-accent); } .BetterX-language-code { color: var(--xv-muted); font-size: 11px; font-weight: 800; } .BetterX-language-check { color: var(--xv-accent); font-size: 16px; font-weight: 900; text-align: right; } .BetterX-language-note { margin: 12px 0 0 !important; color: var(--xv-muted); font-size: 12px; } #BetterX-panel * { box-sizing: border-box; } .BetterX-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 14px 14px 8px; } .BetterX-title-main { font-size: 15px; font-weight: 800; } .BetterX-title-sub { font-size: 11px; color: var(--xv-muted); margin-top: 2px; } .BetterX-header-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; } .BetterX-tip { padding: 0 14px 8px; font-size: 13px; color: var(--xv-muted); } .BetterX-btn { background: var(--xv-chip-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap; } .BetterX-btn:hover { border-color: var(--xv-accent); } .BetterX-btn.primary { background: var(--xv-accent); color: #fff; border-color: var(--xv-accent); } .BetterX-btn.danger { color: #f4212e; } .BetterX-btn.danger:hover { border-color: #f4212e; } .BetterX-summary { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; } .BetterX-stat { background: var(--xv-chip-bg); border-radius: 8px; padding: 4px 8px; font-size: 11px; color: var(--xv-muted); } .BetterX-stat b { color: var(--xv-text); font-size: 12px; } .BetterX-filter-bar, .BetterX-chip-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; } .BetterX-chip-row { padding: 6px 0 0; } .BetterX-chip { background: var(--xv-chip-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer; } .BetterX-chip.active { background: var(--xv-accent); color: #fff; border-color: var(--xv-accent); } .BetterX-controls { padding: 0 14px 10px; display: flex; flex-direction: column; gap: 8px; } .BetterX-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; } .BetterX-control-row { align-items: flex-end; } .BetterX-control-row > .BetterX-btn, .BetterX-control-row > .BetterX-field > .BetterX-input { height: 32px; } .BetterX-control-row > .BetterX-field.inline { height: 32px; justify-content: center; align-self: flex-end; } .BetterX-row .BetterX-input { flex: 1 1 120px; } .BetterX-input { background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 7px 10px; font-size: 13px; width: 100%; } .BetterX-input.small { width: 90px; flex: 0 0 auto; } .BetterX-select { background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; } .BetterX-select option { color: #000; } .BetterX-light .BetterX-select option { color: #0f1419; } .BetterX-advanced { border: 1px solid var(--xv-border); border-radius: 8px; padding: 6px 10px; } .BetterX-advanced > summary { cursor: pointer; font-size: 13px; color: var(--xv-muted); } .BetterX-adv-body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; } .BetterX-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--xv-muted); } .BetterX-field.inline { flex-direction: row; align-items: center; gap: 6px; } .BetterX-download-zip-option { margin-left: 0; } .BetterX-adv-label { font-size: 12px; color: var(--xv-muted); } .BetterX-content-status { font-size: 11px; color: var(--xv-muted); padding: 5px 8px; border-radius: 7px; background: var(--xv-chip-bg); } .BetterX-list { overflow-y: auto; padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 10px; } .BetterX-empty { padding: 24px 8px; text-align: center; color: var(--xv-muted); font-size: 13px; } .BetterX-loadmore { margin-top: 4px; background: var(--xv-chip-bg); color: var(--xv-text); border: 1px dashed var(--xv-border); border-radius: 8px; padding: 8px; font-size: 12px; cursor: pointer; } .BetterX-item { background: var(--xv-item-bg); border: 1px solid var(--xv-border); border-radius: 12px; padding: 10px 12px; } .BetterX-item.is-flash-lost { border-color: rgba(244,33,46,0.5); } .BetterX-item.is-pinned { border-color: rgba(29,155,240,0.6); } .BetterX-item-top { display: flex; justify-content: space-between; gap: 8px; } .BetterX-author-head { display: flex; align-items: center; gap: 8px; } .BetterX-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; } .BetterX-author-line { font-size: 13px; font-weight: 700; word-break: break-word; line-height: 1.35; } .BetterX-author-profile { color: inherit; text-decoration: none; } .BetterX-author-profile:hover { color: var(--xv-accent); text-decoration: underline; } .BetterX-author-handle { color: var(--xv-muted); font-weight: 400; font-size: 12px; } .BetterX-author-time { color: var(--xv-muted); font-weight: 400; font-size: 12px; white-space: nowrap; } .BetterX-submeta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; font-size: 10px; color: var(--xv-muted); } .BetterX-actions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; align-content: flex-start; } .BetterX-text { margin: 8px 0 4px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; } .BetterX-text.collapsed { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; } .BetterX-expand-btn { background: none; border: none; color: var(--xv-accent); font-size: 12px; cursor: pointer; padding: 0; } .BetterX-hl { background: #ffd400; color: #000; border-radius: 3px; padding: 0 1px; } .BetterX-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; } .BetterX-thumb-button { padding: 0; border: 0; border-radius: 8px; background: none; cursor: zoom-in; line-height: 0; } .BetterX-thumb-button:focus-visible { outline: 2px solid var(--xv-accent); outline-offset: 2px; } .BetterX-thumb { display: block; width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--xv-border); transition: transform .16s ease, box-shadow .16s ease; } .BetterX-thumb-button:hover .BetterX-thumb { transform: scale(1.04); box-shadow: 0 3px 12px rgba(0, 0, 0, .28); } .BetterX-image-preview { position: fixed; inset: 0; z-index: 2147483647; display: flex; align-items: center; justify-content: center; box-sizing: border-box; overflow: hidden; overscroll-behavior: contain; touch-action: none; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: rgba(0, 0, 0, .86); cursor: zoom-out; } .BetterX-image-preview-box { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; cursor: default; touch-action: none; user-select: none; } .BetterX-image-preview-box img { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; box-shadow: 0 12px 46px rgba(0, 0, 0, .55); transform: translate3d(0, 0, 0) scale(1); transform-origin: center center; will-change: transform; cursor: zoom-in; touch-action: none; user-select: none; -webkit-user-drag: none; } .BetterX-image-preview-box.is-zoomed img { cursor: grab; } .BetterX-image-preview-box.is-panning img { cursor: grabbing; } .BetterX-image-preview-close { position: fixed; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 3; display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid rgba(255,255,255,.52); border-radius: 50%; background: rgba(20,20,20,.9); color: #fff; text-align: center; text-indent: 0; cursor: pointer; box-shadow: 0 3px 14px rgba(0,0,0,.38); touch-action: manipulation; } .BetterX-image-preview-close > span { display: block; margin: 0; padding: 0; font: 700 27px/1 Arial, sans-serif; line-height: 1; transform: translateY(-1px); } .BetterX-image-preview-nav { position: fixed; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255,255,255,.48); border-radius: 50%; background: rgba(20,20,20,.78); color: #fff; text-align: center; text-indent: 0; cursor: pointer; box-shadow: 0 3px 14px rgba(0,0,0,.34); touch-action: manipulation; transition: opacity .14s ease, background .14s ease, transform .14s ease; } .BetterX-image-preview-nav > span { display: block; font: 700 34px/1 Arial, sans-serif; line-height: 1; transform: translateY(-1px); } .BetterX-image-preview-nav:hover:not(:disabled) { background: rgba(20,20,20,.94); transform: scale(1.06); } .BetterX-image-preview-nav:disabled { opacity: .24; cursor: default; } .BetterX-image-preview-nav[hidden] { display: none !important; } @media (hover: none), (pointer: coarse) { .BetterX-image-preview-nav { display: none !important; } } .BetterX-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; } .BetterX-tag { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: var(--xv-chip-bg); color: var(--xv-muted); } .BetterX-tag.fav { background: rgba(255,212,0,0.15); color: #ffd400; } .BetterX-tag.pin { background: rgba(29,155,240,0.15); color: var(--xv-accent); } .BetterX-tag.flash { background: rgba(244,33,46,0.15); color: #f4212e; } .BetterX-tag.opened { background: rgba(0,186,124,0.15); color: #00ba7c; } .BetterX-tag.keyword { background: rgba(255,212,0,0.15); color: #ffd400; } .BetterX-note-area { margin-top: 4px; } .BetterX-note-btn { font-size: 11px; padding: 3px 8px; } .BetterX-note-text { margin-top: 4px; font-size: 12px; color: var(--xv-text); background: var(--xv-chip-bg); border-radius: 6px; padding: 6px 8px; word-break: break-word; } .BetterX-note-input { width: 100%; min-height: 60px; resize: vertical; background: var(--xv-input-bg); color: var(--xv-text); border: 1px solid var(--xv-border); border-radius: 8px; padding: 7px; font-size: 12px; } .BetterX-note-actions { display: flex; gap: 6px; margin-top: 6px; } .BetterX-bottom-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10px; color: var(--xv-muted); } .BetterX-list::-webkit-scrollbar { width: 8px; } .BetterX-list::-webkit-scrollbar-thumb { background: var(--xv-border); border-radius: 8px; } .BetterX-panel-top { flex: 0 0 auto; } .BetterX-list { flex: 1 1 auto; min-height: 120px; } .BetterX-header { padding-bottom: 10px; border-bottom: 1px solid var(--xv-border); } .BetterX-section-label { padding: 8px 14px 2px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--xv-muted); } .BetterX-controls .BetterX-section-label { padding: 4px 0 0; } .BetterX-controls { border-top: 1px solid var(--xv-border); padding-top: 12px; } .BetterX-menu-wrap { position: relative; display: inline-flex; } .BetterX-icon-btn { padding: 5px 10px; font-weight: 700; line-height: 1; } .BetterX-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; display: flex; flex-direction: column; gap: 2px; padding: 6px; min-width: 150px; background: var(--xv-panel-bg); border: 1px solid var(--xv-border); border-radius: 12px; box-shadow: 0 10px 32px rgba(0,0,0,0.45); backdrop-filter: blur(12px); } .BetterX-menu[hidden] { display: none; } .BetterX-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; color: var(--xv-text); border: none; border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; white-space: nowrap; transition: background .15s; } .BetterX-menu-item:hover { background: var(--xv-chip-bg); } .BetterX-menu-item.danger { color: #f4212e; } .BetterX-menu-item.danger:hover { background: rgba(244,33,46,0.12); } .BetterX-btn { transition: background .15s, border-color .15s, color .15s; } .BetterX-btn:hover { background: var(--xv-chip-bg); } .BetterX-btn.primary:hover { background: var(--xv-accent); filter: brightness(1.08); } .BetterX-chip { transition: background .15s, border-color .15s, color .15s; } .BetterX-input, .BetterX-select, .BetterX-note-input { transition: border-color .15s, box-shadow .15s; } .BetterX-input:focus, .BetterX-select:focus, .BetterX-note-input:focus { outline: none; border-color: var(--xv-accent); box-shadow: 0 0 0 2px rgba(29,155,240,0.25); } .BetterX-item { transition: border-color .15s, background .15s; } .BetterX-item:hover { border-color: rgba(29,155,240,0.5); } .BetterX-advanced { transition: border-color .15s; } .BetterX-advanced[open] { border-color: rgba(29,155,240,0.4); } .BetterX-advanced > summary { list-style: none; display: flex; align-items: center; gap: 6px; font-weight: 600; user-select: none; } .BetterX-advanced > summary::-webkit-details-marker { display: none; } .BetterX-advanced > summary::before { content: '▸'; font-size: 10px; color: var(--xv-muted); transition: transform .15s; } .BetterX-advanced[open] > summary::before { transform: rotate(90deg); } #BetterX-panel { position: fixed; top: 12px; bottom: 12px; width: min(94vw, 520px); height: auto; max-height: none; } #BetterX-root:not(.BetterX-mobile) #BetterX-panel { min-width: min(420px, calc(100vw - 24px)); max-width: calc(100vw - 24px); } .BetterX-panel-resize-handle { position: absolute; top: 0; bottom: 0; width: 7px; z-index: 8; cursor: ew-resize; touch-action: none; user-select: none; } .BetterX-panel-resize-left { left: 0; } .BetterX-panel-resize-right { right: 0; } .BetterX-panel-resize-handle:hover { background: rgba(29,155,240,.25); } #BetterX-root.BetterX-mobile .BetterX-panel-resize-handle { display: none; } .BetterX-header { flex: 0 0 auto; align-items: center; min-height: 58px; padding: 11px 14px; border-bottom: none; background: var(--xv-panel-bg); } .BetterX-title { min-width: 0; } .BetterX-title-main { display: flex; align-items: center; gap: 8px; font-size: 17px; letter-spacing: -.01em; } .BetterX-title-icon { width: 26px; height: 26px; flex: 0 0 26px; border-radius: 7px; object-fit: cover; box-shadow: 0 1px 5px rgba(0,0,0,.28); pointer-events: none; user-select: none; -webkit-user-drag: none; } .BetterX-title-sub { font-size: 11px; } .BetterX-header-actions { flex-wrap: nowrap; align-items: center; } .BetterX-header-actions .BetterX-btn { display: inline-flex; align-items: center; justify-content: center; height: 30px; min-height: 30px; } .BetterX-header-actions .BetterX-icon-btn { width: 30px; padding: 0; } #BetterX-panel.is-settings-view .BetterX-vault-action { display: none; } .BetterX-btn:disabled, .BetterX-input:disabled, .BetterX-select:disabled { cursor: not-allowed; opacity: .48; filter: none; } .BetterX-tabs { flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 0 14px 10px; padding: 3px; border-radius: 11px; background: var(--xv-chip-bg); } .BetterX-tab { display: flex; align-items: center; justify-content: center; min-height: 32px; border: 0; border-radius: 8px; background: transparent; text-align: center; color: var(--xv-muted); font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; } .BetterX-tab:hover { color: var(--xv-text); } .BetterX-tab.active { color: #fff; background: var(--xv-accent); box-shadow: 0 2px 8px rgba(29,155,240,.22); } .BetterX-view { flex: 1 1 auto; min-height: 0; } .BetterX-view[hidden] { display: none !important; } .BetterX-vault-view { display: flex; flex-direction: column; } .BetterX-notifications-view { display: flex; flex-direction: column; min-height: 0; } .BetterX-notification-toolbar { flex: 0 0 auto; padding: 0 14px 12px; border-bottom: 1px solid var(--xv-border); } .BetterX-notification-search-row { margin: 10px 0 0; gap: 8px; } .BetterX-notification-search-row .BetterX-input { flex: 1 1 240px; min-width: 0; } .BetterX-notification-actions { margin: 8px 0; flex-wrap: wrap; } .BetterX-notification-list { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 14px 18px; } .BetterX-notification-user { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--xv-border); } .BetterX-notification-user.is-pinned { box-shadow: inset 3px 0 0 var(--xv-accent); padding-left: 8px; } .BetterX-notification-user.is-disabled { opacity: .68; } .BetterX-notification-user.is-disabled.is-pinned { opacity: .82; } .BetterX-notification-pin-mark { font-size: 12px; vertical-align: 1px; } .BetterX-btn.notification-pinned { color: var(--xv-accent); border-color: var(--xv-accent); font-weight: 700; } .BetterX-notification-user-main { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--xv-text); text-decoration: none; } .BetterX-notification-user-main img, .BetterX-notification-avatar-fallback { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; object-fit: cover; } .BetterX-notification-avatar-fallback { display: grid; place-items: center; background: var(--xv-chip-bg); color: var(--xv-muted); font-weight: 800; } .BetterX-notification-user-main span span, .BetterX-notification-user-main > span { min-width: 0; } .BetterX-notification-user-main b, .BetterX-notification-user-main small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .BetterX-notification-user-main small { color: var(--xv-muted); font-size: 12px; } .BetterX-notification-user-actions { display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; } .BetterX-vault-toolbar { flex: 0 0 auto; border-top: 1px solid var(--xv-border); border-bottom: 1px solid var(--xv-border); background: var(--xv-panel-bg); } .BetterX-tip { margin: 9px 14px 7px; padding: 7px 9px; border-radius: 8px; background: rgba(29,155,240,.08); color: var(--xv-muted); font-size: 12px; line-height: 1.45; } .BetterX-summary { flex-wrap: wrap; overflow-x: visible; padding: 0 14px 8px; } .BetterX-summary::-webkit-scrollbar, .BetterX-filter-bar::-webkit-scrollbar { display: none; } .BetterX-stat { flex: 0 0 auto; border: 1px solid transparent; padding: 4px 8px; font-size: 12px; } .BetterX-stat b { font-size: 13px; } .BetterX-section-label { padding: 2px 14px 5px; font-size: 11px; text-transform: uppercase; } .BetterX-filter-bar { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; min-width: 0; width: 100%; scrollbar-width: none; padding: 0 14px 9px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; } .BetterX-filter-bar.is-dragging { cursor: grabbing; user-select: none; } .BetterX-filter-bar.is-dragging .BetterX-chip { pointer-events: none; } .BetterX-chip { flex: 0 0 auto; min-height: 28px; padding: 4px 11px; } .BetterX-search-tools { display: grid; gap: 7px; padding: 0 14px 11px; } .BetterX-search-tools > .BetterX-input { height: 36px; padding-left: 12px; border-radius: 10px; } .BetterX-toolbar-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; } .BetterX-toolbar-row .BetterX-select { width: 100%; min-width: 0; height: 32px; border-radius: 9px; font-size: 13px; } .BetterX-sort-hint { min-height: 18px; padding: 0 2px; color: var(--xv-text); font-family: SimHei, "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; font-size: 12px; font-weight: 600; line-height: 1.5; } .BetterX-vault-filter-card { margin: 0 14px 10px; min-width: 0; } .BetterX-vault-filter-card > summary { min-width: 0; max-width: 100%; overflow: hidden; } .BetterX-vault-filter-title { flex: 0 0 auto; } .BetterX-vault-filter-state { flex: 1 1 auto; min-width: 0; max-width: 100%; margin-left: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--xv-muted); font-size: 11px; font-weight: 500; } .BetterX-vault-filter-card .BetterX-adv-body { min-width: 0; } .BetterX-vault-filter-card .BetterX-filter-bar { padding: 0 0 3px; } .BetterX-vault-filter-card .BetterX-search-tools { padding: 0; min-width: 0; } .BetterX-list { flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding: 10px 12px 14px; gap: 8px; overscroll-behavior: contain; } .BetterX-settings-view { display: flex; flex-direction: column; border-top: 1px solid var(--xv-border); } .BetterX-settings-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 18px; scrollbar-color: var(--xv-border) transparent; } .BetterX-settings-intro { display: flex; flex-direction: column; gap: 2px; padding: 0 2px 10px; } .BetterX-settings-intro strong { font-size: 15px; } .BetterX-settings-intro span { color: var(--xv-muted); font-size: 12px; line-height: 1.45; } .BetterX-settings-view .BetterX-controls { gap: 9px; padding: 0; border-top: 0; } .BetterX-settings-card, .BetterX-vault-filter-card { padding: 0; overflow: hidden; border-radius: 12px; background: var(--xv-item-bg); } .BetterX-settings-card > summary, .BetterX-vault-filter-card > summary { min-height: 43px; padding: 0 12px; color: var(--xv-text); font-size: 14px; } .BetterX-settings-card[open], .BetterX-vault-filter-card[open] { border-color: rgba(29,155,240,.34); } .BetterX-settings-card[open] > summary, .BetterX-vault-filter-card[open] > summary { border-bottom: 1px solid var(--xv-border); } .BetterX-settings-card > .BetterX-adv-body, .BetterX-vault-filter-card > .BetterX-adv-body { gap: 10px; padding: 12px; } .BetterX-settings-card .BetterX-field, .BetterX-settings-card .BetterX-adv-label { font-size: 13px; line-height: 1.45; } .BetterX-download-name-tokens { gap: 6px; } .BetterX-download-name-tokens .BetterX-chip { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--xv-text); font-weight: 650; } .BetterX-download-name-preview { color: var(--xv-text); font-weight: 650; } .BetterX-download-advanced { width: 100%; box-sizing: border-box; padding: 0; background: var(--xv-input-bg); } .BetterX-download-advanced > summary { min-height: 48px; padding: 6px 10px; } .BetterX-download-advanced[open] > summary { border-bottom: 1px solid var(--xv-border); } .BetterX-download-advanced > .BetterX-adv-body { padding: 10px; } .BetterX-download-advanced-summary { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 1px; } .BetterX-download-advanced-title { color: var(--xv-text); font-size: 13px; } .BetterX-download-advanced-subtitle { color: var(--xv-muted); font-size: 11px; font-weight: 500; line-height: 1.35; } .BetterX-download-advanced-state { flex: 0 0 auto; padding: 2px 6px; border-radius: 999px; background: rgba(29,155,240,.12); color: var(--xv-accent); font-size: 10px; font-weight: 650; } .BetterX-settings-card .BetterX-content-status { font-size: 12px; line-height: 1.4; } .BetterX-dependent-options { display: flex; flex-direction: column; gap: 9px; } .BetterX-dependent-options.is-disabled { opacity: .5; } .BetterX-field.is-disabled { opacity: .5; } .BetterX-adultspam-master-row { flex-wrap: nowrap; justify-content: space-between; } .BetterX-adultspam-master-row > .BetterX-field { flex: 1 1 auto; min-width: 0; } .BetterX-adultspam-master-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; } .BetterX-profile-default-view-row, .BetterX-gif-format-row { flex-wrap: nowrap; justify-content: space-between; } .BetterX-profile-default-view-row > .BetterX-field, .BetterX-gif-format-row > .BetterX-field { flex: 1 1 auto; min-width: 0; } .BetterX-profile-default-view-row > .BetterX-select, .BetterX-gif-format-row > .BetterX-select { flex: 0 0 auto; min-width: 72px; } .BetterX-tag-editor { display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 8px; border: 1px solid var(--xv-border); border-radius: 10px; background: var(--xv-input-bg); } .BetterX-keyword-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; } .BetterX-keyword-tags:empty { display: none; } .BetterX-main-keyword-tags { padding: 0 2px; } .BetterX-keyword-section > .BetterX-row { width: 100%; } .BetterX-keyword-tag { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; min-height: 26px; padding: 3px 5px 3px 9px; border: 1px solid rgba(29,155,240,.35); border-radius: 999px; background: rgba(29,155,240,.12); color: var(--xv-text); font-size: 12px; line-height: 1.3; } .BetterX-keyword-tag-label { overflow-wrap: anywhere; } .BetterX-keyword-tag-remove { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 19px; height: 19px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--xv-muted); cursor: pointer; font-size: 17px; line-height: 1; } .BetterX-keyword-tag-remove:hover { background: rgba(244,33,46,.14); color: #f4212e; } .BetterX-tag-editor > .BetterX-input { width: 100%; margin: 0; background: transparent; } .BetterX-settings-view .BetterX-field.inline { position: relative; min-height: 28px; padding-left: 46px; color: var(--xv-text); line-height: 1.35; } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: absolute; left: 0; top: 50%; width: 38px; height: 22px; margin: 0; border: 1px solid var(--xv-border); border-radius: 999px; background: var(--xv-input-bg); transform: translateY(-50%); cursor: pointer; transition: .16s ease; } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]::after { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--xv-muted); box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: .16s ease; } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:checked { border-color: var(--xv-accent); background: var(--xv-accent); } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:checked::after { left: 18px; background: #fff; } .BetterX-settings-view .BetterX-field.inline > input[type="checkbox"]:focus-visible { outline: 2px solid rgba(29,155,240,.45); outline-offset: 2px; } .BetterX-settings-view .BetterX-control-row > .BetterX-field.inline { align-self: flex-end; justify-content: center; height: 32px; } .BetterX-item { position: relative; flex: 0 0 auto; padding: 11px 12px; border-radius: 13px; overflow: hidden; } .BetterX-empty, .BetterX-loadmore { flex: 0 0 auto; } .BetterX-item.is-unread::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--xv-accent); } .BetterX-avatar { width: 32px; height: 32px; } .BetterX-author { min-width: 120px; } .BetterX-author-line { font-size: 14px; } .BetterX-submeta, .BetterX-tag, .BetterX-bottom-meta { font-size: 11px; } .BetterX-text { font-size: 14px; line-height: 1.55; } .BetterX-note-btn { font-size: 12px; } .BetterX-item-top { align-items: flex-start; } .BetterX-actions { max-width: 58%; } .BetterX-actions .BetterX-btn { min-height: 28px; padding: 4px 8px; } .BetterX-bottom-meta { padding-top: 7px; border-top: 1px solid var(--xv-border); } @media (max-width: 640px) { #BetterX-root.BetterX-mobile #BetterX-panel { inset: 8px; width: auto; height: calc(100dvh - 16px); max-height: none; border-radius: 18px; } #BetterX-root.BetterX-mobile #BetterX-download-pill { left: auto; right: 0; bottom: calc(100% + 10px); width: 52px; min-width: 52px; height: 52px; padding: 0; overflow: visible; border: 0; background: var(--xv-accent); color: var(--xv-accent); box-shadow: 0 4px 16px rgba(0,0,0,.35); opacity: var(--xv-mobile-badge-opacity, 1); transition: opacity 170ms ease-out, filter .15s; } #BetterX-root.BetterX-mobile #BetterX-download-pill.is-progress { border: 0; background: var(--xv-accent); } #BetterX-root.BetterX-mobile .BetterX-download-pill-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #fff; color: var(--xv-accent); font-size: 24px; font-weight: 900; box-shadow: 0 1px 5px rgba(0,0,0,.18); } #BetterX-root.BetterX-mobile .BetterX-download-pill-label { display: none; } #BetterX-root.BetterX-mobile .BetterX-download-pill-count { position: absolute; display: block; top: -2px; right: -2px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #f4212e; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; } #BetterX-root.BetterX-mobile .BetterX-download-pill-count[hidden] { display: none !important; } #BetterX-root.BetterX-mobile #BetterX-download-popover { position: absolute; left: auto; right: 0; bottom: calc(200% + 20px); width: min(360px, calc(100vw - 16px)); max-width: calc(100vw - 16px); max-height: min(52dvh, 420px); } #BetterX-root.BetterX-mobile.is-open:not(.BetterX-mobile-badge-collapsed) #BetterX-badge, #BetterX-root.BetterX-mobile.is-open #BetterX-download-pill { opacity: 0; pointer-events: none; } .BetterX-header { min-height: 54px; padding: 9px 11px; } .BetterX-title-icon { display: none; } .BetterX-title-sub { display: none; } .BetterX-header-actions { gap: 4px; } .BetterX-header-actions .BetterX-btn { padding: 5px 7px; } .BetterX-tabs { margin: 0 10px 8px; } .BetterX-tip { margin: 7px 10px 6px; } .BetterX-summary, .BetterX-filter-bar { padding-left: 10px; padding-right: 10px; } .BetterX-section-label { padding-left: 10px; padding-right: 10px; } .BetterX-search-tools { padding: 0 10px 9px; } .BetterX-vault-filter-card { margin: 0 10px 8px; } .BetterX-vault-filter-card .BetterX-filter-bar, .BetterX-vault-filter-card .BetterX-search-tools { padding-left: 0; padding-right: 0; } .BetterX-toolbar-row { grid-template-columns: 1fr 1fr; } .BetterX-toolbar-row .BetterX-select:last-child { grid-column: 1 / -1; } .BetterX-list { padding: 8px 9px 12px; } .BetterX-notification-toolbar { padding: 0 10px 10px; } .BetterX-notification-search-row { flex-wrap: nowrap; } .BetterX-notification-search-row .BetterX-btn { flex: 0 0 auto; } .BetterX-notification-list { padding: 8px 10px 14px; } .BetterX-notification-user { align-items: center; flex-direction: row; flex-wrap: wrap; } .BetterX-notification-user-main { width: auto; flex: 1 1 96px; min-width: 0; } .BetterX-notification-user-actions { width: auto; max-width: 100%; flex: 0 1 auto; justify-content: flex-start; } .BetterX-settings-scroll { padding: 10px 10px 16px; } .BetterX-item-top { flex-direction: column; } .BetterX-actions { max-width: none; justify-content: flex-start; } .BetterX-thumb { width: 64px; height: 64px; } .BetterX-image-preview { padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); } .BetterX-image-preview-close { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); width: 40px; height: 40px; } }`);
 }
 function startViewObserver() {
   if (state.viewObserver) state.viewObserver.disconnect();
@@ -7838,11 +9266,13 @@ function startObserver() {
   const throttledAdultSpamCount = throttle(updateAdultSpamCount, 300);
   const throttledLayoutRefresh = throttle(applyLayoutEnhancements, 250);
   const pendingRoots = new Set();
+  const pendingDismissRoots = new Set();
   let addedRootsTimer = null;
   state.observerCleanup = () => {
     if (addedRootsTimer !== null) clearTimeout(addedRootsTimer);
     addedRootsTimer = null;
     pendingRoots.clear();
+    pendingDismissRoots.clear();
   };
   const collectArticlesFromRoot = (root, articles) => {
     if (!root || !root.isConnected || root.closest('#BetterX-root')) return;
@@ -7852,6 +9282,10 @@ function startObserver() {
     root.querySelectorAll('article').forEach((article) => articles.add(article));
   };
   const flushPendingRoots = () => {
+    if (dismissWidgetsActive()) {
+      for (const root of pendingDismissRoots) if (root.isConnected) sweepDismissWidgets(root);
+    }
+    pendingDismissRoots.clear();
     const articles = new Set();
     let layoutNeedsFullRefresh = false;
     const deferAutoExpand = state.settings.autoExpandPostText && isPageScrollBusy();
@@ -7870,6 +9304,7 @@ function startObserver() {
       if (state.settings.bypassAgeRestriction) revealAgeRestricted(article);
       if (state.settings.autoExpandPostText && !deferAutoExpand) expandPostShowMore(article);
     }
+    refreshAuthorLinks();
     if (deferAutoExpand) schedulePostShowMoreExpansion();
     if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
     if (layoutNeedsFullRefresh) throttledLayoutRefresh();
@@ -7888,6 +9323,13 @@ function startObserver() {
       const mutationElement = mutation.target instanceof HTMLElement
         ? mutation.target
         : mutation.target && mutation.target.parentElement;
+      if (state.settings.authorLinksEnabled && mutation.type === 'attributes'
+          && mutationElement?.closest('article[data-testid="tweet"]')) pendingRoots.add(mutationElement);
+      if (dismissWidgetsActive() && mutationElement
+          && !mutationElement.closest('article, [data-testid="tweet"], #BetterX-root')) {
+        const widgetRoot = mutationElement.closest(DISMISS_WIDGET_MUTATION_SCOPE);
+        if (widgetRoot) pendingDismissRoots.add(widgetRoot);
+      }
       let hasTextUpdate = mutation.type === 'characterData';
       if (!hasTextUpdate) {
         for (const node of mutation.addedNodes) {
@@ -7905,6 +9347,7 @@ function startObserver() {
         dismissLoggedOutPostObstructions(node);
         if (state.settings.hideAds) sweepStandaloneAds(node);
         if (state.settings.hideNfl) sweepNflEntries(node);
+        if (dismissWidgetsActive()) sweepDismissWidgets(node);
         harvestFollowingControlsFromRoot(node);
         pendingRoots.add(node);
         if (adultSpamFilteringEnabled()) collectArticlesFromRoot(node, immediateAdultArticles);
@@ -7931,10 +9374,12 @@ function startObserver() {
       throttledDisappear();
       if (adultSpamFilteringEnabled()) throttledAdultSpamCount();
     }
-    if (pendingRoots.size) flushAddedRoots();
+    if (pendingRoots.size || pendingDismissRoots.size) flushAddedRoots();
+    else if (hadRemoval) refreshAuthorLinks();
     if (state.rootEl && state.rootEl.classList.contains('BetterX-mobile')) scheduleMobileBadgeSync();
   });
-  state.observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  state.observer.observe(document.body, { childList: true, subtree: true, characterData: true,
+    attributes: true, attributeFilter: ['href'] });
 }
 function stopCleanupTimer() {
   if (!state.cleanupTimer) return;
@@ -7967,6 +9412,17 @@ function handleVisibilityChange() {
     installCleanupTimer();
     installNetworkHookTimer();
   }
+}
+function restoreStartupAppearance() {
+  const mirrored = readSettingsMirror();
+  if (!mirrored) return;
+  const keys = ['useMobileBadgeOnDesktop', 'hideAppBadge', 'useMobileBadgeHandle',
+    'mobileBadgeHandleTop', 'badgePos', 'theme', 'panelWidth'];
+  const appearance = sanitizeSettings({
+    ...Object.fromEntries(keys.map((key) => [key, mirrored[key]])),
+    hideAppBadgeOnDesktop: mirrored.hideAppBadgeOnDesktop,
+  });
+  for (const key of keys) state.settings[key] = appearance[key];
 }
 async function loadStateFromDb() {
   const savedSettings = await dbGetSetting('settings');
@@ -8003,15 +9459,8 @@ async function loadStateFromDb() {
   const persistedFollowedHandles = state.settings.knownFollowedHandles || [];
   persistedFollowedHandles.forEach((handle) => followedHandles.add(handle));
   trimFollowedHandlesToMax();
-  const earlyNotificationSubscriptions = new Map(notificationSubscriptions);
-  notificationSubscriptions.clear();
-  for (const item of state.settings.notificationSubscriptions || []) {
-    const sanitized = sanitizeNotificationSubscription(item);
-    if (sanitized) notificationSubscriptions.set(sanitized.username.toLowerCase(), sanitized);
-  }
-  for (const [key, item] of earlyNotificationSubscriptions) notificationSubscriptions.set(key, item);
   state.settingsLoaded = true;
-  if (earlyNotificationSubscriptions.size) scheduleNotificationSubscriptionsPersist();
+  restoreNotificationAccounts();
   if (followedHandles.size !== persistedFollowedHandles.length) scheduleFollowedHandlesPersist();
   const rawPosts = (await dbGetAllPosts()).filter(Boolean);
   const all = rawPosts.map(sanitizeImportedPost).filter(Boolean)
@@ -8288,6 +9737,7 @@ function installNavigationListener() {
   const onNav = (restorePosition) => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
+      refreshAuthorLinks();
       if (redirectBareProfileToPreferredView()) return;
       installNetworkHooks();
       scheduleNavigationRefresh(restorePosition ? layoutScrollPositions.get(lastUrl) : null);
@@ -8315,9 +9765,12 @@ function installNavigationListener() {
   };
 }
 async function boot() {
+  restoreStartupAppearance();
+  installNotificationAccountTracking();
   installPageScrollActivityTracking();
   try { installStyles(); } catch (err) { console.error('[BetterX] style init failed:', err); }
   createUI();
+  installPostScreenshotMenu();
   document.addEventListener('keydown', handleKeydown, true);
   applyTheme();
   try {
@@ -8339,6 +9792,7 @@ async function boot() {
   scanArticles(document);
   applyAdHiding();
   applyNflHiding();
+  applyDismissWidgetHiding();
   applyAdultSpamFiltering();
   applyMediaDownload();
   applyMediaGridLayout();
@@ -8374,7 +9828,7 @@ async function boot() {
       });
     } catch (err) {}
   }
-  debugLog('v4.1.0 started');
+  debugLog('v4.3.0 started');
 }
 function waitForPageReady() {
   if (document.body) { boot(); return; }

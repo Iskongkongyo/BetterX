@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><body>
+<script>
+window.__notificationViewerOverride = new URLSearchParams(location.search).get('viewer') || '';
+window.__downloads = [];
+window.GM_getValue = (_key, fallback) => fallback;
+window.GM_setValue = () => {};
+window.GM_registerMenuCommand = () => {};
+window.GM_info = {script: {}};
+</script>
+<script src="/userscript.js"></script>
+</body></html>

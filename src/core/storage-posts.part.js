@@ -1027,6 +1027,7 @@
           .map((item) => item.replace(/^@+/, '').toLowerCase())
           .filter((item) => /^[a-z0-9_]{1,15}$/.test(item)));
         case 'notifications': return notificationList();
+        case 'notificationAccounts': return sanitizeNotificationAccounts(value);
         case 'timestamp': {
           const timestamp = Number(value);
           return Number.isFinite(timestamp)
@@ -1061,7 +1062,8 @@
       // 仅把旧版默认值迁移到新默认；其他自定义值原样保留。
       if (revision < 39) {
         if (input.flashMs == null || Number(input.flashMs) === 8000) input.flashMs = DEFAULT_SETTINGS.flashMs;
-        if (input.skipSources == null || (Array.isArray(input.skipSources) && input.skipSources.length === 0)) {
+        // 空数组表示用户已关闭所有页面排除，不能视为“没有设置”。
+        if (input.skipSources == null) {
           input.skipSources = [...DEFAULT_SETTINGS.skipSources];
         }
       }
@@ -1074,10 +1076,10 @@
       if (revision < 4 && (input.adultSpamLevel == null || input.adultSpamLevel === 'conservative')) {
         input.adultSpamLevel = DEFAULT_SETTINGS.adultSpamLevel;
       }
-      // v1.7 收尾版默认开启广告过滤和媒体下载；旧版默认关闭值同步迁移。
+      // 只补缺失项，保留旧版明确保存的开启和关闭选择。
       if (revision < 7) {
-        if (input.hideAds == null || input.hideAds === false) input.hideAds = true;
-        if (input.mediaDownload == null || input.mediaDownload === false) input.mediaDownload = true;
+        if (input.hideAds == null) input.hideAds = DEFAULT_SETTINGS.hideAds;
+        if (input.mediaDownload == null) input.mediaDownload = DEFAULT_SETTINGS.mediaDownload;
       }
       // v2.6 将旧“默认排序”明确为智能排序，避免旧设置落入无效值。
       if (revision < 15 && (!input.sortBy || input.sortBy === 'default')) input.sortBy = 'smart';
@@ -1172,7 +1174,7 @@
   function resetPaging() { state.renderLimit = state.settings.pageSize || 60; }
 
   const SETTINGS_EFFECT_ORDER = [
-    'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'mediaDownload', 'downloadUi',
+    'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'dismissWidgets', 'mediaDownload', 'downloadUi',
     'ageBypass', 'mediaGrid', 'autoExpand', 'authorLinks', 'firefoxCompatibility', 'badge', 'panelWidth',
   ];
   const SETTINGS_EFFECT_HANDLERS = {
@@ -1195,6 +1197,9 @@
     },
     nfl() {
       applyNflHiding();
+    },
+    dismissWidgets() {
+      applyDismissWidgetHiding();
     },
     mediaDownload() {
       applyMediaDownload();
@@ -1262,11 +1267,7 @@
     for (const handle of next.knownFollowedHandles || []) followedHandles.add(handle);
     trimFollowedHandlesToMax();
 
-    notificationSubscriptions.clear();
-    for (const rawItem of next.notificationSubscriptions || []) {
-      const item = sanitizeNotificationSubscription(rawItem);
-      if (item) notificationSubscriptions.set(item.username.toLowerCase(), item);
-    }
+    restoreNotificationAccounts(opts.force === true);
 
     runSettingsEffects(changed);
     if (followedChanged) {

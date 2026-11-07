@@ -1269,7 +1269,7 @@
     if (pendingDownloadStarts.has(id)) { showToast('正在获取视频地址…'); return; }
     const existing = downloadJobs.get(id);
     if (isActiveDownloadJob(existing)) { toggleDownloadPopover(true); return; }
-    if (!selectMedia && isDownloadedPostRecorded(statusId)
+    if (isDownloadedPostRecorded(statusId)
       && !uiConfirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
     if (selectMedia) pendingDownloadSelections.add(id);
     try {
@@ -1302,8 +1302,6 @@
         scheduleDownloadUiRefresh();
         items = await showDownloadMediaPicker(items, article);
         if (!items?.length || state.settings.mediaDownload === false) return;
-        if (isDownloadedPostRecorded(statusId)
-          && !uiConfirm('该帖子内媒体文件曾下载过，是否继续下载？')) return;
       }
       const activeAfterLookup = downloadJobs.get(id);
       if (isActiveDownloadJob(activeAfterLookup)) { toggleDownloadPopover(true); return; }

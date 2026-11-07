@@ -1,7 +1,10 @@
   async function boot() {
+    restoreStartupAppearance();
+    installNotificationAccountTracking();
     installPageScrollActivityTracking();
     try { installStyles(); } catch (err) { console.error('[BetterX] style init failed:', err); }
     createUI();
+    installPostScreenshotMenu();
     // 数据库升级被其他 X 标签页阻塞时也必须立即保留面板入口与恢复快捷键。
     document.addEventListener('keydown', handleKeydown, true);
     applyTheme();
@@ -24,6 +27,7 @@
     scanArticles(document);
     applyAdHiding();
     applyNflHiding();
+    applyDismissWidgetHiding();
     applyAdultSpamFiltering();
     applyMediaDownload();
     applyMediaGridLayout();
@@ -62,7 +66,7 @@
         });
       } catch (err) {}
     }
-    debugLog('v4.1.0 started');
+    debugLog('v4.3.0 started');
   }
 
   function waitForPageReady() {

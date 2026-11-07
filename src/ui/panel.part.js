@@ -193,7 +193,7 @@
           <summary>下载功能</summary>
           <div class="BetterX-adv-body">
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-mediadl" /> 一键下载图片 / 视频 / GIF</label>
-            <div class="BetterX-adv-label">点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。</div>
+            <div class="BetterX-adv-label">点击下载按钮保存全部媒体；长按或 Shift+点击可按缩略图选择要下载的图片、GIF 和视频。下载时帖子内会显示进度与取消按钮，徽标旁会显示任务提示。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-silent-download" /> 下载时保持静默</label>
             <div class="BetterX-adv-label">默认关闭；开启后隐藏应用徽标旁的下载任务提示和任务列表，帖子内的下载进度与取消按钮仍可使用。</div>
             <div class="BetterX-row BetterX-gif-format-row">
@@ -207,7 +207,7 @@
             <label class="BetterX-field inline BetterX-download-zip-option"><input type="checkbox" id="BetterX-dlzip" /> 下载多个媒体自动压缩 ZIP 包</label>
             <div class="BetterX-adv-label BetterX-download-zip-option">默认开启；ZIP 内的文件会使用下方“媒体文件名”模板。关闭后会同时下载多个媒体。</div>
             <label class="BetterX-field inline BetterX-download-history-option"><input type="checkbox" id="BetterX-track-downloaded-posts" /> 记录已经下载过的帖子</label>
-            <div class="BetterX-adv-label BetterX-download-history-option">默认关闭；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。</div>
+            <div class="BetterX-adv-label BetterX-download-history-option">默认开启；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。</div>
             <details class="BetterX-advanced BetterX-download-advanced" id="BetterX-download-advanced">
               <summary>
                 <span class="BetterX-download-advanced-summary">
@@ -217,7 +217,7 @@
                 <span class="BetterX-download-advanced-state" id="BetterX-download-advanced-state" hidden>已自定义</span>
               </summary>
               <div class="BetterX-adv-body">
-                <label class="BetterX-field">媒体文件名（不含扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadFileNameTemplate))}" /></label>
+                <label class="BetterX-field">媒体文件名（不含 .jpg 等扩展名）<input class="BetterX-input" id="BetterX-download-file-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadFileNameTemplate))}" /></label>
                 <label class="BetterX-field">ZIP 压缩包名（不含 .zip）<input class="BetterX-input" id="BetterX-download-zip-name-template" maxlength="180" spellcheck="false" placeholder="${escapeHtml(localizeDownloadNameTemplate(DEFAULT_SETTINGS.downloadZipNameTemplate))}" /></label>
                 <div class="BetterX-adv-label">点击变量会插入到当前正在编辑的模板中；同时下载一个帖子内多个媒体文件时若未使用 <code>{序号}</code>，会自动追加序号避免重名。</div>
                 <div class="BetterX-chip-row BetterX-download-name-tokens">
@@ -235,13 +235,25 @@
             </details>
           </div>
         </details>
-        <details class="BetterX-advanced BetterX-settings-card">
-          <summary>常用功能</summary>
+        <details class="BetterX-advanced BetterX-settings-card" id="BetterX-dismiss-features">
+          <summary>关闭功能</summary>
           <div class="BetterX-adv-body">
+            <div class="BetterX-adv-label">以下开关默认关闭；已有选择会保留。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-nfl" /> 关闭NFL</label>
             <div class="BetterX-adv-label">隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（含“订阅 Premium”）</label>
             <div class="BetterX-adv-label">隐藏时间线广告、广告卡片和“订阅 Premium”提示。广告帖子不会保存到 BetterX，关闭后会重新显示。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-whatsnew" /> 关闭新鲜事</label>
+            <div class="BetterX-adv-label">隐藏侧栏的“有什么新鲜事”卡片；关闭此开关后会恢复显示。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-who-to-follow" /> 关闭推荐关注</label>
+            <div class="BetterX-adv-label">隐藏侧栏的“推荐关注”卡片；关注者列表和帖子内容不受影响，关闭此开关后会恢复显示。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-money" /> 关闭Money</label>
+            <div class="BetterX-adv-label">隐藏导航和菜单中的 Money 入口；关闭此开关后会恢复显示。</div>
+          </div>
+        </details>
+        <details class="BetterX-advanced BetterX-settings-card">
+          <summary>常用功能</summary>
+          <div class="BetterX-adv-body">
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-restore-media-grid" /> 帖子内媒体改为网格视图</label>
             <div class="BetterX-adv-label">把帖子里的多张媒体改成网格：2 张并排，3 张左大右二，4 张按 2×2 排列。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-bypassage" /> 取消年龄限制（用原图 / 视频进行替换）</label>

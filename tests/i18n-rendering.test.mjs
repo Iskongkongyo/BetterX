@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v4.1.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v4.3.0.js', import.meta.url);
 const originalSource = await readFile(scriptPath, 'utf8');
 const panelSource = await readFile(new URL('../src/ui/panel.part.js', import.meta.url), 'utf8');
 const panelTemplateStart = panelSource.indexOf('panel.innerHTML = ') + 'panel.innerHTML = '.length;
@@ -147,6 +147,16 @@ for (const [locale, prefix, userName, indexToken] of [
   assert.equal(api.state.downloadAdvancedStateEl.hidden, true, '默认模板的本地化别名不能误判为自定义模板');
 }
 const englishPanel = english.renderPanelHtml();
+for(const [locale,label] of [
+  ['zh-CN','作品详情页显示作者链接'],['zh-TW','在作品詳情頁顯示作者連結'],
+  ['ja','ポストの詳細画面に投稿者のリンクを表示'],['en-US','Show author links on post details'],
+]){
+  const localized=load(locale);
+  assert.ok(localized.renderPanelHtml().includes(`id="BetterX-author-links-enabled" /> ${label}`));
+  for(const key of ['作者链接','作者链接加载失败，点击重试']){
+    if(locale!=='zh-CN')assert.notEqual(localized.uiText(key),key,`${locale}: ${key}`);
+  }
+}
 for (const [locale, label] of [
   ['zh-CN', '下载时保持静默'], ['zh-TW', '下載時保持靜默'],
   ['ja', 'ダウンロード中は通知を控える'], ['en-US', 'Keep downloads quiet'],
@@ -163,11 +173,28 @@ for (const [locale, title] of [
 ]) {
   const localized=load(locale);
   assert.equal(localized.uiText('选择要下载的媒体'),title);
-  for(const key of ['全选','全不选','下载所选','已选','无预览','选择中','点击下载全部，长按或 Shift+点击选择下载']) {
+  for(const key of ['反选','下载所选','已选','无预览','选择中','点击下载全部，长按或 Shift+点击选择下载']) {
     if(locale!=='zh-CN')assert.notEqual(localized.uiText(key),key,`${locale}: ${key}`);
   }
 }
 assert.ok(englishPanel.includes('placeholder="Example: [\\s_]+"'));
+for(const [locale,labels]of [
+  ['zh-CN',['关闭功能','关闭新鲜事','关闭推荐关注','关闭Money']],
+  ['zh-TW',['關閉功能','關閉新鮮事','關閉推薦關注','關閉 Money']],
+  ['ja',['非表示機能','「いまどうしてる？」を非表示','おすすめユーザーを非表示','Money を非表示']],
+  ['en-US',['Hide features','Hide What’s happening','Hide Who to follow','Hide Money']],
+]){
+  const localized=load(locale),html=localized.renderPanelHtml();
+  assert.ok(html.includes(`<summary>${labels[0]}</summary>`));
+  for(const [index,id]of ['hide-whatsnew','hide-who-to-follow','hide-money'].entries()){
+    assert.ok(html.includes(`id="BetterX-${id}" /> ${labels[index+1]}`),`${locale}: ${id}`);
+  }
+  assert.ok(html.indexOf(`<summary>${labels[0]}</summary>`)<html.indexOf(`<summary>${localized.uiText('常用功能')}</summary>`));
+  for(const hint of ['以下开关默认关闭；已有选择会保留。','默认开启；至少成功下载帖子内一个媒体后会记录并修改该帖子的下载图标。再次点击已记录帖子的下载按钮时，会先询问是否继续下载。']){
+    assert.ok(html.includes(localized.uiText(hint)),`${locale}: missing default-setting guidance`);
+    if(locale!=='zh-CN')assert.notEqual(localized.uiText(hint),hint);
+  }
+}
 assert.ok(englishPanel.includes('placeholder="Example: _; supports $1"'));
 assert.ok(englishPanel.includes('Capture replacements such as <code>$1</code> are supported'));
 

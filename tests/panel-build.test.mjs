@@ -15,7 +15,7 @@ assert.equal(
 );
 
 const panelSource = await readFile(new URL('../src/ui/panel.part.js', import.meta.url), 'utf8');
-const release = await readFile(new URL('../更好的X（BetterX）v4.1.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v4.3.0.js', import.meta.url), 'utf8');
 const compactedSource = compactPanelTemplate(panelSource);
 const opening = 'panel.innerHTML = uiHtml`';
 const boundary = 'const fileInput';
@@ -35,6 +35,12 @@ assert.match(builtHtml, /<section class="BetterX-view BetterX-settings-view"/);
 assert.match(builtHtml, /id="BetterX-download-advanced"/);
 assert.match(builtHtml, /id="BetterX-hide-nfl"[\s\S]*id="BetterX-hideads"/,
   '关闭 NFL 开关应位于关闭广告上方');
+const hideSection=builtHtml.slice(builtHtml.indexOf('id="BetterX-dismiss-features"'),builtHtml.indexOf('<summary>常用功能</summary>'));
+assert.ok(hideSection.includes('<summary>关闭功能</summary>'),'关闭功能必须在常用功能前面');
+for(const id of ['hide-nfl','hideads','hide-whatsnew','hide-who-to-follow','hide-money']){
+  assert.ok(hideSection.includes(`id="BetterX-${id}"`),`${id} 必须集中到关闭功能`);
+  assert.equal(builtHtml.split(`id="BetterX-${id}"`).length-1,1,`${id} 不得重复显示`);
+}
 assert.doesNotMatch(builtHtml, /BetterX-markread|点帖子空白处算已读/,
   '高级设置不再提供点击帖子空白处算已读的开关');
 assert.match(builtHtml, /id="BetterX-post-limit-warning" \/> 帖子上限提示/,

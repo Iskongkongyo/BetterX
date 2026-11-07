@@ -14,7 +14,7 @@
   const MAX_MEDIA_REGISTRY_ENTRIES = 2000;
   const MAX_SESSION_STAT_IDS = 20000;
   const MAX_FOLLOWED_HANDLES = 5000;
-  const MAX_NOTIFICATION_SUBSCRIPTIONS = 2000;
+  const MAX_NOTIFICATION_SUBSCRIPTIONS = 2000; // 常规名单容量；开启订阅全部保留，关闭历史使用剩余名额。
   // 铃铛接口成功前后，网络 Hook 仍可能延迟处理到操作前的用户资料响应。
   // 在短暂保护期内以用户刚确认的操作为准，避免旧状态把界面覆盖回去。
   const NOTIFICATION_MUTATION_GUARD_MS = 5000;
@@ -195,8 +195,11 @@
     theme: setting('auto', ['enum', ['auto', 'dark', 'light']], bind('themeSelectEl', '#BetterX-theme', 'value'), ['theme']),
     pageSize: setting(60, ['int', 20, 200]), badgePos: setting(null, ['badgePos'], null, ['badge']),
     panelWidth: setting(520, ['int', 420, 1200], null, ['panelWidth']),
-    hideAds: bool(true, bind('hideAdsEl', '#BetterX-hideads'), ['ads']),
-    hideNfl: bool(true, bind('hideNflEl', '#BetterX-hide-nfl'), ['nfl']),
+    hideAds: bool(false, bind('hideAdsEl', '#BetterX-hideads'), ['ads']),
+    hideNfl: bool(false, bind('hideNflEl', '#BetterX-hide-nfl'), ['nfl']),
+    hideWhatsHappening: bool(false, bind('hideWhatsHappeningEl', '#BetterX-hide-whatsnew'), ['dismissWidgets']),
+    hideWhoToFollow: bool(false, bind('hideWhoToFollowEl', '#BetterX-hide-who-to-follow'), ['dismissWidgets']),
+    hideMoney: bool(false, bind('hideMoneyEl', '#BetterX-hide-money'), ['dismissWidgets']),
     hideAdultSpam: bool(false, bind('hideAdultSpamEl', '#BetterX-hide-adult-spam'), ['adultSpam']),
     adultSpamCustomRulesEnabled: bool(true, bind('adultSpamCustomRulesEl', '#BetterX-adultspam-custom-enabled'), ['adultSpam']),
     adultSpamLevel: setting('balanced', ['enum', ['conservative', 'balanced']], bind('adultSpamLevelEl', '#BetterX-adultspam-level', 'value'), ['adultSpam']),
@@ -204,6 +207,7 @@
     adultSpamSkipFollowingReposts: bool(false, bind('adultSpamSkipFollowingRepostsEl', '#BetterX-adultspam-skip-following-reposts'), ['adultSpam']),
     knownFollowedHandles: setting([], ['handles', 5000]), notificationSubscriptions: setting([], ['notifications']),
     notificationSubscriptionsSyncedAt: setting(0, ['timestamp']),
+    notificationAccounts: setting({}, ['notificationAccounts']),
     adultSpamKeywords: setting([], ['stringList', 50, 80], null, ['adultSpam']),
     adultSpamWhitelist: setting([], ['handles', 100], null, ['adultSpam']),
     layoutEnabled: bool(false, bind('layoutEnabledEl', '#BetterX-layout-enabled'), ['layout']),
@@ -223,7 +227,7 @@
     downloadFileNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]),
     downloadZipNameTemplate: setting('{用户ID}_{帖子ID}', ['trimmedStringDefault', 180]),
     downloadNameRegex: setting('', ['safeRegex']), downloadNameReplacement: setting('', ['string', 180]),
-    trackDownloadedPosts: bool(false), downloadedPostIds: setting([], ['downloadedIds']),
+    trackDownloadedPosts: bool(true), downloadedPostIds: setting([], ['downloadedIds']),
     bypassAgeRestriction: bool(false, bind('bypassAgeEl', '#BetterX-bypassage'), ['ageBypass']),
     restoreMediaGrid: bool(false, bind('restoreMediaGridEl', '#BetterX-restore-media-grid'), ['mediaGrid']),
     firefoxCompatibility: bool(false, null, ['firefoxCompatibility']), firefoxCompatibilityPrompted: bool(false),
@@ -270,11 +274,13 @@
     panelView: 'vault',
     // UI 引用由 createUI() 与 bindSettingsControls() 按需挂载。
     notificationSearchQuery: '',
+    notificationSyncedAt: 0,
     detectedTimelineWidth: 0,
     detectedLeftbarWidth: 0,
     mobileBadgeRaf: 0,
     suppressNextBadgeClick: false,
     notificationSyncInProgress: false,
+    notificationCleanupInProgress: false,
     notificationMutationUsers: new Set(),
     dbWriteFailureVersion: 0,
     lastDbWriteError: null,
@@ -325,15 +331,6 @@
     state.settings.knownFollowedHandles = [...followedHandles].sort().slice(0, MAX_FOLLOWED_HANDLES);
     queueSettingsPersist(['knownFollowedHandles']);
   }, 750);
-  const scheduleNotificationSubscriptionsPersist = debounce(() => {
-    if (!state.settingsLoaded) return;
-    state.settings.notificationSubscriptions = [...notificationSubscriptions.values()]
-      .sort((a, b) => Number(b.pinned === true) - Number(a.pinned === true)
-        || Number(b.enabled) - Number(a.enabled) || (b.updatedAt || 0) - (a.updatedAt || 0))
-      .slice(0, MAX_NOTIFICATION_SUBSCRIPTIONS);
-    queueSettingsPersist(['notificationSubscriptions', 'notificationSubscriptionsSyncedAt']);
-    renderNotificationSubscriptions();
-  }, 500);
 
   function trimFollowedHandlesToMax() {
     while (followedHandles.size > MAX_FOLLOWED_HANDLES) {
