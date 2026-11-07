@@ -248,6 +248,8 @@
             <div class="BetterX-adv-label">移除敏感内容遮罩并显示原图或视频；在新打开的窗口里建议勾选上“显示可能含有敏感内容的媒体内容”</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-auto-expand-post-text" /> 自动展开帖子里“显示更多”</label>
             <div class="BetterX-adv-label">自动点开帖子正文里的“显示更多 / Show more”；不会展开回复或侧栏内容。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-author-links-enabled" /> 作品详情页显示作者链接</label>
+            <div class="BetterX-adv-label">在作品详情页直接打开作者简介中的链接和个人网站，而不用访问作者主页。</div>
             <div class="BetterX-row BetterX-profile-default-view-row">
               <label class="BetterX-field inline"><input type="checkbox" id="BetterX-profile-default-view-enabled" /> 进入用户主页默认查看</label>
               <select class="BetterX-select" id="BetterX-profile-default-view" aria-label="进入用户主页默认查看">

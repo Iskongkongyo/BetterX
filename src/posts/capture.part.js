@@ -143,6 +143,7 @@
 
   function scanArticles(root) {
     const scope = root && root.querySelectorAll ? root : document;
+    if (scope === document) refreshAuthorLinks();
     if (state.settings.hideAds) sweepStandaloneAds(scope);
     getArticlesFromScope(scope).forEach(captureArticle);
     if (state.settings.mediaDownload) injectDownloadButtons(scope);

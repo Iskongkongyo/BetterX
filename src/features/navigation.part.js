@@ -315,6 +315,7 @@
     const onNav = (restorePosition) => {
       if (location.href !== lastUrl) {
         lastUrl = location.href;
+        refreshAuthorLinks();
         if (redirectBareProfileToPreferredView()) return;
         installNetworkHooks();
         scheduleNavigationRefresh(restorePosition ? layoutScrollPositions.get(lastUrl) : null);

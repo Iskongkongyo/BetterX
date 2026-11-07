@@ -15,6 +15,7 @@ const parts = [
   'src/core/network-harvest.part.js',
   'src/download/download.part.js',
   'src/download/media-picker.part.js',
+  'src/features/author-links.part.js',
   'src/features/media-age-dialogs.part.js',
   'src/features/ads-layout.part.js',
   'src/features/adult-spam.part.js',
