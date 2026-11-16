@@ -5,6 +5,9 @@
   const AUTHOR_LINKS_RETRY_DELAYS = [1000, 4000];
   const AUTHOR_LINKS_MISS_TTL_MS = 30 * 1000;
   const AUTHOR_LINKS_HOME_ROUTE = /^\/home\/?$/i;
+  const AUTHOR_LINK_ICON_CACHE_KEY = 'betterx_author_link_icons';
+  const AUTHOR_LINK_ICON_CACHE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+  const AUTHOR_LINK_ICON_CACHE_LIMIT = 100;
   const AUTHOR_GROK_BUTTON = 'button:is([aria-label*="Grok" i], [data-testid*="grok" i])';
   const AUTHOR_LINK_SITE_LOGOS = [
     ['pixiv.net', 'pixiv/0096FA'],
@@ -28,12 +31,89 @@
   const authorLinksCache = new Map();
   const authorLinksCacheMisses = new Map();
   const authorLinksShortLinkAttempted = new Set();
+  const authorLinkIconRequests = new Map();
+  let authorLinkIconCache = null;
   let authorLinksControlSeq = 0;
   let authorLinksView = null;
   let authorLinksLifecycleInstalled = false;
   let authorLinksHomeInjected = false;
   let authorLinksGeneration = 0;
   let authorLinksHomeGeneration = -1;
+
+  function getAuthorLinkLogo(href) {
+    try {
+      const host = new URL(href).hostname.replace(/\.$/, '');
+      return AUTHOR_LINK_SITE_LOGOS.find(([domain]) => host === domain || host.endsWith('.' + domain))?.[1] || '';
+    } catch { return ''; }
+  }
+
+  function readAuthorLinkIconCache() {
+    if (!authorLinkIconCache) {
+      authorLinkIconCache = {};
+      try {
+        const stored = GM_getValue(AUTHOR_LINK_ICON_CACHE_KEY, null);
+        if (stored && typeof stored === 'object' && !Array.isArray(stored)) authorLinkIconCache = stored;
+      } catch {}
+    }
+    return authorLinkIconCache;
+  }
+
+  function getCachedAuthorLinkIcon(logo) {
+    if (!logo) return '';
+    const entry = readAuthorLinkIconCache()[logo];
+    if (!Number.isFinite(entry?.expiresAt) || entry.expiresAt <= now()) return '';
+    return typeof entry.dataUrl === 'string' && entry.dataUrl.startsWith('data:image/svg+xml') ? entry.dataUrl : '';
+  }
+
+  function rememberAuthorLinkIcon(logo, dataUrl) {
+    const cache = readAuthorLinkIconCache();
+    cache[logo] = { dataUrl, expiresAt: now() + AUTHOR_LINK_ICON_CACHE_TTL_MS };
+    const keys = Object.keys(cache);
+    if (keys.length > AUTHOR_LINK_ICON_CACHE_LIMIT) {
+      for (const key of keys) if (!(cache[key]?.expiresAt > now())) delete cache[key];
+      const overflow = Object.keys(cache).sort((left, right) => (cache[left]?.expiresAt || 0) - (cache[right]?.expiresAt || 0));
+      while (overflow.length > AUTHOR_LINK_ICON_CACHE_LIMIT) delete cache[overflow.shift()];
+    }
+    try { GM_setValue(AUTHOR_LINK_ICON_CACHE_KEY, cache); } catch {}
+  }
+
+  function fetchAuthorLinkIcon(logo) {
+    if (!logo) return Promise.resolve('');
+    const cached = getCachedAuthorLinkIcon(logo);
+    if (cached) return Promise.resolve(cached);
+    const pending = authorLinkIconRequests.get(logo);
+    if (pending) return pending;
+    const request = new Promise((resolve) => {
+      try {
+        // X 的 img-src 允许 data: 图片，CDN 请求由脚本管理器发出并做 1 年本地缓存。
+        GM_xmlhttpRequest({
+          method: 'GET', url: 'https://cdn.simpleicons.org/' + logo, anonymous: true, timeout: 8000,
+          onload: ({ status, responseText }) => {
+            if (status !== 200 || typeof responseText !== 'string' || !/<svg\b/i.test(responseText)) {
+              resolve('');
+              return;
+            }
+            const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(responseText);
+            rememberAuthorLinkIcon(logo, dataUrl);
+            resolve(dataUrl);
+          },
+          onerror: () => resolve(''),
+          ontimeout: () => resolve(''),
+          onabort: () => resolve(''),
+        });
+      } catch { resolve(''); }
+    }).finally(() => authorLinkIconRequests.delete(logo));
+    authorLinkIconRequests.set(logo, request);
+    return request;
+  }
+
+  function prefetchAuthorLinkIcons(links) {
+    if (!state.settings.authorLinksEnabled || !Array.isArray(links)) return;
+    for (const link of links) {
+      const logo = getAuthorLinkLogo(link?.href);
+      if (logo && !getCachedAuthorLinkIcon(logo)) fetchAuthorLinkIcon(logo);
+    }
+  }
 
   function saveAuthorProfileLinksCache(screenName, links) {
     screenName = String(screenName || '').toLowerCase();
@@ -42,7 +122,10 @@
     const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
     authorLinksCache.set(screenName, cached);
     authorLinksCacheMisses.delete(screenName);
-    if (links.length) authorLinksGeneration++;
+    if (links.length) {
+      authorLinksGeneration++;
+      prefetchAuthorLinkIcons(links);
+    }
     if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
     try { GM_setValue(key, cached); } catch {}
     return cached;
@@ -91,6 +174,7 @@
       const cached = authorLinksCache.get(screenName) || GM_getValue(key, null);
       if (Number.isFinite(cached?.expiresAt) && cached.expiresAt > now() && Array.isArray(cached.links)) {
         authorLinksCacheMisses.delete(screenName);
+        prefetchAuthorLinkIcons(cached.links);
         resolveCachedShortLinks(screenName, cached);
         return cached.links;
       }
@@ -118,6 +202,7 @@
       const refreshed = { links, expiresAt: cached.expiresAt };
       authorLinksCache.set(screenName, refreshed);
       authorLinksGeneration++;
+      prefetchAuthorLinkIcons(links);
       try { GM_setValue('betterx_author_links:' + screenName, refreshed); } catch {}
     }).catch(() => {});
   }
@@ -149,6 +234,7 @@
     resolveCachedShortLinks(screenName, cached);
     // 有效但为空的缓存项本身就是负缓存，留在内存里让详情页直接命中，避免重复读取 GM 存储。
     const links = cached.links.filter((link) => typeof link?.href === 'string' && /^https?:\/\//i.test(link.href));
+    if (links.length) prefetchAuthorLinkIcons(links);
     return links.length ? links : null;
   }
 
@@ -230,28 +316,33 @@
     control.style.marginInlineEnd = (extraGap + Math.max(0, nativeSpacing - linksSpacing)) + 'px';
   }
 
-  function createAuthorLinkIcon(href, menu) {
+  function makeAuthorLinkIconImage(dataUrl) {
+    const image = document.createElement('img');
+    image.alt = '';
+    image.src = dataUrl;
+    return image;
+  }
+
+  function createAuthorLinkIcon(href) {
     const icon = document.createElement('span');
     icon.className = 'BetterX-author-link-icon';
     icon.setAttribute('aria-hidden', 'true');
+    const logo = getAuthorLinkLogo(href);
+    const cachedDataUrl = logo ? getCachedAuthorLinkIcon(logo) : '';
+    if (cachedDataUrl) {
+      icon.append(makeAuthorLinkIconImage(cachedDataUrl));
+      return icon;
+    }
     icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>';
-    const host = new URL(href).hostname.replace(/\.$/, '');
-    const logo = AUTHOR_LINK_SITE_LOGOS.find(([domain]) => host === domain || host.endsWith('.' + domain))?.[1];
-    if (logo) menu.addEventListener('beforetoggle', () => {
-      // X 的 img-src 允许 data: 图片，CDN 请求由脚本管理器发出。
-      try {
-        GM_xmlhttpRequest({
-          method: 'GET', url: 'https://cdn.simpleicons.org/' + logo, anonymous: true, timeout: 8000,
-          onload: ({ status, responseText }) => {
-            if (status !== 200 || !responseText || !icon.isConnected) return;
-            const image = document.createElement('img');
-            image.alt = '';
-            image.addEventListener('load', () => icon.replaceChildren(image), { once: true });
-            image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(responseText);
-          },
-        });
-      } catch {}
-    }, { once: true });
+    if (logo) {
+      fetchAuthorLinkIcon(logo).then((dataUrl) => {
+        if (!dataUrl || !icon.isConnected) return;
+        const image = makeAuthorLinkIconImage(dataUrl);
+        image.addEventListener('load', () => {
+          if (icon.isConnected) icon.replaceChildren(image);
+        }, { once: true });
+      });
+    }
     return icon;
   }
 
@@ -306,7 +397,7 @@
       link.rel = 'noopener noreferrer';
       const text = document.createElement('span');
       text.textContent = label;
-      link.append(createAuthorLinkIcon(href, menu), text);
+      link.append(createAuthorLinkIcon(href), text);
       menu.append(link);
     }
 

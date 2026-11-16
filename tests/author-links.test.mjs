@@ -174,7 +174,7 @@ function harness(){
   assert.deepEqual(Array.from(result,link=>link.href),['https://www.pixiv.net/users/123'],'Links converging on one target must collapse');
 }
 function homeHarness(profiles, transport = async () => []){
-  const created=[],articles=[],reads=[],redirects=[];
+  const created=[],articles=[],reads=[],redirects=[],icons=[];
   const stored=new Map(Object.entries(profiles));
   const document={
     body:null,cookie:'',documentElement:{lang:'zh-CN'},
@@ -204,12 +204,17 @@ function homeHarness(profiles, transport = async () => []){
       return [];
     },
   };
-  const context=loadUserscript('refreshAuthorLinks, getCachedAuthorProfileLinks, loadAuthorProfileLinks, installNetworkHooks',
+  const context=loadUserscript('refreshAuthorLinks, getCachedAuthorProfileLinks, loadAuthorProfileLinks, installNetworkHooks, createAuthorLinkIcon',
     'now=()=>globalThis.clock;requestAuthorProfileLinks=async name=>{globalThis.requests++;return globalThis.transport(name);};',{
       clock:100000,requests:0,document,transport,
       GM_getValue:(key,fallback)=>{reads.push(key);return stored.get(key)??fallback;},
       GM_setValue:(key,value)=>stored.set(key,value),
       GM_xmlhttpRequest:options=>{
+        if(options.url.startsWith('https://cdn.simpleicons.org/')){
+          icons.push(options.url);
+          options.onload({status:200,responseText:'<svg viewBox="0 0 24 24"></svg>'});
+          return;
+        }
         redirects.push(options.url);
         options.onload({status:200,finalUrl:'https://www.pixiv.net/users/1'});
       },
@@ -243,7 +248,7 @@ function homeHarness(profiles, transport = async () => []){
     articles.push(article);
     return article;
   };
-  return {context,api:context.__test,stored,reads,redirects,addArticle};
+  return {context,api:context.__test,stored,reads,redirects,icons,addArticle};
 }
 
 {
@@ -491,4 +496,33 @@ function homeHarness(profiles, transport = async () => []){
   await flush();
   assert.ok(article.control,'Intercepted user detail on /home must immediately render author links on visible tweets');
 }
-console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests.');
+{
+  const h=homeHarness({},async()=>links);
+  await h.api.loadAuthorProfileLinks('author');
+  await flush();
+  assert.deepEqual(h.icons,['https://cdn.simpleicons.org/pixiv/0096FA'],'Resolving author links must prefetch uncached site icons');
+  const iconDict=h.stored.get('betterx_author_link_icons');
+  assert.ok(iconDict['pixiv/0096FA']?.dataUrl?.startsWith('data:image/svg+xml'),'Fetched SVG icon must persist in GM storage');
+  assert.equal(iconDict['pixiv/0096FA'].expiresAt,100000+365*24*60*60*1000,'Icon cache must stay valid for one year');
+
+  h.icons.length=0;
+  const fresh=homeHarness({'betterx_author_link_icons':iconDict});
+  const iconNode=fresh.api.createAuthorLinkIcon('https://www.pixiv.net/users/123');
+  assert.equal(fresh.icons.length,0,'Persisted icon cache must hit without network requests');
+  assert.equal(iconNode.children[0]?.tagName,'IMG','Cached icon must render synchronously as <img>');
+  assert.equal(iconNode.children[0]?.src,iconDict['pixiv/0096FA'].dataUrl);
+
+  fresh.context.clock+=365*24*60*60*1000;
+  const expiredNode=fresh.api.createAuthorLinkIcon('https://www.pixiv.net/users/123');
+  assert.equal(expiredNode.children.length,0,'Expired icon must fall back to globe SVG while refreshing');
+  assert.deepEqual(fresh.icons,['https://cdn.simpleicons.org/pixiv/0096FA'],'Expired icon must re-fetch on control creation');
+
+  const invalid=loadUserscript('createAuthorLinkIcon','now=()=>100000;',{
+    document:fresh.context.document,
+    GM_xmlhttpRequest:options=>options.onload({status:200,responseText:'<html>not svg</html>'}),
+    GM_setValue:()=>{throw new Error('non-svg must not be cached');},
+  });
+  invalid.__test.createAuthorLinkIcon('https://www.pixiv.net/users/123');
+  await flush();
+}
+console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests; site icons cache for one year and prefetch on link discovery or control injection.');
