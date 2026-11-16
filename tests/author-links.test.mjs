@@ -204,7 +204,7 @@ function homeHarness(profiles, transport = async () => []){
       return [];
     },
   };
-  const context=loadUserscript('refreshAuthorLinks, getCachedAuthorProfileLinks, loadAuthorProfileLinks',
+  const context=loadUserscript('refreshAuthorLinks, getCachedAuthorProfileLinks, loadAuthorProfileLinks, installNetworkHooks',
     'now=()=>globalThis.clock;requestAuthorProfileLinks=async name=>{globalThis.requests++;return globalThis.transport(name);};',{
       clock:100000,requests:0,document,transport,
       GM_getValue:(key,fallback)=>{reads.push(key);return stored.get(key)??fallback;},
@@ -372,4 +372,123 @@ function homeHarness(profiles, transport = async () => []){
   assert.equal(requested.length,2,'Failed short links must not be retried on every cache read');
   assert.equal(stored.get('betterx_author_links:author').links[0].href,'https://t.co/old','A failed resolution leaves the cache untouched');
 }
-console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets.');
+{
+  const stored=new Map(),redirects=[];
+  const makeRes=(url,body,extra={})=>({
+    url,ok:true,status:200,headers:{get:()=>'application/json'},
+    json:async()=>typeof body==='string'?JSON.parse(body):body,
+    clone:()=>({text:async()=>typeof body==='string'?body:JSON.stringify(body)}),
+    ...extra,
+  });
+  let nextResponse=null;
+  const context=loadUserscript('installNetworkHooks, getCachedAuthorProfileLinks, loadAuthorProfileLinks, requestXSessionJson','now=()=>globalThis.clock;',{
+    clock:100000,
+    GM_getValue:(key,fallback)=>stored.get(key)??fallback,
+    GM_setValue:(key,value)=>stored.set(key,value),
+    GM_xmlhttpRequest:options=>{redirects.push(options.url);options.onload({status:200,finalUrl:'https://www.pixiv.net/users/88'});},
+    fetch:async()=>nextResponse,
+  });
+  context.__test.installNetworkHooks();
+
+  nextResponse=makeRes('https://x.com/i/api/graphql/abc/UserByScreenName?variables=%7B%22screen_name%22%3A%22Alice%22%7D',{
+    data:{user:{result:{__typename:'User',core:{screen_name:'Alice'},profile_bio:{entities:{description:{urls:[
+      {expanded_url:'https://t.co/alice',display_url:'t.co/alice'},
+    ]}}}}}},
+  });
+  await context.fetch('https://x.com/i/api/graphql/abc/UserByScreenName?variables=%7B%22screen_name%22%3A%22Alice%22%7D');
+  await flush();
+  assert.deepEqual(redirects,['https://t.co/alice'],'Intercepted user detail short links must resolve before caching');
+  assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('alice'),item=>item.href),['https://www.pixiv.net/users/88']);
+
+  nextResponse=makeRes('https://x.com/i/api/graphql/abc/UserByRestId?variables=%7B%22userId%22%3A%2242%22%7D',{
+    data:{user:{result:{__typename:'User',legacy:{screen_name:'Bob',entities:{url:{urls:[{expanded_url:'https://github.com/bob',display_url:'github.com/bob'}]}}}}}},
+  });
+  await context.fetch('https://x.com/i/api/graphql/abc/UserByRestId?variables=%7B%22userId%22%3A%2242%22%7D');
+  await flush();
+  assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('bob'),item=>item.href),['https://github.com/bob']);
+
+  nextResponse=makeRes('https://x.com/i/api/graphql/abc/UserByScreenName',{
+    data:{user:{result:{__typename:'User',legacy:{screen_name:'EmptyUser',entities:{description:{urls:[]}}}}}},
+  });
+  await context.fetch('https://x.com/i/api/graphql/abc/UserByScreenName');
+  await flush();
+  assert.deepEqual(Array.from(stored.get('betterx_author_links:emptyuser').links),[],'Intercepted empty profiles must be cached');
+  assert.equal(stored.get('betterx_author_links:emptyuser').expiresAt,100000+60*60*1000);
+
+  for(const [url,body,extra] of [
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',legacy:{screen_name:'FailedHttp',entities:{url:{urls:[{expanded_url:'https://example.com'}]}}}}}}},{ok:false,status:429}],
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{errors:[{message:'rate limit'}],data:{user:{result:{legacy:{screen_name:'GqlErr',entities:{url:{urls:[{expanded_url:'https://example.com'}]}}}}}}}],
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'UserUnavailable',legacy:{screen_name:'Banned'}}}}}],
+    ['https://x.com/i/api/graphql/abc/ProfileSpotlightsQuery',{data:{user_result_by_screen_name:{result:{__typename:'User',legacy:{screen_name:'NoEntities'}}}}}],
+  ]){
+    nextResponse=makeRes(url,body,extra||{});
+    await context.fetch(url);
+    await flush();
+  }
+  for(const name of ['failedhttp','gqlerr','banned','noentities']){
+    assert.equal(stored.has('betterx_author_links:'+name),false,`${name} must not be cached`);
+  }
+
+  class XHR{
+    constructor(){this.listeners=[];this.responseType='';this.status=200;}
+    open(){}send(){}addEventListener(type,fn){if(type==='load')this.listeners.push(fn);}
+    getResponseHeader(){return null;}
+    fire(){this.listeners.forEach(fn=>fn());}
+  }
+  context.XMLHttpRequest=XHR;
+  context.__test.installNetworkHooks();
+  const xhrOk=new XHR();
+  xhrOk.responseType='json';
+  xhrOk.response={data:{users:[{result:{legacy:{screen_name:'Carol',entities:{url:{urls:[{expanded_url:'https://example.org/carol'}]}}}}}]}};
+  xhrOk.open('GET','https://x.com/i/api/graphql/abc/UsersByRestIds');
+  xhrOk.send();xhrOk.fire();
+  await flush();
+  assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('carol'),item=>item.href),['https://example.org/carol']);
+
+  const xhrErr=new XHR();
+  xhrErr.status=500;xhrErr.responseType='json';
+  xhrErr.response={data:{user:{result:{legacy:{screen_name:'Dave',entities:{url:{urls:[{expanded_url:'https://example.org/dave'}]}}}}}}};
+  xhrErr.open('GET','https://x.com/i/api/graphql/abc/UserByScreenName');
+  xhrErr.send();xhrErr.fire();
+  await flush();
+  assert.equal(stored.has('betterx_author_links:dave'),false,'Failed XHR user detail must not be cached');
+
+  nextResponse=makeRes('https://x.com/i/api/1.1/users/show.json?screen_name=eve',{
+    screen_name:'Eve',entities:{url:{urls:[{expanded_url:'https://example.org/eve',display_url:'example.org/eve'}]}},
+  });
+  await context.__test.requestXSessionJson('/i/api/1.1/users/show.json?screen_name=eve');
+  await flush();
+  assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('eve'),item=>item.href),['https://example.org/eve']);
+}
+{
+  const stored=new Map();
+  const context=loadUserscript('requestXSessionJson, getCachedAuthorProfileLinks','now=()=>globalThis.clock;',{
+    clock:100000,
+    GM_getValue:(key,fallback)=>stored.get(key)??fallback,
+    GM_setValue:(key,value)=>stored.set(key,value),
+    fetch:async()=>({
+      ok:true,status:200,
+      json:async()=>({data:{user:{result:{legacy:{screen_name:'Frank',entities:{url:{urls:[{expanded_url:'https://example.org/frank'}]}}}}}}}),
+    }),
+  });
+  await context.__test.requestXSessionJson('/i/api/graphql/abc/UserByScreenName?variables=%7B%22screen_name%22%3A%22Frank%22%7D');
+  await flush();
+  assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('frank'),item=>item.href),['https://example.org/frank'],'Session requests must cache user details even without fetch/XHR hooks');
+}
+{
+  const stored=new Map();
+  const res={
+    url:'https://x.com/i/api/graphql/abc/UserByScreenName',ok:true,status:200,headers:{get:()=>'application/json'},
+    clone:()=>({text:async()=>JSON.stringify({data:{user:{result:{legacy:{screen_name:'Author',entities:{url:{urls:[{expanded_url:links[0].href,display_url:links[0].label}]}}}}}}})}),
+  };
+  const h=homeHarness({});
+  const article=h.addArticle('author');
+  h.api.refreshAuthorLinks();
+  assert.equal(article.control,null);
+  h.context.fetch=async()=>res;
+  h.api.installNetworkHooks();
+  await h.context.fetch(res.url);
+  await flush();
+  assert.ok(article.control,'Intercepted user detail on /home must immediately render author links on visible tweets');
+}
+console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests.');

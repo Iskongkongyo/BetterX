@@ -24,6 +24,7 @@
     ['github.com', 'github/6E7781'],
   ];
   const authorLinksRequests = new Map();
+  const authorLinksPassiveJobs = new Map();
   const authorLinksCache = new Map();
   const authorLinksCacheMisses = new Map();
   const authorLinksShortLinkAttempted = new Set();
@@ -34,9 +35,55 @@
   let authorLinksGeneration = 0;
   let authorLinksHomeGeneration = -1;
 
+  function saveAuthorProfileLinksCache(screenName, links) {
+    screenName = String(screenName || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(links)) return null;
+    const key = 'betterx_author_links:' + screenName;
+    const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
+    authorLinksCache.set(screenName, cached);
+    authorLinksCacheMisses.delete(screenName);
+    if (links.length) authorLinksGeneration++;
+    if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
+    try { GM_setValue(key, cached); } catch {}
+    return cached;
+  }
+
+  function applyHarvestedAuthorProfileLinks(screenName, links) {
+    saveAuthorProfileLinksCache(screenName, links);
+    if (!state.settings.authorLinksEnabled) return links;
+    if (homeAuthorLinksActive() && links.length) {
+      refreshHomeAuthorLinks();
+    } else if (authorLinksView?.screenName === screenName && authorLinksView.status === 'error' && isActiveAuthorLinksView(authorLinksView)) {
+      clearTimeout(authorLinksView.retryTimer);
+      authorLinksView.retryTimer = null;
+      authorLinksView.links = links;
+      authorLinksView.status = links.length ? 'ready' : 'empty';
+      refreshAuthorLinks();
+    }
+    return links;
+  }
+
+  function cacheHarvestedAuthorProfileLinks(screenName, rawLinks) {
+    screenName = String(screenName || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(rawLinks)) return Promise.resolve(null);
+    // 主动请求已在进行中时由 loadAuthorProfileLinks 统一解析与落盘，避免重复解析短链。
+    if (authorLinksRequests.has(screenName)) return authorLinksRequests.get(screenName);
+    const pending = authorLinksPassiveJobs.get(screenName);
+    if (pending) return pending;
+    if (!rawLinks.some((link) => isShortUrl(link.href))) {
+      return Promise.resolve(applyHarvestedAuthorProfileLinks(screenName, rawLinks));
+    }
+    const job = resolveAuthorProfileLinks(rawLinks).then((links) => {
+      if (authorLinksRequests.has(screenName)) return links;
+      return applyHarvestedAuthorProfileLinks(screenName, links);
+    }).finally(() => authorLinksPassiveJobs.delete(screenName));
+    authorLinksPassiveJobs.set(screenName, job);
+    return job;
+  }
+
   async function loadAuthorProfileLinks(screenName) {
     screenName = screenName.toLowerCase();
-    const pending = authorLinksRequests.get(screenName);
+    const pending = authorLinksRequests.get(screenName) || authorLinksPassiveJobs.get(screenName);
     if (pending) return pending;
 
     const key = 'betterx_author_links:' + screenName;
@@ -51,12 +98,7 @@
     authorLinksCache.delete(screenName);
 
     const request = requestAuthorProfileLinks(screenName).then((links) => {
-      const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
-      authorLinksCache.set(screenName, cached);
-      authorLinksCacheMisses.delete(screenName);
-      if (links.length) authorLinksGeneration++;
-      if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
-      try { GM_setValue(key, cached); } catch {}
+      saveAuthorProfileLinksCache(screenName, links);
       return links;
     }).finally(() => authorLinksRequests.delete(screenName));
     authorLinksRequests.set(screenName, request);

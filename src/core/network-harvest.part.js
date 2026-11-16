@@ -225,6 +225,7 @@
       }
       const payload = await response.json();
       if (Array.isArray(payload?.errors) && payload.errors.length) throw makeXSessionRequestError(response.status, payload);
+      if (USER_DETAIL_API_RE.test(url)) harvestUserDetailPayload(payload, url);
       return payload;
     } finally {
       if (timer) clearTimeout(timer);
@@ -338,6 +339,82 @@
     return url;
   }
 
+  const USER_DETAIL_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/(?:UserByScreenName|UserByRestId|UsersByRestIds|ProfileSpotlightsQuery)|1\.1\/users\/show\.json)(?:[/?#]|$)/i;
+
+  function extractRequestedScreenName(url) {
+    try {
+      const parsed = new URL(String(url || ''), location.origin);
+      const vars = parsed.searchParams.get('variables');
+      if (vars) {
+        const obj = JSON.parse(vars);
+        if (typeof obj?.screen_name === 'string') return obj.screen_name;
+      }
+      const queryName = parsed.searchParams.get('screen_name');
+      return typeof queryName === 'string' ? queryName : '';
+    } catch { return ''; }
+  }
+
+  function extractScreenNameFromProfileNode(profile, fallbackScreenName = '') {
+    const raw = profile?.legacy?.screen_name || profile?.core?.screen_name || profile?.screen_name || fallbackScreenName || '';
+    const clean = String(raw).trim().replace(/^@+/, '').toLowerCase();
+    return /^[a-z0-9_]{1,15}$/.test(clean) ? clean : '';
+  }
+
+  function extractLinksFromProfileNode(profile) {
+    const entitySources = [profile?.profile_bio?.entities, profile?.legacy?.entities, profile?.entities];
+    const links = new Map();
+    for (const field of entitySources.flatMap((entities) => [entities?.description, entities?.url])) {
+      if (!Array.isArray(field?.urls)) continue;
+      for (const entry of field.urls) {
+        const rawUrl = entry?.expanded_url || entry?.url;
+        if (typeof rawUrl !== 'string') continue;
+        try {
+          const { href, protocol } = new URL(rawUrl);
+          if ((protocol !== 'https:' && protocol !== 'http:') || links.has(href)) continue;
+          const label = typeof entry.display_url === 'string' ? entry.display_url.trim() : '';
+          links.set(href, { href, label: label || href });
+        } catch {}
+      }
+    }
+    return [...links.values()];
+  }
+
+  function harvestUserDetailPayload(payload, url = '') {
+    if (!payload || typeof payload !== 'object' || (Array.isArray(payload.errors) && payload.errors.length)) return;
+    const fallbackScreenName = extractRequestedScreenName(url);
+    const candidates = [];
+    if (payload.data?.user?.result) candidates.push({ result: payload.data.user.result, fallbackScreenName });
+    if (payload.data?.user_result_by_screen_name?.result) {
+      candidates.push({ result: payload.data.user_result_by_screen_name.result, fallbackScreenName });
+    }
+    if (Array.isArray(payload.data?.users)) {
+      for (const item of payload.data.users) {
+        if (item) candidates.push({ result: item.result || item, fallbackScreenName: '' });
+      }
+    }
+    if (!candidates.length && payload.screen_name && payload.entities) {
+      candidates.push({ result: payload, fallbackScreenName });
+    }
+    for (const { result, fallbackScreenName: candidateFallback } of candidates) {
+      const profile = result?.user || result;
+      if (!profile || typeof profile !== 'object' || profile.__typename === 'UserUnavailable') continue;
+      const hasEntities = Boolean(
+        (profile.profile_bio && typeof profile.profile_bio.entities === 'object')
+        || (profile.legacy && typeof profile.legacy.entities === 'object')
+        || (profile.entities && typeof profile.entities === 'object')
+      );
+      if (!hasEntities) continue;
+      const screenName = extractScreenNameFromProfileNode(profile, candidateFallback);
+      if (!screenName) continue;
+      cacheHarvestedAuthorProfileLinks(screenName, extractLinksFromProfileNode(profile));
+    }
+  }
+
+  function harvestUserDetailResponseText(text, url = '') {
+    if (!text || text.length > MAX_NETWORK_RESPONSE_BYTES) return;
+    try { harvestUserDetailPayload(JSON.parse(text), url); } catch {}
+  }
+
   async function requestAuthorProfileLinks(screenName) {
     const params = new URLSearchParams({
       variables: JSON.stringify({ screen_name: screenName, withGrokTranslatedBio: true }),
@@ -361,22 +438,7 @@
     const result = payload?.data?.user?.result;
     const profile = result?.user || result;
     if (!profile || (!profile.profile_bio && !profile.legacy)) throw new Error('X returned no readable author profile');
-    const entitySources = [profile.profile_bio?.entities, profile.legacy?.entities];
-    const links = new Map();
-    for (const field of entitySources.flatMap((entities) => [entities?.description, entities?.url])) {
-      if (!Array.isArray(field?.urls)) continue;
-      for (const entry of field.urls) {
-        const rawUrl = entry?.expanded_url || entry?.url;
-        if (typeof rawUrl !== 'string') continue;
-        try {
-          const { href, protocol } = new URL(rawUrl);
-          if ((protocol !== 'https:' && protocol !== 'http:') || links.has(href)) continue;
-          const label = typeof entry.display_url === 'string' ? entry.display_url.trim() : '';
-          links.set(href, { href, label: label || href });
-        } catch {}
-      }
-    }
-    return resolveAuthorProfileLinks([...links.values()]);
+    return resolveAuthorProfileLinks(extractLinksFromProfileNode(profile));
   }
 
   function isShortLinkLabel(label) {
@@ -897,18 +959,28 @@
     const accountToken = xhr?.__xvNotificationAccountToken;
     const readRevision = xhr?.__xvNotificationReadRevision;
     const url = xhr && xhr.__xvUrl ? String(xhr.__xvUrl) : '';
-    if (!/(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) return;
+    const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
+    const isUserDetail = USER_DETAIL_API_RE.test(url)
+      && (xhr?.status === undefined || (Number(xhr.status) >= 200 && Number(xhr.status) < 300));
+    if (!isApi && !isUserDetail) return;
     try {
       if (typeof xhr.getResponseHeader === 'function'
           && declaredResponseTooLarge((name) => xhr.getResponseHeader(name))) return;
       if (xhr.responseType === '' || xhr.responseType === 'text') {
-        tryHarvest(xhr.responseText, accountToken, readRevision);
+        if (isUserDetail) harvestUserDetailResponseText(xhr.responseText, url);
+        if (isApi) tryHarvest(xhr.responseText, accountToken, readRevision);
       } else if (xhr.responseType === 'json' && xhr.response && typeof xhr.response === 'object') {
-        enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision);
+        if (isUserDetail) harvestUserDetailPayload(xhr.response, url);
+        if (isApi) enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision);
       } else if (xhr.responseType === 'arraybuffer' && xhr.response && typeof xhr.response.byteLength === 'number' && xhr.response.byteLength <= MAX_NETWORK_RESPONSE_BYTES) {
-        tryHarvest(new TextDecoder('utf-8').decode(new Uint8Array(xhr.response)), accountToken, readRevision);
+        const text = new TextDecoder('utf-8').decode(new Uint8Array(xhr.response));
+        if (isUserDetail) harvestUserDetailResponseText(text, url);
+        if (isApi) tryHarvest(text, accountToken, readRevision);
       } else if (xhr.responseType === 'blob' && xhr.response && typeof xhr.response.size === 'number' && typeof xhr.response.text === 'function' && xhr.response.size <= MAX_NETWORK_RESPONSE_BYTES) {
-        xhr.response.text().then((text) => tryHarvest(text, accountToken, readRevision)).catch(() => {});
+        xhr.response.text().then((text) => {
+          if (isUserDetail) harvestUserDetailResponseText(text, url);
+          if (isApi) tryHarvest(text, accountToken, readRevision);
+        }).catch(() => {});
       }
     } catch (e) {}
   }
@@ -946,16 +1018,25 @@
           const hooked = function (...args) {
             const accountToken = ensureNotificationAccount();
             const readRevision = accountToken.session?.stateRevision || 0;
+            const reqUrl = typeof args[0] === 'string'
+              ? args[0]
+              : (args[0] && typeof args[0].url === 'string' ? args[0].url : (args[0] instanceof URL ? args[0].href : ''));
             const p = origFetch.apply(this, args);
             try {
               p.then((res) => {
                 try {
-                  const url = (res && res.url) || '';
-                  if (res && res.clone && /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) {
+                  const url = (res && res.url) || reqUrl;
+                  const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
+                  const httpOk = Boolean(res) && res.ok !== false && (!Number.isFinite(res.status) || (res.status >= 200 && res.status < 300));
+                  const isUserDetail = httpOk && USER_DETAIL_API_RE.test(url);
+                  if (res && res.clone && (isApi || isUserDetail)) {
                     if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
                     const contentType = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
                     if (contentType && !/(?:json|javascript|text)/i.test(contentType)) return;
-                    res.clone().text().then((text) => tryHarvest(text, accountToken, readRevision)).catch(() => {});
+                    res.clone().text().then((text) => {
+                      if (isUserDetail) harvestUserDetailResponseText(text, url);
+                      if (isApi) tryHarvest(text, accountToken, readRevision);
+                    }).catch(() => {});
                   }
                 } catch (e) {}
               }).catch(() => {});
@@ -976,7 +1057,7 @@
         } else {
           const origOpen = XHR.prototype.open;
           const hookedOpen = function (method, url) {
-            this.__xvUrl = url;
+            this.__xvUrl = typeof url === 'string' ? url : (url && typeof url.href === 'string' ? url.href : String(url || ''));
             return origOpen.apply(this, arguments);
           };
           hookedOpen.__xvHooked = true;
