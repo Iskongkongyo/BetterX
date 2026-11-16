@@ -2856,6 +2856,7 @@ async function requestXSessionJson(pathOrUrl, options) {
       method: opts.method || 'GET',
       credentials: 'include',
       ...(opts.cache ? { cache: opts.cache } : {}),
+      ...(opts.skipUserDetailHarvest ? { __xvSkipUserDetailHarvest: true } : {}),
       headers,
       body: opts.body || undefined,
       signal: controller ? controller.signal : undefined,
@@ -2867,6 +2868,7 @@ async function requestXSessionJson(pathOrUrl, options) {
     }
     const payload = await response.json();
     if (Array.isArray(payload?.errors) && payload.errors.length) throw makeXSessionRequestError(response.status, payload);
+    if (!opts.skipUserDetailHarvest && USER_DETAIL_API_RE.test(url)) harvestUserDetailPayload(payload, url);
     return payload;
   } finally {
     if (timer) clearTimeout(timer);
@@ -2966,6 +2968,76 @@ async function resolveShortUrl(url, timeoutMs = SHORT_LINK_RESOLVE_TIMEOUT_MS) {
   }
   return url;
 }
+const USER_DETAIL_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/(?:UserByScreenName|UserByRestId|UsersByRestIds|ProfileSpotlightsQuery)|1\.1\/users\/show\.json)(?:[/?#]|$)/i;
+function extractRequestedScreenName(url) {
+  try {
+    const parsed = new URL(String(url || ''), location.origin);
+    const vars = parsed.searchParams.get('variables');
+    if (vars) {
+      const obj = JSON.parse(vars);
+      if (typeof obj?.screen_name === 'string') return obj.screen_name;
+    }
+    const queryName = parsed.searchParams.get('screen_name');
+    return typeof queryName === 'string' ? queryName : '';
+  } catch { return ''; }
+}
+function extractScreenNameFromProfileNode(profile, fallbackScreenName = '') {
+  const raw = profile?.legacy?.screen_name || profile?.core?.screen_name || profile?.screen_name || fallbackScreenName || '';
+  const clean = String(raw).trim().replace(/^@+/, '').toLowerCase();
+  return /^[a-z0-9_]{1,15}$/.test(clean) ? clean : '';
+}
+function extractLinksFromProfileNode(profile) {
+  const entitySources = [profile?.profile_bio?.entities, profile?.legacy?.entities, profile?.entities];
+  const links = new Map();
+  for (const field of entitySources.flatMap((entities) => [entities?.description, entities?.url])) {
+    if (!Array.isArray(field?.urls)) continue;
+    for (const entry of field.urls) {
+      const rawUrl = entry?.expanded_url || entry?.url;
+      if (typeof rawUrl !== 'string') continue;
+      try {
+        const { href, protocol } = new URL(rawUrl);
+        if ((protocol !== 'https:' && protocol !== 'http:') || links.has(href)) continue;
+        const label = typeof entry.display_url === 'string' ? entry.display_url.trim() : '';
+        links.set(href, { href, label: label || href });
+      } catch {}
+    }
+  }
+  return [...links.values()];
+}
+function harvestUserDetailPayload(payload, url = '') {
+  if (!payload || typeof payload !== 'object' || (Array.isArray(payload.errors) && payload.errors.length)) return;
+  const fallbackScreenName = extractRequestedScreenName(url);
+  const candidates = [];
+  if (payload.data?.user?.result) candidates.push({ result: payload.data.user.result, fallbackScreenName });
+  if (payload.data?.user_result_by_screen_name?.result) {
+    candidates.push({ result: payload.data.user_result_by_screen_name.result, fallbackScreenName });
+  }
+  if (Array.isArray(payload.data?.users)) {
+    for (const item of payload.data.users) {
+      if (item) candidates.push({ result: item.result || item, fallbackScreenName: '' });
+    }
+  }
+  if (!candidates.length && payload.screen_name && payload.entities) {
+    candidates.push({ result: payload, fallbackScreenName });
+  }
+  for (const { result, fallbackScreenName: candidateFallback } of candidates) {
+    const profile = result?.user || result;
+    if (!profile || typeof profile !== 'object' || profile.__typename === 'UserUnavailable') continue;
+    const hasEntities = Boolean(
+      (profile.profile_bio && typeof profile.profile_bio.entities === 'object')
+      || (profile.legacy && typeof profile.legacy.entities === 'object')
+      || (profile.entities && typeof profile.entities === 'object')
+    );
+    if (!hasEntities) continue;
+    const screenName = extractScreenNameFromProfileNode(profile, candidateFallback);
+    if (!screenName) continue;
+    cacheHarvestedAuthorProfileLinks(screenName, extractLinksFromProfileNode(profile));
+  }
+}
+function harvestUserDetailResponseText(text, url = '') {
+  if (!text || text.length > MAX_NETWORK_RESPONSE_BYTES) return;
+  try { harvestUserDetailPayload(JSON.parse(text), url); } catch {}
+}
 async function requestAuthorProfileLinks(screenName) {
   const params = new URLSearchParams({
     variables: JSON.stringify({ screen_name: screenName, withGrokTranslatedBio: true }),
@@ -2985,26 +3057,11 @@ async function requestAuthorProfileLinks(screenName) {
     }),
     fieldToggles: JSON.stringify({ withPayments: false, withAuxiliaryUserLabels: true }),
   });
-  const payload = await requestXSessionJson('/i/api/graphql/AMIBMjtxEEATh4z8V9GtRg/UserByScreenName?' + params);
+  const payload = await requestXSessionJson('/i/api/graphql/AMIBMjtxEEATh4z8V9GtRg/UserByScreenName?' + params, { skipUserDetailHarvest: true });
   const result = payload?.data?.user?.result;
   const profile = result?.user || result;
   if (!profile || (!profile.profile_bio && !profile.legacy)) throw new Error('X returned no readable author profile');
-  const entitySources = [profile.profile_bio?.entities, profile.legacy?.entities];
-  const links = new Map();
-  for (const field of entitySources.flatMap((entities) => [entities?.description, entities?.url])) {
-    if (!Array.isArray(field?.urls)) continue;
-    for (const entry of field.urls) {
-      const rawUrl = entry?.expanded_url || entry?.url;
-      if (typeof rawUrl !== 'string') continue;
-      try {
-        const { href, protocol } = new URL(rawUrl);
-        if ((protocol !== 'https:' && protocol !== 'http:') || links.has(href)) continue;
-        const label = typeof entry.display_url === 'string' ? entry.display_url.trim() : '';
-        links.set(href, { href, label: label || href });
-      } catch {}
-    }
-  }
-  return resolveAuthorProfileLinks([...links.values()]);
+  return resolveAuthorProfileLinks(extractLinksFromProfileNode(profile));
 }
 function isShortLinkLabel(label) {
   const text = String(label || '').trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/^\/+/, '');
@@ -3482,18 +3539,28 @@ function harvestXhrResponse(xhr) {
   const accountToken = xhr?.__xvNotificationAccountToken;
   const readRevision = xhr?.__xvNotificationReadRevision;
   const url = xhr && xhr.__xvUrl ? String(xhr.__xvUrl) : '';
-  if (!/(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) return;
+  const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
+  const isUserDetail = USER_DETAIL_API_RE.test(url)
+    && (xhr?.status === undefined || (Number(xhr.status) >= 200 && Number(xhr.status) < 300));
+  if (!isApi && !isUserDetail) return;
   try {
     if (typeof xhr.getResponseHeader === 'function'
         && declaredResponseTooLarge((name) => xhr.getResponseHeader(name))) return;
     if (xhr.responseType === '' || xhr.responseType === 'text') {
-      tryHarvest(xhr.responseText, accountToken, readRevision);
+      if (isUserDetail) harvestUserDetailResponseText(xhr.responseText, url);
+      if (isApi) tryHarvest(xhr.responseText, accountToken, readRevision);
     } else if (xhr.responseType === 'json' && xhr.response && typeof xhr.response === 'object') {
-      enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision);
+      if (isUserDetail) harvestUserDetailPayload(xhr.response, url);
+      if (isApi) enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision);
     } else if (xhr.responseType === 'arraybuffer' && xhr.response && typeof xhr.response.byteLength === 'number' && xhr.response.byteLength <= MAX_NETWORK_RESPONSE_BYTES) {
-      tryHarvest(new TextDecoder('utf-8').decode(new Uint8Array(xhr.response)), accountToken, readRevision);
+      const text = new TextDecoder('utf-8').decode(new Uint8Array(xhr.response));
+      if (isUserDetail) harvestUserDetailResponseText(text, url);
+      if (isApi) tryHarvest(text, accountToken, readRevision);
     } else if (xhr.responseType === 'blob' && xhr.response && typeof xhr.response.size === 'number' && typeof xhr.response.text === 'function' && xhr.response.size <= MAX_NETWORK_RESPONSE_BYTES) {
-      xhr.response.text().then((text) => tryHarvest(text, accountToken, readRevision)).catch(() => {});
+      xhr.response.text().then((text) => {
+        if (isUserDetail) harvestUserDetailResponseText(text, url);
+        if (isApi) tryHarvest(text, accountToken, readRevision);
+      }).catch(() => {});
     }
   } catch (e) {}
 }
@@ -3524,16 +3591,25 @@ function installNetworkHooks() {
         const hooked = function (...args) {
           const accountToken = ensureNotificationAccount();
           const readRevision = accountToken.session?.stateRevision || 0;
+          const reqUrl = typeof args[0] === 'string'
+            ? args[0]
+            : (args[0] && typeof args[0].url === 'string' ? args[0].url : (args[0] instanceof URL ? args[0].href : ''));
           const p = origFetch.apply(this, args);
           try {
             p.then((res) => {
               try {
-                const url = (res && res.url) || '';
-                if (res && res.clone && /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url)) {
+                const url = (res && res.url) || reqUrl;
+                const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
+                const httpOk = Boolean(res) && res.ok !== false && (!Number.isFinite(res.status) || (res.status >= 200 && res.status < 300));
+                const isUserDetail = httpOk && !args[1]?.__xvSkipUserDetailHarvest && USER_DETAIL_API_RE.test(url);
+                if (res && res.clone && (isApi || isUserDetail)) {
                   if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
                   const contentType = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
                   if (contentType && !/(?:json|javascript|text)/i.test(contentType)) return;
-                  res.clone().text().then((text) => tryHarvest(text, accountToken, readRevision)).catch(() => {});
+                  res.clone().text().then((text) => {
+                    if (isUserDetail) harvestUserDetailResponseText(text, url);
+                    if (isApi) tryHarvest(text, accountToken, readRevision);
+                  }).catch(() => {});
                 }
               } catch (e) {}
             }).catch(() => {});
@@ -3554,7 +3630,7 @@ function installNetworkHooks() {
       } else {
         const origOpen = XHR.prototype.open;
         const hookedOpen = function (method, url) {
-          this.__xvUrl = url;
+          this.__xvUrl = typeof url === 'string' ? url : (url && typeof url.href === 'string' ? url.href : String(url || ''));
           return origOpen.apply(this, arguments);
         };
         hookedOpen.__xvHooked = true;
@@ -5122,6 +5198,10 @@ const AUTHOR_LINKS_EMPTY_TTL_MS = 60 * 60 * 1000;
 const AUTHOR_LINKS_RETRY_DELAYS = [1000, 4000];
 const AUTHOR_LINKS_MISS_TTL_MS = 30 * 1000;
 const AUTHOR_LINKS_HOME_ROUTE = /^\/home\/?$/i;
+const AUTHOR_LINK_ICON_CACHE_KEY = 'betterx_author_link_icons';
+const AUTHOR_LINK_ICON_CACHE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+const AUTHOR_LINK_ICON_CACHE_LIMIT = 100;
+const AUTHOR_LINK_ICON_RETRY_MS = 30 * 1000;
 const AUTHOR_GROK_BUTTON = 'button:is([aria-label*="Grok" i], [data-testid*="grok" i])';
 const AUTHOR_LINK_SITE_LOGOS = [
   ['pixiv.net', 'pixiv/0096FA'],
@@ -5141,38 +5221,192 @@ const AUTHOR_LINK_SITE_LOGOS = [
   ['github.com', 'github/6E7781'],
 ];
 const authorLinksRequests = new Map();
+const authorLinksHarvestedLinks = new Map();
+const authorLinksPassiveJobs = new Map();
 const authorLinksCache = new Map();
 const authorLinksCacheMisses = new Map();
 const authorLinksShortLinkAttempted = new Set();
+const authorLinkIconRequests = new Map();
+const authorLinkIconRetryAt = new Map();
+let authorLinkIconCache = null;
 let authorLinksControlSeq = 0;
 let authorLinksView = null;
 let authorLinksLifecycleInstalled = false;
 let authorLinksHomeInjected = false;
 let authorLinksGeneration = 0;
 let authorLinksHomeGeneration = -1;
+function getAuthorLinkLogo(href) {
+  try {
+    const host = new URL(href).hostname.replace(/\.$/, '');
+    return AUTHOR_LINK_SITE_LOGOS.find(([domain]) => host === domain || host.endsWith('.' + domain))?.[1] || '';
+  } catch { return ''; }
+}
+function readAuthorLinkIconCache() {
+  if (!authorLinkIconCache) {
+    authorLinkIconCache = {};
+    try {
+      const stored = GM_getValue(AUTHOR_LINK_ICON_CACHE_KEY, null);
+      if (stored && typeof stored === 'object' && !Array.isArray(stored)) authorLinkIconCache = stored;
+    } catch {}
+  }
+  return authorLinkIconCache;
+}
+function getCachedAuthorLinkIcon(logo) {
+  if (!logo) return '';
+  const entry = readAuthorLinkIconCache()[logo];
+  if (!Number.isFinite(entry?.expiresAt) || entry.expiresAt <= now()) return '';
+  return typeof entry.dataUrl === 'string' && entry.dataUrl.startsWith('data:image/svg+xml') ? entry.dataUrl : '';
+}
+function rememberAuthorLinkIcon(logo, dataUrl) {
+  const cache = readAuthorLinkIconCache();
+  cache[logo] = { dataUrl, expiresAt: now() + AUTHOR_LINK_ICON_CACHE_TTL_MS };
+  const keys = Object.keys(cache);
+  if (keys.length > AUTHOR_LINK_ICON_CACHE_LIMIT) {
+    for (const key of keys) if (!(cache[key]?.expiresAt > now())) delete cache[key];
+    const overflow = Object.keys(cache).sort((left, right) => (cache[left]?.expiresAt || 0) - (cache[right]?.expiresAt || 0));
+    while (overflow.length > AUTHOR_LINK_ICON_CACHE_LIMIT) delete cache[overflow.shift()];
+  }
+  try { GM_setValue(AUTHOR_LINK_ICON_CACHE_KEY, cache); } catch {}
+}
+function fetchAuthorLinkIcon(logo) {
+  if (!logo) return Promise.resolve('');
+  const cached = getCachedAuthorLinkIcon(logo);
+  if (cached) return Promise.resolve(cached);
+  if (authorLinkIconRetryAt.get(logo) > now()) return Promise.resolve('');
+  const pending = authorLinkIconRequests.get(logo);
+  if (pending) return pending;
+  const request = new Promise((resolve) => {
+    try {
+      GM_xmlhttpRequest({
+        method: 'GET', url: 'https://cdn.simpleicons.org/' + logo, anonymous: true, timeout: 8000,
+        onload: ({ status, responseText }) => {
+          if (status !== 200 || typeof responseText !== 'string' || !/<svg\b/i.test(responseText)) {
+            resolve('');
+            return;
+          }
+          const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(responseText);
+          rememberAuthorLinkIcon(logo, dataUrl);
+          resolve(dataUrl);
+        },
+        onerror: () => resolve(''),
+        ontimeout: () => resolve(''),
+        onabort: () => resolve(''),
+      });
+    } catch { resolve(''); }
+  }).then((dataUrl) => {
+    if (dataUrl) authorLinkIconRetryAt.delete(logo);
+    else authorLinkIconRetryAt.set(logo, now() + AUTHOR_LINK_ICON_RETRY_MS);
+    return dataUrl;
+  }).finally(() => authorLinkIconRequests.delete(logo));
+  authorLinkIconRequests.set(logo, request);
+  return request;
+}
+function prefetchAuthorLinkIcons(links) {
+  if (!state.settings.authorLinksEnabled || !Array.isArray(links)) return;
+  for (const link of links) {
+    const logo = getAuthorLinkLogo(link?.href);
+    if (logo && !getCachedAuthorLinkIcon(logo)) fetchAuthorLinkIcon(logo);
+  }
+}
+function saveAuthorProfileLinksCache(screenName, links) {
+  screenName = String(screenName || '').toLowerCase();
+  if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(links)) return null;
+  const key = 'betterx_author_links:' + screenName;
+  const changed = JSON.stringify(authorLinksCache.get(screenName)?.links) !== JSON.stringify(links);
+  const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
+  authorLinksCache.set(screenName, cached);
+  authorLinksCacheMisses.delete(screenName);
+  if (links.length) {
+    if (changed) authorLinksGeneration++;
+    prefetchAuthorLinkIcons(links);
+  }
+  if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
+  try { GM_setValue(key, cached); } catch {}
+  return cached;
+}
+function applyHarvestedAuthorProfileLinks(screenName, links) {
+  const changed = JSON.stringify(authorLinksCache.get(screenName)?.links) !== JSON.stringify(links);
+  saveAuthorProfileLinksCache(screenName, links);
+  if (!state.settings.authorLinksEnabled) return links;
+  if (homeAuthorLinksActive()) {
+    if (changed) {
+      for (const control of document.querySelectorAll('[data-betterx-author-links="home"]')) {
+        if (control.dataset.betterxAuthorLinksAuthor === screenName) control.remove();
+      }
+      refreshHomeAuthorLinks();
+    }
+  } else if (authorLinksView?.screenName === screenName && isActiveAuthorLinksView(authorLinksView)) {
+    const view = authorLinksView;
+    const status = links.length ? 'ready' : 'empty';
+    clearTimeout(view.retryTimer);
+    view.retryTimer = null;
+    if (view.status !== status || JSON.stringify(view.links) !== JSON.stringify(links)) {
+      removeAuthorLinksControl(view);
+      view.links = links;
+      view.status = status;
+      refreshAuthorLinks();
+    }
+  }
+  return links;
+}
+async function resolveHarvestedAuthorProfileLinks(screenName) {
+  let rawLinks;
+  let links;
+  do {
+    rawLinks = authorLinksHarvestedLinks.get(screenName);
+    links = await resolveAuthorProfileLinks(rawLinks);
+  } while (rawLinks !== authorLinksHarvestedLinks.get(screenName));
+  return links;
+}
+function cacheHarvestedAuthorProfileLinks(screenName, rawLinks) {
+  screenName = String(screenName || '').toLowerCase();
+  if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(rawLinks)) return Promise.resolve(null);
+  authorLinksHarvestedLinks.set(screenName, rawLinks);
+  const pending = authorLinksRequests.get(screenName) || authorLinksPassiveJobs.get(screenName);
+  if (pending) return pending;
+  if (!rawLinks.some((link) => isShortUrl(link.href))) {
+    authorLinksHarvestedLinks.delete(screenName);
+    return Promise.resolve(applyHarvestedAuthorProfileLinks(screenName, rawLinks));
+  }
+  const job = resolveHarvestedAuthorProfileLinks(screenName)
+    .then((links) => applyHarvestedAuthorProfileLinks(screenName, links))
+    .finally(() => {
+      authorLinksPassiveJobs.delete(screenName);
+      authorLinksHarvestedLinks.delete(screenName);
+    });
+  authorLinksPassiveJobs.set(screenName, job);
+  return job;
+}
 async function loadAuthorProfileLinks(screenName) {
   screenName = screenName.toLowerCase();
-  const pending = authorLinksRequests.get(screenName);
+  const pending = authorLinksRequests.get(screenName) || authorLinksPassiveJobs.get(screenName);
   if (pending) return pending;
   const key = 'betterx_author_links:' + screenName;
   try {
     const cached = authorLinksCache.get(screenName) || GM_getValue(key, null);
     if (Number.isFinite(cached?.expiresAt) && cached.expiresAt > now() && Array.isArray(cached.links)) {
       authorLinksCacheMisses.delete(screenName);
+      prefetchAuthorLinkIcons(cached.links);
       resolveCachedShortLinks(screenName, cached);
       return cached.links;
     }
   } catch {}
   authorLinksCache.delete(screenName);
-  const request = requestAuthorProfileLinks(screenName).then((links) => {
-    const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
-    authorLinksCache.set(screenName, cached);
-    authorLinksCacheMisses.delete(screenName);
-    if (links.length) authorLinksGeneration++;
-    if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
-    try { GM_setValue(key, cached); } catch {}
+  const request = requestAuthorProfileLinks(screenName).catch((error) => {
+    const harvested = authorLinksHarvestedLinks.get(screenName);
+    if (!harvested) throw error;
+    return harvested;
+  }).then(async (links) => {
+    if (authorLinksHarvestedLinks.has(screenName)) {
+      links = await resolveHarvestedAuthorProfileLinks(screenName);
+      return applyHarvestedAuthorProfileLinks(screenName, links);
+    }
+    saveAuthorProfileLinksCache(screenName, links);
     return links;
-  }).finally(() => authorLinksRequests.delete(screenName));
+  }).finally(() => {
+    authorLinksRequests.delete(screenName);
+    authorLinksHarvestedLinks.delete(screenName);
+  });
   authorLinksRequests.set(screenName, request);
   return request;
 }
@@ -5187,6 +5421,7 @@ function resolveCachedShortLinks(screenName, cached) {
     const refreshed = { links, expiresAt: cached.expiresAt };
     authorLinksCache.set(screenName, refreshed);
     authorLinksGeneration++;
+    prefetchAuthorLinkIcons(links);
     try { GM_setValue('betterx_author_links:' + screenName, refreshed); } catch {}
   }).catch(() => {});
 }
@@ -5214,6 +5449,7 @@ function getCachedAuthorProfileLinks(screenName) {
   authorLinksCacheMisses.delete(screenName);
   resolveCachedShortLinks(screenName, cached);
   const links = cached.links.filter((link) => typeof link?.href === 'string' && /^https?:\/\//i.test(link.href));
+  if (links.length) prefetchAuthorLinkIcons(links);
   return links.length ? links : null;
 }
 function isAuthorLinksCaret(caret, screenName, statusId, photo) {
@@ -5286,27 +5522,32 @@ function placeAuthorLinksControl(view, target) {
   const linksSpacing = Math.abs(grokX - centerX(button));
   control.style.marginInlineEnd = (extraGap + Math.max(0, nativeSpacing - linksSpacing)) + 'px';
 }
-function createAuthorLinkIcon(href, menu) {
+function makeAuthorLinkIconImage(dataUrl) {
+  const image = document.createElement('img');
+  image.alt = '';
+  image.src = dataUrl;
+  return image;
+}
+function createAuthorLinkIcon(href) {
   const icon = document.createElement('span');
   icon.className = 'BetterX-author-link-icon';
   icon.setAttribute('aria-hidden', 'true');
+  const logo = getAuthorLinkLogo(href);
+  const cachedDataUrl = logo ? getCachedAuthorLinkIcon(logo) : '';
+  if (cachedDataUrl) {
+    icon.append(makeAuthorLinkIconImage(cachedDataUrl));
+    return icon;
+  }
   icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>';
-  const host = new URL(href).hostname.replace(/\.$/, '');
-  const logo = AUTHOR_LINK_SITE_LOGOS.find(([domain]) => host === domain || host.endsWith('.' + domain))?.[1];
-  if (logo) menu.addEventListener('beforetoggle', () => {
-    try {
-      GM_xmlhttpRequest({
-        method: 'GET', url: 'https://cdn.simpleicons.org/' + logo, anonymous: true, timeout: 8000,
-        onload: ({ status, responseText }) => {
-          if (status !== 200 || !responseText || !icon.isConnected) return;
-          const image = document.createElement('img');
-          image.alt = '';
-          image.addEventListener('load', () => icon.replaceChildren(image), { once: true });
-          image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(responseText);
-        },
-      });
-    } catch {}
-  }, { once: true });
+  if (logo) {
+    fetchAuthorLinkIcon(logo).then((dataUrl) => {
+      if (!dataUrl || !icon.isConnected) return;
+      const image = makeAuthorLinkIconImage(dataUrl);
+      image.addEventListener('load', () => {
+        if (icon.isConnected) icon.replaceChildren(image);
+      }, { once: true });
+    });
+  }
   return icon;
 }
 function createAuthorLinksControl(links, view) {
@@ -5355,7 +5596,7 @@ function createAuthorLinksControl(links, view) {
     link.rel = 'noopener noreferrer';
     const text = document.createElement('span');
     text.textContent = label;
-    link.append(createAuthorLinkIcon(href, menu), text);
+    link.append(createAuthorLinkIcon(href), text);
     menu.append(link);
   }
   control.append(button, menu);
@@ -5391,11 +5632,13 @@ function refreshHomeAuthorLinks() {
     if (article.querySelector('.BetterX-author-links')) continue;
     const caret = article.querySelector('button[data-testid="caret"]');
     if (!caret || caret.closest('[hidden], [aria-hidden="true"]')) continue;
-    const links = getCachedAuthorProfileLinks(getArticleAuthorName(article));
+    const screenName = getArticleAuthorName(article);
+    const links = getCachedAuthorProfileLinks(screenName);
     if (!links) { article.dataset.betterxAuthorLinks = 'none'; continue; }
     const caretSlot = getAuthorLinksSlot(caret);
     const control = createAuthorLinksControl(links, { home: true });
     control.dataset.betterxAuthorLinks = 'home';
+    control.dataset.betterxAuthorLinksAuthor = screenName;
     delete article.dataset.betterxAuthorLinks;
     placeAuthorLinksControl({ home: true, caret, caretSlot, control, target: null }, getAuthorLinksTarget(caretSlot));
     authorLinksHomeInjected = true;

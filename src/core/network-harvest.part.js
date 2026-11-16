@@ -214,6 +214,7 @@
         method: opts.method || 'GET',
         credentials: 'include',
         ...(opts.cache ? { cache: opts.cache } : {}),
+        ...(opts.skipUserDetailHarvest ? { __xvSkipUserDetailHarvest: true } : {}),
         headers,
         body: opts.body || undefined,
         signal: controller ? controller.signal : undefined,
@@ -225,7 +226,7 @@
       }
       const payload = await response.json();
       if (Array.isArray(payload?.errors) && payload.errors.length) throw makeXSessionRequestError(response.status, payload);
-      if (USER_DETAIL_API_RE.test(url)) harvestUserDetailPayload(payload, url);
+      if (!opts.skipUserDetailHarvest && USER_DETAIL_API_RE.test(url)) harvestUserDetailPayload(payload, url);
       return payload;
     } finally {
       if (timer) clearTimeout(timer);
@@ -434,7 +435,7 @@
       }),
       fieldToggles: JSON.stringify({ withPayments: false, withAuxiliaryUserLabels: true }),
     });
-    const payload = await requestXSessionJson('/i/api/graphql/AMIBMjtxEEATh4z8V9GtRg/UserByScreenName?' + params);
+    const payload = await requestXSessionJson('/i/api/graphql/AMIBMjtxEEATh4z8V9GtRg/UserByScreenName?' + params, { skipUserDetailHarvest: true });
     const result = payload?.data?.user?.result;
     const profile = result?.user || result;
     if (!profile || (!profile.profile_bio && !profile.legacy)) throw new Error('X returned no readable author profile');
@@ -1028,7 +1029,7 @@
                   const url = (res && res.url) || reqUrl;
                   const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
                   const httpOk = Boolean(res) && res.ok !== false && (!Number.isFinite(res.status) || (res.status >= 200 && res.status < 300));
-                  const isUserDetail = httpOk && USER_DETAIL_API_RE.test(url);
+                  const isUserDetail = httpOk && !args[1]?.__xvSkipUserDetailHarvest && USER_DETAIL_API_RE.test(url);
                   if (res && res.clone && (isApi || isUserDetail)) {
                     if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
                     const contentType = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';

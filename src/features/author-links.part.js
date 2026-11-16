@@ -8,6 +8,7 @@
   const AUTHOR_LINK_ICON_CACHE_KEY = 'betterx_author_link_icons';
   const AUTHOR_LINK_ICON_CACHE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
   const AUTHOR_LINK_ICON_CACHE_LIMIT = 100;
+  const AUTHOR_LINK_ICON_RETRY_MS = 30 * 1000;
   const AUTHOR_GROK_BUTTON = 'button:is([aria-label*="Grok" i], [data-testid*="grok" i])';
   const AUTHOR_LINK_SITE_LOGOS = [
     ['pixiv.net', 'pixiv/0096FA'],
@@ -27,11 +28,13 @@
     ['github.com', 'github/6E7781'],
   ];
   const authorLinksRequests = new Map();
+  const authorLinksHarvestedLinks = new Map();
   const authorLinksPassiveJobs = new Map();
   const authorLinksCache = new Map();
   const authorLinksCacheMisses = new Map();
   const authorLinksShortLinkAttempted = new Set();
   const authorLinkIconRequests = new Map();
+  const authorLinkIconRetryAt = new Map();
   let authorLinkIconCache = null;
   let authorLinksControlSeq = 0;
   let authorLinksView = null;
@@ -81,6 +84,7 @@
     if (!logo) return Promise.resolve('');
     const cached = getCachedAuthorLinkIcon(logo);
     if (cached) return Promise.resolve(cached);
+    if (authorLinkIconRetryAt.get(logo) > now()) return Promise.resolve('');
     const pending = authorLinkIconRequests.get(logo);
     if (pending) return pending;
     const request = new Promise((resolve) => {
@@ -102,6 +106,10 @@
           onabort: () => resolve(''),
         });
       } catch { resolve(''); }
+    }).then((dataUrl) => {
+      if (dataUrl) authorLinkIconRetryAt.delete(logo);
+      else authorLinkIconRetryAt.set(logo, now() + AUTHOR_LINK_ICON_RETRY_MS);
+      return dataUrl;
     }).finally(() => authorLinkIconRequests.delete(logo));
     authorLinkIconRequests.set(logo, request);
     return request;
@@ -119,11 +127,12 @@
     screenName = String(screenName || '').toLowerCase();
     if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(links)) return null;
     const key = 'betterx_author_links:' + screenName;
+    const changed = JSON.stringify(authorLinksCache.get(screenName)?.links) !== JSON.stringify(links);
     const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
     authorLinksCache.set(screenName, cached);
     authorLinksCacheMisses.delete(screenName);
     if (links.length) {
-      authorLinksGeneration++;
+      if (changed) authorLinksGeneration++;
       prefetchAuthorLinkIcons(links);
     }
     if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
@@ -132,34 +141,57 @@
   }
 
   function applyHarvestedAuthorProfileLinks(screenName, links) {
+    const changed = JSON.stringify(authorLinksCache.get(screenName)?.links) !== JSON.stringify(links);
     saveAuthorProfileLinksCache(screenName, links);
     if (!state.settings.authorLinksEnabled) return links;
-    if (homeAuthorLinksActive() && links.length) {
-      refreshHomeAuthorLinks();
-    } else if (authorLinksView?.screenName === screenName && authorLinksView.status === 'error' && isActiveAuthorLinksView(authorLinksView)) {
-      clearTimeout(authorLinksView.retryTimer);
-      authorLinksView.retryTimer = null;
-      authorLinksView.links = links;
-      authorLinksView.status = links.length ? 'ready' : 'empty';
-      refreshAuthorLinks();
+    if (homeAuthorLinksActive()) {
+      if (changed) {
+        for (const control of document.querySelectorAll('[data-betterx-author-links="home"]')) {
+          if (control.dataset.betterxAuthorLinksAuthor === screenName) control.remove();
+        }
+        refreshHomeAuthorLinks();
+      }
+    } else if (authorLinksView?.screenName === screenName && isActiveAuthorLinksView(authorLinksView)) {
+      const view = authorLinksView;
+      const status = links.length ? 'ready' : 'empty';
+      clearTimeout(view.retryTimer);
+      view.retryTimer = null;
+      if (view.status !== status || JSON.stringify(view.links) !== JSON.stringify(links)) {
+        removeAuthorLinksControl(view);
+        view.links = links;
+        view.status = status;
+        refreshAuthorLinks();
+      }
     }
+    return links;
+  }
+
+  async function resolveHarvestedAuthorProfileLinks(screenName) {
+    let rawLinks;
+    let links;
+    do {
+      rawLinks = authorLinksHarvestedLinks.get(screenName);
+      links = await resolveAuthorProfileLinks(rawLinks);
+    } while (rawLinks !== authorLinksHarvestedLinks.get(screenName));
     return links;
   }
 
   function cacheHarvestedAuthorProfileLinks(screenName, rawLinks) {
     screenName = String(screenName || '').toLowerCase();
     if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(rawLinks)) return Promise.resolve(null);
-    // 主动请求已在进行中时由 loadAuthorProfileLinks 统一解析与落盘，避免重复解析短链。
-    if (authorLinksRequests.has(screenName)) return authorLinksRequests.get(screenName);
-    const pending = authorLinksPassiveJobs.get(screenName);
+    authorLinksHarvestedLinks.set(screenName, rawLinks);
+    const pending = authorLinksRequests.get(screenName) || authorLinksPassiveJobs.get(screenName);
     if (pending) return pending;
     if (!rawLinks.some((link) => isShortUrl(link.href))) {
+      authorLinksHarvestedLinks.delete(screenName);
       return Promise.resolve(applyHarvestedAuthorProfileLinks(screenName, rawLinks));
     }
-    const job = resolveAuthorProfileLinks(rawLinks).then((links) => {
-      if (authorLinksRequests.has(screenName)) return links;
-      return applyHarvestedAuthorProfileLinks(screenName, links);
-    }).finally(() => authorLinksPassiveJobs.delete(screenName));
+    const job = resolveHarvestedAuthorProfileLinks(screenName)
+      .then((links) => applyHarvestedAuthorProfileLinks(screenName, links))
+      .finally(() => {
+        authorLinksPassiveJobs.delete(screenName);
+        authorLinksHarvestedLinks.delete(screenName);
+      });
     authorLinksPassiveJobs.set(screenName, job);
     return job;
   }
@@ -181,10 +213,21 @@
     } catch {}
     authorLinksCache.delete(screenName);
 
-    const request = requestAuthorProfileLinks(screenName).then((links) => {
+    const request = requestAuthorProfileLinks(screenName).catch((error) => {
+      const harvested = authorLinksHarvestedLinks.get(screenName);
+      if (!harvested) throw error;
+      return harvested;
+    }).then(async (links) => {
+      if (authorLinksHarvestedLinks.has(screenName)) {
+        links = await resolveHarvestedAuthorProfileLinks(screenName);
+        return applyHarvestedAuthorProfileLinks(screenName, links);
+      }
       saveAuthorProfileLinksCache(screenName, links);
       return links;
-    }).finally(() => authorLinksRequests.delete(screenName));
+    }).finally(() => {
+      authorLinksRequests.delete(screenName);
+      authorLinksHarvestedLinks.delete(screenName);
+    });
     authorLinksRequests.set(screenName, request);
     return request;
   }
@@ -442,11 +485,13 @@
       if (article.querySelector('.BetterX-author-links')) continue;
       const caret = article.querySelector('button[data-testid="caret"]');
       if (!caret || caret.closest('[hidden], [aria-hidden="true"]')) continue;
-      const links = getCachedAuthorProfileLinks(getArticleAuthorName(article));
+      const screenName = getArticleAuthorName(article);
+      const links = getCachedAuthorProfileLinks(screenName);
       if (!links) { article.dataset.betterxAuthorLinks = 'none'; continue; }
       const caretSlot = getAuthorLinksSlot(caret);
       const control = createAuthorLinksControl(links, { home: true });
       control.dataset.betterxAuthorLinks = 'home';
+      control.dataset.betterxAuthorLinksAuthor = screenName;
       delete article.dataset.betterxAuthorLinks;
       placeAuthorLinksControl({ home: true, caret, caretSlot, control, target: null }, getAuthorLinksTarget(caretSlot));
       authorLinksHomeInjected = true;

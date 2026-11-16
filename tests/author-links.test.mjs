@@ -187,7 +187,8 @@ function homeHarness(profiles, transport = async () => []){
         append(...nodes){for(const child of nodes){child.parentElement=node;node.children.push(child);}node.firstElementChild=node.children[0];},
         replaceChildren(...nodes){node.children=nodes;node.firstElementChild=nodes[0];},
         querySelector(){return null;},
-        closest(){return null;},
+        matches(){return false;},
+        closest(selector){return node.parentElement?.closest(selector)||null;},
         remove(){node.isConnected=false;node.removed=true;},
       };
       created.push(node);
@@ -204,7 +205,7 @@ function homeHarness(profiles, transport = async () => []){
       return [];
     },
   };
-  const context=loadUserscript('refreshAuthorLinks, getCachedAuthorProfileLinks, loadAuthorProfileLinks, installNetworkHooks, createAuthorLinkIcon',
+  const context=loadUserscript('refreshAuthorLinks, getCachedAuthorProfileLinks, loadAuthorProfileLinks, installNetworkHooks, createAuthorLinkIcon, cacheHarvestedAuthorProfileLinks, getView:()=>authorLinksView',
     'now=()=>globalThis.clock;requestAuthorProfileLinks=async name=>{globalThis.requests++;return globalThis.transport(name);};',{
       clock:100000,requests:0,document,transport,
       GM_getValue:(key,fallback)=>{reads.push(key);return stored.get(key)??fallback;},
@@ -225,20 +226,21 @@ function homeHarness(profiles, transport = async () => []){
   const addArticle=(name)=>{
     let control=null;
     const caret={tagName:'BUTTON',isConnected:true,previousElementSibling:null,parentElement:null,
-      closest(selector){return selector==='article'?article:null;},
+      closest(selector){return selector==='article'||selector==='article[data-testid="tweet"]'?article:null;},
+      contains(node){return node===caret;},
       querySelector(){return null;},
       getBoundingClientRect(){return {width:0,height:0};},
-      before(inserted){control=inserted;},
+      before(inserted){control=inserted;inserted.parentElement=article;caret.previousElementSibling=inserted;},
     };
     const article={isConnected:true,dataset:{},nameQueries:0,
-      closest(){return null;},
+      closest(selector){return selector==='article'||selector==='article[data-testid="tweet"]'?article:selector==='[data-testid="primaryColumn"]'?document:null;},
       querySelector(selector){
         if(selector==='[data-testid="User-Name"]'){
           article.nameQueries++;
-          return {querySelector:()=>name?{pathname:'/'+name}:null};
+          return {querySelector:query=>name?(query==='a[href*="/status/"]'?{href:'https://x.com/'+name+'/status/123'}:{pathname:'/'+name}):null};
         }
         if(selector==='button[data-testid="caret"]')return caret;
-        if(selector==='.BetterX-author-links')return control;
+        if(selector==='.BetterX-author-links')return control?.isConnected?control:null;
         return null;
       },
       remove(){article.isConnected=false;},
@@ -525,4 +527,111 @@ function homeHarness(profiles, transport = async () => []){
   invalid.__test.createAuthorLinkIcon('https://www.pixiv.net/users/123');
   await flush();
 }
-console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests; site icons cache for one year and prefetch on link discovery or control injection.');
+// Harvest regression: active-race.
+for(const activeFails of [true,false]){
+  const stored=new Map();let settleActive,requestUrl;
+  const context=loadUserscript('refreshAuthorLinks, cacheHarvestedAuthorProfileLinks, installNetworkHooks, getView:()=>authorLinksView','now=()=>100000;',{
+    GM_getValue:(key,fallback)=>stored.get(key)??fallback,
+    GM_setValue:(key,value)=>stored.set(key,value),
+    fetch:url=>new Promise(resolve=>{requestUrl=url;settleActive=resolve;}),
+  });
+  const api=context.__test;
+  api.state.settings.authorLinksEnabled=true;context.location.pathname='/author/status/123';
+  api.installNetworkHooks();api.refreshAuthorLinks();await flush();
+  const fresh=[{href:'https://example.org/new',label:'new'}];
+  const passive=api.cacheHarvestedAuthorProfileLinks('author',fresh);
+  passive.catch(()=>{});
+  const payload=activeFails?{errors:[{message:'rate limited'}]}:{data:{user:{result:{legacy:{screen_name:'Author',entities:{url:{urls:[{expanded_url:'https://example.org/old'}]}}}}}}};
+  settleActive({url:requestUrl,ok:!activeFails,status:activeFails?429:200,
+    headers:{get:()=>'application/json'},json:async()=>payload,clone:()=>({text:async()=>JSON.stringify(payload)}),
+  });
+  await Promise.allSettled([passive]);await flush();
+  assert.equal(api.getView().status,'ready','Successful passive details must survive a failed active request');
+  assert.equal(stored.get('betterx_author_links:author')?.links[0]?.href,'https://example.org/new','Late active responses must not overwrite newer passive details');
+  assert.equal(api.getView().links[0]?.href,'https://example.org/new');
+}
+// Harvest regression: self-short-link.
+{
+  const methods=[];
+  const payload={data:{user:{result:{legacy:{screen_name:'Author',entities:{url:{urls:[{expanded_url:'https://t.co/fail'}]}}}}}}};
+  const context=loadUserscript('loadAuthorProfileLinks, installNetworkHooks','now=()=>100000;',{
+    fetch:async url=>({url,ok:true,status:200,headers:{get:()=>'application/json'},json:async()=>payload,clone:()=>({text:async()=>JSON.stringify(payload)})}),
+    GM_xmlhttpRequest:options=>{methods.push(options.method);options.onerror();},
+  });
+  context.__test.installNetworkHooks();
+  const result=await context.__test.loadAuthorProfileLinks('author');await flush();
+  assert.equal(result[0].href,'https://t.co/fail');
+  assert.deepEqual(methods,['HEAD','GET'],'Self-intercepted failed short links must use only one resolution budget');
+}
+// Harvest regression: passive-empty.
+{
+  const stored=new Map(),pending=[];
+  const context=loadUserscript('cacheHarvestedAuthorProfileLinks','now=()=>100000;',{
+    GM_getValue:(key,fallback)=>stored.get(key)??fallback,
+    GM_setValue:(key,value)=>stored.set(key,value),
+    GM_xmlhttpRequest:options=>pending.push(options),
+  });
+  const old=context.__test.cacheHarvestedAuthorProfileLinks('author',[{href:'https://t.co/old',label:'old'}]);
+  const fresh=context.__test.cacheHarvestedAuthorProfileLinks('author',[]);
+  pending[0].onload({status:200,finalUrl:'https://example.org/old'});
+  await Promise.all([old,fresh]);
+  assert.deepEqual(Array.from(stored.get('betterx_author_links:author').links),[],'A newer empty profile must replace a pending passive short-link result');
+}
+// Harvest regression: detail-sync.
+for(const initial of [[],[{href:'https://example.org/old',label:'old'}],'error']){
+  const h=homeHarness({},async()=>{if(initial==='error')throw new Error('offline');return initial;});
+  const article=h.addArticle('author');
+  h.context.location.pathname='/author/status/123';
+  h.api.refreshAuthorLinks();await flush();
+  const previous=article.control;
+  const fresh=[{href:'https://example.org/new',label:'new'}];
+  await h.api.cacheHarvestedAuthorProfileLinks('author',fresh);
+  assert.equal(h.api.getView().status,'ready','Passive details must refresh empty, ready and error views');
+  assert.equal(article.control?.children[1]?.children[0]?.href,'https://example.org/new','Passive recovery must replace any retry button or obsolete menu');
+  if(previous)assert.equal(previous.isConnected,false,'A changed author menu must detach the previous control');
+  await h.api.cacheHarvestedAuthorProfileLinks('author',[]);
+  assert.equal(h.api.getView().status,'empty');
+  assert.equal(article.querySelector('.BetterX-author-links'),null,'An emptied profile must remove its detail control');
+}
+// Harvest regression: home-sync.
+{
+  const h=homeHarness({
+    'betterx_author_links:author':{links,expiresAt:200000},
+    'betterx_author_links:writer':{links:[{href:'https://example.org/writer',label:'writer'}],expiresAt:200000},
+  });
+  const author=h.addArticle('author'),writer=h.addArticle('writer'),unknown=h.addArticle('unknown');
+  h.api.refreshAuthorLinks();
+  const oldControl=author.control,writerControl=writer.control;
+  const fresh=[{href:'https://example.org/new',label:'new'}];
+  await h.api.cacheHarvestedAuthorProfileLinks('author',fresh);
+  assert.equal(author.control?.children[1]?.children[0]?.href,'https://example.org/new','Existing home menus must refresh when intercepted links change');
+  assert.equal(oldControl.isConnected,false);
+  assert.equal(writer.control,writerControl,'Updating one author must preserve other authors\' controls');
+  const unknownQueries=unknown.nameQueries;
+  await h.api.cacheHarvestedAuthorProfileLinks('author',fresh);
+  assert.equal(unknown.nameQueries,unknownQueries,'Identical passive details must not re-scan unrelated cache misses');
+  await h.api.cacheHarvestedAuthorProfileLinks('author',[]);
+  assert.equal(author.querySelector('.BetterX-author-links'),null,'Empty intercepted profiles must remove home menus');
+  assert.equal(writer.control,writerControl);
+}
+// Harvest regression: icon-cooldown.
+for(const failure of ['http','network','timeout']){
+  const h=homeHarness({'betterx_author_links:author':{links:[{href:'https://weibo.com/123',label:'weibo'}],expiresAt:200000}});
+  let calls=0,succeed=false;
+  h.context.GM_xmlhttpRequest=options=>{
+    calls++;
+    if(succeed)options.onload({status:200,responseText:'<svg xmlns="http://www.w3.org/2000/svg"></svg>'});
+    else if(failure==='http')options.onload({status:404,responseText:'not found'});
+    else if(failure==='network')options.onerror();
+    else options.ontimeout();
+  };
+  h.api.getCachedAuthorProfileLinks('author');await flush();
+  for(let index=0;index<3;index++){h.api.getCachedAuthorProfileLinks('author');await flush();}
+  assert.equal(calls,1,`${failure}: cached profile reads must respect the failed icon cooldown`);
+  h.context.clock+=60000;succeed=true;
+  h.api.getCachedAuthorProfileLinks('author');await flush();
+  assert.equal(calls,2,`${failure}: a failed icon must be retryable after cooldown`);
+  h.api.getCachedAuthorProfileLinks('author');await flush();
+  assert.equal(calls,2,'A successful retry must populate the existing icon cache');
+}
+console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests; site icons cache for one year and prefetch on link discovery or control injection; passive details survive active failures and synchronize rendered menus; failed icons respect retry cooldowns.');
