@@ -160,7 +160,7 @@
         assert(buttonFor(overlayPost).offsetWidth === overlayPost.querySelector('[data-testid="caret"]').offsetWidth,
           'Without Grok the links button must still use the native action width');
         const settingsLabel = settingsToggle.closest('label');
-        assert(settingsLabel.textContent.trim() === '作品详情页显示作者链接' &&
+        assert(settingsLabel.textContent.trim() === '显示作者链接' &&
           settingsLabel.nextElementSibling.textContent.includes('，而不用访问作者主页'),
           'The setting must explain where author links appear and why');
         buttonFor(overlayPost).click();
@@ -178,6 +178,67 @@
         history.replaceState(null, '', path);
         await sleep(40);
         assert(requests.length === 2 && buttonFor(post), 'Expired links must be requested again');
+
+        history.pushState(null, '', '/home');
+        const homeSkeleton = detailArticle('632901', 'home_uncached');
+        homeSkeleton.querySelector('[data-testid="User-Name"]').textContent = '';
+        const homeRecycled = detailArticle('632902', 'home_uncached');
+        primary.append(homeSkeleton, homeRecycled);
+        try {
+          await sleep(140);
+          assert(!homeSkeleton.dataset.betterxAuthorLinks && homeRecycled.dataset.betterxAuthorLinks === 'none',
+            'Skeleton tweets must stay unmarked while uncached home tweets cache none');
+          homeSkeleton.querySelector('[data-testid="User-Name"]').innerHTML = '<a href="/author">author</a>';
+          const swappedLink = document.createElement('a');
+          swappedLink.href = '/author';
+          swappedLink.textContent = 'author';
+          homeRecycled.querySelector('[data-testid="User-Name"] a').replaceWith(swappedLink);
+          await sleep(140);
+          assert(buttonFor(homeSkeleton) && buttonFor(homeRecycled),
+            'childList author mounts and virtual-list swaps must show cached home buttons');
+          const uncachedLink = document.createElement('a');
+          uncachedLink.href = '/home_uncached';
+          uncachedLink.textContent = 'home_uncached';
+          swappedLink.replaceWith(uncachedLink);
+          await sleep(140);
+          assert(!buttonFor(homeRecycled) && homeRecycled.dataset.betterxAuthorLinks === 'none',
+            'Swapping a recycled home tweet back to an uncached author must remove stale buttons');
+
+          const floatingDl = document.createElement('span');
+          floatingDl.className = 'BetterX-download-controls floating';
+          homeRecycled.append(floatingDl);
+          await sleep(140);
+          assert(homeRecycled.dataset.betterxAuthorLinks === 'none',
+            'Appending floating download controls to an article must not wipe its none marker');
+          floatingDl.remove();
+
+          const homeActionRow = homeSkeleton.querySelector('[data-testid="caret"]').parentElement.parentElement;
+          const homeGrok = document.createElement('div');
+          homeGrok.style.marginInlineEnd = '4px';
+          homeGrok.innerHTML = '<button aria-label="Grok 操作" style="width:20px;height:20px;padding:0">G</button>';
+          homeActionRow.prepend(homeGrok);
+          await sleep(140);
+          assert(homeGrok.previousElementSibling === buttonFor(homeSkeleton).parentElement,
+            'Home links button must relocate left when Grok mounts after injection');
+          homeGrok.remove();
+          await sleep(140);
+          assert(buttonFor(homeSkeleton).parentElement.style.marginInlineEnd === '0px',
+            'Home links button must reset extra Grok margin when Grok unmounts');
+
+          homeRecycled.remove();
+          history.pushState(null, '', '/later_home/status/632903');
+          await sleep(60);
+          history.pushState(null, '', '/home');
+          await sleep(20);
+          uncachedLink.href = '/later_home';
+          primary.append(homeRecycled);
+          await sleep(140);
+          assert(buttonFor(homeRecycled), 'Returning to /home and re-attaching a cached tweet must render its links button');
+        } finally {
+          homeSkeleton.remove();
+          homeRecycled.remove();
+        }
+
         setAuthorLinks(false);
         assert(!buttonFor(post), 'Turning author links off must remove the button immediately');
       } finally {

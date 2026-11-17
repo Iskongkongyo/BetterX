@@ -79,6 +79,21 @@
         flushPendingRoots();
       }, 100);
     };
+    const AUTHOR_LINKS_MUTATION_SELECTOR = `[data-testid="User-Name"], button[data-testid="caret"], ${AUTHOR_GROK_BUTTON}`;
+    const isBetterXAuthorLinksNode = (node) => Boolean(
+      node && (
+        node.id === 'BetterX-root'
+        || node.closest?.('#BetterX-root, .BetterX-author-links, .BetterX-download-controls')
+      )
+    );
+    const nodeAffectsAuthorLinks = (node) => Boolean(
+      node instanceof HTMLElement
+      && !isBetterXAuthorLinksNode(node)
+      && (node.matches(AUTHOR_LINKS_MUTATION_SELECTOR) || node.querySelector(AUTHOR_LINKS_MUTATION_SELECTOR))
+    );
+    const invalidateHomeAuthorLinksArticle = (article) => {
+      if (article?.dataset) delete article.dataset.betterxAuthorLinks;
+    };
     state.observer = new MutationObserver((mutations) => {
       let hadRemoval = false;
       const immediateAdultArticles = new Set();
@@ -86,8 +101,29 @@
         const mutationElement = mutation.target instanceof HTMLElement
           ? mutation.target
           : mutation.target && mutation.target.parentElement;
-        if (state.settings.authorLinksEnabled && mutation.type === 'attributes'
-            && mutationElement?.closest('article[data-testid="tweet"]')) pendingRoots.add(mutationElement);
+        if (state.settings.authorLinksEnabled) {
+          const tweetArticle = mutationElement?.closest?.('article[data-testid="tweet"]');
+          if (tweetArticle && !isBetterXAuthorLinksNode(mutationElement)) {
+            if (mutation.type === 'attributes') {
+              // 虚拟列表会复用 article 节点：作者链接变了就要重新评估首页缓存按钮。
+              if (mutationElement.closest('[data-testid="User-Name"]')) {
+                invalidateHomeAuthorLinksArticle(tweetArticle);
+                pendingRoots.add(mutationElement);
+              } else if (!homeAuthorLinksActive()) {
+                pendingRoots.add(mutationElement);
+              }
+            } else if (mutation.type === 'childList') {
+              // React 虚拟列表或分步渲染可能通过 childList 替换/补全作者节点，不能只在 href 属性变化时才清除 none。
+              const affectsHeader = Boolean(mutationElement.closest('[data-testid="User-Name"]'))
+                || [...mutation.addedNodes].some(nodeAffectsAuthorLinks)
+                || [...mutation.removedNodes].some(nodeAffectsAuthorLinks);
+              if (affectsHeader) {
+                invalidateHomeAuthorLinksArticle(tweetArticle);
+                pendingRoots.add(mutationElement);
+              }
+            }
+          }
+        }
         if (dismissWidgetsActive() && mutationElement
             && !mutationElement.closest('article, [data-testid="tweet"], #BetterX-root')) {
           const widgetRoot = mutationElement.closest(DISMISS_WIDGET_MUTATION_SCOPE);
@@ -108,6 +144,11 @@
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
           if (node.id === 'BetterX-root' || node.closest && node.closest('#BetterX-root')) continue;
+          if (node.closest?.('.BetterX-author-links')) continue;
+          if (state.settings.authorLinksEnabled && !isBetterXAuthorLinksNode(node)) {
+            if (node.matches('article[data-testid="tweet"]')) invalidateHomeAuthorLinksArticle(node);
+            else node.querySelectorAll?.('article[data-testid="tweet"]').forEach(invalidateHomeAuthorLinksArticle);
+          }
           dismissLoggedOutPostObstructions(node);
           if (state.settings.hideAds) sweepStandaloneAds(node);
           if (state.settings.hideNfl) sweepNflEntries(node);

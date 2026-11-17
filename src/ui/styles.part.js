@@ -194,7 +194,6 @@
       .BetterX-author-links { display: inline-flex; align-self: center; flex: none; color-scheme: light; }
       body:has(#BetterX-root:not(.BetterX-light)) .BetterX-author-links { color-scheme: dark; }
       .BetterX-author-links > button {
-        anchor-name: --betterx-author-links;
         position: relative; display: grid; place-items: center; width: 18.75px; height: 20px;
         padding: 0; overflow: visible;
         border: 0; border-radius: 50%; background: transparent; cursor: pointer;
@@ -210,8 +209,8 @@
         background: rgba(29, 155, 240, .1);
       }
       .BetterX-author-links > button svg { position: relative; width: var(--xv-author-links-icon-size, 18.75px); height: auto; }
-      #BetterX-author-links-menu {
-        position: fixed; position-anchor: --betterx-author-links;
+      .BetterX-author-links-menu {
+        position: fixed;
         position-area: block-end span-inline-start; justify-self: end;
         position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
         inset: auto; margin: 4px 0; padding: 4px; width: max-content;
@@ -220,16 +219,16 @@
         background: light-dark(#fff, #15181c); color: light-dark(#0f1419, #e7e9ea);
         box-shadow: 0 0 0 1px light-dark(rgba(0,0,0,.1), rgba(255,255,255,.18)), 0 6px 20px rgba(0,0,0,.24);
       }
-      #BetterX-author-links-menu a {
+      .BetterX-author-links-menu a {
         display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 8px; color: inherit;
         font-size: 14px; line-height: 1.4; text-decoration: none;
       }
-      #BetterX-author-links-menu a > span:last-child {
+      .BetterX-author-links-menu a > span:last-child {
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
       .BetterX-author-link-icon { display: inline-flex; width: 16px; height: 16px; flex: none; }
       .BetterX-author-link-icon > svg, .BetterX-author-link-icon > img { width: 100%; height: 100%; }
-      #BetterX-author-links-menu a:hover, #BetterX-author-links-menu a:focus-visible {
+      .BetterX-author-links-menu a:hover, .BetterX-author-links-menu a:focus-visible {
         background: rgba(29,155,240,.12);
       }
       .BetterX-download-controls {
