@@ -5200,26 +5200,116 @@ const AUTHOR_LINKS_MISS_TTL_MS = 30 * 1000;
 const AUTHOR_LINKS_HOME_ROUTE = /^\/home\/?$/i;
 const AUTHOR_LINK_ICON_CACHE_KEY = 'betterx_author_link_icons';
 const AUTHOR_LINK_ICON_CACHE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
-const AUTHOR_LINK_ICON_CACHE_LIMIT = 100;
+const AUTHOR_LINK_ICON_CACHE_LIMIT = 150;
 const AUTHOR_LINK_ICON_RETRY_MS = 30 * 1000;
 const AUTHOR_GROK_BUTTON = 'button:is([aria-label*="Grok" i], [data-testid*="grok" i])';
 const AUTHOR_LINK_SITE_LOGOS = [
-  ['pixiv.net', 'pixiv/0096FA'],
-  ['weibo.com', 'sinaweibo/FF8200'],
-  ['weibo.cn', 'sinaweibo/FF8200'],
-  ['bilibili.com', 'bilibili/00AEEC'],
-  ['b23.tv', 'bilibili/00AEEC'],
-  ['youtube.com', 'youtube/FF0033'],
-  ['youtu.be', 'youtube/FF0033'],
-  ['instagram.com', 'instagram/FF0069'],
-  ['tiktok.com', 'tiktok/FE2C55'],
-  ['twitch.tv', 'twitch/9146FF'],
-  ['patreon.com', 'patreon/FF424D'],
-  ['ko-fi.com', 'kofi/FF5A16'],
-  ['linktr.ee', 'linktree/43E660'],
-  ['bsky.app', 'bluesky/0285FF'],
-  ['github.com', 'github/6E7781'],
+  ['pixiv/0096FA', ['pixiv.net', 'pixiv.me', 'fanbox.cc']],
+  ['sinaweibo/FF8200', ['weibo.com', 'weibo.cn', 'weibo.com.cn']],
+  ['bilibili/00AEEC', ['bilibili.com', 'b23.tv', 'bilibili.tv', 'acg.tv', 'bili2233.cn']],
+  ['youtubemusic/FF0000', ['music.youtube.com']],
+  ['youtube/FF0033', ['youtube.com', 'youtu.be', 'youtube-nocookie.com']],
+  ['instagram/FF0069', ['instagram.com', 'instagr.am', 'ig.me']],
+  ['tiktok/FE2C55', ['tiktok.com', 'tiktokv.com', 'douyin.com', 'iesdouyin.com']],
+  ['twitch/9146FF', ['twitch.tv', 'twitch.com']],
+  ['patreon/FF424D', ['patreon.com']],
+  ['kofi/FF5A16', ['ko-fi.com', 'kofi.com']],
+  ['linktree/43E660', ['linktr.ee', 'linktree.com']],
+  ['bluesky/0285FF', ['bsky.app', 'bsky.social']],
+  ['github/6E7781', ['github.com', 'github.io']],
+  ['x/6E7781', ['x.com', 'twitter.com']],
+  ['threads/6E7781', ['threads.net', 'threads.com']],
+  ['facebook/0866FF', ['facebook.com', 'fb.com', 'fb.me']],
+  ['messenger/0866FF', ['m.me', 'messenger.com']],
+  ['discord/5865F2', ['discord.gg', 'discord.com', 'discordapp.com']],
+  ['telegram/26A5E4', ['t.me', 'telegram.me', 'telegram.org']],
+  ['whatsapp/1FA855', ['wa.me', 'whatsapp.com']],
+  ['line/00C300', ['line.me', 'lin.ee']],
+  ['wechat/07C160', ['weixin.qq.com', 'wechat.com']],
+  ['qq/1EBAFC', ['qq.com']],
+  ['xiaohongshu/FF2442', ['xiaohongshu.com', 'xhslink.com']],
+  ['zhihu/0084FF', ['zhihu.com']],
+  ['douban/2D963D', ['douban.com']],
+  ['kuaishou/FF4906', ['kuaishou.com']],
+  ['reddit/FF4500', ['reddit.com', 'redd.it']],
+  ['tumblr/4F80B8', ['tumblr.com']],
+  ['mastodon/6364FF', ['mastodon.social', 'mastodon.online', 'mastodon.cloud', 'mstdn.jp', 'pawoo.net', 'baraag.net', 'fedibird.com', 'fosstodon.org']],
+  ['misskey/86B300', ['misskey.io', 'misskey.design', 'misskey.art', 'misskey.social']],
+  ['plurk/FF574D', ['plurk.com']],
+  ['vk/0077FF', ['vk.com']],
+  ['naver/03C75A', ['naver.com', 'naver.me']],
+  ['kakaotalk/E0A800', ['kakao.com']],
+  ['snapchat/E0A800', ['snapchat.com']],
+  ['signal/3B45FD', ['signal.me', 'signal.group', 'signal.org']],
+  ['niconico/6E7781', ['nicovideo.jp', 'nico.ms']],
+  ['kick/22C55E', ['kick.com']],
+  ['vimeo/1AB7EA', ['vimeo.com']],
+  ['deviantart/05CC47', ['deviantart.com', 'fav.me']],
+  ['artstation/13AFF0', ['artstation.com']],
+  ['behance/1769FF', ['behance.net']],
+  ['dribbble/EA4C89', ['dribbble.com']],
+  ['pinterest/E60023', ['pinterest.com', 'pinterest.jp', 'pinterest.co.uk', 'pin.it']],
+  ['flickr/0063DC', ['flickr.com', 'flic.kr']],
+  ['unsplash/6E7781', ['unsplash.com']],
+  ['newgrounds/F08C00', ['newgrounds.com']],
+  ['furaffinity/4F7CAC', ['furaffinity.net']],
+  ['spotify/1DB954', ['spotify.com', 'spoti.fi']],
+  ['soundcloud/FF5500', ['soundcloud.com']],
+  ['bandcamp/1DA0C3', ['bandcamp.com']],
+  ['applemusic/FA243C', ['music.apple.com']],
+  ['applepodcasts/9933CC', ['podcasts.apple.com']],
+  ['neteasecloudmusic/D43C33', ['music.163.com', '163cn.tv']],
+  ['lastdotfm/D51007', ['last.fm']],
+  ['mixcloud/6E4AFF', ['mixcloud.com']],
+  ['buymeacoffee/E0A800', ['buymeacoffee.com', 'bmc.link']],
+  ['gumroad/E052B2', ['gumroad.com']],
+  ['afdian/946CE6', ['afdian.com', 'afdian.net']],
+  ['onlyfans/00AFF0', ['onlyfans.com']],
+  ['carrd/596CAF', ['carrd.co']],
+  ['bento/768CFF', ['bento.me']],
+  ['aboutdotme/6E7781', ['about.me']],
+  ['paypal/0070BA', ['paypal.me', 'paypal.com']],
+  ['etsy/F16521', ['etsy.com']],
+  ['shopify/7AB55C', ['myshopify.com']],
+  ['note/2CB696', ['note.com', 'note.mu']],
+  ['substack/FF6719', ['substack.com']],
+  ['medium/6E7781', ['medium.com']],
+  ['notion/6E7781', ['notion.site', 'notion.so']],
+  ['wordpress/21759B', ['wordpress.com', 'wordpress.org']],
+  ['blogger/FF5722', ['blogspot.com', 'blogspot.jp', 'blogspot.co.uk', 'blogger.com']],
+  ['archiveofourown/CC0000', ['archiveofourown.org']],
+  ['wattpad/FF500A', ['wattpad.com']],
+  ['tapas/E0A800', ['tapas.io']],
+  ['ameba/2D8C3C', ['ameblo.jp', 'ameba.jp']],
+  ['goodreads/8C6D46', ['goodreads.com']],
+  ['letterboxd/FF8000', ['letterboxd.com']],
+  ['imdb/DFA900', ['imdb.com']],
+  ['qiita/55C500', ['qiita.com']],
+  ['zenn/3EA8FF', ['zenn.dev']],
+  ['juejin/007FFF', ['juejin.cn']],
+  ['devdotto/6E7781', ['dev.to']],
+  ['steam/3B82C4', ['steamcommunity.com', 'store.steampowered.com', 's.team']],
+  ['itchdotio/FA5C5C', ['itch.io']],
+  ['vrchat/6E7781', ['vrchat.com']],
+  ['roblox/6E7781', ['roblox.com']],
+  ['playstation/0070D1', ['playstation.com']],
+  ['myanimelist/3B66C7', ['myanimelist.net']],
+  ['anilist/02A9FF', ['anilist.co']],
+  ['gitlab/FC6D26', ['gitlab.com']],
+  ['gitee/C71D23', ['gitee.com']],
+  ['codeberg/2185D0', ['codeberg.org']],
+  ['huggingface/E09F00', ['huggingface.co', 'hf.co']],
+  ['stackoverflow/F58025', ['stackoverflow.com']],
+  ['npm/CB3837', ['npmjs.com']],
+  ['vercel/6E7781', ['vercel.app', 'vercel.com']],
+  ['netlify/00A396', ['netlify.app', 'netlify.com']],
+  ['googlescholar/4285F4', ['scholar.google.com']],
+  ['orcid/7FA824', ['orcid.org']],
+  ['arxiv/B31B1B', ['arxiv.org']],
 ];
+const AUTHOR_LINK_DOMAIN_LOGOS = new Map(
+  AUTHOR_LINK_SITE_LOGOS.flatMap(([logo, domains]) => domains.map((domain) => [domain, logo]))
+);
 const authorLinksRequests = new Map();
 const authorLinksHarvestedLinks = new Map();
 const authorLinksPassiveJobs = new Map();
@@ -5237,9 +5327,17 @@ let authorLinksGeneration = 0;
 let authorLinksHomeGeneration = -1;
 function getAuthorLinkLogo(href) {
   try {
-    const host = new URL(href).hostname.replace(/\.$/, '');
-    return AUTHOR_LINK_SITE_LOGOS.find(([domain]) => host === domain || host.endsWith('.' + domain))?.[1] || '';
-  } catch { return ''; }
+    const { protocol, hostname } = new URL(href);
+    if (protocol !== 'http:' && protocol !== 'https:') return '';
+    for (let host = hostname.toLowerCase().replace(/\.+$/, ''); host;) {
+      const logo = AUTHOR_LINK_DOMAIN_LOGOS.get(host);
+      if (logo) return logo;
+      const dot = host.indexOf('.');
+      if (dot < 0) break;
+      host = host.slice(dot + 1);
+    }
+  } catch {}
+  return '';
 }
 function readAuthorLinkIconCache() {
   if (!authorLinkIconCache) {

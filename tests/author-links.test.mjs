@@ -634,4 +634,44 @@ for(const failure of ['http','network','timeout']){
   h.api.getCachedAuthorProfileLinks('author');await flush();
   assert.equal(calls,2,'A successful retry must populate the existing icon cache');
 }
-console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests; site icons cache for one year and prefetch on link discovery or control injection; passive details survive active failures and synchronize rendered menus; failed icons respect retry cooldowns.');
+// Site logo matching: pixiv.me, alias/subdomain precedence, and common site icons.
+{
+  const context=loadUserscript('AUTHOR_LINK_SITE_LOGOS, AUTHOR_LINK_DOMAIN_LOGOS, getAuthorLinkLogo');
+  const {AUTHOR_LINK_SITE_LOGOS:rules,AUTHOR_LINK_DOMAIN_LOGOS:domainMap,getAuthorLinkLogo:getLogo}=context.__test;
+  const totalDomains=rules.reduce((sum,[,domains])=>sum+domains.length,0);
+  assert.equal(domainMap.size,totalDomains,'Site logo domains must not collide or duplicate');
+  for(const [url,expected] of [
+    ['https://pixiv.me/alice','pixiv/0096FA'],
+    ['https://www.pixiv.me/alice','pixiv/0096FA'],
+    ['https://PIXIV.ME./alice','pixiv/0096FA'],
+    ['https://alice.fanbox.cc/','pixiv/0096FA'],
+    ['https://music.youtube.com/watch?v=1','youtubemusic/FF0000'],
+    ['https://www.youtube.com/@alice','youtube/FF0033'],
+    ['https://youtu.be/abc','youtube/FF0033'],
+    ['https://weixin.qq.com/r/abc','wechat/07C160'],
+    ['https://qun.qq.com/abc','qq/1EBAFC'],
+    ['https://alice.bsky.social','bluesky/0285FF'],
+    ['https://alice.github.io/site','github/6E7781'],
+    ['https://www.bilibili.tv/en','bilibili/00AEEC'],
+    ['https://acg.tv/av1','bilibili/00AEEC'],
+    ['https://instagr.am/p/1','instagram/FF0069'],
+    ['https://v.douyin.com/abc','tiktok/FE2C55'],
+    ['https://x.com/alice','x/6E7781'],
+    ['https://twitter.com/alice','x/6E7781'],
+    ['https://discord.gg/invite','discord/5865F2'],
+    ['https://t.me/alice','telegram/26A5E4'],
+    ['https://www.xiaohongshu.com/user/1','xiaohongshu/FF2442'],
+    ['https://xhslink.com/a/1','xiaohongshu/FF2442'],
+    ['https://misskey.io/@alice','misskey/86B300'],
+    ['https://www.nicovideo.jp/user/1','niconico/6E7781'],
+    ['https://afdian.com/a/alice','afdian/946CE6'],
+    ['https://steamcommunity.com/id/alice','steam/3B82C4'],
+    ['https://alice.itch.io/game','itchdotio/FA5C5C'],
+    ['https://open.spotify.com/artist/1','spotify/1DB954'],
+    ['https://note.com/alice','note/2CB696'],
+  ])assert.equal(getLogo(url),expected,`Expected logo ${expected} for ${url}`);
+  for(const url of ['https://notpixiv.me/alice','https://fakepixiv.net','javascript:alert(1)','mailto:a@pixiv.me','not a url']){
+    assert.equal(getLogo(url),'',`Unexpected logo match for ${url}`);
+  }
+}
+console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests; site icons cache for one year and prefetch on link discovery or control injection; passive details survive active failures and synchronize rendered menus; failed icons respect retry cooldowns; site logo rules match pixiv.me, subdomains, aliases and common sites.');
