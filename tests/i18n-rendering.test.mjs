@@ -148,8 +148,8 @@ for (const [locale, prefix, userName, indexToken] of [
 }
 const englishPanel = english.renderPanelHtml();
 for(const [locale,label] of [
-  ['zh-CN','作品详情页显示作者链接'],['zh-TW','在作品詳情頁顯示作者連結'],
-  ['ja','ポストの詳細画面に投稿者のリンクを表示'],['en-US','Show author links on post details'],
+  ['zh-CN','显示作者链接'],['zh-TW','顯示作者連結'],
+  ['ja','投稿者のリンクを表示'],['en-US','show author links'],
 ]){
   const localized=load(locale);
   assert.ok(localized.renderPanelHtml().includes(`id="BetterX-author-links-enabled" /> ${label}`));

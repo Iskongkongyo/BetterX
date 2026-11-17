@@ -233,6 +233,7 @@ function homeHarness(profiles, transport = async () => []){
       before(inserted){control=inserted;inserted.parentElement=article;caret.previousElementSibling=inserted;},
     };
     const article={isConnected:true,dataset:{},nameQueries:0,
+      setAuthor(next){name=next;},
       closest(selector){return selector==='article'||selector==='article[data-testid="tweet"]'?article:selector==='[data-testid="primaryColumn"]'?document:null;},
       querySelector(selector){
         if(selector==='[data-testid="User-Name"]'){
@@ -673,5 +674,199 @@ for(const failure of ['http','network','timeout']){
   for(const url of ['https://notpixiv.me/alice','https://fakepixiv.net','javascript:alert(1)','mailto:a@pixiv.me','not a url']){
     assert.equal(getLogo(url),'',`Unexpected logo match for ${url}`);
   }
+}
+// Home skeleton articles, recycled home controls, and empty-DOM navigation returns.
+{
+  const h=homeHarness({
+    'betterx_author_links:cached':{links,expiresAt:200000},
+    'betterx_author_links:writer':{links:[{href:'https://github.com/writer',label:'github.com/writer'}],expiresAt:200000},
+  },async()=>[{href:'https://www.pixiv.net/users/999',label:'pixiv.net/users/999'}]);
+  const skeleton=h.addArticle('');
+  h.api.refreshAuthorLinks();
+  assert.equal(skeleton.dataset.betterxAuthorLinks,undefined,'Skeleton tweets without an author name must not be locked to none');
+  skeleton.setAuthor('cached');
+  h.api.refreshAuthorLinks();
+  assert.equal(skeleton.control?.children[1]?.children[0]?.href,links[0].href,'Skeleton tweets must inject once the author mounts');
+
+  skeleton.setAuthor('writer');
+  h.api.refreshAuthorLinks();
+  assert.equal(skeleton.control?.children[1]?.children[0]?.href,'https://github.com/writer','Recycled home articles must replace stale author buttons');
+  const writerControl=skeleton.control;
+  skeleton.setAuthor('uncached');
+  h.api.refreshAuthorLinks();
+  assert.equal(writerControl.isConnected,false);
+  assert.equal(skeleton.querySelector('.BetterX-author-links'),null,'Recycled home articles reassigned to an uncached author must remove stale buttons');
+  assert.equal(skeleton.dataset.betterxAuthorLinks,'none');
+
+  // Issue 3: returning to /home while home articles are not yet mounted must not lose the generation bump.
+  const returning=h.addArticle('later');
+  h.api.refreshAuthorLinks();
+  assert.equal(returning.dataset.betterxAuthorLinks,'none');
+  returning.isConnected=false;
+  h.context.location.pathname='/later/status/700';
+  h.api.refreshAuthorLinks();
+  await flush();
+  h.context.location.pathname='/home';
+  h.api.refreshAuthorLinks();
+  assert.equal(returning.control,null);
+  returning.isConnected=true;
+  h.api.refreshAuthorLinks();
+  assert.equal(returning.control?.children[1]?.children[0]?.href,'https://www.pixiv.net/users/999',
+    'Home articles re-attached after returning from detail view must re-evaluate stale none markers');
+
+  // Reserved single-segment paths inside User-Name must be skipped in favor of the actual handle.
+  const verifiedHeader={
+    isConnected:true,dataset:{},
+    closest(selector){return selector==='article'||selector==='article[data-testid="tweet"]'?verifiedHeader:selector==='[data-testid="primaryColumn"]'?h.context.document:null;},
+    querySelector(selector){
+      if(selector==='[data-testid="User-Name"]')return {querySelectorAll:()=>[{pathname:'/home'},{pathname:'/about/'},{pathname:'/Cached/'}]};
+      return null;
+    },
+  };
+  const ctx=loadUserscript('getArticleAuthorName');
+  assert.equal(ctx.__test.getArticleAuthorName(verifiedHeader),'cached');
+
+  // Re-harvesting identical links after in-memory LRU eviction must not trigger generation churn.
+  const evictStored=new Map([['betterx_author_links:evicted',{links,expiresAt:200000}]]);
+  const evictHarness=homeHarness(Object.fromEntries(evictStored));
+  evictHarness.api.getCachedAuthorProfileLinks('evicted');
+  for(let i=0;i<210;i++)await evictHarness.api.cacheHarvestedAuthorProfileLinks(`filler_${i}`,[{href:`https://example.org/${i}`,label:`${i}`}]);
+  const miss=evictHarness.addArticle('miss_user');
+  evictHarness.api.refreshAuthorLinks();
+  const missQueries=miss.nameQueries;
+  await evictHarness.api.cacheHarvestedAuthorProfileLinks('evicted',links);
+  evictHarness.api.refreshAuthorLinks();
+  assert.equal(miss.nameQueries,missQueries,'Evicted unchanged cache hits must not re-scan unrelated cache misses');
+}
+// Partial user payloads must not wipe valid cached links; timeline payloads harvest non-empty profiles safely.
+{
+  const stored=new Map([['betterx_author_links:alice',{links,expiresAt:200000}]]);
+  let nextResponse=null;
+  const makeRes=(url,body)=>({
+    url,ok:true,status:200,headers:{get:()=>'application/json'},
+    json:async()=>body,clone:()=>({text:async()=>JSON.stringify(body)}),
+  });
+  const context=loadUserscript('installNetworkHooks, getCachedAuthorProfileLinks, drainNetworkHarvestQueue, networkHarvestQueue','now=()=>globalThis.clock;',{
+    clock:100000,
+    GM_getValue:(key,fallback)=>stored.get(key)??fallback,
+    GM_setValue:(key,value)=>stored.set(key,value),
+    GM_xmlhttpRequest:options=>options.onerror(),
+    fetch:async()=>nextResponse,
+  });
+  context.__test.installNetworkHooks();
+
+  // Disabled authorLinksEnabled must not queue text-only HomeTimeline payloads for profile harvesting.
+  nextResponse=makeRes('https://x.com/i/api/graphql/abc/HomeTimeline',{
+    data:{home:{home_timeline_urt:{instructions:[{entries:[{content:{itemContent:{tweet_results:{result:{
+      __typename:'Tweet',rest_id:'900',
+      core:{user_results:{result:{
+        __typename:'User',rest_id:'10',core:{screen_name:'DisabledUser'},
+        profile_bio:{entities:{description:{urls:[{expanded_url:'https://example.org/off',display_url:'off'}]}}},
+      }}},
+    }}}}}]}]}}},
+  });
+  await context.fetch('https://x.com/i/api/graphql/abc/HomeTimeline');
+  await flush();
+  assert.equal(context.__test.networkHarvestQueue.length,0,'Disabled author links must not queue profile-only timeline payloads');
+  assert.equal(stored.has('betterx_author_links:disableduser'),false);
+
+  context.__test.state.settings.authorLinksEnabled=true;
+
+  for(const [url,body] of [
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',core:{screen_name:'Alice'},profile_bio:{entities:{description:{urls:[]}}}}}}}],
+    ['https://x.com/i/api/graphql/abc/ProfileSpotlightsQuery',{data:{user_result_by_screen_name:{result:{__typename:'User',legacy:{screen_name:'Alice',entities:{description:{urls:[]}}}}}}}],
+    ['https://x.com/i/api/graphql/abc/UsersByRestIds',{data:{users:[{result:{__typename:'User',legacy:{screen_name:'Alice',entities:{description:{urls:[]}}}}}]}}],
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',legacy:{screen_name:'Alice',url:'https://t.co/site',entities:{description:{urls:[]}}}}}}}],
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',core:{screen_name:'Alice'},profile_bio:{entities:{description:{urls:[{expanded_url:'https://example.org/partial',display_url:'example.org/partial'}]}}}}}}}],
+  ]){
+    nextResponse=makeRes(url,body);
+    await context.fetch(url);
+    await flush();
+  }
+  assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('alice'),item=>item.href),[links[0].href],
+    'Partial or empty passive user payloads must not overwrite an existing valid cache');
+
+  for(const [url,body] of [
+    ['https://x.com/i/api/graphql/abc/ProfileSpotlightsQuery',{data:{user_result_by_screen_name:{result:{__typename:'User',legacy:{screen_name:'SpotlightEmpty',entities:{description:{urls:[]}}}}}}}],
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',core:{screen_name:'NullEntities'},profile_bio:{entities:{description:{urls:[]}}},legacy:{entities:null}}}}}],
+  ]){
+    nextResponse=makeRes(url,body);
+    await context.fetch(url);
+    await flush();
+  }
+  assert.equal(stored.has('betterx_author_links:spotlightempty'),false,'Partial spotlight endpoints must not write empty negative caches');
+  assert.equal(stored.has('betterx_author_links:nullentities'),false,'Null legacy.entities must not pass completeness checks');
+
+  // REST friends/list.json must never trigger timeline author link harvesting.
+  nextResponse=makeRes('https://x.com/i/api/1.1/friends/list.json?cursor=-1',{
+    users:[{id_str:'77',screen_name:'FriendUser',entities:{url:{urls:[{expanded_url:'https://example.org/friend',display_url:'friend'}]}}}],
+  });
+  await context.fetch('https://x.com/i/api/1.1/friends/list.json?cursor=-1');
+  await flush();
+  context.__test.drainNetworkHarvestQueue({timeRemaining:()=>100});
+  await flush();
+  assert.equal(stored.has('betterx_author_links:frienduser'),false,'REST friends/list.json must not harvest author profile links');
+
+  // Later complete User node in the same timeline payload must supersede an earlier partial one.
+  nextResponse=makeRes('https://x.com/i/api/graphql/abc/HomeTimeline',{
+    data:{home:{home_timeline_urt:{instructions:[{entries:[
+      {content:{itemContent:{tweet_results:{result:{
+        __typename:'Tweet',rest_id:'901a',
+        core:{user_results:{result:{
+          __typename:'User',rest_id:'11',core:{screen_name:'HomeAuthor'},
+          profile_bio:{entities:{description:{urls:[{expanded_url:'https://www.pixiv.net/users/555',display_url:'pixiv.net/users/555'}]}}},
+        }}},
+      }}}}},
+      {content:{itemContent:{tweet_results:{result:{
+        __typename:'Tweet',rest_id:'901b',
+        core:{user_results:{result:{
+          __typename:'User',rest_id:'11',core:{screen_name:'HomeAuthor'},
+          profile_bio:{entities:{description:{urls:[{expanded_url:'https://www.pixiv.net/users/555',display_url:'pixiv.net/users/555'}]}}},
+          legacy:{screen_name:'HomeAuthor',id_str:'11',entities:{url:{urls:[{expanded_url:'https://github.com/homeauthor',display_url:'github.com/homeauthor'}]}}},
+        }}},
+      }}}}},
+    ]}]}}},
+  });
+  await context.fetch('https://x.com/i/api/graphql/abc/HomeTimeline');
+  await flush();
+  context.__test.drainNetworkHarvestQueue({timeRemaining:()=>100});
+  await flush();
+  assert.deepEqual(
+    Array.from(context.__test.getCachedAuthorProfileLinks('homeauthor'),item=>item.href),
+    ['https://www.pixiv.net/users/555','https://github.com/homeauthor'],
+    'Complete User nodes must supersede earlier partial nodes and keep combined links'
+  );
+
+  // Failing short link in HomeTimeline must not overwrite an already-resolved cache entry.
+  nextResponse=makeRes('https://x.com/i/api/graphql/abc/HomeTimeline',{
+    data:{home:{home_timeline_urt:{instructions:[{entries:[{content:{itemContent:{tweet_results:{result:{
+      __typename:'Tweet',rest_id:'903',
+      core:{user_results:{result:{
+        __typename:'User',rest_id:'13',core:{screen_name:'Alice'},
+        legacy:{screen_name:'Alice',entities:{url:{urls:[{expanded_url:'https://bit.ly/fail',display_url:'bit.ly/fail'}]}}},
+      }}},
+    }}}}}]}]}}},
+  });
+  await context.fetch('https://x.com/i/api/graphql/abc/HomeTimeline');
+  await flush();
+  context.__test.drainNetworkHarvestQueue({timeRemaining:()=>100});
+  await flush();
+  assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('alice'),item=>item.href),[links[0].href],
+    'Failed short-link resolution from timeline must preserve previously resolved links');
+
+  nextResponse=makeRes('https://x.com/i/api/graphql/abc/HomeTimeline',{
+    data:{home:{home_timeline_urt:{instructions:[{entries:[{content:{itemContent:{tweet_results:{result:{
+      __typename:'Tweet',rest_id:'902',
+      core:{user_results:{result:{
+        __typename:'User',rest_id:'12',core:{screen_name:'EmptyTimeline'},
+        legacy:{screen_name:'EmptyTimeline',entities:{description:{urls:[]}}},
+      }}},
+    }}}}}]}]}}},
+  });
+  await context.fetch('https://x.com/i/api/graphql/abc/HomeTimeline');
+  await flush();
+  context.__test.drainNetworkHarvestQueue({timeRemaining:()=>100});
+  await flush();
+  assert.equal(stored.has('betterx_author_links:emptytimeline'),false,'Timeline payloads must not write negative empty caches');
 }
 console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests; site icons cache for one year and prefetch on link discovery or control injection; passive details survive active failures and synchronize rendered menus; failed icons respect retry cooldowns; site logo rules match pixiv.me, subdomains, aliases and common sites.');

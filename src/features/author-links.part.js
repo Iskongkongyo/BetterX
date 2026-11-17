@@ -123,6 +123,8 @@
   const authorLinksCache = new Map();
   const authorLinksCacheMisses = new Map();
   const authorLinksShortLinkAttempted = new Set();
+  const authorLinksHomeMissGenerations = new WeakMap();
+  const authorLinksHomePlacements = new WeakMap();
   const authorLinkIconRequests = new Map();
   const authorLinkIconRetryAt = new Map();
   let authorLinkIconCache = null;
@@ -131,7 +133,6 @@
   let authorLinksLifecycleInstalled = false;
   let authorLinksHomeInjected = false;
   let authorLinksGeneration = 0;
-  let authorLinksHomeGeneration = -1;
 
   function getAuthorLinkLogo(href) {
     try {
@@ -222,11 +223,33 @@
     }
   }
 
-  function saveAuthorProfileLinksCache(screenName, links) {
+  function readAuthorLinksRecord(screenName) {
+    let cached = authorLinksCache.get(screenName);
+    if (!cached) {
+      try { cached = GM_getValue('betterx_author_links:' + screenName, null); } catch { cached = null; }
+    }
+    return cached && Number.isFinite(cached.expiresAt) && cached.expiresAt > now() && Array.isArray(cached.links)
+      ? cached
+      : null;
+  }
+
+  function authorProfileLinksChanged(screenName, links) {
+    const previous = readAuthorLinksRecord(screenName);
+    return !previous || JSON.stringify(previous.links) !== JSON.stringify(links);
+  }
+
+  function hasValidNonEmptyAuthorLinksCache(screenName) {
+    screenName = String(screenName || '').toLowerCase();
+    if (!/^[a-z0-9_]{1,15}$/.test(screenName)) return false;
+    const cached = readAuthorLinksRecord(screenName);
+    return Boolean(cached && cached.links.length > 0);
+  }
+
+  function saveAuthorProfileLinksCache(screenName, links, onCommit) {
     screenName = String(screenName || '').toLowerCase();
     if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(links)) return null;
     const key = 'betterx_author_links:' + screenName;
-    const changed = JSON.stringify(authorLinksCache.get(screenName)?.links) !== JSON.stringify(links);
+    const changed = authorProfileLinksChanged(screenName, links);
     const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
     authorLinksCache.set(screenName, cached);
     authorLinksCacheMisses.delete(screenName);
@@ -236,12 +259,19 @@
     }
     if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
     try { GM_setValue(key, cached); } catch {}
+    onCommit?.(changed);
     return cached;
   }
 
-  function applyHarvestedAuthorProfileLinks(screenName, links) {
-    const changed = JSON.stringify(authorLinksCache.get(screenName)?.links) !== JSON.stringify(links);
-    saveAuthorProfileLinksCache(screenName, links);
+  function applyHarvestedAuthorProfileLinks(screenName, links, options = null) {
+    if (options?.preserveResolved && links.some((link) => isShortUrl(link.href))) {
+      const existing = readAuthorLinksRecord(screenName);
+      if (existing?.links.length && !existing.links.some((link) => isShortUrl(link.href))) {
+        return existing.links;
+      }
+    }
+    let changed = false;
+    saveAuthorProfileLinksCache(screenName, links, (wasChanged) => { changed = wasChanged; });
     if (!state.settings.authorLinksEnabled) return links;
     if (homeAuthorLinksActive()) {
       if (changed) {
@@ -275,7 +305,7 @@
     return links;
   }
 
-  function cacheHarvestedAuthorProfileLinks(screenName, rawLinks) {
+  function cacheHarvestedAuthorProfileLinks(screenName, rawLinks, options = null) {
     screenName = String(screenName || '').toLowerCase();
     if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(rawLinks)) return Promise.resolve(null);
     authorLinksHarvestedLinks.set(screenName, rawLinks);
@@ -283,10 +313,10 @@
     if (pending) return pending;
     if (!rawLinks.some((link) => isShortUrl(link.href))) {
       authorLinksHarvestedLinks.delete(screenName);
-      return Promise.resolve(applyHarvestedAuthorProfileLinks(screenName, rawLinks));
+      return Promise.resolve(applyHarvestedAuthorProfileLinks(screenName, rawLinks, options));
     }
     const job = resolveHarvestedAuthorProfileLinks(screenName)
-      .then((links) => applyHarvestedAuthorProfileLinks(screenName, links))
+      .then((links) => applyHarvestedAuthorProfileLinks(screenName, links, options))
       .finally(() => {
         authorLinksPassiveJobs.delete(screenName);
         authorLinksHarvestedLinks.delete(screenName);
@@ -305,6 +335,11 @@
       const cached = authorLinksCache.get(screenName) || GM_getValue(key, null);
       if (Number.isFinite(cached?.expiresAt) && cached.expiresAt > now() && Array.isArray(cached.links)) {
         authorLinksCacheMisses.delete(screenName);
+        if (!authorLinksCache.has(screenName)) {
+          authorLinksCache.set(screenName, cached);
+          if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
+          if (cached.links.length) authorLinksGeneration++;
+        }
         prefetchAuthorLinkIcons(cached.links);
         resolveCachedShortLinks(screenName, cached);
         return cached.links;
@@ -386,8 +421,7 @@
     const scope = photo ? '#layers, [role="dialog"]' : '[data-testid="primaryColumn"]';
     if (!article.closest(scope) || (!photo && article.closest('#layers, [role="dialog"]'))) return false;
     const header = article.querySelector('[data-testid="User-Name"]');
-    const author = header?.querySelector('a[href]');
-    if (author?.pathname.toLowerCase().replace(/\/$/, '') !== '/' + screenName) return false;
+    if (getHeaderAuthorName(header) !== screenName) return false;
     const timestamp = header.querySelector('a[href*="/status/"]');
     if (timestamp) return extractStatusIdFromUrl(timestamp.href) === statusId;
     const permalink = 'a[href$="/status/' + statusId + '"], a[href*="/status/' + statusId + '?"], a[href*="/status/' + statusId + '/photo/"]';
@@ -559,9 +593,22 @@
     return Boolean(state.settings.authorLinksEnabled && AUTHOR_LINKS_HOME_ROUTE.test(location.pathname || ''));
   }
 
+  function getHeaderAuthorName(header) {
+    if (!header) return '';
+    const candidates = typeof header.querySelectorAll === 'function'
+      ? header.querySelectorAll('a[href]')
+      : [header.querySelector('a[href]')].filter(Boolean);
+    for (const link of candidates) {
+      const path = link?.pathname || '';
+      if (!/^\/[a-z0-9_]{1,15}\/?$/i.test(path)) continue;
+      const name = path.replace(/\//g, '').toLowerCase();
+      if (!RESERVED_TOP_PATHS.has(name) && !PROFILE_ROOT_ROUTE_EXCLUSIONS.has(name)) return name;
+    }
+    return '';
+  }
+
   function getArticleAuthorName(article) {
-    const path = article.querySelector('[data-testid="User-Name"]')?.querySelector('a[href]')?.pathname || '';
-    return /^\/[a-z0-9_]{1,15}\/?$/i.test(path) ? path.replace(/\//g, '').toLowerCase() : '';
+    return getHeaderAuthorName(article.querySelector('[data-testid="User-Name"]'));
   }
 
   function removeHomeAuthorLinks() {
@@ -573,26 +620,58 @@
   // 首页只消费本地缓存：未缓存作者保持静默，避免滚动时向 X 发起成片请求触发限流。
   function refreshHomeAuthorLinks() {
     if (!homeAuthorLinksActive()) { removeHomeAuthorLinks(); return; }
-    if (authorLinksHomeGeneration !== authorLinksGeneration) {
-      authorLinksHomeGeneration = authorLinksGeneration;
-      // 缓存有新增：重新评估此前判定为“无缓存”的推文。
-      for (const article of document.querySelectorAll('[data-betterx-author-links="none"]')) delete article.dataset.betterxAuthorLinks;
-    }
     for (const article of document.querySelectorAll('[data-testid="primaryColumn"] article[data-testid="tweet"]')) {
-      // 已注入控件或已确认无缓存的推文直接跳过，避免每次 DOM 变动都重查作者节点。
-      if (!article.isConnected || article.dataset.betterxAuthorLinks === 'none' || article.closest('#layers, [role="dialog"]')) continue;
-      if (article.querySelector('.BetterX-author-links')) continue;
+      if (!article.isConnected || article.closest('#layers, [role="dialog"]')) continue;
+      // 仅在缓存版本与本节点判定版本一致时跳过；返回首页或缓存更新后自动重评。
+      if (article.dataset.betterxAuthorLinks === 'none') {
+        if (authorLinksHomeMissGenerations.get(article) === authorLinksGeneration) continue;
+        delete article.dataset.betterxAuthorLinks;
+      }
+      const existing = article.querySelector('.BetterX-author-links');
       const caret = article.querySelector('button[data-testid="caret"]');
-      if (!caret || caret.closest('[hidden], [aria-hidden="true"]')) continue;
+      if (!caret || caret.closest('[hidden], [aria-hidden="true"]')) {
+        existing?.remove();
+        continue;
+      }
       const screenName = getArticleAuthorName(article);
+      if (!screenName) {
+        // 作者节点尚未挂载完成时不写入 none，等待后续 DOM 补全。
+        existing?.remove();
+        continue;
+      }
+      if (existing) {
+        if (existing.dataset.betterxAuthorLinksAuthor === screenName) {
+          const placed = authorLinksHomePlacements.get(existing);
+          const fastTarget = placed && placed.caret === caret && placed.caretSlot?.contains(caret)
+            ? getAuthorLinksTarget(placed.caretSlot)
+            : null;
+          if (fastTarget && fastTarget === placed.target && fastTarget.previousElementSibling === existing) continue;
+          const caretSlot = fastTarget ? placed.caretSlot : getAuthorLinksSlot(caret);
+          const target = fastTarget || getAuthorLinksTarget(caretSlot);
+          if (target !== placed?.target || target.previousElementSibling !== existing) {
+            const homeView = { home: true, caret, caretSlot, control: existing, target: placed?.target || null };
+            placeAuthorLinksControl(homeView, target);
+            authorLinksHomePlacements.set(existing, { caret, caretSlot, target: homeView.target });
+          }
+          continue;
+        }
+        existing.remove();
+      }
       const links = getCachedAuthorProfileLinks(screenName);
-      if (!links) { article.dataset.betterxAuthorLinks = 'none'; continue; }
+      if (!links) {
+        article.dataset.betterxAuthorLinks = 'none';
+        authorLinksHomeMissGenerations.set(article, authorLinksGeneration);
+        continue;
+      }
       const caretSlot = getAuthorLinksSlot(caret);
       const control = createAuthorLinksControl(links, { home: true });
       control.dataset.betterxAuthorLinks = 'home';
       control.dataset.betterxAuthorLinksAuthor = screenName;
       delete article.dataset.betterxAuthorLinks;
-      placeAuthorLinksControl({ home: true, caret, caretSlot, control, target: null }, getAuthorLinksTarget(caretSlot));
+      authorLinksHomeMissGenerations.delete(article);
+      const homeView = { home: true, caret, caretSlot, control, target: null };
+      placeAuthorLinksControl(homeView, getAuthorLinksTarget(caretSlot));
+      authorLinksHomePlacements.set(control, { caret, caretSlot, target: homeView.target });
       authorLinksHomeInjected = true;
     }
   }
@@ -642,9 +721,10 @@
   }
 
   function refreshAuthorLinks() {
-    refreshHomeAuthorLinks();
     const route = getAuthorLinksRoute();
-    if (!route) { resetAuthorLinksView(); return; }
+    if (!route) resetAuthorLinksView();
+    refreshHomeAuthorLinks();
+    if (!route) return;
     if (!authorLinksLifecycleInstalled && typeof window.addEventListener === 'function') {
       authorLinksLifecycleInstalled = true;
       window.addEventListener('pagehide', resetAuthorLinksView);

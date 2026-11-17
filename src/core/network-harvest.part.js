@@ -341,6 +341,11 @@
   }
 
   const USER_DETAIL_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/(?:UserByScreenName|UserByRestId|UsersByRestIds|ProfileSpotlightsQuery)|1\.1\/users\/show\.json)(?:[/?#]|$)/i;
+  const AUTHORITATIVE_USER_DETAIL_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/UserByScreenName|1\.1\/users\/show\.json)(?:[/?#]|$)/i;
+  const TIMELINE_PROFILE_HARVEST_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/(?:Home|UserTweets|UserMedia|UserHighlights|TweetDetail|.*Timeline|Bookmarks|Likes|Explore)|2\/timeline\/)/i;
+  const TIMELINE_PROFILE_HARVEST_LIMIT = 500;
+  const timelineHarvestedAuthorLinks = new Map();
+  const harvestedLegacySubnodes = new WeakSet();
 
   function extractRequestedScreenName(url) {
     try {
@@ -380,6 +385,72 @@
     return [...links.values()];
   }
 
+  function getProfileHarvestInfo(profile, url = '') {
+    if (!profile || typeof profile !== 'object' || profile.__typename === 'UserUnavailable') return null;
+    const hasProfileBioEntities = Boolean(profile.profile_bio?.entities && typeof profile.profile_bio.entities === 'object');
+    const hasLegacyEntities = Boolean(profile.legacy?.entities && typeof profile.legacy.entities === 'object');
+    const hasRootEntities = Boolean(profile.entities && typeof profile.entities === 'object');
+    if (!hasProfileBioEntities && !hasLegacyEntities && !hasRootEntities) return null;
+
+    const rawProfileUrl = typeof profile.legacy?.url === 'string'
+      ? profile.legacy.url
+      : (typeof profile.url === 'string' ? profile.url : '');
+    const hasUnexpandedUrl = /^https?:\/\//i.test(rawProfileUrl.trim())
+      && !Array.isArray(profile.legacy?.entities?.url?.urls)
+      && !Array.isArray(profile.entities?.url?.urls)
+      && !Array.isArray(profile.profile_bio?.entities?.url?.urls);
+    const hasDescriptionOrUrlField = Boolean(
+      profile.legacy?.entities?.description || profile.legacy?.entities?.url
+      || profile.entities?.description || profile.entities?.url
+      || (hasLegacyEntities && (profile.profile_bio?.entities?.description || profile.profile_bio?.entities?.url))
+    );
+    const isCompleteProfile = (hasLegacyEntities || hasRootEntities) && hasDescriptionOrUrlField && !hasUnexpandedUrl;
+    const allowEmptyCache = isCompleteProfile && AUTHORITATIVE_USER_DETAIL_API_RE.test(url);
+    return {
+      links: extractLinksFromProfileNode(profile),
+      isCompleteProfile,
+      allowEmptyCache,
+    };
+  }
+
+  function isAuthorLinksHarvestActive() {
+    return Boolean(state.settings.authorLinksEnabled
+      || (!state.settingsLoaded && readSettingsMirror()?.authorLinksEnabled));
+  }
+
+  function isTimelineUserProfileNode(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    if (harvestedLegacySubnodes.has(value)) return false;
+    if (value.__typename === 'UserUnavailable' || value.__typename === 'Tweet') return false;
+    if (typeof value.full_text === 'string' || typeof value.legacy?.full_text === 'string') return false;
+    if (value.__typename === 'User') return true;
+    // 兼容未携带 __typename 的 User 节点，同时避免把 User.legacy 子对象误当成独立用户节点。
+    if (value.rest_id || value.core || value.profile_bio) return true;
+    return typeof value.id_str === 'string' && typeof value.screen_name === 'string'
+      && Boolean(value.entities?.description || value.entities?.url);
+  }
+
+  function harvestTimelineUserProfileLinks(value, harvestedAuthors) {
+    if (!isTimelineUserProfileNode(value)) return;
+    if (value.legacy && typeof value.legacy === 'object') harvestedLegacySubnodes.add(value.legacy);
+    const info = getProfileHarvestInfo(value);
+    if (!info || !info.links.length) return;
+    const screenName = extractScreenNameFromProfileNode(value);
+    if (!screenName) return;
+    const seenComplete = harvestedAuthors?.get(screenName);
+    if (seenComplete === true || (seenComplete === false && !info.isCompleteProfile)) return;
+    harvestedAuthors?.set(screenName, info.isCompleteProfile);
+    if (!info.isCompleteProfile && hasValidNonEmptyAuthorLinksCache(screenName)) return;
+    const rawKey = info.links.map((link) => link.href).join('\n');
+    if (timelineHarvestedAuthorLinks.get(screenName) === rawKey && hasValidNonEmptyAuthorLinksCache(screenName)) return;
+    if (timelineHarvestedAuthorLinks.has(screenName)) timelineHarvestedAuthorLinks.delete(screenName);
+    timelineHarvestedAuthorLinks.set(screenName, rawKey);
+    while (timelineHarvestedAuthorLinks.size > TIMELINE_PROFILE_HARVEST_LIMIT) {
+      timelineHarvestedAuthorLinks.delete(timelineHarvestedAuthorLinks.keys().next().value);
+    }
+    cacheHarvestedAuthorProfileLinks(screenName, info.links, { preserveResolved: true });
+  }
+
   function harvestUserDetailPayload(payload, url = '') {
     if (!payload || typeof payload !== 'object' || (Array.isArray(payload.errors) && payload.errors.length)) return;
     const fallbackScreenName = extractRequestedScreenName(url);
@@ -398,16 +469,17 @@
     }
     for (const { result, fallbackScreenName: candidateFallback } of candidates) {
       const profile = result?.user || result;
-      if (!profile || typeof profile !== 'object' || profile.__typename === 'UserUnavailable') continue;
-      const hasEntities = Boolean(
-        (profile.profile_bio && typeof profile.profile_bio.entities === 'object')
-        || (profile.legacy && typeof profile.legacy.entities === 'object')
-        || (profile.entities && typeof profile.entities === 'object')
-      );
-      if (!hasEntities) continue;
+      const info = getProfileHarvestInfo(profile, url);
+      if (!info) continue;
       const screenName = extractScreenNameFromProfileNode(profile, candidateFallback);
       if (!screenName) continue;
-      cacheHarvestedAuthorProfileLinks(screenName, extractLinksFromProfileNode(profile));
+      if (!info.links.length) {
+        // 残缺资料或部分字段查询返回的空链接不得写负缓存，更不得覆盖已有有效缓存。
+        if (!info.allowEmptyCache || hasValidNonEmptyAuthorLinksCache(screenName)) continue;
+      } else if (!info.isCompleteProfile && hasValidNonEmptyAuthorLinksCache(screenName)) {
+        continue;
+      }
+      cacheHarvestedAuthorProfileLinks(screenName, info.links);
     }
   }
 
@@ -534,7 +606,10 @@
           with_total_count: 'true',
         });
         // friends/following/list 是“你关注的粉丝”，不能用来枚举自己关注的全部账号。
-        const payload = await requestXSessionJson(`/i/api/1.1/friends/list.json?${params}`, { cache: 'no-store' });
+        const payload = await requestXSessionJson(`/i/api/1.1/friends/list.json?${params}`, {
+          cache: 'no-store',
+          skipUserDetailHarvest: true,
+        });
         if (!isCurrentNotificationAccount(accountToken)) return;
         const { users, nextCursor } = parseNotificationFollowingPage(payload);
         for (const rawUser of users) {
@@ -603,6 +678,7 @@
       await requestXSessionJson('/i/api/1.1/friendships/update.json', {
         method: 'POST',
         form: true,
+        skipUserDetailHarvest: true,
         body: body.toString(),
       });
       if (!isCurrentNotificationAccount(accountToken)) {
@@ -850,11 +926,12 @@
   let networkHarvestScheduled = false;
   let networkHarvestDroppedJobs = 0;
 
-  function textMayContainHarvestData(txt) {
+  function textMayContainHarvestData(txt, harvestProfileLinks = false) {
     return txt.indexOf('extended_entities') !== -1 || txt.indexOf('binding_values') !== -1
       || txt.indexOf('"following"') !== -1 || txt.indexOf('relationship_perspectives') !== -1
       || txt.indexOf('notifications_settings') !== -1 || txt.indexOf('notifications_enabled') !== -1
-      || txt.indexOf('"notifications"') !== -1;
+      || txt.indexOf('"notifications"') !== -1
+      || (harvestProfileLinks && (txt.indexOf('profile_bio') !== -1 || txt.indexOf('expanded_url') !== -1));
   }
 
   function scheduleNetworkHarvestDrain() {
@@ -872,33 +949,47 @@
     }
   }
 
-  function enqueueNetworkHarvestObject(root, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0) {
+  function enqueueNetworkHarvestObject(root, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0, options = null) {
     if (!root || typeof root !== 'object') return;
     if (networkHarvestQueue.length >= MAX_NETWORK_HARVEST_JOBS) {
       networkHarvestDroppedJobs++;
       return;
     }
-    networkHarvestQueue.push({ type: 'object', stack: [{ value: root, depth: 0 }], processedNodes: 0, accountToken, readRevision });
+    const harvestProfileLinks = Boolean(options?.harvestProfileLinks)
+      && !(Array.isArray(root.errors) && root.errors.length && !root.data);
+    networkHarvestQueue.push({
+      type: 'object', stack: [{ value: root, depth: 0 }], processedNodes: 0,
+      accountToken, readRevision,
+      harvestProfileLinks,
+      harvestedAuthors: new Map(),
+    });
     scheduleNetworkHarvestDrain();
   }
 
-  function tryHarvest(txt, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0) {
-    if (!txt || txt.length > MAX_NETWORK_RESPONSE_BYTES || !textMayContainHarvestData(txt)) return;
+  function tryHarvest(txt, accountToken = ensureNotificationAccount(), readRevision = accountToken.session?.stateRevision || 0, options = null) {
+    const harvestProfileLinks = Boolean(options?.harvestProfileLinks) && isAuthorLinksHarvestActive();
+    if (!txt || txt.length > MAX_NETWORK_RESPONSE_BYTES || !textMayContainHarvestData(txt, harvestProfileLinks)) return;
     if (networkHarvestQueue.length >= MAX_NETWORK_HARVEST_JOBS
         || networkHarvestQueuedChars + txt.length > MAX_NETWORK_HARVEST_QUEUE_CHARS) {
       networkHarvestDroppedJobs++;
       return;
     }
     networkHarvestQueuedChars += txt.length;
-    networkHarvestQueue.push({ type: 'text', text: txt, charLength: txt.length, accountToken, readRevision });
+    networkHarvestQueue.push({
+      type: 'text', text: txt, charLength: txt.length,
+      accountToken, readRevision,
+      harvestProfileLinks,
+      harvestedAuthors: new Map(),
+    });
     scheduleNetworkHarvestDrain();
   }
 
-  function processHarvestObjectNode(value, depth, stack, accountToken, readRevision, batch) {
+  function processHarvestObjectNode(value, depth, stack, accountToken, readRevision, batch, harvestProfileLinks = false, harvestedAuthors = null) {
     if (!value || typeof value !== 'object' || depth > 40) return;
     if (!Array.isArray(value)) {
       harvestFollowingRelationship(value);
       harvestNotificationRelationship(value, accountToken, readRevision, batch);
+      if (harvestProfileLinks) harvestTimelineUserProfileLinks(value, harvestedAuthors);
       const idStr = value.id_str;
       const ext = value.extended_entities;
       if (idStr && ext && Array.isArray(ext.media)) registerMedia(idStr, ext.media);
@@ -918,6 +1009,7 @@
 
   function drainNetworkHarvestQueue(deadline) {
     const accountToken = ensureNotificationAccount();
+    const authorLinksActive = isAuthorLinksHarvestActive();
     const batch = { changed: false };
     let nodeBudget = NETWORK_HARVEST_SLICE_NODES;
     while (networkHarvestQueue.length && nodeBudget > 0) {
@@ -927,15 +1019,24 @@
         networkHarvestQueuedChars = Math.max(0, networkHarvestQueuedChars - (job.charLength || 0));
         let parsed;
         try { parsed = JSON.parse(job.text); } catch (err) { networkHarvestQueue.shift(); continue; }
-        job = { type: 'object', stack: [{ value: parsed, depth: 0 }], processedNodes: 0, accountToken: job.accountToken, readRevision: job.readRevision };
+        const harvestProfileLinks = Boolean(job.harvestProfileLinks)
+          && !(Array.isArray(parsed?.errors) && parsed.errors.length && !parsed?.data);
+        job = {
+          type: 'object', stack: [{ value: parsed, depth: 0 }], processedNodes: 0,
+          accountToken: job.accountToken, readRevision: job.readRevision,
+          harvestProfileLinks, harvestedAuthors: job.harvestedAuthors || new Map(),
+        };
         networkHarvestQueue[0] = job;
         nodeBudget = Math.max(1, nodeBudget - 50);
       }
+      const harvestProfileLinks = Boolean(job.harvestProfileLinks && authorLinksActive);
       while (job.stack.length && nodeBudget > 0 && job.processedNodes < MAX_NETWORK_HARVEST_NODES_PER_JOB) {
         const node = job.stack.pop();
         job.processedNodes++;
         nodeBudget--;
-        try { processHarvestObjectNode(node.value, node.depth, job.stack, job.accountToken, job.readRevision, batch); } catch (err) {}
+        try {
+          processHarvestObjectNode(node.value, node.depth, job.stack, job.accountToken, job.readRevision, batch, harvestProfileLinks, job.harvestedAuthors);
+        } catch (err) {}
         if (typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() <= 2) break;
       }
       if (!job.stack.length || job.processedNodes >= MAX_NETWORK_HARVEST_NODES_PER_JOB) {
@@ -961,26 +1062,29 @@
     const readRevision = xhr?.__xvNotificationReadRevision;
     const url = xhr && xhr.__xvUrl ? String(xhr.__xvUrl) : '';
     const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
-    const isUserDetail = USER_DETAIL_API_RE.test(url)
-      && (xhr?.status === undefined || (Number(xhr.status) >= 200 && Number(xhr.status) < 300));
+    const httpOk = xhr?.status === undefined || (Number(xhr.status) >= 200 && Number(xhr.status) < 300);
+    const isUserDetail = httpOk && USER_DETAIL_API_RE.test(url);
+    const harvestOptions = {
+      harvestProfileLinks: httpOk && !USER_DETAIL_API_RE.test(url) && TIMELINE_PROFILE_HARVEST_API_RE.test(url),
+    };
     if (!isApi && !isUserDetail) return;
     try {
       if (typeof xhr.getResponseHeader === 'function'
           && declaredResponseTooLarge((name) => xhr.getResponseHeader(name))) return;
       if (xhr.responseType === '' || xhr.responseType === 'text') {
         if (isUserDetail) harvestUserDetailResponseText(xhr.responseText, url);
-        if (isApi) tryHarvest(xhr.responseText, accountToken, readRevision);
+        if (isApi) tryHarvest(xhr.responseText, accountToken, readRevision, harvestOptions);
       } else if (xhr.responseType === 'json' && xhr.response && typeof xhr.response === 'object') {
         if (isUserDetail) harvestUserDetailPayload(xhr.response, url);
-        if (isApi) enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision);
+        if (isApi) enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision, harvestOptions);
       } else if (xhr.responseType === 'arraybuffer' && xhr.response && typeof xhr.response.byteLength === 'number' && xhr.response.byteLength <= MAX_NETWORK_RESPONSE_BYTES) {
         const text = new TextDecoder('utf-8').decode(new Uint8Array(xhr.response));
         if (isUserDetail) harvestUserDetailResponseText(text, url);
-        if (isApi) tryHarvest(text, accountToken, readRevision);
+        if (isApi) tryHarvest(text, accountToken, readRevision, harvestOptions);
       } else if (xhr.responseType === 'blob' && xhr.response && typeof xhr.response.size === 'number' && typeof xhr.response.text === 'function' && xhr.response.size <= MAX_NETWORK_RESPONSE_BYTES) {
         xhr.response.text().then((text) => {
           if (isUserDetail) harvestUserDetailResponseText(text, url);
-          if (isApi) tryHarvest(text, accountToken, readRevision);
+          if (isApi) tryHarvest(text, accountToken, readRevision, harvestOptions);
         }).catch(() => {});
       }
     } catch (e) {}
@@ -1029,14 +1133,20 @@
                   const url = (res && res.url) || reqUrl;
                   const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
                   const httpOk = Boolean(res) && res.ok !== false && (!Number.isFinite(res.status) || (res.status >= 200 && res.status < 300));
-                  const isUserDetail = httpOk && !args[1]?.__xvSkipUserDetailHarvest && USER_DETAIL_API_RE.test(url);
+                  const skipUserDetailHarvest = Boolean(args[1]?.__xvSkipUserDetailHarvest);
+                  const isUserDetail = httpOk && !skipUserDetailHarvest && USER_DETAIL_API_RE.test(url);
+                  const harvestOptions = {
+                    harvestProfileLinks: httpOk && !skipUserDetailHarvest
+                      && !USER_DETAIL_API_RE.test(url)
+                      && TIMELINE_PROFILE_HARVEST_API_RE.test(url),
+                  };
                   if (res && res.clone && (isApi || isUserDetail)) {
                     if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
                     const contentType = res.headers && res.headers.get ? (res.headers.get('content-type') || '') : '';
                     if (contentType && !/(?:json|javascript|text)/i.test(contentType)) return;
                     res.clone().text().then((text) => {
                       if (isUserDetail) harvestUserDetailResponseText(text, url);
-                      if (isApi) tryHarvest(text, accountToken, readRevision);
+                      if (isApi) tryHarvest(text, accountToken, readRevision, harvestOptions);
                     }).catch(() => {});
                   }
                 } catch (e) {}
