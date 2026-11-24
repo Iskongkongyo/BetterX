@@ -84,6 +84,24 @@ function harness(){
   complete(links);await flush();assert.equal(api.getView(),null,'Late responses must not revive an inactive view');
 }
 {
+  const { context, api, stored } = harness();
+  let resolveOld;
+  context.transport = () => new Promise((resolve) => { resolveOld = resolve; });
+  api.refreshAuthorLinks();
+  api.state.settings.authorLinksEnabled = false;
+  api.refreshAuthorLinks();
+  api.state.settings.authorLinksEnabled = true;
+  const latest = [{ href: 'https://example.org/fresh', label: 'fresh' }];
+  context.transport = async () => latest;
+  api.refreshAuthorLinks();
+  await flush();
+  resolveOld(links);
+  await flush();
+  assert.equal(context.requests, 2, 'Re-enabling must start a fresh profile request');
+  assert.equal(stored.get('betterx_author_links:author').links[0].href, latest[0].href);
+  assert.equal(api.getView().links[0].href, latest[0].href);
+}
+{
   const profile={profile_bio:{entities:{description:{urls:[
     {expanded_url:links[0].href,display_url:links[0].label},
     {expanded_url:'javascript:alert(1)'},
@@ -98,80 +116,41 @@ function harness(){
   await assert.rejects(context.__test.requestAuthorProfileLinks('author'),/no readable author profile/);
 }
 {
-  const calls=[];
-  const store=new Map();
-  const context=loadUserscript('isShortUrl, resolveShortUrl','now=()=>globalThis.clock;',{
-    clock:100000,
-    GM_getValue:(key,fallback)=>store.get(key)??fallback,
-    GM_setValue:(key,value)=>store.set(key,value),
-    GM_xmlhttpRequest:options=>{
-      calls.push({method:options.method,timeout:options.timeout});
-      if(options.method==='HEAD'){options.onerror();return;}
-      options.onload({status:200,finalUrl:'https://www.pixiv.net/users/123'});
-    },
-  });
-  const {isShortUrl:isShort,resolveShortUrl:resolve}=context.__test;
-  for(const url of ['https://t.co/abc','https://t.cn/abc','https://x.gd/abc','https://bit.ly/abc','https://c1n.cn/abc',
-    'https://tinyurl.com/abc','https://shrturi.com/abc','https://dub.sh/abc'])assert.ok(isShort(url),`${url} must be treated as a short link`);
-  for(const url of ['https://www.pixiv.net/users/123','https://example.org/t.cn','not a url'])assert.ok(!isShort(url),`${url} must not be treated as a short link`);
-  assert.equal(await resolve('https://t.co/abc'),'https://www.pixiv.net/users/123','A failed HEAD must fall back to GET');
-  assert.deepEqual(calls.map(call=>call.method),['HEAD','GET']);
-  assert.ok(calls.every(call=>call.timeout>0&&call.timeout<=6000),'Short link requests must respect the 6s budget');
-  const dictionary=store.get('betterx_short_links');
-  assert.equal(dictionary['https://t.co/abc'].href,'https://www.pixiv.net/users/123','Resolved short links must be remembered');
-  assert.equal(dictionary['https://t.co/abc'].expiresAt,context.clock+365*24*60*60*1000,'Resolved short links are cached for one year');
-  calls.length=0;
-  assert.equal(await resolve('https://t.co/abc'),'https://www.pixiv.net/users/123');
-  assert.equal(calls.length,0,'A remembered short link must not be requested again');
-  assert.equal(await resolve('https://www.pixiv.net/users/123'),'https://www.pixiv.net/users/123');
-  assert.equal(calls.length,0,'Regular links must not trigger redirect requests');
-}
-{
-  for(const [label,respond] of [['network error',options=>options.onerror()],['timeout',options=>options.ontimeout()],
-    ['unsafe redirect',options=>options.onload({status:200,finalUrl:'javascript:alert(1)'})],
-    ['missing final url',options=>options.onload({status:200})]]){
-    const context=loadUserscript('resolveShortUrl','',{GM_xmlhttpRequest:respond});
-    assert.equal(await context.__test.resolveShortUrl('https://bit.ly/abc'),'https://bit.ly/abc',`${label} must keep the original short link`);
-    assert.equal(await context.__test.resolveShortUrl('https://bit.ly/abc',0),'https://bit.ly/abc','An exhausted timeout budget must not throw');
+  const requests = [];
+  const shortUrl = 'https://t.co/AbCdEf';
+  const unresolved = 'https://bit.ly/xyz';
+  const legacyMapping = {
+    'https://t.cn/known': { href: 'https://example.org/known', expiresAt: 200000 },
+    'https://t.co/expired': { href: 'https://example.org/stale', expiresAt: 90000 },
+    'https://t.co/invalid': { href: 'https://bit.ly/still-short', expiresAt: 200000 },
+  };
+  const profile = { legacy: { entities: { url: { urls: [
+    { url: shortUrl, expanded_url: unresolved, unwound_url: links[0].href, display_url: 't.co/AbCdEf' },
+    { url: 'https://t.co/duplicate', expanded_url: links[0].href },
+    { url: 'https://t.cn/known', display_url: 't.cn/known' },
+    { expanded_url: unresolved, unwound_url: 'mailto:bad@example.org', display_url: 'bit.ly/xyz' },
+    { url: 'https://t.co/expired' },
+    { url: 'https://t.co/invalid' },
+  ] } } } };
+  const context = loadUserscript('isShortUrl, requestAuthorProfileLinks',
+    'now = () => 100000; requestXSessionJson = async () => globalThis.payload;', {
+      payload: { data: { user: { result: profile } } },
+      GM_getValue: (key, fallback) => key === 'betterx_short_links' ? legacyMapping : fallback,
+      GM_xmlhttpRequest: (options) => requests.push(options.url),
+    });
+  const { isShortUrl, requestAuthorProfileLinks } = context.__test;
+  for (const host of ['t.co', 't.cn', 'x.gd', 'bit.ly', 'c1n.cn', 'tinyurl.com', 'shrturi.com', 'dub.sh']) {
+    assert.equal(isShortUrl('https://' + host + '/abc'), true);
   }
-  const throwing=loadUserscript('resolveShortUrl','',{GM_xmlhttpRequest:()=>{throw new Error('blocked');}});
-  assert.equal(await throwing.__test.resolveShortUrl('https://bit.ly/abc'),'https://bit.ly/abc','A blocked request API must fall back silently');
-}
-{
-  const shortUrl='https://t.co/AbCdEf';
-  const profile={legacy:{entities:{url:{urls:[
-    {expanded_url:shortUrl,display_url:'t.co/AbCdEf'},
-    {expanded_url:'https://example.org/',display_url:'example.org'},
-  ]}}}};
-  const calls=[];
-  const context=loadUserscript('requestAuthorProfileLinks','requestXSessionJson=async()=>globalThis.payload;',{
-    payload:{data:{user:{result:profile}}},
-    GM_xmlhttpRequest:options=>{calls.push(options.url);options.onload({status:200,finalUrl:'https://www.pixiv.net/users/123'});},
-  });
-  const result=await context.__test.requestAuthorProfileLinks('author');
-  assert.deepEqual(Array.from(result,link=>link.href),['https://www.pixiv.net/users/123','https://example.org/']);
-  assert.equal(result[0].label,'pixiv.net/users/123','Short link labels must follow the resolved host');
-  assert.deepEqual(calls,[shortUrl],'Only short links trigger redirect requests');
-}
-{
-  const shortUrl='https://bit.ly/xyz';
-  const profile={legacy:{entities:{url:{urls:[{expanded_url:shortUrl,display_url:'bit.ly/xyz'}]}}}};
-  const context=loadUserscript('requestAuthorProfileLinks','requestXSessionJson=async()=>globalThis.payload;',{
-    payload:{data:{user:{result:profile}}},
-    GM_xmlhttpRequest:options=>options.ontimeout(),
-  });
-  const result=await context.__test.requestAuthorProfileLinks('author');
-  assert.deepEqual(Array.from(result,link=>link.href),[shortUrl],'Failed resolution keeps the original short link');
-  assert.equal(result[0].label,'bit.ly/xyz','Failed resolution keeps the original label');
-}
-{
-  const profile={legacy:{entities:{url:{urls:[{expanded_url:'https://t.co/one'},{expanded_url:'https://t.co/two'}]}}}};
-  const context=loadUserscript('requestAuthorProfileLinks','requestXSessionJson=async()=>globalThis.payload;',{
-    payload:{data:{user:{result:profile}}},
-    GM_xmlhttpRequest:options=>options.onload({status:200,finalUrl:'https://www.pixiv.net/users/123'}),
-  });
-  const result=await context.__test.requestAuthorProfileLinks('author');
-  assert.deepEqual(Array.from(result,link=>link.href),['https://www.pixiv.net/users/123'],'Links converging on one target must collapse');
+  assert.equal(isShortUrl('https://example.org/t.cn'), false);
+  const result = await requestAuthorProfileLinks('author');
+  assert.deepEqual(Array.from(result, (link) => link.href), [
+    links[0].href, 'https://example.org/known', unresolved, 'https://t.co/expired', 'https://t.co/invalid',
+  ]);
+  assert.equal(result[0].label, 'pixiv.net/users/123');
+  assert.equal(result[1].label, 'example.org/known');
+  assert.equal(result[2].label, 'bit.ly/xyz');
+  assert.deepEqual(requests, [], 'Short links must use X data or a valid cache without preflight requests');
 }
 function homeHarness(profiles, transport = async () => []){
   const created=[],articles=[],reads=[],redirects=[],icons=[];
@@ -314,12 +293,33 @@ function homeHarness(profiles, transport = async () => []){
   assert.equal(h.context.requests,0,'A valid empty cache entry must not refetch the profile');
 }
 {
-  const h=homeHarness({'betterx_author_links:author':{links:[{href:'https://t.co/old',label:'t.co/old'}],expiresAt:200000}});
-  const cached=h.api.getCachedAuthorProfileLinks('author');
-  assert.equal(cached[0].href,'https://t.co/old','The timeline renders the cached link before resolution');
+  const shortHref = 'https://t.co/old';
+  const record = { links: [{ href: shortHref, label: 't.co/old' }], expiresAt: 200000 };
+  const h = homeHarness({ 'betterx_author_links:author': record });
+  const article = h.addArticle('author');
+  h.api.refreshAuthorLinks();
+  assert.equal(article.control?.children[1]?.children[0]?.href, shortHref);
+  assert.equal((await h.api.loadAuthorProfileLinks('author'))[0].href, shortHref);
+  const nextLinks = [{ href: 'https://example.org/current', label: 'current' }];
+  h.api.cacheHarvestedAuthorProfileLinks('author', nextLinks);
   await flush();
-  assert.deepEqual(h.redirects,['https://t.co/old'],'A legacy cached short link must still resolve from the timeline');
-  assert.equal(h.stored.get('betterx_author_links:author').links[0].href,'https://www.pixiv.net/users/1');
+  assert.deepEqual(h.redirects, [], 'An unresolved legacy link must not start a background request');
+  assert.equal(h.stored.get('betterx_author_links:author').links[0].href, nextLinks[0].href);
+  assert.equal(article.control?.children[1]?.children[0]?.href, nextLinks[0].href);
+}
+{
+  const shortHref = 'https://t.co/old';
+  const record = { links: [{ href: shortHref, label: 't.co/old' }], expiresAt: 200000 };
+  const h = homeHarness({
+    'betterx_author_links:author': record,
+    betterx_short_links: { [shortHref]: { href: 'https://example.org/known', expiresAt: 150000 } },
+  });
+  const article = h.addArticle('author');
+  h.api.refreshAuthorLinks();
+  assert.equal(article.control?.children[1]?.children[0]?.href, 'https://example.org/known');
+  assert.equal((await h.api.loadAuthorProfileLinks('author'))[0].href, 'https://example.org/known');
+  assert.deepEqual(h.redirects, []);
+  assert.deepEqual(h.stored.get('betterx_author_links:author'), record, 'Reading a legacy link must not rewrite the author record');
 }
 {
   const h=homeHarness({},async()=>links);
@@ -334,51 +334,6 @@ function homeHarness(profiles, transport = async () => []){
   h.api.refreshAuthorLinks();
   assert.ok(article.control,'A newly cached author must be picked up on the next scan');
   assert.equal(article.dataset.betterxAuthorLinks,undefined,'The injected tweet must drop the negative marker');
-}
-{
-  const protocolOnly=loadUserscript('resolveShortUrl','',{
-    GM_xmlhttpRequest:options=>options.onload({status:200,finalUrl:'https://t.co/abc'}),
-  });
-  assert.equal(await protocolOnly.__test.resolveShortUrl('http://t.co/abc'),'http://t.co/abc','A protocol-only redirect must not count as resolved');
-  const chained=loadUserscript('resolveShortUrl','',{
-    GM_xmlhttpRequest:options=>options.onload({status:200,finalUrl:'https://bit.ly/still'}),
-  });
-  assert.equal(await chained.__test.resolveShortUrl('https://t.co/abc'),'https://t.co/abc','A redirect to another shortener must keep the original link');
-}
-{
-  const stored=new Map([['betterx_author_links:author',{links:[{href:'https://t.co/old',label:'t.co/old'}],expiresAt:200000}]]);
-  const requested=[];
-  const context=loadUserscript('loadAuthorProfileLinks','now=()=>globalThis.clock;',{
-    clock:100000,
-    GM_getValue:(key,fallback)=>stored.get(key)??fallback,
-    GM_setValue:(key,value)=>stored.set(key,value),
-    GM_xmlhttpRequest:options=>{requested.push(options.url);options.onload({status:200,finalUrl:'https://www.pixiv.net/users/1'});},
-  });
-  const cached=await context.__test.loadAuthorProfileLinks('author');
-  assert.equal(cached[0].href,'https://t.co/old','Cached links must render before the background resolution finishes');
-  await flush();
-  assert.deepEqual(requested,['https://t.co/old'],'Legacy caches holding short links must resolve once in the background');
-  const refreshed=stored.get('betterx_author_links:author');
-  assert.equal(refreshed.links[0].href,'https://www.pixiv.net/users/1','Resolved short links must be persisted');
-  assert.equal(refreshed.expiresAt,200000,'Overwriting a resolved cache entry must keep its original expiry');
-  assert.deepEqual(Object.keys(refreshed),['links','expiresAt'],'No migration marker may be stored');
-  await context.__test.loadAuthorProfileLinks('author');await flush();
-  assert.deepEqual(requested,['https://t.co/old'],'An already refreshed cache entry must not be requested again');
-}
-{
-  const stored=new Map([['betterx_author_links:author',{links:[{href:'https://t.co/old',label:'t.co/old'}],expiresAt:200000}]]);
-  const requested=[];
-  const context=loadUserscript('loadAuthorProfileLinks','now=()=>globalThis.clock;',{
-    clock:100000,
-    GM_getValue:(key,fallback)=>stored.get(key)??fallback,
-    GM_setValue:(key,value)=>stored.set(key,value),
-    GM_xmlhttpRequest:options=>{requested.push(options.method);options.onerror();},
-  });
-  await context.__test.loadAuthorProfileLinks('author');await flush();
-  assert.deepEqual(requested,['HEAD','GET'],'A failed resolution tries HEAD then GET once');
-  await context.__test.loadAuthorProfileLinks('author');await flush();
-  assert.equal(requested.length,2,'Failed short links must not be retried on every cache read');
-  assert.equal(stored.get('betterx_author_links:author').links[0].href,'https://t.co/old','A failed resolution leaves the cache untouched');
 }
 {
   const stored=new Map(),redirects=[];
@@ -396,16 +351,17 @@ function homeHarness(profiles, transport = async () => []){
     GM_xmlhttpRequest:options=>{redirects.push(options.url);options.onload({status:200,finalUrl:'https://www.pixiv.net/users/88'});},
     fetch:async()=>nextResponse,
   });
+  context.__test.state.settings.authorLinksEnabled = true;
   context.__test.installNetworkHooks();
 
   nextResponse=makeRes('https://x.com/i/api/graphql/abc/UserByScreenName?variables=%7B%22screen_name%22%3A%22Alice%22%7D',{
     data:{user:{result:{__typename:'User',core:{screen_name:'Alice'},profile_bio:{entities:{description:{urls:[
-      {expanded_url:'https://t.co/alice',display_url:'t.co/alice'},
+      {url:'https://t.co/alice',expanded_url:'https://www.pixiv.net/users/88',display_url:'t.co/alice'},
     ]}}}}}},
   });
   await context.fetch('https://x.com/i/api/graphql/abc/UserByScreenName?variables=%7B%22screen_name%22%3A%22Alice%22%7D');
   await flush();
-  assert.deepEqual(redirects,['https://t.co/alice'],'Intercepted user detail short links must resolve before caching');
+  assert.ok(redirects.every((url) => url.startsWith('https://cdn.simpleicons.org/')));
   assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('alice'),item=>item.href),['https://www.pixiv.net/users/88']);
 
   nextResponse=makeRes('https://x.com/i/api/graphql/abc/UserByRestId?variables=%7B%22userId%22%3A%2242%22%7D',{
@@ -467,6 +423,33 @@ function homeHarness(profiles, transport = async () => []){
   await context.__test.requestXSessionJson('/i/api/1.1/users/show.json?screen_name=eve');
   await flush();
   assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('eve'),item=>item.href),['https://example.org/eve']);
+
+  const profilePath = '/i/api/graphql/abc/UserByScreenName';
+  const payloadFor = (name) => ({ data: { user: { result: {
+    legacy: { screen_name: name, entities: { url: { urls: [{ url: 'https://t.co/disabled' }] } } },
+  } } } });
+  nextResponse = makeRes('https://example.org' + profilePath, payloadFor('Foreign'));
+  await context.fetch(nextResponse.url);
+  await flush();
+  assert.equal(stored.has('betterx_author_links:foreign'), false, 'Only X responses can update author profiles');
+
+  context.__test.state.settings.authorLinksEnabled = false;
+  const requestsBeforeDisabled = redirects.length;
+  nextResponse = makeRes('https://x.com' + profilePath, payloadFor('DisabledFetch'));
+  await context.fetch(nextResponse.url);
+  const xhrOff = new XHR();
+  xhrOff.responseType = 'json';
+  xhrOff.response = payloadFor('DisabledXhr');
+  xhrOff.open('GET', profilePath);
+  xhrOff.send();
+  xhrOff.fire();
+  nextResponse = makeRes('https://x.com' + profilePath, payloadFor('DisabledSession'));
+  await context.__test.requestXSessionJson(profilePath);
+  await flush();
+  for (const name of ['disabledfetch', 'disabledxhr', 'disabledsession']) {
+    assert.equal(stored.has('betterx_author_links:' + name), false, name + ' must not persist links when disabled');
+  }
+  assert.equal(redirects.length, requestsBeforeDisabled, 'Disabled profile harvest must not make a GM request');
 }
 {
   const stored=new Map();
@@ -479,6 +462,7 @@ function homeHarness(profiles, transport = async () => []){
       json:async()=>({data:{user:{result:{legacy:{screen_name:'Frank',entities:{url:{urls:[{expanded_url:'https://example.org/frank'}]}}}}}}}),
     }),
   });
+  context.__test.state.settings.authorLinksEnabled = true;
   await context.__test.requestXSessionJson('/i/api/graphql/abc/UserByScreenName?variables=%7B%22screen_name%22%3A%22Frank%22%7D');
   await flush();
   assert.deepEqual(Array.from(context.__test.getCachedAuthorProfileLinks('frank'),item=>item.href),['https://example.org/frank'],'Session requests must cache user details even without fetch/XHR hooks');
@@ -540,43 +524,15 @@ for(const activeFails of [true,false]){
   api.state.settings.authorLinksEnabled=true;context.location.pathname='/author/status/123';
   api.installNetworkHooks();api.refreshAuthorLinks();await flush();
   const fresh=[{href:'https://example.org/new',label:'new'}];
-  const passive=api.cacheHarvestedAuthorProfileLinks('author',fresh);
-  passive.catch(()=>{});
+  api.cacheHarvestedAuthorProfileLinks('author',fresh);
   const payload=activeFails?{errors:[{message:'rate limited'}]}:{data:{user:{result:{legacy:{screen_name:'Author',entities:{url:{urls:[{expanded_url:'https://example.org/old'}]}}}}}}};
   settleActive({url:requestUrl,ok:!activeFails,status:activeFails?429:200,
     headers:{get:()=>'application/json'},json:async()=>payload,clone:()=>({text:async()=>JSON.stringify(payload)}),
   });
-  await Promise.allSettled([passive]);await flush();
+  await flush();
   assert.equal(api.getView().status,'ready','Successful passive details must survive a failed active request');
   assert.equal(stored.get('betterx_author_links:author')?.links[0]?.href,'https://example.org/new','Late active responses must not overwrite newer passive details');
   assert.equal(api.getView().links[0]?.href,'https://example.org/new');
-}
-// Harvest regression: self-short-link.
-{
-  const methods=[];
-  const payload={data:{user:{result:{legacy:{screen_name:'Author',entities:{url:{urls:[{expanded_url:'https://t.co/fail'}]}}}}}}};
-  const context=loadUserscript('loadAuthorProfileLinks, installNetworkHooks','now=()=>100000;',{
-    fetch:async url=>({url,ok:true,status:200,headers:{get:()=>'application/json'},json:async()=>payload,clone:()=>({text:async()=>JSON.stringify(payload)})}),
-    GM_xmlhttpRequest:options=>{methods.push(options.method);options.onerror();},
-  });
-  context.__test.installNetworkHooks();
-  const result=await context.__test.loadAuthorProfileLinks('author');await flush();
-  assert.equal(result[0].href,'https://t.co/fail');
-  assert.deepEqual(methods,['HEAD','GET'],'Self-intercepted failed short links must use only one resolution budget');
-}
-// Harvest regression: passive-empty.
-{
-  const stored=new Map(),pending=[];
-  const context=loadUserscript('cacheHarvestedAuthorProfileLinks','now=()=>100000;',{
-    GM_getValue:(key,fallback)=>stored.get(key)??fallback,
-    GM_setValue:(key,value)=>stored.set(key,value),
-    GM_xmlhttpRequest:options=>pending.push(options),
-  });
-  const old=context.__test.cacheHarvestedAuthorProfileLinks('author',[{href:'https://t.co/old',label:'old'}]);
-  const fresh=context.__test.cacheHarvestedAuthorProfileLinks('author',[]);
-  pending[0].onload({status:200,finalUrl:'https://example.org/old'});
-  await Promise.all([old,fresh]);
-  assert.deepEqual(Array.from(stored.get('betterx_author_links:author').links),[],'A newer empty profile must replace a pending passive short-link result');
 }
 // Harvest regression: detail-sync.
 for(const initial of [[],[{href:'https://example.org/old',label:'old'}],'error']){
@@ -611,8 +567,19 @@ for(const initial of [[],[{href:'https://example.org/old',label:'old'}],'error']
   const unknownQueries=unknown.nameQueries;
   await h.api.cacheHarvestedAuthorProfileLinks('author',fresh);
   assert.equal(unknown.nameQueries,unknownQueries,'Identical passive details must not re-scan unrelated cache misses');
-  await h.api.cacheHarvestedAuthorProfileLinks('author',[]);
+  const url = 'https://x.com/i/api/graphql/abc/UserByScreenName';
+  const payload = { data: { user: { result: {
+    legacy: { screen_name: 'author', entities: { description: { urls: [] }, url: { urls: [] } } },
+  } } } };
+  h.context.fetch = async () => ({ url, ok: true, clone: () => ({ text: async () => JSON.stringify(payload) }) });
+  h.api.installNetworkHooks();
+  await h.context.fetch(url);
+  await flush();
+  assert.equal(h.stored.get('betterx_author_links:author').links.length, 0);
+  assert.equal(h.stored.get('betterx_author_links:author').authoritativeEmpty, true);
   assert.equal(author.querySelector('.BetterX-author-links'),null,'Empty intercepted profiles must remove home menus');
+  h.api.cacheHarvestedAuthorProfileLinks('author', fresh, { preserveResolved: true });
+  assert.equal(author.querySelector('.BetterX-author-links'), null, 'Timeline responses must preserve an authoritative empty profile');
   assert.equal(writer.control,writerControl);
 }
 // Harvest regression: icon-cooldown.
@@ -776,7 +743,8 @@ for(const failure of ['http','network','timeout']){
     ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',core:{screen_name:'Alice'},profile_bio:{entities:{description:{urls:[]}}}}}}}],
     ['https://x.com/i/api/graphql/abc/ProfileSpotlightsQuery',{data:{user_result_by_screen_name:{result:{__typename:'User',legacy:{screen_name:'Alice',entities:{description:{urls:[]}}}}}}}],
     ['https://x.com/i/api/graphql/abc/UsersByRestIds',{data:{users:[{result:{__typename:'User',legacy:{screen_name:'Alice',entities:{description:{urls:[]}}}}}]}}],
-    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',legacy:{screen_name:'Alice',url:'https://t.co/site',entities:{description:{urls:[]}}}}}}}],
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',legacy:{screen_name:'Alice',url:'https://t.co/site',entities:{description:{urls:[]},url:{urls:[]}}}}}}}],
+    ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',legacy:{screen_name:'Alice',entities:{description:{}}}}}}}],
     ['https://x.com/i/api/graphql/abc/UserByScreenName',{data:{user:{result:{__typename:'User',core:{screen_name:'Alice'},profile_bio:{entities:{description:{urls:[{expanded_url:'https://example.org/partial',display_url:'example.org/partial'}]}}}}}}}],
   ]){
     nextResponse=makeRes(url,body);
@@ -869,4 +837,4 @@ for(const failure of ['http','network','timeout']){
   await flush();
   assert.equal(stored.has('betterx_author_links:emptytimeline'),false,'Timeline payloads must not write negative empty caches');
 }
-console.log('Author links cache empty results, bound retries, recover on demand and ignore obsolete responses; profile parsers validate and deduplicate links; short links resolve through HEAD/GET redirects, refresh labels, resolve legacy cached short links once in place without extending their expiry, reject protocol-only or chained shortener redirects and fall back on failures; the home timeline injects isolated cached-author menus without extra requests and skips re-scanning decided tweets; intercepted user detail APIs populate the cache across fetch, XHR and session requests; site icons cache for one year and prefetch on link discovery or control injection; passive details survive active failures and synchronize rendered menus; failed icons respect retry cooldowns; site logo rules match pixiv.me, subdomains, aliases and common sites.');
+console.log('Author links preserve current profiles, honor the setting across network paths, and keep homepage, detail, retry, cache, and icon behavior. Short links use X data or cached destinations without preflight requests.');

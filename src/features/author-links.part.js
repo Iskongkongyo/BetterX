@@ -118,11 +118,8 @@
     AUTHOR_LINK_SITE_LOGOS.flatMap(([logo, domains]) => domains.map((domain) => [domain, logo]))
   );
   const authorLinksRequests = new Map();
-  const authorLinksHarvestedLinks = new Map();
-  const authorLinksPassiveJobs = new Map();
   const authorLinksCache = new Map();
   const authorLinksCacheMisses = new Map();
-  const authorLinksShortLinkAttempted = new Set();
   const authorLinksHomeMissGenerations = new WeakMap();
   const authorLinksHomePlacements = new WeakMap();
   const authorLinkIconRequests = new Map();
@@ -245,12 +242,13 @@
     return Boolean(cached && cached.links.length > 0);
   }
 
-  function saveAuthorProfileLinksCache(screenName, links, onCommit) {
+  function saveAuthorProfileLinksCache(screenName, links, authoritative = false, onCommit) {
     screenName = String(screenName || '').toLowerCase();
     if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(links)) return null;
     const key = 'betterx_author_links:' + screenName;
     const changed = authorProfileLinksChanged(screenName, links);
     const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
+    if (!links.length && authoritative) cached.authoritativeEmpty = true;
     authorLinksCache.set(screenName, cached);
     authorLinksCacheMisses.delete(screenName);
     if (links.length) {
@@ -263,15 +261,9 @@
     return cached;
   }
 
-  function applyHarvestedAuthorProfileLinks(screenName, links, options = null) {
-    if (options?.preserveResolved && links.some((link) => isShortUrl(link.href))) {
-      const existing = readAuthorLinksRecord(screenName);
-      if (existing?.links.length && !existing.links.some((link) => isShortUrl(link.href))) {
-        return existing.links;
-      }
-    }
+  function applyHarvestedAuthorProfileLinks(screenName, links, authoritative) {
     let changed = false;
-    saveAuthorProfileLinksCache(screenName, links, (wasChanged) => { changed = wasChanged; });
+    saveAuthorProfileLinksCache(screenName, links, authoritative, (wasChanged) => { changed = wasChanged; });
     if (!state.settings.authorLinksEnabled) return links;
     if (homeAuthorLinksActive()) {
       if (changed) {
@@ -295,40 +287,25 @@
     return links;
   }
 
-  async function resolveHarvestedAuthorProfileLinks(screenName) {
-    let rawLinks;
-    let links;
-    do {
-      rawLinks = authorLinksHarvestedLinks.get(screenName);
-      links = await resolveAuthorProfileLinks(rawLinks);
-    } while (rawLinks !== authorLinksHarvestedLinks.get(screenName));
-    return links;
-  }
-
-  function cacheHarvestedAuthorProfileLinks(screenName, rawLinks, options = null) {
+  function cacheHarvestedAuthorProfileLinks(screenName, links, options = null) {
+    if (!isAuthorLinksHarvestActive() || !Array.isArray(links)) return null;
     screenName = String(screenName || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(rawLinks)) return Promise.resolve(null);
-    authorLinksHarvestedLinks.set(screenName, rawLinks);
-    const pending = authorLinksRequests.get(screenName) || authorLinksPassiveJobs.get(screenName);
-    if (pending) return pending;
-    if (!rawLinks.some((link) => isShortUrl(link.href))) {
-      authorLinksHarvestedLinks.delete(screenName);
-      return Promise.resolve(applyHarvestedAuthorProfileLinks(screenName, rawLinks, options));
-    }
-    const job = resolveHarvestedAuthorProfileLinks(screenName)
-      .then((links) => applyHarvestedAuthorProfileLinks(screenName, links, options))
-      .finally(() => {
-        authorLinksPassiveJobs.delete(screenName);
-        authorLinksHarvestedLinks.delete(screenName);
-      });
-    authorLinksPassiveJobs.set(screenName, job);
-    return job;
+    if (!/^[a-z0-9_]{1,15}$/.test(screenName)) return null;
+    const current = readAuthorLinksRecord(screenName);
+    if (current?.authoritativeEmpty && !options?.authoritative) return current.links;
+    if (options?.preserveResolved && current?.links.length && links.some((link) => isShortUrl(link.href))
+        && !current.links.some((link) => isShortUrl(link.href))) return current.links;
+
+    const pending = authorLinksRequests.get(screenName);
+    if (pending) pending.latestLinks = links;
+    return applyHarvestedAuthorProfileLinks(screenName, links, options?.authoritative);
   }
 
   async function loadAuthorProfileLinks(screenName) {
+    if (!isAuthorLinksHarvestActive()) return [];
     screenName = screenName.toLowerCase();
-    const pending = authorLinksRequests.get(screenName) || authorLinksPassiveJobs.get(screenName);
-    if (pending) return pending;
+    const pending = authorLinksRequests.get(screenName);
+    if (pending) return pending.promise;
 
     const key = 'betterx_author_links:' + screenName;
     try {
@@ -340,48 +317,29 @@
           if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
           if (cached.links.length) authorLinksGeneration++;
         }
-        prefetchAuthorLinkIcons(cached.links);
-        resolveCachedShortLinks(screenName, cached);
-        return cached.links;
+        const links = resolveAuthorProfileLinks(cached.links);
+        prefetchAuthorLinkIcons(links);
+        return links;
       }
     } catch {}
     authorLinksCache.delete(screenName);
 
-    const request = requestAuthorProfileLinks(screenName).catch((error) => {
-      const harvested = authorLinksHarvestedLinks.get(screenName);
-      if (!harvested) throw error;
-      return harvested;
-    }).then(async (links) => {
-      if (authorLinksHarvestedLinks.has(screenName)) {
-        links = await resolveHarvestedAuthorProfileLinks(screenName);
-        return applyHarvestedAuthorProfileLinks(screenName, links);
-      }
+    const request = { latestLinks: null, promise: null };
+    const isCurrent = () => isAuthorLinksHarvestActive() && authorLinksRequests.get(screenName) === request;
+    request.promise = requestAuthorProfileLinks(screenName).then((links) => {
+      if (!isCurrent()) return [];
+      if (request.latestLinks) return request.latestLinks;
       saveAuthorProfileLinksCache(screenName, links);
       return links;
+    }, (error) => {
+      if (!isCurrent()) return [];
+      if (request.latestLinks) return request.latestLinks;
+      throw error;
     }).finally(() => {
-      authorLinksRequests.delete(screenName);
-      authorLinksHarvestedLinks.delete(screenName);
+      if (authorLinksRequests.get(screenName) === request) authorLinksRequests.delete(screenName);
     });
     authorLinksRequests.set(screenName, request);
-    return request;
-  }
-
-  // 缓存里还留着短链时后台还原一次，成功后原地覆写、保留原有过期时间。
-  function resolveCachedShortLinks(screenName, cached) {
-    if (!cached.links.some((link) => isShortUrl(link.href))) return;
-    // 失败也不重试：同一次页面会话内每个作者最多请求一轮，避免滚动时反复打短链服务商。
-    if (authorLinksShortLinkAttempted.has(screenName)) return;
-    authorLinksShortLinkAttempted.add(screenName);
-    resolveAuthorProfileLinks(cached.links).then((links) => {
-      const changed = links.length !== cached.links.length
-        || links.some((link, index) => link.href !== cached.links[index].href);
-      if (!changed) return;
-      const refreshed = { links, expiresAt: cached.expiresAt };
-      authorLinksCache.set(screenName, refreshed);
-      authorLinksGeneration++;
-      prefetchAuthorLinkIcons(links);
-      try { GM_setValue('betterx_author_links:' + screenName, refreshed); } catch {}
-    }).catch(() => {});
+    return request.promise;
   }
 
   function rememberAuthorLinksMiss(screenName) {
@@ -408,9 +366,7 @@
       if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
     }
     authorLinksCacheMisses.delete(screenName);
-    resolveCachedShortLinks(screenName, cached);
-    // 有效但为空的缓存项本身就是负缓存，留在内存里让详情页直接命中，避免重复读取 GM 存储。
-    const links = cached.links.filter((link) => typeof link?.href === 'string' && /^https?:\/\//i.test(link.href));
+    const links = resolveAuthorProfileLinks(cached.links);
     if (links.length) prefetchAuthorLinkIcons(links);
     return links.length ? links : null;
   }
@@ -704,8 +660,9 @@
     removeAuthorLinksControl(view);
     loadAuthorProfileLinks(view.screenName).then((links) => {
       if (!isActiveAuthorLinksView(view)) return;
-      view.links = links;
-      view.status = links.length ? 'ready' : 'empty';
+      const cached = readAuthorLinksRecord(view.screenName);
+      view.links = cached ? resolveAuthorProfileLinks(cached.links) : links;
+      view.status = view.links.length ? 'ready' : 'empty';
       refreshAuthorLinks();
     }).catch((error) => {
       if (!isActiveAuthorLinksView(view)) return;
@@ -721,6 +678,7 @@
   }
 
   function refreshAuthorLinks() {
+    if (!isAuthorLinksHarvestActive()) authorLinksRequests.clear();
     const route = getAuthorLinksRoute();
     if (!route) resetAuthorLinksView();
     refreshHomeAuthorLinks();

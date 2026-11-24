@@ -2868,7 +2868,7 @@ async function requestXSessionJson(pathOrUrl, options) {
     }
     const payload = await response.json();
     if (Array.isArray(payload?.errors) && payload.errors.length) throw makeXSessionRequestError(response.status, payload);
-    if (!opts.skipUserDetailHarvest && USER_DETAIL_API_RE.test(url)) harvestUserDetailPayload(payload, url);
+    if (!opts.skipUserDetailHarvest) harvestUserDetailPayload(payload, response.url || url);
     return payload;
   } finally {
     if (timer) clearTimeout(timer);
@@ -2885,10 +2885,7 @@ const SHORT_LINK_HOSTS = [
   't.co', 't.cn', 'x.gd', 'bit.ly', 'c1n.cn', 'tinyurl.com', 'shrturi.com', 'dub.sh',
   'is.gd', 'v.gd', 'ow.ly', 't.ly', 'cutt.ly', 'rb.gy', 'reurl.cc', 'url.cn', 'suo.im',
 ];
-const SHORT_LINK_RESOLVE_TIMEOUT_MS = 6000;
 const SHORT_LINK_CACHE_KEY = 'betterx_short_links';
-const SHORT_LINK_CACHE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
-const SHORT_LINK_CACHE_LIMIT = 300;
 let shortLinkCache = null;
 function isShortUrl(url) {
   try {
@@ -2903,25 +2900,13 @@ function authorLinkLabel(href) {
     return text.length > 40 ? text.slice(0, 39) + '…' : text;
   } catch { return href; }
 }
-function resolvedLinkUrl(candidate, original) {
+function normalizeAuthorLinkUrl(value) {
+  if (typeof value !== 'string') return '';
   try {
-    const { href, protocol } = new URL(candidate);
-    if ((protocol !== 'http:' && protocol !== 'https:') || href === original || isShortUrl(href)) return '';
+    const { href, protocol, username, password } = new URL(value);
+    if ((protocol !== 'http:' && protocol !== 'https:') || username || password) return '';
     return href;
   } catch { return ''; }
-}
-function requestShortUrlRedirect(method, url, timeout) {
-  return new Promise((resolve, reject) => {
-    try {
-      GM_xmlhttpRequest({
-        method, url, timeout, anonymous: true,
-        onload: (response) => resolve(response || {}),
-        onerror: () => reject(new Error('short link network error')),
-        ontimeout: () => reject(new Error('short link timeout')),
-        onabort: () => reject(new Error('short link aborted')),
-      });
-    } catch (error) { reject(error); }
-  });
 }
 function readShortLinkCache() {
   if (!shortLinkCache) {
@@ -2936,44 +2921,22 @@ function readShortLinkCache() {
 function getCachedShortLink(url) {
   const entry = readShortLinkCache()[url];
   if (!Number.isFinite(entry?.expiresAt) || entry.expiresAt <= now()) return '';
-  return resolvedLinkUrl(entry.href, url);
-}
-function rememberShortLink(url, href) {
-  const cache = readShortLinkCache();
-  cache[url] = { href, expiresAt: now() + SHORT_LINK_CACHE_TTL_MS };
-  const keys = Object.keys(cache);
-  if (keys.length > SHORT_LINK_CACHE_LIMIT) {
-    for (const key of keys) if (!(cache[key]?.expiresAt > now())) delete cache[key];
-    const overflow = Object.keys(cache).sort((left, right) => cache[left].expiresAt - cache[right].expiresAt);
-    while (overflow.length > SHORT_LINK_CACHE_LIMIT) delete cache[overflow.shift()];
-  }
-  try { GM_setValue(SHORT_LINK_CACHE_KEY, cache); } catch {}
-}
-async function resolveShortUrl(url, timeoutMs = SHORT_LINK_RESOLVE_TIMEOUT_MS) {
-  if (!isShortUrl(url)) return url;
-  const cached = getCachedShortLink(url);
-  if (cached) return cached;
-  const deadline = Date.now() + timeoutMs;
-  for (const method of ['HEAD', 'GET']) {
-    const timeout = deadline - Date.now();
-    if (timeout <= 0) break;
-    try {
-      const { finalUrl } = await requestShortUrlRedirect(method, url, timeout);
-      const resolved = resolvedLinkUrl(finalUrl, url);
-      if (resolved) {
-        rememberShortLink(url, resolved);
-        return resolved;
-      }
-    } catch {}
-  }
-  return url;
+  const href = normalizeAuthorLinkUrl(entry.href);
+  return href && !isShortUrl(href) ? href : '';
 }
 const USER_DETAIL_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/(?:UserByScreenName|UserByRestId|UsersByRestIds|ProfileSpotlightsQuery)|1\.1\/users\/show\.json)(?:[/?#]|$)/i;
 const AUTHORITATIVE_USER_DETAIL_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/UserByScreenName|1\.1\/users\/show\.json)(?:[/?#]|$)/i;
 const TIMELINE_PROFILE_HARVEST_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/(?:Home|UserTweets|UserMedia|UserHighlights|TweetDetail|.*Timeline|Bookmarks|Likes|Explore)|2\/timeline\/)/i;
+const X_PROFILE_API_HOSTS = new Set(['x.com', 'm.x.com', 'twitter.com', 'api.x.com', 'api.twitter.com']);
 const TIMELINE_PROFILE_HARVEST_LIMIT = 500;
 const timelineHarvestedAuthorLinks = new Map();
 const harvestedLegacySubnodes = new WeakSet();
+function isXAuthorProfileResponse(value, endpoint) {
+  try {
+    const { protocol, hostname, port, pathname } = new URL(value, location.origin);
+    return protocol === 'https:' && !port && X_PROFILE_API_HOSTS.has(hostname) && endpoint.test(pathname);
+  } catch { return false; }
+}
 function extractRequestedScreenName(url) {
   try {
     const parsed = new URL(String(url || ''), location.origin);
@@ -2993,21 +2956,17 @@ function extractScreenNameFromProfileNode(profile, fallbackScreenName = '') {
 }
 function extractLinksFromProfileNode(profile) {
   const entitySources = [profile?.profile_bio?.entities, profile?.legacy?.entities, profile?.entities];
-  const links = new Map();
+  const links = [];
   for (const field of entitySources.flatMap((entities) => [entities?.description, entities?.url])) {
     if (!Array.isArray(field?.urls)) continue;
     for (const entry of field.urls) {
-      const rawUrl = entry?.expanded_url || entry?.url;
-      if (typeof rawUrl !== 'string') continue;
-      try {
-        const { href, protocol } = new URL(rawUrl);
-        if ((protocol !== 'https:' && protocol !== 'http:') || links.has(href)) continue;
-        const label = typeof entry.display_url === 'string' ? entry.display_url.trim() : '';
-        links.set(href, { href, label: label || href });
-      } catch {}
+      const candidates = [entry?.unwound_url, entry?.expanded_url, entry?.url]
+        .map(normalizeAuthorLinkUrl).filter(Boolean);
+      const href = candidates.find((candidate) => !isShortUrl(candidate)) || candidates[0];
+      if (href) links.push({ href, label: entry.display_url });
     }
   }
-  return [...links.values()];
+  return resolveAuthorProfileLinks(links);
 }
 function getProfileHarvestInfo(profile, url = '') {
   if (!profile || typeof profile !== 'object' || profile.__typename === 'UserUnavailable') return null;
@@ -3018,17 +2977,15 @@ function getProfileHarvestInfo(profile, url = '') {
   const rawProfileUrl = typeof profile.legacy?.url === 'string'
     ? profile.legacy.url
     : (typeof profile.url === 'string' ? profile.url : '');
-  const hasUnexpandedUrl = /^https?:\/\//i.test(rawProfileUrl.trim())
-    && !Array.isArray(profile.legacy?.entities?.url?.urls)
-    && !Array.isArray(profile.entities?.url?.urls)
-    && !Array.isArray(profile.profile_bio?.entities?.url?.urls);
-  const hasDescriptionOrUrlField = Boolean(
-    profile.legacy?.entities?.description || profile.legacy?.entities?.url
-    || profile.entities?.description || profile.entities?.url
-    || (hasLegacyEntities && (profile.profile_bio?.entities?.description || profile.profile_bio?.entities?.url))
-  );
+  const entitySources = [profile.legacy?.entities, profile.entities, profile.profile_bio?.entities];
+  const hasUnexpandedUrl = normalizeAuthorLinkUrl(rawProfileUrl)
+    && !entitySources.some((entities) => Array.isArray(entities?.url?.urls)
+      && entities.url.urls.some((entry) => [entry?.unwound_url, entry?.expanded_url, entry?.url].some(normalizeAuthorLinkUrl)));
+  const completenessSources = hasLegacyEntities ? entitySources : entitySources.slice(0, 2);
+  const hasDescriptionOrUrlField = completenessSources.some((entities) => Array.isArray(entities?.description?.urls)
+    || Array.isArray(entities?.url?.urls));
   const isCompleteProfile = (hasLegacyEntities || hasRootEntities) && hasDescriptionOrUrlField && !hasUnexpandedUrl;
-  const allowEmptyCache = isCompleteProfile && AUTHORITATIVE_USER_DETAIL_API_RE.test(url);
+  const allowEmptyCache = isCompleteProfile && isXAuthorProfileResponse(url, AUTHORITATIVE_USER_DETAIL_API_RE);
   return {
     links: extractLinksFromProfileNode(profile),
     isCompleteProfile,
@@ -3070,7 +3027,8 @@ function harvestTimelineUserProfileLinks(value, harvestedAuthors) {
   cacheHarvestedAuthorProfileLinks(screenName, info.links, { preserveResolved: true });
 }
 function harvestUserDetailPayload(payload, url = '') {
-  if (!payload || typeof payload !== 'object' || (Array.isArray(payload.errors) && payload.errors.length)) return;
+  if (!isAuthorLinksHarvestActive() || !isXAuthorProfileResponse(url, USER_DETAIL_API_RE)
+      || !payload || typeof payload !== 'object' || (Array.isArray(payload.errors) && payload.errors.length)) return;
   const fallbackScreenName = extractRequestedScreenName(url);
   const candidates = [];
   if (payload.data?.user?.result) candidates.push({ result: payload.data.user.result, fallbackScreenName });
@@ -3091,16 +3049,13 @@ function harvestUserDetailPayload(payload, url = '') {
     if (!info) continue;
     const screenName = extractScreenNameFromProfileNode(profile, candidateFallback);
     if (!screenName) continue;
-    if (!info.links.length) {
-      if (!info.allowEmptyCache || hasValidNonEmptyAuthorLinksCache(screenName)) continue;
-    } else if (!info.isCompleteProfile && hasValidNonEmptyAuthorLinksCache(screenName)) {
-      continue;
-    }
-    cacheHarvestedAuthorProfileLinks(screenName, info.links);
+    if (!info.links.length && !info.allowEmptyCache) continue;
+    if (!info.isCompleteProfile && hasValidNonEmptyAuthorLinksCache(screenName)) continue;
+    cacheHarvestedAuthorProfileLinks(screenName, info.links, { authoritative: info.allowEmptyCache });
   }
 }
 function harvestUserDetailResponseText(text, url = '') {
-  if (!text || text.length > MAX_NETWORK_RESPONSE_BYTES) return;
+  if (!isAuthorLinksHarvestActive() || !text || text.length > MAX_NETWORK_RESPONSE_BYTES) return;
   try { harvestUserDetailPayload(JSON.parse(text), url); } catch {}
 }
 async function requestAuthorProfileLinks(screenName) {
@@ -3126,20 +3081,24 @@ async function requestAuthorProfileLinks(screenName) {
   const result = payload?.data?.user?.result;
   const profile = result?.user || result;
   if (!profile || (!profile.profile_bio && !profile.legacy)) throw new Error('X returned no readable author profile');
-  return resolveAuthorProfileLinks(extractLinksFromProfileNode(profile));
+  return extractLinksFromProfileNode(profile);
 }
 function isShortLinkLabel(label) {
   const text = String(label || '').trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/^\/+/, '');
   return text ? isShortUrl('https://' + text) : false;
 }
-async function resolveAuthorProfileLinks(links) {
-  if (!links.some((link) => isShortUrl(link.href))) return links;
-  const resolved = await Promise.all(links.map(async (link) => {
-    const finalHref = await resolveShortUrl(link.href);
-    if (finalHref === link.href) return link;
-    return { href: finalHref, label: isShortLinkLabel(link.label) ? authorLinkLabel(finalHref) : link.label };
-  }));
-  return [...new Map(resolved.map((link) => [link.href, link])).values()];
+function resolveAuthorProfileLinks(links) {
+  const resolved = new Map();
+  for (const link of links) {
+    const original = normalizeAuthorLinkUrl(link?.href);
+    if (!original) continue;
+    const href = (isShortUrl(original) && getCachedShortLink(original)) || original;
+    if (resolved.has(href)) continue;
+    const label = typeof link.label === 'string' ? link.label.trim() : '';
+    const useDestinationLabel = !isShortUrl(href) && (isShortLinkLabel(label) || (!label && href !== original));
+    resolved.set(href, { href, label: useDestinationLabel ? authorLinkLabel(href) : (label || href) });
+  }
+  return [...resolved.values()];
 }
 function notificationUserFromRest(raw, enabled) {
   if (!raw || typeof raw !== 'object') return null;
@@ -3511,7 +3470,7 @@ function textMayContainHarvestData(txt, harvestProfileLinks = false) {
     || txt.indexOf('"following"') !== -1 || txt.indexOf('relationship_perspectives') !== -1
     || txt.indexOf('notifications_settings') !== -1 || txt.indexOf('notifications_enabled') !== -1
     || txt.indexOf('"notifications"') !== -1
-    || (harvestProfileLinks && (txt.indexOf('profile_bio') !== -1 || txt.indexOf('expanded_url') !== -1));
+    || (harvestProfileLinks && (txt.includes('profile_bio') || txt.includes('expanded_url') || txt.includes('unwound_url')));
 }
 function scheduleNetworkHarvestDrain() {
   if (networkHarvestScheduled || !networkHarvestQueue.length) return;
@@ -3635,27 +3594,30 @@ function harvestXhrResponse(xhr) {
   const url = xhr && xhr.__xvUrl ? String(xhr.__xvUrl) : '';
   const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
   const httpOk = xhr?.status === undefined || (Number(xhr.status) >= 200 && Number(xhr.status) < 300);
-  const isUserDetail = httpOk && USER_DETAIL_API_RE.test(url);
+  const profileUrl = xhr?.responseURL || url;
+  const profileHarvestActive = httpOk && isAuthorLinksHarvestActive();
+  const isUserDetail = profileHarvestActive && isXAuthorProfileResponse(profileUrl, USER_DETAIL_API_RE);
   const harvestOptions = {
-    harvestProfileLinks: httpOk && !USER_DETAIL_API_RE.test(url) && TIMELINE_PROFILE_HARVEST_API_RE.test(url),
+    harvestProfileLinks: profileHarvestActive && !isUserDetail
+      && isXAuthorProfileResponse(profileUrl, TIMELINE_PROFILE_HARVEST_API_RE),
   };
   if (!isApi && !isUserDetail) return;
   try {
     if (typeof xhr.getResponseHeader === 'function'
         && declaredResponseTooLarge((name) => xhr.getResponseHeader(name))) return;
     if (xhr.responseType === '' || xhr.responseType === 'text') {
-      if (isUserDetail) harvestUserDetailResponseText(xhr.responseText, url);
+      if (isUserDetail) harvestUserDetailResponseText(xhr.responseText, profileUrl);
       if (isApi) tryHarvest(xhr.responseText, accountToken, readRevision, harvestOptions);
     } else if (xhr.responseType === 'json' && xhr.response && typeof xhr.response === 'object') {
-      if (isUserDetail) harvestUserDetailPayload(xhr.response, url);
+      if (isUserDetail) harvestUserDetailPayload(xhr.response, profileUrl);
       if (isApi) enqueueNetworkHarvestObject(xhr.response, accountToken, readRevision, harvestOptions);
     } else if (xhr.responseType === 'arraybuffer' && xhr.response && typeof xhr.response.byteLength === 'number' && xhr.response.byteLength <= MAX_NETWORK_RESPONSE_BYTES) {
       const text = new TextDecoder('utf-8').decode(new Uint8Array(xhr.response));
-      if (isUserDetail) harvestUserDetailResponseText(text, url);
+      if (isUserDetail) harvestUserDetailResponseText(text, profileUrl);
       if (isApi) tryHarvest(text, accountToken, readRevision, harvestOptions);
     } else if (xhr.responseType === 'blob' && xhr.response && typeof xhr.response.size === 'number' && typeof xhr.response.text === 'function' && xhr.response.size <= MAX_NETWORK_RESPONSE_BYTES) {
       xhr.response.text().then((text) => {
-        if (isUserDetail) harvestUserDetailResponseText(text, url);
+        if (isUserDetail) harvestUserDetailResponseText(text, profileUrl);
         if (isApi) tryHarvest(text, accountToken, readRevision, harvestOptions);
       }).catch(() => {});
     }
@@ -3698,12 +3660,11 @@ function installNetworkHooks() {
                 const url = (res && res.url) || reqUrl;
                 const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
                 const httpOk = Boolean(res) && res.ok !== false && (!Number.isFinite(res.status) || (res.status >= 200 && res.status < 300));
-                const skipUserDetailHarvest = Boolean(args[1]?.__xvSkipUserDetailHarvest);
-                const isUserDetail = httpOk && !skipUserDetailHarvest && USER_DETAIL_API_RE.test(url);
+                const profileHarvestActive = httpOk && !args[1]?.__xvSkipUserDetailHarvest && isAuthorLinksHarvestActive();
+                const isUserDetail = profileHarvestActive && isXAuthorProfileResponse(url, USER_DETAIL_API_RE);
                 const harvestOptions = {
-                  harvestProfileLinks: httpOk && !skipUserDetailHarvest
-                    && !USER_DETAIL_API_RE.test(url)
-                    && TIMELINE_PROFILE_HARVEST_API_RE.test(url),
+                  harvestProfileLinks: profileHarvestActive && !isUserDetail
+                    && isXAuthorProfileResponse(url, TIMELINE_PROFILE_HARVEST_API_RE),
                 };
                 if (res && res.clone && (isApi || isUserDetail)) {
                   if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
@@ -5414,11 +5375,8 @@ const AUTHOR_LINK_DOMAIN_LOGOS = new Map(
   AUTHOR_LINK_SITE_LOGOS.flatMap(([logo, domains]) => domains.map((domain) => [domain, logo]))
 );
 const authorLinksRequests = new Map();
-const authorLinksHarvestedLinks = new Map();
-const authorLinksPassiveJobs = new Map();
 const authorLinksCache = new Map();
 const authorLinksCacheMisses = new Map();
-const authorLinksShortLinkAttempted = new Set();
 const authorLinksHomeMissGenerations = new WeakMap();
 const authorLinksHomePlacements = new WeakMap();
 const authorLinkIconRequests = new Map();
@@ -5529,12 +5487,13 @@ function hasValidNonEmptyAuthorLinksCache(screenName) {
   const cached = readAuthorLinksRecord(screenName);
   return Boolean(cached && cached.links.length > 0);
 }
-function saveAuthorProfileLinksCache(screenName, links, onCommit) {
+function saveAuthorProfileLinksCache(screenName, links, authoritative = false, onCommit) {
   screenName = String(screenName || '').toLowerCase();
   if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(links)) return null;
   const key = 'betterx_author_links:' + screenName;
   const changed = authorProfileLinksChanged(screenName, links);
   const cached = { links, expiresAt: now() + (links.length ? AUTHOR_LINKS_CACHE_TTL_MS : AUTHOR_LINKS_EMPTY_TTL_MS) };
+  if (!links.length && authoritative) cached.authoritativeEmpty = true;
   authorLinksCache.set(screenName, cached);
   authorLinksCacheMisses.delete(screenName);
   if (links.length) {
@@ -5546,15 +5505,9 @@ function saveAuthorProfileLinksCache(screenName, links, onCommit) {
   onCommit?.(changed);
   return cached;
 }
-function applyHarvestedAuthorProfileLinks(screenName, links, options = null) {
-  if (options?.preserveResolved && links.some((link) => isShortUrl(link.href))) {
-    const existing = readAuthorLinksRecord(screenName);
-    if (existing?.links.length && !existing.links.some((link) => isShortUrl(link.href))) {
-      return existing.links;
-    }
-  }
+function applyHarvestedAuthorProfileLinks(screenName, links, authoritative) {
   let changed = false;
-  saveAuthorProfileLinksCache(screenName, links, (wasChanged) => { changed = wasChanged; });
+  saveAuthorProfileLinksCache(screenName, links, authoritative, (wasChanged) => { changed = wasChanged; });
   if (!state.settings.authorLinksEnabled) return links;
   if (homeAuthorLinksActive()) {
     if (changed) {
@@ -5577,38 +5530,23 @@ function applyHarvestedAuthorProfileLinks(screenName, links, options = null) {
   }
   return links;
 }
-async function resolveHarvestedAuthorProfileLinks(screenName) {
-  let rawLinks;
-  let links;
-  do {
-    rawLinks = authorLinksHarvestedLinks.get(screenName);
-    links = await resolveAuthorProfileLinks(rawLinks);
-  } while (rawLinks !== authorLinksHarvestedLinks.get(screenName));
-  return links;
-}
-function cacheHarvestedAuthorProfileLinks(screenName, rawLinks, options = null) {
+function cacheHarvestedAuthorProfileLinks(screenName, links, options = null) {
+  if (!isAuthorLinksHarvestActive() || !Array.isArray(links)) return null;
   screenName = String(screenName || '').toLowerCase();
-  if (!/^[a-z0-9_]{1,15}$/.test(screenName) || !Array.isArray(rawLinks)) return Promise.resolve(null);
-  authorLinksHarvestedLinks.set(screenName, rawLinks);
-  const pending = authorLinksRequests.get(screenName) || authorLinksPassiveJobs.get(screenName);
-  if (pending) return pending;
-  if (!rawLinks.some((link) => isShortUrl(link.href))) {
-    authorLinksHarvestedLinks.delete(screenName);
-    return Promise.resolve(applyHarvestedAuthorProfileLinks(screenName, rawLinks, options));
-  }
-  const job = resolveHarvestedAuthorProfileLinks(screenName)
-    .then((links) => applyHarvestedAuthorProfileLinks(screenName, links, options))
-    .finally(() => {
-      authorLinksPassiveJobs.delete(screenName);
-      authorLinksHarvestedLinks.delete(screenName);
-    });
-  authorLinksPassiveJobs.set(screenName, job);
-  return job;
+  if (!/^[a-z0-9_]{1,15}$/.test(screenName)) return null;
+  const current = readAuthorLinksRecord(screenName);
+  if (current?.authoritativeEmpty && !options?.authoritative) return current.links;
+  if (options?.preserveResolved && current?.links.length && links.some((link) => isShortUrl(link.href))
+      && !current.links.some((link) => isShortUrl(link.href))) return current.links;
+  const pending = authorLinksRequests.get(screenName);
+  if (pending) pending.latestLinks = links;
+  return applyHarvestedAuthorProfileLinks(screenName, links, options?.authoritative);
 }
 async function loadAuthorProfileLinks(screenName) {
+  if (!isAuthorLinksHarvestActive()) return [];
   screenName = screenName.toLowerCase();
-  const pending = authorLinksRequests.get(screenName) || authorLinksPassiveJobs.get(screenName);
-  if (pending) return pending;
+  const pending = authorLinksRequests.get(screenName);
+  if (pending) return pending.promise;
   const key = 'betterx_author_links:' + screenName;
   try {
     const cached = authorLinksCache.get(screenName) || GM_getValue(key, null);
@@ -5619,44 +5557,28 @@ async function loadAuthorProfileLinks(screenName) {
         if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
         if (cached.links.length) authorLinksGeneration++;
       }
-      prefetchAuthorLinkIcons(cached.links);
-      resolveCachedShortLinks(screenName, cached);
-      return cached.links;
+      const links = resolveAuthorProfileLinks(cached.links);
+      prefetchAuthorLinkIcons(links);
+      return links;
     }
   } catch {}
   authorLinksCache.delete(screenName);
-  const request = requestAuthorProfileLinks(screenName).catch((error) => {
-    const harvested = authorLinksHarvestedLinks.get(screenName);
-    if (!harvested) throw error;
-    return harvested;
-  }).then(async (links) => {
-    if (authorLinksHarvestedLinks.has(screenName)) {
-      links = await resolveHarvestedAuthorProfileLinks(screenName);
-      return applyHarvestedAuthorProfileLinks(screenName, links);
-    }
+  const request = { latestLinks: null, promise: null };
+  const isCurrent = () => isAuthorLinksHarvestActive() && authorLinksRequests.get(screenName) === request;
+  request.promise = requestAuthorProfileLinks(screenName).then((links) => {
+    if (!isCurrent()) return [];
+    if (request.latestLinks) return request.latestLinks;
     saveAuthorProfileLinksCache(screenName, links);
     return links;
+  }, (error) => {
+    if (!isCurrent()) return [];
+    if (request.latestLinks) return request.latestLinks;
+    throw error;
   }).finally(() => {
-    authorLinksRequests.delete(screenName);
-    authorLinksHarvestedLinks.delete(screenName);
+    if (authorLinksRequests.get(screenName) === request) authorLinksRequests.delete(screenName);
   });
   authorLinksRequests.set(screenName, request);
-  return request;
-}
-function resolveCachedShortLinks(screenName, cached) {
-  if (!cached.links.some((link) => isShortUrl(link.href))) return;
-  if (authorLinksShortLinkAttempted.has(screenName)) return;
-  authorLinksShortLinkAttempted.add(screenName);
-  resolveAuthorProfileLinks(cached.links).then((links) => {
-    const changed = links.length !== cached.links.length
-      || links.some((link, index) => link.href !== cached.links[index].href);
-    if (!changed) return;
-    const refreshed = { links, expiresAt: cached.expiresAt };
-    authorLinksCache.set(screenName, refreshed);
-    authorLinksGeneration++;
-    prefetchAuthorLinkIcons(links);
-    try { GM_setValue('betterx_author_links:' + screenName, refreshed); } catch {}
-  }).catch(() => {});
+  return request.promise;
 }
 function rememberAuthorLinksMiss(screenName) {
   authorLinksCacheMisses.set(screenName, now() + AUTHOR_LINKS_MISS_TTL_MS);
@@ -5680,8 +5602,7 @@ function getCachedAuthorProfileLinks(screenName) {
     if (authorLinksCache.size > 200) authorLinksCache.delete(authorLinksCache.keys().next().value);
   }
   authorLinksCacheMisses.delete(screenName);
-  resolveCachedShortLinks(screenName, cached);
-  const links = cached.links.filter((link) => typeof link?.href === 'string' && /^https?:\/\//i.test(link.href));
+  const links = resolveAuthorProfileLinks(cached.links);
   if (links.length) prefetchAuthorLinkIcons(links);
   return links.length ? links : null;
 }
@@ -5945,8 +5866,9 @@ function startAuthorLinksRequest(view) {
   removeAuthorLinksControl(view);
   loadAuthorProfileLinks(view.screenName).then((links) => {
     if (!isActiveAuthorLinksView(view)) return;
-    view.links = links;
-    view.status = links.length ? 'ready' : 'empty';
+    const cached = readAuthorLinksRecord(view.screenName);
+    view.links = cached ? resolveAuthorProfileLinks(cached.links) : links;
+    view.status = view.links.length ? 'ready' : 'empty';
     refreshAuthorLinks();
   }).catch((error) => {
     if (!isActiveAuthorLinksView(view)) return;
@@ -5961,6 +5883,7 @@ function startAuthorLinksRequest(view) {
   });
 }
 function refreshAuthorLinks() {
+  if (!isAuthorLinksHarvestActive()) authorLinksRequests.clear();
   const route = getAuthorLinksRoute();
   if (!route) resetAuthorLinksView();
   refreshHomeAuthorLinks();
