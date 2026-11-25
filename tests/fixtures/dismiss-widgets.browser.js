@@ -46,8 +46,13 @@
           for(const [other,element]of Object.entries(card))if(other!==target)assert(visible(element),`${key} changed another hide setting`);
           input.click();assert(visible(card[target]),`${key} did not restore its target`);
         }
+        const sharedAside=document.createElement('aside');
+        sharedAside.setAttribute('role','complementary');
+        sharedAside.innerHTML='<section><h2>订阅 Premium</h2><a href="/i/premium_sign_up">订阅</a></section><section>普通趋势</section>';
+        sidebar.appendChild(sharedAside);
         group.querySelector('#BetterX-hide-nfl').click();group.querySelector('#BetterX-hideads').click();
         assert(!visible(all.nfl)&&!visible(all.premium)&&!visible(all['standalone-ad']),'Moved NFL/ad controls stopped working');
+        assert(!visible(sharedAside.firstElementChild)&&sharedAside.lastElementChild.checkVisibility(),'Premium filtering hid the shared sidebar or left the card visible');
         api.setSettingsPartial({hideWhatsHappening:false,hideWhoToFollow:false,hideMoney:false});await api.state.dbWriteQueue;
         const saved=await api.dbGetSetting('settings');
         api.setSettingsPartial({hideWhatsHappening:true,hideWhoToFollow:true,hideMoney:true});

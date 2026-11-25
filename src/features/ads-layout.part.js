@@ -2,7 +2,7 @@
   // “来自 apple.com 的广告”“已推广”“Promoted by Webull HK”“推广人 Webull HK”。
   // 因此不能再用精确词表；统一按标签文本模式匹配，并排除正文与作者链接，避免误伤。
   const AD_LABEL_MAX_LENGTH = 80;
-  const AD_LABEL_HINT_RE = /广告|廣告|推广|推廣|赞助|贊助|広告|プロモーション|광고|프로모션|\b(?:Ad|Ads|Promoted|Sponsored|Anzeige|Publicidad|Anúncio|Promocionado|Promovido|Patrocinado|Reklama|Sponsorisé|Gesponsert|Реклама)\b/i;
+  const AD_LABEL_HINT_RE = /广告|廣告|推广|推廣|赞助|贊助|広告|プロモーション|광고|프로모션|(?:Ad|Ads|Promoted|Sponsored|Anzeige|Publicidad|Anúncio|Promocionado|Promovido|Patrocinado|Reklama|Sponsorisé|Gesponsert|Реклама)/i;
   const AD_LABEL_PATTERNS = [
     /^(?:广告|廣告|已推广|已推廣|推广|推廣|赞助|贊助|赞助内容|贊助內容|広告|プロモーション|광고|프로모션|Anzeige|Publicidad|Anúncio|Promocionado|Promovido|Patrocinado|Reklama|Sponsorisé|Gesponsert|Реклама)$/i,
     /^(?:Ad|Ads|Promoted|Sponsored)$/i,
@@ -107,26 +107,22 @@
     if (!element || !element.closest) return;
     // 新版：侧栏卡片是 <section><h2>订阅 Premium</h2>…<a href="/i/premium_sign_up">订阅</a></section>，
     // 外层 aside 同时包含趋势列表，因此只能隐藏卡片本身。
-    const signupLink = element.matches && element.matches('a[href*="/i/premium_sign_up"]')
-      ? element
-      : element.closest('a[href*="/i/premium_sign_up"]');
-    if (signupLink) {
-      const card = signupLink.closest('section');
-      const heading = card && card.querySelector('h1, h2, h3');
-      const headingText = (heading && heading.textContent || '').trim();
-      if (card && (PREMIUM_UPSELL_LABELS.has(headingText) || PREMIUM_UPSELL_LABELS.has((signupLink.textContent || '').trim()))) {
+    const aside = element.closest('aside[role="complementary"]');
+    const signupLink = element.closest('a[href*="/i/premium_sign_up"]');
+    const link = signupLink || aside?.querySelector('a[href*="/i/premium_sign_up"]');
+    const card = link?.closest('section');
+    if (card && (!aside || aside.contains(card))) {
+      const heading = card.querySelector('h1, h2, h3');
+      if (PREMIUM_UPSELL_LABELS.has((heading?.textContent || '').trim())
+          || PREMIUM_UPSELL_LABELS.has((link.textContent || '').trim())) {
         card.classList.add('BetterX-ad-hidden');
         return;
       }
     }
 
-    const aside = element.matches && element.matches('aside[role="complementary"]')
-      ? element
-      : element.closest('aside[role="complementary"]');
     if (aside) {
       const label = (aside.getAttribute('aria-label') || '').trim();
-      const hasPremiumSignupLink = !!aside.querySelector('a[href*="/i/premium_sign_up"]');
-      if (!hasPremiumSignupLink && !PREMIUM_UPSELL_LABELS.has(label)) return;
+      if (!PREMIUM_UPSELL_LABELS.has(label)) return;
 
       // PC 端 aside 外还有一层带边框和留白的卡片容器；仅在它没有其他内容时一并隐藏。
       const wrapper = aside.parentElement && aside.parentElement.children.length === 1
@@ -231,9 +227,9 @@
               if (isPromotedTimelineEntry(entry)) {
                 entries.splice(index, 1);
                 changed = true;
-              } else if (content && Array.isArray(content.items)) {
-                if (stripPromotedItems(content.items)) changed = true;
-                if (!content.items.length) { entries.splice(index, 1); changed = true; }
+              } else if (stripPromotedItems(content?.items)) {
+                changed = true;
+                if (!content.items.length) entries.splice(index, 1);
               }
             }
           }

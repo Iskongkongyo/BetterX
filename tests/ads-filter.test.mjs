@@ -17,7 +17,7 @@ const promotedLabels = [
   '推广人 Webull HK', '推廣人 Webull HK', '广告主 Acme', '赞助人 Acme',
   'Acme の広告', 'Acme による広告', 'Acme のプロモーション',
   'Acme 의 광고', 'Acme의 프로모션',
-  'Anzeige von Acme', 'Publicidad de Acme', 'Patrocinado por Acme',
+  'Anzeige von Acme', 'Publicidad de Acme', 'Patrocinado por Acme', 'Sponsorisé', 'Sponsorisé par Acme', 'Реклама',
 ];
 for (const label of promotedLabels) {
   assert.equal(api.isAdLabelText(label), true, `推广标签未被识别：${label}`);
@@ -37,14 +37,20 @@ for (const label of organicLabels) {
   const context = loadUserscript('isAdArticle', '', { NodeFilter: { SHOW_TEXT: 4 } });
   const parentClosest = (value) => ({ closest: () => value });
   const article = { querySelector: () => null, closest: () => null };
-  const walkerWith = (parent) => () => {
-    let visited = false;
-    return { nextNode: () => (visited ? null : (visited = true, { nodeValue: '来自 acme.com 的广告', parentElement: parent })) };
+  const walkerWith = (label, parent) => () => {
+    const nodes = [{ nodeValue: label, parentElement: parent }];
+    return { nextNode: () => nodes.shift() };
   };
-  context.document.createTreeWalker = walkerWith(parentClosest(null));
-  assert.equal(context.__test.isAdArticle(article), true, '正文之外的推广标签应被识别');
-  context.document.createTreeWalker = walkerWith(parentClosest({}));
-  assert.equal(context.__test.isAdArticle(article), false, '正文 / 作者链接中的“广告”字样不应判为推广');
+  for (const label of promotedLabels) {
+    context.document.createTreeWalker = walkerWith(label, parentClosest(null));
+    assert.equal(context.__test.isAdArticle(article), true, `页面推广标签未被识别：${label}`);
+    context.document.createTreeWalker = walkerWith(label, parentClosest({}));
+    assert.equal(context.__test.isAdArticle(article), false, `正文或链接中的标签被误判：${label}`);
+  }
+  for (const label of organicLabels) {
+    context.document.createTreeWalker = walkerWith(label, parentClosest(null));
+    assert.equal(context.__test.isAdArticle(article), false, `页面普通文案被误判：${label}`);
+  }
 }
 
 {
@@ -97,5 +103,68 @@ assert.equal(JSON.stringify(payload).includes('promoted_metadata'), false, '过�
 
 const clean = { data: { home_timeline: { home_timeline_urt: { instructions: [{ entries: [{ content: { content: { __typename: 'TimelineTweet' } } }] }] } } } };
 assert.equal(api.stripPromotedFromTimelinePayload(clean), false, '没有推广入口时不应改写响应');
+
+{
+  const empty = { entryId: 'module-1', content: { items: [] } };
+  const ad = { content: { content: { promoted_metadata: {} } } };
+  const append = { type: 'TimelineAddToModule', moduleEntryId: empty.entryId, moduleItems: [{ item: { content: { name: 'Organic' } } }] };
+  const timeline = { instructions: [{ entries: [empty, ad] }, append] };
+  assert.equal(api.stripPromotedFromTimelinePayload(timeline), true);
+  assert.deepEqual(timeline.instructions, [{ entries: [empty] }, append], '后续追加内容需要原本为空的模块');
+  assert.equal(api.stripPromotedFromTimelinePayload(timeline), false);
+}
+
+{
+  const context = loadUserscript('maybeStripPromotedAdsFromFetchResponse, MAX_NETWORK_RESPONSE_BYTES', '', { Headers, Response });
+  const { state, maybeStripPromotedAdsFromFetchResponse: filter, MAX_NETWORK_RESPONSE_BYTES: limit } = context.__test;
+  state.settings.hideAds = true;
+  const base = '/i/api/graphql/hash/';
+  const home = base + 'HomeTimeline';
+  const json = JSON.stringify(fixture);
+  const responseFor = (body, headers = {}) => new Response(body, { headers: { 'content-type': 'application/json', ...headers } });
+  const checkUnread = async (url, headers) => {
+    const original = responseFor(json, headers);
+    let clones = 0;
+    original.clone = () => { clones++; throw new Error('Unexpected clone'); };
+    assert.equal(await filter(original, url, context), original);
+    assert.equal(clones, 0, `响应不应被复制：${url}`);
+  };
+  await checkUnread(base + 'UserByScreenName?ref=HomeTimeline');
+  await checkUnread('https://example.org' + home);
+  await checkUnread(home, { 'content-length': String(limit + 1) });
+  await checkUnread(home, { 'content-type': 'text/event-stream' });
+  state.settings.hideAds = false;
+  await checkUnread(home);
+  state.settings.hideAds = true;
+
+  const expected = structuredClone(payload);
+  for (const operation of ['HomeTimeline', 'SearchTimeline', 'ExploreSidebar', 'TweetDetail']) {
+    const original = responseFor(json, { 'content-length': String(Buffer.byteLength(json)) });
+    const filtered = await filter(original, base + operation + '?variables=1', context);
+    assert.notEqual(filtered, original);
+    assert.equal(filtered.headers.has('content-length'), false);
+    assert.deepEqual(await filtered.json(), expected);
+  }
+
+  const paddedJson = json + ' '.repeat(limit - Buffer.byteLength(json));
+  const bytes = new TextEncoder().encode(paddedJson);
+  let writer;
+  const stream = new ReadableStream({ start(controller) {
+    writer = controller;
+    controller.enqueue(bytes);
+    controller.enqueue(Uint8Array.of(32));
+  } });
+  const oversized = responseFor(stream);
+  // 还未收到 EOF 时就应交还原响应，页面仍能读取最后一块。
+  assert.equal(await filter(oversized, home, context), oversized);
+  writer.close();
+  assert.equal((await oversized.arrayBuffer()).byteLength, limit + 1);
+
+  for (const body of ['{"promoted_metadata":', '{"data":{}}']) {
+    const original = responseFor(body);
+    assert.equal(await filter(original, home, context), original);
+    assert.equal(await original.text(), body);
+  }
+}
 
 console.log('Ads: label detection covers new X formats; payload filter removes promoted tweets and trends.');

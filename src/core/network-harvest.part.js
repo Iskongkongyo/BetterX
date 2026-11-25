@@ -293,15 +293,16 @@
   const USER_DETAIL_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/(?:UserByScreenName|UserByRestId|UsersByRestIds|ProfileSpotlightsQuery)|1\.1\/users\/show\.json)(?:[/?#]|$)/i;
   const AUTHORITATIVE_USER_DETAIL_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/UserByScreenName|1\.1\/users\/show\.json)(?:[/?#]|$)/i;
   const TIMELINE_PROFILE_HARVEST_API_RE = /\/(?:i\/api\/)?(?:graphql\/[^/]+\/(?:Home|UserTweets|UserMedia|UserHighlights|TweetDetail|.*Timeline|Bookmarks|Likes|Explore)|2\/timeline\/)/i;
-  const X_PROFILE_API_HOSTS = new Set(['x.com', 'm.x.com', 'twitter.com', 'api.x.com', 'api.twitter.com']);
+  const AD_TIMELINE_API_RE = /^\/(?:i\/api\/)?graphql\/[^/]+\/(?:[\w]+Timeline|UserTweets(?:AndReplies)?|UserMedia|UserHighlightsTweets|TweetDetail|Bookmarks|Likes|Explore(?:Page|Sidebar)?|GenericTimelineById)\/?$/i;
+  const X_API_HOSTS = new Set(['x.com', 'm.x.com', 'twitter.com', 'api.x.com', 'api.twitter.com']);
   const TIMELINE_PROFILE_HARVEST_LIMIT = 500;
   const timelineHarvestedAuthorLinks = new Map();
   const harvestedLegacySubnodes = new WeakSet();
 
-  function isXAuthorProfileResponse(value, endpoint) {
+  function isXApiResponse(value, endpoint) {
     try {
       const { protocol, hostname, port, pathname } = new URL(value, location.origin);
-      return protocol === 'https:' && !port && X_PROFILE_API_HOSTS.has(hostname) && endpoint.test(pathname);
+      return protocol === 'https:' && !port && X_API_HOSTS.has(hostname) && endpoint.test(pathname);
     } catch { return false; }
   }
 
@@ -357,7 +358,7 @@
     const hasDescriptionOrUrlField = completenessSources.some((entities) => Array.isArray(entities?.description?.urls)
       || Array.isArray(entities?.url?.urls));
     const isCompleteProfile = (hasLegacyEntities || hasRootEntities) && hasDescriptionOrUrlField && !hasUnexpandedUrl;
-    const allowEmptyCache = isCompleteProfile && isXAuthorProfileResponse(url, AUTHORITATIVE_USER_DETAIL_API_RE);
+    const allowEmptyCache = isCompleteProfile && isXApiResponse(url, AUTHORITATIVE_USER_DETAIL_API_RE);
     return {
       links: extractLinksFromProfileNode(profile),
       isCompleteProfile,
@@ -404,7 +405,7 @@
   }
 
   function harvestUserDetailPayload(payload, url = '') {
-    if (!isAuthorLinksHarvestActive() || !isXAuthorProfileResponse(url, USER_DETAIL_API_RE)
+    if (!isAuthorLinksHarvestActive() || !isXApiResponse(url, USER_DETAIL_API_RE)
         || !payload || typeof payload !== 'object' || (Array.isArray(payload.errors) && payload.errors.length)) return;
     const fallbackScreenName = extractRequestedScreenName(url);
     const candidates = [];
@@ -1018,10 +1019,10 @@
     const httpOk = xhr?.status === undefined || (Number(xhr.status) >= 200 && Number(xhr.status) < 300);
     const profileUrl = xhr?.responseURL || url;
     const profileHarvestActive = httpOk && isAuthorLinksHarvestActive();
-    const isUserDetail = profileHarvestActive && isXAuthorProfileResponse(profileUrl, USER_DETAIL_API_RE);
+    const isUserDetail = profileHarvestActive && isXApiResponse(profileUrl, USER_DETAIL_API_RE);
     const harvestOptions = {
       harvestProfileLinks: profileHarvestActive && !isUserDetail
-        && isXAuthorProfileResponse(profileUrl, TIMELINE_PROFILE_HARVEST_API_RE),
+        && isXApiResponse(profileUrl, TIMELINE_PROFILE_HARVEST_API_RE),
     };
     if (!isApi && !isUserDetail) return;
     try {
@@ -1058,40 +1059,58 @@
     console.warn(`[BetterX] ${apiName} 被其他脚本反复替换，已停止继续套娃 Hook；可导出 Firefox 兼容诊断。`);
   }
 
-  // 从 GraphQL 响应中删除推广入口，交给 X 的虚拟列表重新排版；失败时一律返回原响应。
-  function maybeStripPromotedAdsFromFetchResponse(response, url, pageWin) {
+  // Content-Length 可能缺失，或只反映压缩体积；按实际读取的字节数限制过滤开销。
+  async function readAdTimelineText(response) {
+    const reader = response.clone().body.getReader();
+    const decoder = new TextDecoder();
+    let bytes = 0;
+    let text = '';
     try {
-      if (!state || !state.settings || !state.settings.hideAds) return response;
-      if (!response || typeof response.clone !== 'function' || response.ok === false) return response;
-      if (!/(?:graphql|\/i\/api\/)/i.test(url || '')) return response;
-      const contentType = response.headers && response.headers.get
-        ? (response.headers.get('content-type') || '') : '';
-      if (contentType && !/json/i.test(contentType)) return response;
-    } catch (e) { return response; }
-    return response.clone().text().then((text) => {
-      if (!text || text.indexOf('"promoted_metadata"') < 0) return response;
-      let payload;
-      try { payload = JSON.parse(text); } catch (e) { return response; }
-      let changed = false;
-      try { changed = stripPromotedFromTimelinePayload(payload); } catch (e) { return response; }
-      if (!changed) return response;
-      try {
-        const HeadersCtor = (pageWin && pageWin.Headers) || Headers;
-        const ResponseCtor = (pageWin && pageWin.Response) || Response;
-        const headers = new HeadersCtor(response.headers);
-        headers.delete('content-length');
-        headers.delete('content-encoding');
-        const filtered = new ResponseCtor(JSON.stringify(payload), {
-          status: response.status,
-          statusText: response.statusText,
-          headers,
-        });
-        try { Object.defineProperty(filtered, 'url', { value: response.url || url }); } catch (e) {}
-        return filtered;
-      } catch (e) {
-        return response;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) return text + decoder.decode();
+        bytes += value.byteLength;
+        if (bytes > MAX_NETWORK_RESPONSE_BYTES) {
+          // clone 与原响应共享数据源；等待 cancel 可能阻塞尚未交还给页面的另一端。
+          reader.cancel().catch(() => {});
+          return '';
+        }
+        text += decoder.decode(value, { stream: true });
       }
-    }).catch(() => response);
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  // 从 GraphQL 响应中删除推广入口，交给 X 的虚拟列表重新排版；失败时一律返回原响应。
+  async function maybeStripPromotedAdsFromFetchResponse(response, url, pageWin) {
+    try {
+      if (!state.settings.hideAds || !response?.ok || !response.body) return response;
+      if (!isXApiResponse(response.url || url, AD_TIMELINE_API_RE)) return response;
+      if (declaredResponseTooLarge((name) => response.headers.get(name))) return response;
+      const contentType = response.headers.get('content-type');
+      if (contentType && !/json/i.test(contentType)) return response;
+
+      const text = await readAdTimelineText(response);
+      if (!text.includes('"promoted_metadata"')) return response;
+      const payload = JSON.parse(text);
+      if (!stripPromotedFromTimelinePayload(payload)) return response;
+
+      const HeadersCtor = pageWin?.Headers || Headers;
+      const ResponseCtor = pageWin?.Response || Response;
+      const headers = new HeadersCtor(response.headers);
+      headers.delete('content-length');
+      headers.delete('content-encoding');
+      const filtered = new ResponseCtor(JSON.stringify(payload), {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+      try { Object.defineProperty(filtered, 'url', { value: response.url || url }); } catch (e) {}
+      return filtered;
+    } catch (e) {
+      return response;
+    }
   }
 
   function installNetworkHooks() {
@@ -1126,10 +1145,10 @@
                   const isApi = /(graphql|\/2\/timeline|\/i\/api\/)/i.test(url);
                   const httpOk = Boolean(res) && res.ok !== false && (!Number.isFinite(res.status) || (res.status >= 200 && res.status < 300));
                   const profileHarvestActive = httpOk && !args[1]?.__xvSkipUserDetailHarvest && isAuthorLinksHarvestActive();
-                  const isUserDetail = profileHarvestActive && isXAuthorProfileResponse(url, USER_DETAIL_API_RE);
+                  const isUserDetail = profileHarvestActive && isXApiResponse(url, USER_DETAIL_API_RE);
                   const harvestOptions = {
                     harvestProfileLinks: profileHarvestActive && !isUserDetail
-                      && isXAuthorProfileResponse(url, TIMELINE_PROFILE_HARVEST_API_RE),
+                      && isXApiResponse(url, TIMELINE_PROFILE_HARVEST_API_RE),
                   };
                   if (res && res.clone && (isApi || isUserDetail)) {
                     if (res.headers && declaredResponseTooLarge((name) => res.headers.get(name))) return;
