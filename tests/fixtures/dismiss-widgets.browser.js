@@ -13,7 +13,7 @@
   const widgets=host=>Object.fromEntries([...host.querySelectorAll('[data-widget]')].map(element=>[element.dataset.widget,element]));
 
   window.__runDismissWidgetTests=async(api,check)=>{
-    await check('4.3.0 hide settings precede common features and preserve old choices with reversible controls',async()=>{
+    await check('4.3.1 hide settings precede common features and preserve old choices with reversible controls',async()=>{
       const previous={...api.state.settings},host=makeHost();
       const sidebar=host.querySelector('[data-testid="sidebarColumn"]');
       const card={trends:sidebar.querySelector('[data-widget="trends"]'),follows:sidebar.querySelector('[data-widget="follows"]'),money:host.querySelector('[data-widget="money"]')};

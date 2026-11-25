@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const scriptPath = new URL('../更好的X（BetterX）v4.3.0.js', import.meta.url);
+const scriptPath = new URL('../更好的X（BetterX）v4.3.1.js', import.meta.url);
 const originalSource = await readFile(scriptPath, 'utf8');
 const panelSource = await readFile(new URL('../src/ui/panel.part.js', import.meta.url), 'utf8');
 const panelTemplateStart = panelSource.indexOf('panel.innerHTML = ') + 'panel.innerHTML = '.length;

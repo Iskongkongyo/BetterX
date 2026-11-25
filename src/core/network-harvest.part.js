@@ -1058,6 +1058,42 @@
     console.warn(`[BetterX] ${apiName} 被其他脚本反复替换，已停止继续套娃 Hook；可导出 Firefox 兼容诊断。`);
   }
 
+  // 从 GraphQL 响应中删除推广入口，交给 X 的虚拟列表重新排版；失败时一律返回原响应。
+  function maybeStripPromotedAdsFromFetchResponse(response, url, pageWin) {
+    try {
+      if (!state || !state.settings || !state.settings.hideAds) return response;
+      if (!response || typeof response.clone !== 'function' || response.ok === false) return response;
+      if (!/(?:graphql|\/i\/api\/)/i.test(url || '')) return response;
+      const contentType = response.headers && response.headers.get
+        ? (response.headers.get('content-type') || '') : '';
+      if (contentType && !/json/i.test(contentType)) return response;
+    } catch (e) { return response; }
+    return response.clone().text().then((text) => {
+      if (!text || text.indexOf('"promoted_metadata"') < 0) return response;
+      let payload;
+      try { payload = JSON.parse(text); } catch (e) { return response; }
+      let changed = false;
+      try { changed = stripPromotedFromTimelinePayload(payload); } catch (e) { return response; }
+      if (!changed) return response;
+      try {
+        const HeadersCtor = (pageWin && pageWin.Headers) || Headers;
+        const ResponseCtor = (pageWin && pageWin.Response) || Response;
+        const headers = new HeadersCtor(response.headers);
+        headers.delete('content-length');
+        headers.delete('content-encoding');
+        const filtered = new ResponseCtor(JSON.stringify(payload), {
+          status: response.status,
+          statusText: response.statusText,
+          headers,
+        });
+        try { Object.defineProperty(filtered, 'url', { value: response.url || url }); } catch (e) {}
+        return filtered;
+      } catch (e) {
+        return response;
+      }
+    }).catch(() => response);
+  }
+
   function installNetworkHooks() {
     // Firefox/Tampermonkey 可能把脚本放进 JavaScript 沙箱；跨 Xray 返回 Promise/Response，
     // 或与其他下载/过滤脚本叠加包装 fetch/XHR 时，可能令 X 永远停在启动徽标。
@@ -1106,6 +1142,12 @@
                   }
                 } catch (e) {}
               }).catch(() => {});
+            } catch (e) {}
+            try {
+              // 广告过滤走网络层时，X 的虚拟列表不会为推广入口预留高度。
+              if (state && state.settings && state.settings.hideAds) {
+                return p.then((res) => maybeStripPromotedAdsFromFetchResponse(res, reqUrl, pageWin));
+              }
             } catch (e) {}
             return p;
           };

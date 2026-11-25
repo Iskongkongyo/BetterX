@@ -17,7 +17,7 @@ assert.match(compactedFixture, /const FIXTURE[^\r\n]+\}\);/);
 assert.match(compactedFixture, /keep  two spaces/);
 assert.match(compactedFixture, /\n\n  function afterFixture/);
 
-const release = await readFile(new URL('../更好的X（BetterX）v4.3.0.js', import.meta.url), 'utf8');
+const release = await readFile(new URL('../更好的X（BetterX）v4.3.1.js', import.meta.url), 'utf8');
 const cases = [
   ['../src/00-bootstrap-i18n.part.js', 'const UI_LANGUAGE = detectUiLanguage();', 'function uiText'],
   ['../src/core/config-state.part.js', 'const FILTERS = [', 'const PROFILE_DEFAULT_VIEW_OPTIONS ='],
@@ -29,7 +29,7 @@ const cases = [
   ['../src/core/storage-posts.part.js', 'const SETTINGS_EFFECT_ORDER = [', 'function runSettingsEffects'],
   ['../src/core/network-harvest.part.js', 'const TWEET_DETAIL_FEATURES = {', 'function setBoundedRegistryEntry'],
   ['../src/features/media-age-dialogs.part.js', 'const CARD_CONTENT_SEL = [', 'function revealCardUnderMask'],
-  ['../src/features/ads-layout.part.js', 'const PREMIUM_UPSELL_LABELS = new Set([', 'function isAdArticle'],
+  ['../src/features/ads-layout.part.js', 'const PREMIUM_UPSELL_LABELS = new Set([', 'const PREMIUM_UPSELL_ACTION_LABELS = new Set(['],
   ['../src/features/ads-layout.part.js', 'const LAYOUT_NAV_LABELS = new Set([', 'function layoutEnhancementsActive'],
   ['../src/ui/panel-state.part.js', 'const SETTING_REMOVE_ACTIONS = Object.freeze({', 'function dispatchSettingRemoveAction'],
   ['../src/ui/panel-state.part.js', 'const PANEL_ACTION_HANDLERS = Object.freeze({', 'function dispatchPanelAction'],

@@ -4,7 +4,7 @@ import { loadUserscript } from './helpers/userscript-harness.mjs';
 
 for (const path of [
   '../src/main.part.js',
-  '../更好的X（BetterX）v4.3.0.js',
+  '../更好的X（BetterX）v4.3.1.js',
 ]) {
   const source = await readFile(new URL(path, import.meta.url), 'utf8');
   const bootStart = source.indexOf('async function boot()');

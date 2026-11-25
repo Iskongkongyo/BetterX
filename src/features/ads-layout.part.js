@@ -1,7 +1,32 @@
-  const AD_LABELS = ['广告', '推广', 'Ad', 'Promoted', 'Publicidad', 'Anúncio', '広告', '광고'];
+  // X 新版界面（2025）取消了 data-testid，推广标签改为时间线内文本，例如：
+  // “来自 apple.com 的广告”“已推广”“Promoted by Webull HK”“推广人 Webull HK”。
+  // 因此不能再用精确词表；统一按标签文本模式匹配，并排除正文与作者链接，避免误伤。
+  const AD_LABEL_MAX_LENGTH = 80;
+  const AD_LABEL_HINT_RE = /广告|廣告|推广|推廣|赞助|贊助|広告|プロモーション|광고|프로모션|\b(?:Ad|Ads|Promoted|Sponsored|Anzeige|Publicidad|Anúncio|Promocionado|Promovido|Patrocinado|Reklama|Sponsorisé|Gesponsert|Реклама)\b/i;
+  const AD_LABEL_PATTERNS = [
+    /^(?:广告|廣告|已推广|已推廣|推广|推廣|赞助|贊助|赞助内容|贊助內容|広告|プロモーション|광고|프로모션|Anzeige|Publicidad|Anúncio|Promocionado|Promovido|Patrocinado|Reklama|Sponsorisé|Gesponsert|Реклама)$/i,
+    /^(?:Ad|Ads|Promoted|Sponsored)$/i,
+    /^(?:来自|來自)[^]{1,80}的(?:广告|廣告)$/,
+    /^(?:Ad|Ads|Promoted|Sponsored)\s*(?:from|by)\s+[^]{1,80}$/i,
+    /^(?:推广人|推廣人|广告主|廣告主|推广方|推廣方|赞助人|贊助人)\s*[^]{0,80}$/,
+    /^[^]{1,80}(?:の広告|による広告|のプロモーション)$/,
+    /^[^]{1,80}의\s*(?:광고|프로모션)$/,
+    /^(?:Anzeige|Publicidad|Anúncio|Promocionado|Promovido|Patrocinado|Reklama|Sponsorisé|Gesponsert)\s+(?:von|de|por|door|par|di|da)\s+[^]{1,80}$/i,
+  ];
+  const AD_LABEL_IGNORE_SELECTOR = '#BetterX-root, [data-testid="tweetText"], div[lang][dir="auto"], .whitespace-pre-wrap, a[href^="/"]';
+  const AD_IMPRESSION_SELECTOR = '[data-testid$="impression-pixel"]';
+  const PROMOTED_TREND_SELECTOR = 'a[href*="src=promoted_trend_click"]';
   // X 新增的独立程序化广告位（Google SafeFrame），不属于 article，需隐藏整个卡片以免留下空白。
-  const STANDALONE_AD_SELECTOR = '[data-testid="whoToFollowSspAd"], [data-testid$="SspAd"]';
-  const PREMIUM_UPSELL_SELECTOR = 'aside[role="complementary"][aria-label], a[href*="/i/premium_sign_up"]';
+  const STANDALONE_AD_SELECTOR = [
+    '[data-testid="whoToFollowSspAd"]',
+    '[data-testid$="SspAd"]',
+    'iframe[src*="doubleclick.net"]',
+    'iframe[src*="googlesyndication.com"]',
+    'iframe[src*="amazon-adsystem.com"]',
+    'iframe[id^="google_ads_iframe"]',
+    'ins.adsbygoogle',
+  ].join(', ');
+  const PREMIUM_UPSELL_SELECTOR = 'aside[role="complementary"], a[href*="/i/premium_sign_up"]';
   const PREMIUM_UPSELL_LABELS = new Set([
     '订阅 Premium', '訂閱 Premium', 'Subscribe to Premium',
     'プレミアムにサブスクライブ', 'Premium 구독하기',
@@ -10,26 +35,49 @@
     '订阅', '訂閱', 'Subscribe', 'サブスクライブ', '구독하기',
   ]);
   const NFL_SCORES_SELECTOR = '[data-testid="nfl_scores_sidebar"]';
-  function isAdArticle(article) {
-    if (!article || !article.querySelector) return false;
-    const cell = article.closest('[data-testid="cellInnerDiv"]') || article;
-    // 特征1：广告展示追踪像素（只有推广帖才有；top/right/bottom/left-impression-pixel）。
-    // 注意：视频帖也会用 placementTracking 包裹播放器，但不含 impression-pixel，故不能用 placementTracking 判定。
-    if (cell.querySelector && cell.querySelector('[data-testid$="impression-pixel"]')) return true;
-    // 特征2：头部独立的“广告”标签（排除正文里恰好提到“广告”的情况）
-    const nodes = article.querySelectorAll('span, div[dir="ltr"]');
-    for (const el of nodes) {
-      if (el.closest && el.closest('[data-testid="tweetText"]')) continue;
-      const t = (el.textContent || '').trim();
-      if (t && t.length <= 12 && AD_LABELS.includes(t)) return true;
+
+  function isAdLabelText(text) {
+    const value = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!value || value.length > AD_LABEL_MAX_LENGTH) return false;
+    return AD_LABEL_PATTERNS.some((pattern) => pattern.test(value));
+  }
+
+  function hasAdLabel(article) {
+    if (!article || typeof document.createTreeWalker !== 'function') return false;
+    const showText = typeof NodeFilter !== 'undefined' ? NodeFilter.SHOW_TEXT : 4;
+    const walker = document.createTreeWalker(article, showText);
+    let node;
+    while ((node = walker.nextNode())) {
+      const text = (node.nodeValue || '').trim();
+      if (!text || text.length > AD_LABEL_MAX_LENGTH || !AD_LABEL_HINT_RE.test(text)) continue;
+      if (!isAdLabelText(text)) continue;
+      const element = node.parentElement;
+      // 正文、作者名与站内链接里出现“广告 / Promoted”等词不算推广标签。
+      if (!element || (element.closest && element.closest(AD_LABEL_IGNORE_SELECTOR))) continue;
+      return true;
     }
     return false;
   }
 
+  function isAdArticle(article) {
+    if (!article || !article.querySelector) return false;
+    const cell = (article.closest && article.closest('[data-testid="cellInnerDiv"]')) || article;
+    // 特征1：广告展示追踪像素（只有推广帖才有；top/right/bottom/left-impression-pixel）。
+    // 注意：视频帖也会用 placementTracking 包裹播放器，但不含 impression-pixel，故不能用 placementTracking 判定。
+    if (cell.querySelector && cell.querySelector(AD_IMPRESSION_SELECTOR)) return true;
+    // 特征2：推广标签。旧版是精确的“广告 / Promoted”，新版是“来自 X 的广告 / 已推广 / 推广人 X”等。
+    return hasAdLabel(article);
+  }
+
+  // 新版时间线使用绝对定位虚拟列表（main ul > li[data-index] + inline transform），
+  // display:none 会让列表项从测量中消失并留下空白；改为折叠高度，至少移除广告内容。
   function hideAdElement(article) {
-    const cell = article.closest('[data-testid="cellInnerDiv"]') || article;
-    if (cell && cell.classList) cell.classList.add('BetterX-ad-hidden');
-    else if (cell) cell.style.display = 'none';
+    if (!article) return;
+    const cell = article.closest && article.closest('[data-testid="cellInnerDiv"]');
+    if (cell) { cell.classList.add('BetterX-ad-hidden'); return; }
+    const row = article.closest && article.closest('li');
+    if (row) { row.classList.add('BetterX-ad-collapsed'); return; }
+    article.classList.add('BetterX-ad-hidden');
   }
 
   function hideStandaloneAdElement(element) {
@@ -37,13 +85,41 @@
     const container = element.matches && element.matches(STANDALONE_AD_SELECTOR)
       ? element
       : (element.closest ? element.closest(STANDALONE_AD_SELECTOR) : null);
-    if (!container) return;
-    if (container.classList) container.classList.add('BetterX-ad-hidden');
-    else if (container.style) container.style.display = 'none';
+    if (container && container.classList) container.classList.add('BetterX-ad-hidden');
+  }
+
+  function hidePromotedTrendElement(element) {
+    if (!element || !element.closest) return;
+    const link = element.matches && element.matches(PROMOTED_TREND_SELECTOR)
+      ? element
+      : element.closest(PROMOTED_TREND_SELECTOR);
+    if (!link) return;
+    // 旧版趋势是 [data-testid="trend"]；新版趋势列表是绝对定位的 li。
+    const trend = link.closest('[data-testid="trend"]');
+    if (trend) { trend.classList.add('BetterX-ad-hidden'); return; }
+    const row = link.closest('li');
+    if (row) { row.classList.add('BetterX-ad-collapsed'); return; }
+    const card = link.closest('div[role="link"]');
+    if (card) card.classList.add('BetterX-ad-hidden');
   }
 
   function hidePremiumUpsellElement(element) {
     if (!element || !element.closest) return;
+    // 新版：侧栏卡片是 <section><h2>订阅 Premium</h2>…<a href="/i/premium_sign_up">订阅</a></section>，
+    // 外层 aside 同时包含趋势列表，因此只能隐藏卡片本身。
+    const signupLink = element.matches && element.matches('a[href*="/i/premium_sign_up"]')
+      ? element
+      : element.closest('a[href*="/i/premium_sign_up"]');
+    if (signupLink) {
+      const card = signupLink.closest('section');
+      const heading = card && card.querySelector('h1, h2, h3');
+      const headingText = (heading && heading.textContent || '').trim();
+      if (card && (PREMIUM_UPSELL_LABELS.has(headingText) || PREMIUM_UPSELL_LABELS.has((signupLink.textContent || '').trim()))) {
+        card.classList.add('BetterX-ad-hidden');
+        return;
+      }
+    }
+
     const aside = element.matches && element.matches('aside[role="complementary"]')
       ? element
       : element.closest('aside[role="complementary"]');
@@ -61,9 +137,6 @@
     }
 
     // 移动端只有一个“订阅”链接，没有 aside；动作文本校验可避免误伤普通 Premium 导航入口。
-    const signupLink = element.matches && element.matches('a[href*="/i/premium_sign_up"]')
-      ? element
-      : element.closest('a[href*="/i/premium_sign_up"]');
     const actionLabel = (signupLink && (signupLink.innerText || signupLink.textContent) || '').trim();
     if (!signupLink || !PREMIUM_UPSELL_ACTION_LABELS.has(actionLabel)) return;
 
@@ -78,15 +151,22 @@
     wrapper.classList.add('BetterX-ad-hidden');
   }
 
+  function eachMatchingInScope(scope, selector, callback) {
+    if (!scope) return;
+    if (scope.matches && scope.matches(selector)) callback(scope);
+    if (scope.closest) {
+      const ancestor = scope.closest(selector);
+      if (ancestor) callback(ancestor);
+    }
+    if (scope.querySelectorAll) scope.querySelectorAll(selector).forEach(callback);
+  }
+
   function sweepStandaloneAds(root) {
     if (!state.settings.hideAds) return;
     const scope = root && root.querySelectorAll ? root : document;
-    if (scope.matches && scope.matches(STANDALONE_AD_SELECTOR)) hideStandaloneAdElement(scope);
-    if (scope.closest) hideStandaloneAdElement(scope.closest(STANDALONE_AD_SELECTOR));
-    scope.querySelectorAll(STANDALONE_AD_SELECTOR).forEach(hideStandaloneAdElement);
-    if (scope.matches && scope.matches(PREMIUM_UPSELL_SELECTOR)) hidePremiumUpsellElement(scope);
-    if (scope.closest) hidePremiumUpsellElement(scope.closest(PREMIUM_UPSELL_SELECTOR));
-    scope.querySelectorAll(PREMIUM_UPSELL_SELECTOR).forEach(hidePremiumUpsellElement);
+    eachMatchingInScope(scope, STANDALONE_AD_SELECTOR, hideStandaloneAdElement);
+    eachMatchingInScope(scope, PROMOTED_TREND_SELECTOR, hidePromotedTrendElement);
+    eachMatchingInScope(scope, PREMIUM_UPSELL_SELECTOR, hidePremiumUpsellElement);
   }
 
   function sweepAds(root) {
@@ -98,12 +178,82 @@
   }
 
   function unhideAds() {
-    document.querySelectorAll('.BetterX-ad-hidden').forEach((el) => el.classList.remove('BetterX-ad-hidden'));
+    document.querySelectorAll('.BetterX-ad-hidden, .BetterX-ad-collapsed')
+      .forEach((el) => el.classList.remove('BetterX-ad-hidden', 'BetterX-ad-collapsed'));
   }
 
   function applyAdHiding() {
     if (state.settings.hideAds) sweepAds();
     else unhideAds();
+  }
+
+  // ── 网络层广告过滤 ────────────────────────────────────────────────
+  // X 新版时间线先 fetch GraphQL，再渲染虚拟列表。直接删除响应里的 promoted_metadata 入口，
+  // X 就不会为广告预留高度，避免“隐藏后留下大块空白”。DOM 层继续作为 SSR/缓存/兼容模式兜底。
+  function isPromotedTimelineItemContent(content) {
+    return !!(content && typeof content === 'object' && content.promoted_metadata);
+  }
+
+  function isPromotedTimelineEntry(entry) {
+    const content = entry && entry.content;
+    return !!(content && isPromotedTimelineItemContent(content.content));
+  }
+
+  function stripPromotedItems(items) {
+    if (!Array.isArray(items)) return false;
+    let changed = false;
+    for (let index = items.length - 1; index >= 0; index--) {
+      const item = items[index];
+      if (!item || typeof item !== 'object') continue;
+      const content = item.content || (item.item && item.item.content);
+      if (isPromotedTimelineItemContent(content)) {
+        items.splice(index, 1);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  function stripPromotedFromTimelinePayload(payload) {
+    let changed = false;
+    const visit = (node) => {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) { node.forEach(visit); return; }
+      if (Array.isArray(node.instructions)) {
+        const kept = [];
+        for (const instruction of node.instructions) {
+          if (!instruction || typeof instruction !== 'object') { kept.push(instruction); continue; }
+          if (Array.isArray(instruction.entries)) {
+            const entries = instruction.entries;
+            for (let index = entries.length - 1; index >= 0; index--) {
+              const entry = entries[index];
+              const content = entry && entry.content;
+              if (isPromotedTimelineEntry(entry)) {
+                entries.splice(index, 1);
+                changed = true;
+              } else if (content && Array.isArray(content.items)) {
+                if (stripPromotedItems(content.items)) changed = true;
+                if (!content.items.length) { entries.splice(index, 1); changed = true; }
+              }
+            }
+          }
+          if (stripPromotedItems(instruction.moduleItems)) changed = true;
+          if (instruction.entry && isPromotedTimelineEntry(instruction.entry)) {
+            // TimelineReplaceEntry / TimelinePinEntry 指向推广内容时整条指令丢弃。
+            changed = true;
+            continue;
+          }
+          kept.push(instruction);
+        }
+        if (kept.length !== node.instructions.length) node.instructions = kept;
+      }
+      for (const key of Object.keys(node)) {
+        if (key === 'instructions') continue;
+        visit(node[key]);
+      }
+    };
+    visit(payload);
+    return changed;
   }
 
   function getNflEntryContainer(element) {

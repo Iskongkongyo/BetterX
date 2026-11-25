@@ -6,7 +6,7 @@
 <h1 align="center">更好的 X（BetterX）</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.3.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.3.1-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
@@ -55,7 +55,7 @@
 ### 🛠️ 体验增强
 
 - **内容净化**：隐藏黄推、成人引流机器人和广告，支持强度、白名单与自定义屏蔽词。英文短词、数字和通用引流词只作辅助判断，需结合独立的成人内容证据；自定义屏蔽词仍按用户规则直接匹配，账号白名单优先。
-- **关闭功能**：集中管理广告（含“订阅 Premium”）、NFL、新鲜事、推荐关注卡片和 Money 入口的显隐；这些开关默认关闭，已有选择会保留。
+- **关闭功能**：集中管理广告（含“订阅 Premium”）、NFL、新鲜事、推荐关注卡片和 Money 入口的显隐；这些开关默认关闭，已有选择会保留。广告过滤会优先在时间线接口响应中移除推广内容，避免新版虚拟列表隐藏后留下大块空白，并保留 DOM 兜底。
 - **界面简化与宽屏**：可隐藏侧栏、推广、消息栏 / Grok，并调整时间线宽度。
 - **媒体下载**：点击下载全部图片、视频和 GIF，长按约 0.5 秒或 Shift+点击可按缩略图选择要下载的媒体，支持反选。一键下载、ZIP 打包和下载记录默认开启，已有选择会保留。支持自定义文件名；GIF 默认保存为 MP4，也可在浏览器内转换为 GIF。命名变量随界面语言显示，已有模板继续兼容。可开启“下载时保持静默”，隐藏应用徽标旁的任务提示。
 - **帖子截图**：在帖子右上角“更多”菜单选择“保存帖子截图”，导出包含头像、Emoji 和媒体的 PNG；支持视频封面及明暗主题，资源失败时可重试或导出诊断。

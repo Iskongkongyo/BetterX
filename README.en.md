@@ -6,7 +6,7 @@
 <h1 align="center">BetterX</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.3.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.3.1-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/platform-Tampermonkey%20%7C%20Violentmonkey-orange.svg" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
@@ -55,7 +55,7 @@ Have you run into any of these annoyances while browsing X?
 ### 🛠️ Experience Enhancements
 
 - **Content filtering**: Hides suspected adult spam and promotional bot accounts, with intensity levels, an allowlist, and custom block terms. Short English terms, numbers, and generic promotional cues require independent adult-content evidence. Custom block terms still apply directly, and the account allowlist takes precedence. Ad hiding is also available.
-- **Hide features**: Manage ads (including Subscribe to Premium), NFL, What’s happening, Who to follow cards, and Money links in one place. These switches default to off; existing choices are preserved.
+- **Hide features**: Manage ads (including Subscribe to Premium), NFL, What’s happening, Who to follow cards, and Money links in one place. These switches default to off; existing choices are preserved. Ad filtering first removes promoted entries from timeline responses so the new virtual list does not leave large blank gaps, with DOM hiding kept as a fallback.
 - **Simplified and wide layout**: Hide the sidebar, promotions, the Messages bar / Grok, and adjust the timeline width.
 - **Media download**: Click to download all images, videos, and GIFs, or hold for about half a second (or Shift+click) to choose which items to download by thumbnail, with an option to invert the selection. One-click downloads, ZIP packaging, and download history default to on; existing choices are preserved. Custom file names are supported. GIF content is saved as MP4 by default; select GIF to convert it in the browser. Naming variables follow the interface language, and existing templates remain supported. Enable *Keep downloads quiet* to hide the task indicator beside the app badge.
 - **Post screenshots**: Choose *Save post screenshot* from a post's top-right *More* menu to export a PNG with its avatar, emoji and media. Supports video posters and light/dark themes, with retry and diagnostic export when resources fail.
