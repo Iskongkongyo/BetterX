@@ -13,9 +13,18 @@
     /^[^]{1,80}의\s*(?:광고|프로모션)$/,
     /^(?:Anzeige|Publicidad|Anúncio|Promocionado|Promovido|Patrocinado|Reklama|Sponsorisé|Gesponsert)\s+(?:von|de|por|door|par|di|da)\s+[^]{1,80}$/i,
   ];
-  const AD_LABEL_IGNORE_SELECTOR = '#BetterX-root, [data-testid="tweetText"], div[lang][dir="auto"], .whitespace-pre-wrap, a[href^="/"]';
+  const AD_LABEL_IGNORE_SELECTOR = [
+    '#BetterX-root', '[data-testid="tweetText"]', '[data-testid="User-Name"]', '[data-testid^="card."]',
+    '[data-testid="quoteTweet"]', '[data-testid="quoteTweetContainer"]', '[data-testid="tweetPhoto"]',
+    '[data-testid="videoPlayer"]', '[data-testid="videoComponent"]',
+    'div[lang][dir="auto"]', '.whitespace-pre-wrap', 'blockquote', 'a[href]',
+  ].join(', ');
   const AD_IMPRESSION_SELECTOR = '[data-testid$="impression-pixel"]';
-  const PROMOTED_TREND_SELECTOR = 'a[href*="src=promoted_trend_click"]';
+  const AD_ARTICLE_ROW_SELECTOR = 'li[data-index]';
+  const hiddenAdArticleContainers = new WeakSet();
+  const PROMOTED_TREND_SELECTOR = 'a[href*="promoted_trend_click"]';
+  const PROMOTED_TREND_MARKED_SELECTOR = '.BetterX-ad-trend-hidden, .BetterX-ad-trend-collapsed';
+  const promotedTrendLinks = new WeakMap();
   // X 新增的独立程序化广告位（Google SafeFrame），不属于 article，需隐藏整个卡片以免留下空白。
   const STANDALONE_AD_SELECTOR = [
     '[data-testid="whoToFollowSspAd"]',
@@ -73,11 +82,26 @@
   // display:none 会让列表项从测量中消失并留下空白；改为折叠高度，至少移除广告内容。
   function hideAdElement(article) {
     if (!article) return;
-    const cell = article.closest && article.closest('[data-testid="cellInnerDiv"]');
-    if (cell) { cell.classList.add('BetterX-ad-hidden'); return; }
-    const row = article.closest && article.closest('li');
-    if (row) { row.classList.add('BetterX-ad-collapsed'); return; }
-    article.classList.add('BetterX-ad-hidden');
+    const cell = article.closest?.('[data-testid="cellInnerDiv"]');
+    const row = cell ? null : article.closest?.(AD_ARTICLE_ROW_SELECTOR);
+    const container = cell || row || article;
+    hiddenAdArticleContainers.add(container);
+    container.classList.add(row ? 'BetterX-ad-collapsed' : 'BetterX-ad-hidden');
+  }
+
+  function updateAdArticleVisibility(article) {
+    if (!article?.classList) return false;
+    if (isAdArticle(article)) {
+      hideAdElement(article);
+      return true;
+    }
+    // X 可复用帖子或其外壳。只清理此前由帖子过滤添加的标记。
+    for (const container of [article, article.closest?.('[data-testid="cellInnerDiv"]'), article.closest?.(AD_ARTICLE_ROW_SELECTOR)]) {
+      if (container && hiddenAdArticleContainers.delete(container)) {
+        container.classList.remove('BetterX-ad-hidden', 'BetterX-ad-collapsed');
+      }
+    }
+    return false;
   }
 
   function hideStandaloneAdElement(element) {
@@ -88,19 +112,34 @@
     if (container && container.classList) container.classList.add('BetterX-ad-hidden');
   }
 
-  function hidePromotedTrendElement(element) {
-    if (!element || !element.closest) return;
-    const link = element.matches && element.matches(PROMOTED_TREND_SELECTOR)
-      ? element
-      : element.closest(PROMOTED_TREND_SELECTOR);
-    if (!link) return;
-    // 旧版趋势是 [data-testid="trend"]；新版趋势列表是绝对定位的 li。
+  function getPromotedTrendTarget(link) {
+    if (link.closest('article, [data-testid="tweet"], #BetterX-root')) return null;
+    try {
+      const url = new URL(link.getAttribute('href'), location.origin);
+      if (url.protocol !== 'https:' || url.port || !X_API_HOSTS.has(url.hostname)
+          || url.searchParams.get('src') !== 'promoted_trend_click') return null;
+    } catch { return null; }
     const trend = link.closest('[data-testid="trend"]');
-    if (trend) { trend.classList.add('BetterX-ad-hidden'); return; }
-    const row = link.closest('li');
-    if (row) { row.classList.add('BetterX-ad-collapsed'); return; }
-    const card = link.closest('div[role="link"]');
-    if (card) card.classList.add('BetterX-ad-hidden');
+    const region = link.closest('[data-testid="sidebarColumn"], [data-testid="trendList"], [data-testid="trends"]')
+      || (/^\/explore(?:\/|$)/.test(location.pathname) ? link.closest('main, [data-testid="primaryColumn"]') : null);
+    const row = trend || link.closest('li, div[role="link"]');
+    if (!row || (!trend && !region?.contains(row)) || row.querySelector('article, [data-testid="tweet"]')) return null;
+    return row;
+  }
+
+  function sweepPromotedTrends(scope) {
+    eachMatchingInScope(scope, PROMOTED_TREND_MARKED_SELECTOR, (row) => {
+      const link = promotedTrendLinks.get(row);
+      if (link && row.contains(link) && getPromotedTrendTarget(link) === row) return;
+      promotedTrendLinks.delete(row);
+      row.classList.remove('BetterX-ad-trend-hidden', 'BetterX-ad-trend-collapsed');
+    });
+    eachMatchingInScope(scope, PROMOTED_TREND_SELECTOR, (link) => {
+      const row = getPromotedTrendTarget(link);
+      if (!row) return;
+      promotedTrendLinks.set(row, link);
+      row.classList.add(row.matches(AD_ARTICLE_ROW_SELECTOR) ? 'BetterX-ad-trend-collapsed' : 'BetterX-ad-trend-hidden');
+    });
   }
 
   function hidePremiumUpsellElement(element) {
@@ -149,11 +188,8 @@
 
   function eachMatchingInScope(scope, selector, callback) {
     if (!scope) return;
-    if (scope.matches && scope.matches(selector)) callback(scope);
-    if (scope.closest) {
-      const ancestor = scope.closest(selector);
-      if (ancestor) callback(ancestor);
-    }
+    const ancestor = scope.closest?.(selector);
+    if (ancestor) callback(ancestor);
     if (scope.querySelectorAll) scope.querySelectorAll(selector).forEach(callback);
   }
 
@@ -161,21 +197,21 @@
     if (!state.settings.hideAds) return;
     const scope = root && root.querySelectorAll ? root : document;
     eachMatchingInScope(scope, STANDALONE_AD_SELECTOR, hideStandaloneAdElement);
-    eachMatchingInScope(scope, PROMOTED_TREND_SELECTOR, hidePromotedTrendElement);
+    sweepPromotedTrends(scope);
     eachMatchingInScope(scope, PREMIUM_UPSELL_SELECTOR, hidePremiumUpsellElement);
   }
 
   function sweepAds(root) {
     if (!state.settings.hideAds) return;
-    getArticlesFromScope(root).forEach((a) => {
-      if (isAdArticle(a)) hideAdElement(a);
-    });
+    getArticlesFromScope(root).forEach(updateAdArticleVisibility);
     sweepStandaloneAds(root);
   }
 
   function unhideAds() {
-    document.querySelectorAll('.BetterX-ad-hidden, .BetterX-ad-collapsed')
-      .forEach((el) => el.classList.remove('BetterX-ad-hidden', 'BetterX-ad-collapsed'));
+    document.querySelectorAll('.BetterX-ad-hidden, .BetterX-ad-collapsed, ' + PROMOTED_TREND_MARKED_SELECTOR)
+      .forEach((el) => el.classList.remove(
+        'BetterX-ad-hidden', 'BetterX-ad-collapsed', 'BetterX-ad-trend-hidden', 'BetterX-ad-trend-collapsed',
+      ));
   }
 
   function applyAdHiding() {
@@ -184,34 +220,36 @@
   }
 
   // ── 网络层广告过滤 ────────────────────────────────────────────────
-  // X 新版时间线先 fetch GraphQL，再渲染虚拟列表。直接删除响应里的 promoted_metadata 入口，
+  // X 新版时间线先 fetch GraphQL，再渲染虚拟列表。直接删除响应里的推广入口，
   // X 就不会为广告预留高度，避免“隐藏后留下大块空白”。DOM 层继续作为 SSR/缓存/兼容模式兜底。
   function isPromotedTimelineItemContent(content) {
-    return !!(content && typeof content === 'object' && content.promoted_metadata);
-  }
-
-  function isPromotedTimelineEntry(entry) {
-    const content = entry && entry.content;
-    return !!(content && isPromotedTimelineItemContent(content.content));
+    return Boolean(content?.promotedMetadata || content?.promoted_metadata);
   }
 
   function stripPromotedItems(items) {
-    if (!Array.isArray(items)) return false;
-    let changed = false;
-    for (let index = items.length - 1; index >= 0; index--) {
-      const item = items[index];
-      if (!item || typeof item !== 'object') continue;
-      const content = item.content || (item.item && item.item.content);
-      if (isPromotedTimelineItemContent(content)) {
-        items.splice(index, 1);
-        changed = true;
-      }
-    }
-    return changed;
+    if (!Array.isArray(items)) return items;
+    const kept = items.filter((item) => !isPromotedTimelineItemContent(item?.item?.itemContent)
+      && !isPromotedTimelineItemContent(item?.item?.content)
+      && !isPromotedTimelineItemContent(item?.itemContent)
+      && !isPromotedTimelineItemContent(item?.content));
+    return kept.length === items.length ? items : kept;
   }
 
   function stripPromotedFromTimelinePayload(payload) {
     let changed = false;
+    const keepEntry = (entry) => {
+      const content = entry?.content;
+      if (isPromotedTimelineItemContent(content?.itemContent) || isPromotedTimelineItemContent(content?.content)) {
+        changed = true;
+        return false;
+      }
+      const items = stripPromotedItems(content?.items);
+      if (items === content?.items) return true;
+      changed = true;
+      content.items = items;
+      // 有 ID 的模块可能在本次或后续响应中收到普通追加项，保留其定位目标。
+      return items.length > 0 || Boolean(entry.entryId || entry.entry_id);
+    };
     const visit = (node) => {
       if (!node || typeof node !== 'object') return;
       if (Array.isArray(node)) { node.forEach(visit); return; }
@@ -220,26 +258,15 @@
         for (const instruction of node.instructions) {
           if (!instruction || typeof instruction !== 'object') { kept.push(instruction); continue; }
           if (Array.isArray(instruction.entries)) {
-            const entries = instruction.entries;
-            for (let index = entries.length - 1; index >= 0; index--) {
-              const entry = entries[index];
-              const content = entry && entry.content;
-              if (isPromotedTimelineEntry(entry)) {
-                entries.splice(index, 1);
-                changed = true;
-              } else if (stripPromotedItems(content?.items)) {
-                changed = true;
-                if (!content.items.length) entries.splice(index, 1);
-              }
-            }
+            const entries = instruction.entries.filter(keepEntry);
+            if (entries.length !== instruction.entries.length) instruction.entries = entries;
           }
-          if (stripPromotedItems(instruction.moduleItems)) changed = true;
-          if (instruction.entry && isPromotedTimelineEntry(instruction.entry)) {
-            // TimelineReplaceEntry / TimelinePinEntry 指向推广内容时整条指令丢弃。
+          const moduleItems = stripPromotedItems(instruction.moduleItems);
+          if (moduleItems !== instruction.moduleItems) {
+            instruction.moduleItems = moduleItems;
             changed = true;
-            continue;
           }
-          kept.push(instruction);
+          if (!instruction.entry || keepEntry(instruction.entry)) kept.push(instruction);
         }
         if (kept.length !== node.instructions.length) node.instructions = kept;
       }

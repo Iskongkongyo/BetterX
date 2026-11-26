@@ -101,6 +101,13 @@
         const mutationElement = mutation.target instanceof HTMLElement
           ? mutation.target
           : mutation.target && mutation.target.parentElement;
+        if (state.settings.hideAds && mutationElement && (mutation.type === 'attributes' || mutation.removedNodes?.length)) {
+          if (mutationElement.closest('article')) pendingRoots.add(mutationElement);
+          if (mutationElement.closest(PROMOTED_TREND_MARKED_SELECTOR)
+              || (mutation.type === 'attributes' && mutationElement.matches(PROMOTED_TREND_SELECTOR))) {
+            sweepPromotedTrends(mutationElement);
+          }
+        }
         if (state.settings.authorLinksEnabled) {
           const tweetArticle = mutationElement?.closest?.('article[data-testid="tweet"]');
           if (tweetArticle && !isBetterXAuthorLinksNode(mutationElement)) {

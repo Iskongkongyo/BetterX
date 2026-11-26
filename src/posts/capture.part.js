@@ -39,7 +39,7 @@
   }
 
   function captureArticle(article) {
-    if (state.settings.hideAds && isAdArticle(article)) { hideAdElement(article); return; }
+    if (state.settings.hideAds && updateAdArticleVisibility(article)) return;
     let adultSpamResult;
     if (adultSpamFilteringEnabled() && evaluateAndApplyAdultSpam(article, adultSpamResult = {}, true)) return;
     if (!(article instanceof HTMLElement)) return;

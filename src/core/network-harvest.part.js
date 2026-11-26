@@ -1092,7 +1092,7 @@
       if (contentType && !/json/i.test(contentType)) return response;
 
       const text = await readAdTimelineText(response);
-      if (!text.includes('"promoted_metadata"')) return response;
+      if (!state.settings.hideAds || !/"(?:promoted_metadata|promotedMetadata)"\s*:/.test(text)) return response;
       const payload = JSON.parse(text);
       if (!stripPromotedFromTimelinePayload(payload)) return response;
 

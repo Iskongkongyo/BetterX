@@ -57,7 +57,7 @@ for (const label of organicLabels) {
   const classes = [];
   const row = { classList: { add: (name) => classes.push(name) } };
   const article = {
-    closest: (selector) => (selector === 'li' ? row : null),
+    closest: (selector) => (selector === 'li[data-index]' ? row : null),
     classList: { add: (name) => classes.push(`article:${name}`) },
   };
   api.hideAdElement(article);
@@ -145,6 +145,48 @@ assert.equal(api.stripPromotedFromTimelinePayload(clean), false, '没有推广�
     assert.equal(filtered.headers.has('content-length'), false);
     assert.deepEqual(await filtered.json(), expected);
   }
+
+  const organicItem = { item: { itemContent: { __typename: 'TimelineTweet', tweetDisplayType: 'Tweet' } } };
+  const adItem = { item: { itemContent: { __typename: 'TimelineTweet', promotedMetadata: {} } } };
+  const namedModule = (entryId, items) => ({ entryId, content: { entryType: 'TimelineTimelineModule', items } });
+  const cursor = { entryId: 'cursor-bottom', content: { cursorType: 'Bottom', value: 'next-page' } };
+  const instructions = [
+    { type: 'TimelineAddEntries', entries: [
+      { entryId: 'tweet-1', content: { itemContent: organicItem.item.itemContent } },
+      { entryId: 'promoted-2', content: { itemContent: adItem.item.itemContent } },
+      namedModule('mixed', [adItem, organicItem]),
+      namedModule('append-now', [adItem]),
+      namedModule('append-later', [adItem]),
+      cursor,
+    ] },
+    { type: 'TimelineAddToModule', moduleEntryId: 'append-now', moduleItems: [adItem, organicItem] },
+    { type: 'TimelineReplaceEntry', entry: namedModule('replacement', [organicItem, adItem]) },
+    { type: 'TimelinePinEntry', entry: { content: { itemContent: adItem.item.itemContent } } },
+  ];
+  const modern = { data: { home: { home_timeline_urt: { instructions } } } };
+  const filtered = await filter(responseFor(JSON.stringify(modern)), home, context);
+  assert.deepEqual((await filtered.json()).data.home.home_timeline_urt.instructions, [
+    { type: 'TimelineAddEntries', entries: [
+      instructions[0].entries[0],
+      namedModule('mixed', [organicItem]),
+      namedModule('append-now', []),
+      namedModule('append-later', []),
+      cursor,
+    ] },
+    { type: 'TimelineAddToModule', moduleEntryId: 'append-now', moduleItems: [organicItem] },
+    { type: 'TimelineReplaceEntry', entry: namedModule('replacement', [organicItem]) },
+  ]);
+
+  let completeBody;
+  const pendingBody = new ReadableStream({ start(controller) { completeBody = controller; } });
+  const switchedOff = responseFor(pendingBody);
+  const pendingFilter = filter(switchedOff, home, context);
+  state.settings.hideAds = false;
+  completeBody.enqueue(new TextEncoder().encode(json));
+  completeBody.close();
+  assert.equal(await pendingFilter, switchedOff, '关闭开关后应交还仍在读取的原始响应');
+  assert.equal(await switchedOff.text(), json);
+  state.settings.hideAds = true;
 
   const paddedJson = json + ' '.repeat(limit - Buffer.byteLength(json));
   const bytes = new TextEncoder().encode(paddedJson);
