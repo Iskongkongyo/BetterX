@@ -130,6 +130,20 @@
       article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [role="presentation"] > div {
         aspect-ratio: auto !important;
       }
+      html.BetterX-media-grid-enabled article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [data-betterx-media-grid-overflow] {
+        position: relative !important;
+      }
+      html.BetterX-media-grid-enabled article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [data-betterx-media-grid-overflow] ~ [role="presentation"] {
+        display: none !important;
+      }
+      html.BetterX-media-grid-enabled article nav.BetterX-media-grid [data-testid="ScrollSnap-List"] > [data-betterx-media-grid-overflow]::after {
+        content: attr(data-betterx-media-grid-overflow);
+        position: absolute; right: 8px; bottom: 8px; z-index: 2;
+        padding: 3px 8px; border: 1px solid rgba(255, 255, 255, .24); border-radius: 999px;
+        color: #fff; background: rgba(15, 20, 25, .72);
+        font-size: 13px; line-height: 1.2; font-weight: 700; font-variant-numeric: tabular-nums;
+        pointer-events: none; user-select: none;
+      }
 
       #BetterX-download-pill {
         position: absolute; left: calc(100% + 8px); bottom: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -186,6 +200,9 @@
       #BetterX-root.BetterX-panel-right #BetterX-panel { left: auto; right: 0; }
       #BetterX-root.BetterX-mobile #BetterX-panel { position: fixed; right: 12px; left: auto; bottom: 84px; max-height: calc(100vh - 120px); }
       .BetterX-ad-hidden, .BetterX-ad-trend-hidden, .BetterX-nfl-hidden { display: none !important; }
+      html.BetterX-hide-ads aside[role="complementary"]:has(> button[data-testid="grokBotOfferDismiss"]):has(> a[href*="/i/premium_sign_up"]) {
+        display: none !important;
+      }
       /* 新版时间线是绝对定位虚拟列表；折叠比 display:none 更稳妥，至少移除广告内容。 */
       .BetterX-ad-collapsed, .BetterX-ad-trend-collapsed {
         height: 0 !important; min-height: 0 !important; max-height: 0 !important;

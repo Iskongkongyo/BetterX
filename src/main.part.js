@@ -70,6 +70,8 @@
   }
 
   function waitForPageReady() {
+    // X 可能在 IndexedDB 就绪前导航，先跟踪历史，界面刷新仍等 boot 完成初始化。
+    installNavigationListener({ deferRefresh: true });
     if (document.body) { boot(); return; }
     const timer = setInterval(() => {
       if (document.body) { clearInterval(timer); boot(); }

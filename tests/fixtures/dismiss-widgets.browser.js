@@ -154,5 +154,53 @@
         await api.state.dbWriteQueue;
       }
     });
+
+    await check('Hide ads filters the Grok Bot Premium offer without hiding surrounding content', async () => {
+      const previous = { ...api.state.settings };
+      const host = document.createElement('div');
+      host.innerHTML = '<aside role="complementary" data-fixture="sidebar">'
+        + '<div data-fixture="trends">Ordinary trends</div>'
+        + '<aside role="complementary" aria-label="Get Grok Bot with X Premium" data-fixture="offer">'
+        + '<span data-testid="grokBotMark"></span><div>Get Grok Bot with X Premium</div>'
+        + '<a href="/i/premium_sign_up?referring_page=grok-bot-offer%3Ahome-sidebar">Get the offer</a>'
+        + '<button data-testid="grokBotOfferDismiss" type="button">Dismiss</button></aside></aside>'
+        + '<div role="dialog" aria-label="Premium information" data-fixture="dialog">'
+        + '<a href="/i/premium_sign_up">View options</a></div>'
+        + '<aside role="complementary" data-fixture="grok">'
+        + '<span data-testid="grokBotMark"></span><a href="/i/grok">Open Grok</a></aside>';
+      document.body.appendChild(host);
+      const get = (id) => host.querySelector('[data-fixture="' + id + '"]');
+      const offer = get('offer');
+      let dismissals = 0;
+      offer.querySelector('button').addEventListener('click', () => { dismissals++; });
+      try {
+        api.applySettingsSnapshot({ ...previous, hideAds: false });
+        assert(visible(offer), 'The offer must remain visible with Hide ads off');
+
+        api.applySettingsSnapshot({ ...previous, hideAds: true });
+        assert(!visible(offer), 'Hide ads did not hide the supplied Grok Bot offer');
+        assert(['sidebar', 'trends', 'dialog', 'grok'].every((id) => visible(get(id))),
+          'The offer rule hid an ordinary sidebar, trend, dialog or Grok entry');
+
+        const inserted = offer.cloneNode(true);
+        inserted.setAttribute('aria-label', 'Grok Bot avec X Premium');
+        inserted.querySelector('a').setAttribute('href', '/i/grok');
+        get('sidebar').appendChild(inserted);
+        assert(visible(inserted), 'The dismiss marker alone should not hide a card');
+        inserted.querySelector('a').setAttribute('href', '/i/premium_sign_up?referring_page=grok-bot-offer%3Ahome-sidebar');
+        assert(!visible(inserted), 'A late Premium link did not hide the localized offer');
+        inserted.querySelector('button').remove();
+        assert(visible(inserted), 'A reused card should be visible once the offer marker is gone');
+
+        api.applySettingsSnapshot({ ...previous, hideAds: false });
+        assert(visible(offer), 'Turning Hide ads off did not restore the offer');
+        assert(dismissals === 0, 'The offer must not be permanently dismissed');
+        return { offerHidden: true, dynamicOfferHidden: true, surroundingsPreserved: true };
+      } finally {
+        host.remove();
+        api.applySettingsSnapshot(previous);
+        await api.state.dbWriteQueue;
+      }
+    });
   };
 })();

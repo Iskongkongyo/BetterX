@@ -1,3 +1,5 @@
+  const MEDIA_GRID_OVERFLOW_ATTRIBUTE = 'data-betterx-media-grid-overflow';
+
   function getArticlesFromScope(scope) {
     const root = (scope && scope.querySelectorAll) ? scope : document;
     return root.matches && root.matches('article') ? [root] : [...root.querySelectorAll('article')];
@@ -9,6 +11,8 @@
       el.classList.remove('BetterX-media-grid', 'BetterX-media-grid-count-2', 'BetterX-media-grid-count-3', 'BetterX-media-grid-count-4');
     });
     root.querySelectorAll('.BetterX-media-grid-box').forEach((el) => el.classList.remove('BetterX-media-grid-box'));
+    root.querySelectorAll('[' + MEDIA_GRID_OVERFLOW_ATTRIBUTE + ']')
+      .forEach((el) => el.removeAttribute(MEDIA_GRID_OVERFLOW_ATTRIBUTE));
   }
 
   function restoreMediaGridInArticle(article) {
@@ -16,6 +20,18 @@
     article.querySelectorAll('[data-testid="ScrollSnap-List"]').forEach((list) => {
       const items = [...list.children].filter((child) => child.getAttribute('role') === 'presentation');
       const nav = list.closest('nav[role="navigation"]');
+      const overflowTile = nav && items.length > 4 ? items[3] : null;
+      for (const child of list.children) {
+        if (child !== overflowTile && child.hasAttribute(MEDIA_GRID_OVERFLOW_ATTRIBUTE)) {
+          child.removeAttribute(MEDIA_GRID_OVERFLOW_ATTRIBUTE);
+        }
+      }
+      if (overflowTile) {
+        const count = '+' + (items.length - 4);
+        if (overflowTile.getAttribute(MEDIA_GRID_OVERFLOW_ATTRIBUTE) !== count) {
+          overflowTile.setAttribute(MEDIA_GRID_OVERFLOW_ATTRIBUTE, count);
+        }
+      }
       if (!nav) return;
       nav.classList.remove('BetterX-media-grid', 'BetterX-media-grid-count-2', 'BetterX-media-grid-count-3', 'BetterX-media-grid-count-4');
       if (nav.parentElement) nav.parentElement.classList.remove('BetterX-media-grid-box');
@@ -26,6 +42,7 @@
   }
 
   function applyMediaGridLayout(scope) {
+    document.documentElement?.classList?.toggle('BetterX-media-grid-enabled', Boolean(state.settings.restoreMediaGrid));
     if (!state.settings.restoreMediaGrid) {
       removeMediaGridLayout(scope);
       return;

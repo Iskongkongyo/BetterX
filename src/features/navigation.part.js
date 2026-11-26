@@ -1,5 +1,9 @@
   const layoutScrollPositions = new Map();
   let layoutNavigationToken = 0;
+  let profileVisitHandle = '';
+  let navigationOccurred = false;
+  let navigationListenerInstalled = false;
+  let navigationRefreshReady = false;
 
   function usesExpandedLayout() {
     return !!(state.settings.layoutEnabled && (
@@ -117,8 +121,12 @@
     const normalizedSort = PROFILE_POST_SORT_OPTIONS.includes(sort) ? sort : DEFAULT_SETTINGS.profilePostSort;
     if (!guard || guard.handle !== String(handle || '').toLowerCase()
         || guard.view !== view || guard.sort !== normalizedSort) return false;
-    try { sessionStorage.removeItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY); } catch (err) {}
+    clearProfileDefaultViewRedirectGuard();
     return true;
+  }
+
+  function clearProfileDefaultViewRedirectGuard() {
+    try { sessionStorage.removeItem(PROFILE_DEFAULT_VIEW_REDIRECT_GUARD_KEY); } catch (err) {}
   }
 
   function getBareProfileHandle(pathname) {
@@ -130,6 +138,11 @@
     if (!/^[a-z0-9_]{1,15}$/i.test(handle)) return '';
     if (PROFILE_ROOT_ROUTE_EXCLUSIONS.has(handle.toLowerCase())) return '';
     return handle;
+  }
+
+  function getProfilePageHandle(pathname) {
+    const match = /^\/([^/]+)(?:\/(?:all|with_replies|reposts|retweets|highlights|media|likes|articles|followers|following|verified_followers|followers_you_follow|photo|header_photo))?\/?$/i.exec(pathname);
+    return match ? getBareProfileHandle(match[1]).toLowerCase() : '';
   }
 
   function applyPreferredProfileViewToUrl(targetUrl, handle, view, sort) {
@@ -250,7 +263,11 @@
       : null;
   }
 
-  function redirectBareProfileToPreferredView() {
+  function redirectBareProfileToPreferredView(initialLoad = true) {
+    if (initialLoad) {
+      const navigationType = globalThis.performance?.getEntriesByType?.('navigation')?.[0]?.type;
+      if (navigationOccurred || navigationType === 'back_forward' || navigationType === 'reload') return false;
+    }
     const view = getConfiguredProfileDefaultView();
     const sort = getConfiguredProfilePostSort();
     // “帖子 + 最近”就是 X 的用户主页默认状态，无需额外改写 URL。
@@ -290,6 +307,7 @@
       if (!profileTarget) return;
       const { link, handle } = profileTarget;
       if (link && link.hasAttribute('download')) return;
+      if (handle.toLowerCase() === profileVisitHandle) return;
       const view = getConfiguredProfileDefaultView();
       const sort = getConfiguredProfilePostSort();
       // 用户点击个人主页的“帖子”页签是明确选择，跳过一次默认页签重定向。
@@ -310,25 +328,39 @@
     }, true);
   }
 
-  function installNavigationListener() {
+  function installNavigationListener({ deferRefresh = false } = {}) {
+    if (!deferRefresh) navigationRefreshReady = true;
+    if (navigationListenerInstalled) return;
+    navigationListenerInstalled = true;
+    profileVisitHandle = getProfilePageHandle(location.pathname);
     let lastUrl = location.href;
-    const onNav = (restorePosition) => {
-      if (location.href !== lastUrl) {
-        lastUrl = location.href;
-        refreshAuthorLinks();
-        if (redirectBareProfileToPreferredView()) return;
-        installNetworkHooks();
-        scheduleNavigationRefresh(restorePosition ? layoutScrollPositions.get(lastUrl) : null);
+    const onNav = (restorePosition, fromHistory = false) => {
+      if (location.href === lastUrl) return;
+      lastUrl = location.href;
+      navigationOccurred = true;
+      const previousProfile = profileVisitHandle;
+      const currentProfile = getProfilePageHandle(location.pathname);
+      // 帖子详情与图片层属于当前访问，包括主页里打开的他人帖子。
+      if (currentProfile || !extractStatusIdFromUrl(location.pathname)) profileVisitHandle = currentProfile;
+      if (previousProfile && previousProfile !== profileVisitHandle
+          && readProfileDefaultViewRedirectGuard()?.handle === previousProfile) {
+        clearProfileDefaultViewRedirectGuard();
       }
+      if (navigationRefreshReady) refreshAuthorLinks();
+      if (!fromHistory && currentProfile && currentProfile !== previousProfile
+          && redirectBareProfileToPreferredView(false)) return;
+      if (!navigationRefreshReady) return;
+      installNetworkHooks();
+      scheduleNavigationRefresh(restorePosition ? layoutScrollPositions.get(lastUrl) : null);
     };
-    window.addEventListener('popstate', () => {
-      rememberLayoutScrollPosition(lastUrl);
-      onNav(true);
+    window.addEventListener('popstate', (event) => {
+      if (navigationRefreshReady) rememberLayoutScrollPosition(lastUrl);
+      onNav(true, event.isTrusted);
     });
     const origPush = history.pushState;
     history.pushState = function (...args) {
       const previousUrl = location.href;
-      rememberLayoutScrollPosition(previousUrl);
+      if (navigationRefreshReady) rememberLayoutScrollPosition(previousUrl);
       const r = origPush.apply(this, args);
       onNav(false);
       return r;
@@ -336,7 +368,7 @@
     const origReplace = history.replaceState;
     history.replaceState = function (...args) {
       const previousUrl = location.href;
-      rememberLayoutScrollPosition(previousUrl);
+      if (navigationRefreshReady) rememberLayoutScrollPosition(previousUrl);
       const r = origReplace.apply(this, args);
       onNav(false);
       return r;

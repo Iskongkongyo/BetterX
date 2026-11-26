@@ -339,5 +339,62 @@
         window.fetch=originalFetch;window.GM_setValue=originalSet;posts.forEach(post=>post.remove());
       }
     });
+    await check('profile defaults preserve the Posts tab on real history traversal and detail close', async () => {
+      const previous = { ...api.state.settings };
+      const savedUrl = location.href;
+      const savedHistoryState = history.state;
+      const originalNow = Date.now;
+      const route = () => location.pathname + location.search;
+      const traverse = (go) => new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          window.removeEventListener('popstate', onPop);
+          reject(new Error('No native history traversal event'));
+        }, 3000);
+        const onPop = (event) => {
+          if (!event.isTrusted) return;
+          clearTimeout(timer);
+          window.removeEventListener('popstate', onPop);
+          resolve();
+        };
+        window.addEventListener('popstate', onPop);
+        go();
+      });
+      try {
+        api.applySettingsSnapshot({
+          ...previous, authorLinksEnabled: false, profileDefaultViewEnabled: true,
+          profileDefaultView: 'photo', profilePostSort: 'recent',
+        });
+        api.installNavigationListener();
+        history.replaceState(null, '', '/home');
+        history.pushState({ page: 'fresh profile' }, '', '/issuefive');
+        assert(route() === '/issuefive/media?filter=photo', 'A new profile visit should open the selected Photos tab');
+        assert(history.state.page === 'fresh profile', 'Applying the default changed the site history state');
+
+        const posts = '/issuefive?sort=recent';
+        const detail = '/another/status/7654321/photo/1';
+        history.pushState({ page: 'posts' }, '', posts);
+        assert(route() === posts, 'Changing to Posts should stay on that tab');
+        history.pushState(null, '', detail);
+        Date.now = () => originalNow() + 60000;
+        await traverse(() => history.back());
+        assert(route() === posts && history.state.page === 'posts', 'Back from the photo viewer changed the selected tab or history state');
+        await traverse(() => history.forward());
+        assert(route() === detail, 'Forward should restore the detail URL');
+        history.replaceState(null, '', posts);
+        assert(route() === posts, 'An in-app close should keep the selected Posts tab');
+
+        history.pushState(null, '', '/home');
+        await traverse(() => history.back());
+        assert(route() === posts, 'Back from Home should restore the recorded Posts URL');
+        await traverse(() => history.forward());
+        history.pushState(null, '', '/issuefive');
+        assert(route() === '/issuefive/media?filter=photo', 'A new visit after leaving the profile should apply the default again');
+        return { nativeBackAndForward: true, detailClosePreservedTab: true, freshVisitAppliedDefault: true };
+      } finally {
+        Date.now = originalNow;
+        api.applySettingsSnapshot(previous);
+        history.replaceState(savedHistoryState, '', savedUrl);
+      }
+    });
   };
 })();

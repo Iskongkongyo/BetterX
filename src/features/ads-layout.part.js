@@ -215,6 +215,7 @@
   }
 
   function applyAdHiding() {
+    document.documentElement?.classList?.toggle('BetterX-hide-ads', Boolean(state.settings.hideAds));
     if (state.settings.hideAds) sweepAds();
     else unhideAds();
   }

@@ -374,6 +374,72 @@
         api.setSettingsPartial({silentDownload:false}); api.togglePanel(false); api.refreshDownloadUi();
       }
     });
+    await check('media grid reports extra items on the fourth tile and keeps its preview link usable', async () => {
+      const previous = { ...api.state.settings };
+      const host = document.createElement('article');
+      host.style.cssText = 'position:fixed;top:16px;left:16px;width:360px;z-index:2147483646';
+      host.innerHTML = '<div><nav role="navigation"><div data-testid="ScrollSnap-SwipeableList">'
+        + '<div data-testid="ScrollSnap-List"><span hidden></span></div></div></nav></div>';
+      const list = host.querySelector('[data-testid="ScrollSnap-List"]');
+      const overflow = 'data-betterx-media-grid-overflow';
+      const items = () => [...list.children].filter((child) => child.getAttribute('role') === 'presentation');
+      const countOnFourth = () => items()[3]?.getAttribute(overflow) ?? null;
+      const add = (index) => {
+        const tile = document.createElement('div');
+        tile.setAttribute('role', 'presentation');
+        tile.innerHTML = '<div><div><a style="display:block;width:100%;height:100%;background:#617f9a" href="/grid/status/1919/photo/'
+          + index + '">Open media ' + index + '</a></div></div>';
+        list.appendChild(tile);
+        return tile;
+      };
+      const waitForCount = async (expected) => {
+        for (let attempt = 0; attempt < 30 && countOnFourth() !== expected; attempt++) await sleep(50);
+        assert(countOnFourth() === expected, 'Unexpected overflow count: ' + countOnFourth());
+      };
+      try {
+        api.applySettingsSnapshot({ ...previous, restoreMediaGrid: false, mediaDownload: false });
+        for (let index = 1; index <= 6; index++) add(index);
+        api.startObserver();
+        document.body.appendChild(host);
+        assert(!list.querySelector('[' + overflow + ']'), 'Grid disabled should not show an overflow badge');
+        api.applySettingsSnapshot({ ...api.state.settings, restoreMediaGrid: true });
+
+        const originalFourth = items()[3];
+        assert(countOnFourth() === '+2', 'Six media items should display +2 on the fourth tile');
+        assert(items().slice(0, 4).every((tile) => getComputedStyle(tile).display !== 'none'), 'A visible tile was hidden');
+        assert(items().slice(4).every((tile) => getComputedStyle(tile).display === 'none'), 'Extras still occupy the grid');
+        const badge = getComputedStyle(originalFourth, '::after');
+        assert(badge.content === '"+2"' && badge.right === '8px' && badge.bottom === '8px',
+          'The overflow badge was not rendered in the bottom-right corner');
+        const box = originalFourth.getBoundingClientRect();
+        const link = originalFourth.querySelector('a');
+        const hit = document.elementFromPoint(box.right - 14, box.bottom - 14);
+        assert(badge.pointerEvents === 'none' && hit?.closest('a') === link, 'The badge intercepted the preview link');
+
+        add(7);
+        await waitForCount('+3');
+        list.prepend(originalFourth);
+        for (let attempt = 0; attempt < 30 && countOnFourth() !== '+3'; attempt++) await sleep(50);
+        assert(countOnFourth() === '+3' && !originalFourth.hasAttribute(overflow)
+          && list.querySelectorAll('[' + overflow + ']').length === 1, 'Reordering left an obsolete badge');
+        items().slice(4).forEach((tile) => tile.remove());
+        await waitForCount(null);
+        assert(!list.querySelector('[' + overflow + ']'), 'Four media items should have no badge');
+
+        add(5);
+        await waitForCount('+1');
+        api.applySettingsSnapshot({ ...api.state.settings, restoreMediaGrid: false });
+        assert(!list.querySelector('[' + overflow + ']') && getComputedStyle(items()[4]).display !== 'none',
+          'Disabling the grid did not restore the original media list');
+        return { fourthTileCount: true, previewLinkUsable: true, updatesWithMediaCount: true };
+      } finally {
+        api.state.observer?.disconnect();
+        api.state.observerCleanup?.();
+        api.state.viewObserver?.disconnect();
+        host.remove();
+        api.applySettingsSnapshot(previous);
+      }
+    });
     await window.__runDownloadSelectionTests(api, check);
     await window.__runPostScreenshotTests(api, check);
     await window.__runDismissWidgetTests(api, check);
