@@ -1,0 +1,145 @@
+{
+  "data": {
+    "home_timeline": {
+      "home_timeline_urt": {
+        "instructions": [
+          { "__typename": "TimelineClearCache" },
+          {
+            "__typename": "TimelineAddEntries",
+            "entries": [
+              {
+                "content": {
+                  "__typename": "TimelineTimelineCursor",
+                  "value": "cursor-top",
+                  "cursorType": "Top"
+                }
+              },
+              {
+                "content": {
+                  "__typename": "TimelineTimelineItem",
+                  "content": {
+                    "__typename": "TimelineTweet",
+                    "tweet_results": { "result": { "__typename": "Tweet", "rest_id": "111" } }
+                  }
+                }
+              },
+              {
+                "content": {
+                  "__typename": "TimelineTimelineItem",
+                  "content": {
+                    "__typename": "TimelineTweet",
+                    "promoted_metadata": {
+                      "advertiser_name": "Acme VPN",
+                      "impression_id": "promoted-222"
+                    },
+                    "tweet_results": { "result": { "__typename": "Tweet", "rest_id": "222" } }
+                  }
+                }
+              },
+              {
+                "content": {
+                  "__typename": "TimelineTimelineCursor",
+                  "value": "cursor-bottom",
+                  "cursorType": "Bottom"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "search_by_raw_query": {
+      "search_timeline": {
+        "timeline": {
+          "instructions": [
+            {
+              "__typename": "TimelineAddEntries",
+              "entries": [
+                {
+                  "content": {
+                    "__typename": "TimelineTimelineItem",
+                    "content": {
+                      "__typename": "TimelineTweet",
+                      "promoted_metadata": { "advertiser_name": "Search Ad" },
+                      "tweet_results": { "result": { "__typename": "Tweet", "rest_id": "333" } }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "__typename": "TimelineReplaceEntry",
+              "entry_id_to_replace": "promoted-444",
+              "entry": {
+                "content": {
+                  "__typename": "TimelineTimelineItem",
+                  "content": {
+                    "__typename": "TimelineTweet",
+                    "promoted_metadata": { "advertiser_name": "Replace Ad" }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "explore_sidebar": {
+      "timeline": {
+        "instructions": [
+          {
+            "__typename": "TimelineAddEntries",
+            "entries": [
+              {
+                "content": {
+                  "__typename": "TimelineTimelineModule",
+                  "items": [
+                    {
+                      "item": {
+                        "__typename": "TimelineTimelineItem",
+                        "content": {
+                          "__typename": "TimelineTrend",
+                          "name": "Promoted trend",
+                          "promoted_metadata": {
+                            "advertiser_name": "Webull HK",
+                            "promoted_trend": { "rest_id": "120146" }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "item": {
+                        "__typename": "TimelineTimelineItem",
+                        "content": {
+                          "__typename": "TimelineTrend",
+                          "name": "Organic trend"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "content": {
+                  "__typename": "TimelineTimelineModule",
+                  "items": [
+                    {
+                      "item": {
+                        "__typename": "TimelineTimelineItem",
+                        "content": {
+                          "__typename": "TimelineTrend",
+                          "name": "Only promoted trend",
+                          "promoted_metadata": { "advertiser_name": "Solo Ad" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

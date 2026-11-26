@@ -42,8 +42,7 @@ const api = vm.runInNewContext(`(() => {
   const upsertPost = (post) => { savedPost = post; };
   const now = () => 1;
   const location = { pathname: '/home', search: '' };
-  const isAdArticle = () => false;
-  const hideAdElement = () => {};
+  const updateAdArticleVisibility = () => false;
   const getPostById = () => savedPost;
 ${source.slice(start, end)}
   captureArticle(article);

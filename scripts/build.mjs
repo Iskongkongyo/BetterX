@@ -6,7 +6,7 @@ import {
 } from './strip-comments.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const outputPath = resolve(root, '更好的X（BetterX）v4.3.0.js');
+const outputPath = resolve(root, '更好的X（BetterX）v4.4.0.js');
 const parts = [
   'src/00-bootstrap-i18n.part.js',
   'src/core/config-state.part.js',
@@ -61,7 +61,7 @@ const releaseTransforms = new Map([
     ['const CARD_CONTENT_SEL = [', 'function revealCardUnderMask'],
   ])],
   ['src/features/ads-layout.part.js', (source) => compactStaticBlocks(source, [
-    ['const PREMIUM_UPSELL_LABELS = new Set([', 'function isAdArticle'],
+    ['const PREMIUM_UPSELL_LABELS = new Set([', 'const PREMIUM_UPSELL_ACTION_LABELS = new Set(['],
     ['const LAYOUT_NAV_LABELS = new Set([', 'function layoutEnhancementsActive'],
   ])],
   ['src/ui/panel-state.part.js', (source) => compactStaticBlocks(source, [
@@ -80,8 +80,8 @@ const output = chunks.map((chunk, index) => {
 if (!output.startsWith('// ==UserScript==')) {
   throw new Error('Build aborted: userscript metadata header is missing.');
 }
-if (!output.includes('// @version      4.3.0')) {
-  throw new Error('Build aborted: expected version 4.3.0.');
+if (!output.includes('// @version      4.4.0')) {
+  throw new Error('Build aborted: expected version 4.4.0.');
 }
 if (!output.trimEnd().endsWith('})();')) {
   throw new Error('Build aborted: userscript wrapper is incomplete.');

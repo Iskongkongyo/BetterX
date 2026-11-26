@@ -336,7 +336,7 @@
   async function capturePostScreenshot(article, expectedId) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 45000);
-    const report = { version: '4.3.0', startedAt: new Date().toISOString(), browser: navigator.userAgent,
+    const report = { version: '4.4.0', startedAt: new Date().toISOString(), browser: navigator.userAgent,
       resources: [], videoPosters: 0, ok: false };
     lastScreenshotReport = report;
     const context = { signal: controller.signal, report, assets: new Map(), jobs: [], references: new Set(), definitions: new Set(), nodes: 0, bytes: 0, encodedBytes: 0 };

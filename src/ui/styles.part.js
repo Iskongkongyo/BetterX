@@ -185,7 +185,12 @@
       }
       #BetterX-root.BetterX-panel-right #BetterX-panel { left: auto; right: 0; }
       #BetterX-root.BetterX-mobile #BetterX-panel { position: fixed; right: 12px; left: auto; bottom: 84px; max-height: calc(100vh - 120px); }
-      .BetterX-ad-hidden, .BetterX-nfl-hidden { display: none !important; }
+      .BetterX-ad-hidden, .BetterX-ad-trend-hidden, .BetterX-nfl-hidden { display: none !important; }
+      /* 新版时间线是绝对定位虚拟列表；折叠比 display:none 更稳妥，至少移除广告内容。 */
+      .BetterX-ad-collapsed, .BetterX-ad-trend-collapsed {
+        height: 0 !important; min-height: 0 !important; max-height: 0 !important;
+        overflow: hidden !important; margin: 0 !important; padding: 0 !important; border: 0 !important;
+      }
       html.BetterX-hide-whatsnew .BetterX-whatsnew-hidden,
       html.BetterX-hide-who-to-follow .BetterX-who-to-follow-hidden,
       html.BetterX-hide-money .BetterX-money-hidden { display: none !important; }

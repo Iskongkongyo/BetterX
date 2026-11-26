@@ -13,7 +13,7 @@
   const widgets=host=>Object.fromEntries([...host.querySelectorAll('[data-widget]')].map(element=>[element.dataset.widget,element]));
 
   window.__runDismissWidgetTests=async(api,check)=>{
-    await check('4.3.0 hide settings precede common features and preserve old choices with reversible controls',async()=>{
+    await check('4.4.0 hide settings precede common features and preserve old choices with reversible controls',async()=>{
       const previous={...api.state.settings},host=makeHost();
       const sidebar=host.querySelector('[data-testid="sidebarColumn"]');
       const card={trends:sidebar.querySelector('[data-widget="trends"]'),follows:sidebar.querySelector('[data-widget="follows"]'),money:host.querySelector('[data-widget="money"]')};
@@ -46,8 +46,13 @@
           for(const [other,element]of Object.entries(card))if(other!==target)assert(visible(element),`${key} changed another hide setting`);
           input.click();assert(visible(card[target]),`${key} did not restore its target`);
         }
+        const sharedAside=document.createElement('aside');
+        sharedAside.setAttribute('role','complementary');
+        sharedAside.innerHTML='<section><h2>订阅 Premium</h2><a href="/i/premium_sign_up">订阅</a></section><section>普通趋势</section>';
+        sidebar.appendChild(sharedAside);
         group.querySelector('#BetterX-hide-nfl').click();group.querySelector('#BetterX-hideads').click();
         assert(!visible(all.nfl)&&!visible(all.premium)&&!visible(all['standalone-ad']),'Moved NFL/ad controls stopped working');
+        assert(!visible(sharedAside.firstElementChild)&&sharedAside.lastElementChild.checkVisibility(),'Premium filtering hid the shared sidebar or left the card visible');
         api.setSettingsPartial({hideWhatsHappening:false,hideWhoToFollow:false,hideMoney:false});await api.state.dbWriteQueue;
         const saved=await api.dbGetSetting('settings');
         api.setSettingsPartial({hideWhatsHappening:true,hideWhoToFollow:true,hideMoney:true});
@@ -93,6 +98,60 @@
       }finally{
         api.state.observer?.disconnect();api.state.observerCleanup?.();api.state.viewObserver?.disconnect();
         host?.remove();api.applySettingsSnapshot(previous);await api.state.dbWriteQueue;
+      }
+    });
+
+    await check('ad fallback preserves ordinary cards and restores a reused timeline row', async () => {
+      const previous = { ...api.state.settings };
+      const host = document.createElement('main');
+      host.innerHTML = '<ul>'
+        + '<li data-index="1" id="ad-fixture-row"><article data-testid="tweet">'
+        + '<span data-label>Promoted by Acme</span><div data-testid="tweetText">Post text</div></article></li>'
+        + '<li data-index="2" id="ad-fixture-card"><article data-testid="tweet">'
+        + '<a data-testid="card.wrapper" href="https://example.org/news"><span>Sponsored by a local library</span></a>'
+        + '<a href="https://x.com/search?q=topic&amp;src=promoted_trend_click">A link shared within the post</a></article></li>'
+        + '</ul><div data-testid="sidebarColumn"><ul>'
+        + '<li data-index="3" id="ad-fixture-trend"><a href="https://x.com/search?q=topic&amp;src=promoted_trend_click">Promoted trend</a></li>'
+        + '<li data-index="4" id="ad-fixture-organic-trend"><a href="https://x.com/search?q=topic&amp;src=promoted_trend_click_archive">Ordinary trend</a></li>'
+        + '</ul></div>';
+      const hasHeight = (id) => host.querySelector('#' + id).getBoundingClientRect().height > 0;
+      try {
+        api.applySettingsSnapshot({ ...previous, hideAds: true, hideAdultSpam: false });
+        api.startObserver();
+        document.body.appendChild(host);
+        api.scanArticles(host);
+        assert(!hasHeight('ad-fixture-row'), 'A genuine ad label was missed');
+        assert(!hasHeight('ad-fixture-trend'), 'A genuine promoted trend was missed');
+        assert(hasHeight('ad-fixture-card'), 'A link card or search link inside a post hid ordinary content');
+        assert(hasHeight('ad-fixture-organic-trend'), 'A different src parameter matched a promoted trend');
+
+        const trend = host.querySelector('#ad-fixture-trend a');
+        trend.setAttribute('href', 'https://x.com/search?q=ordinary');
+        await sleep(50);
+        assert(hasHeight('ad-fixture-trend'), 'A reused trend link retained a stale ad marker');
+        trend.setAttribute('href', 'https://x.com/search?q=topic&src=promoted_trend_click');
+        await sleep(50);
+        assert(!hasHeight('ad-fixture-trend'), 'Promotion added via a trend href update was missed');
+
+        const row = host.querySelector('#ad-fixture-row');
+        row.querySelector('[data-label]').remove();
+        await sleep(170);
+        assert(hasHeight('ad-fixture-row'), 'Removing an ad label without replacing the article left the row collapsed');
+
+        row.innerHTML = '<article data-testid="tweet"><span>Promoted by Acme</span></article>';
+        await sleep(170);
+        assert(!hasHeight('ad-fixture-row'), 'An ad inserted into the same row was missed');
+        row.innerHTML = '<article data-testid="tweet"><div data-testid="tweetText">A new ordinary post</div></article>';
+        await sleep(170);
+        assert(hasHeight('ad-fixture-row'), 'A recycled row kept the previous post’s ad marker');
+        return { adLabelsVerified: true, linkCardsPreserved: true, reusedRowRestored: true };
+      } finally {
+        api.state.observer?.disconnect();
+        api.state.observerCleanup?.();
+        api.state.viewObserver?.disconnect();
+        host.remove();
+        api.applySettingsSnapshot(previous);
+        await api.state.dbWriteQueue;
       }
     });
   };
