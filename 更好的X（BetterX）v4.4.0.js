@@ -5000,6 +5000,14 @@ function findTopLevelArticleElement(article, selector) {
     !element.closest || element.closest('article') === article
   )) || null;
 }
+function findDownloadActionGroup(article) {
+  const groups = [...article.querySelectorAll('[role="group"]')].filter((group) => (
+    !group.closest || group.closest('article') === article
+  ));
+  return groups.find((group) => group.querySelector?.(
+    '[data-testid="reply"], [data-testid="retweet"], [data-testid="unretweet"], [data-testid="like"], [data-testid="unlike"], [data-engagement-action]'
+  )) || groups.find((group) => !group.querySelector?.('[role="slider"]')) || null;
+}
 function findGuestDownloadActionPlacement(article) {
   const reply = findTopLevelArticleElement(article, '[data-engagement-action="reply"]');
   const repost = findTopLevelArticleElement(article, '[data-engagement-action="retweet"]');
@@ -5015,7 +5023,7 @@ function findGuestDownloadActionPlacement(article) {
   return { host: row, before: trailing };
 }
 function placeDownloadControls(article, controls) {
-  const group = findTopLevelArticleElement(article, '[role="group"]');
+  const group = findDownloadActionGroup(article);
   if (group) {
     controls.classList.remove('guest-actions', 'floating');
     controls.classList.add('in-group');

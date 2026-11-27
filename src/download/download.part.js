@@ -1325,6 +1325,17 @@
     )) || null;
   }
 
+  function findDownloadActionGroup(article) {
+    const groups = [...article.querySelectorAll('[role="group"]')].filter((group) => (
+      !group.closest || group.closest('article') === article
+    ));
+    // X 新版视频播放器的进度条也是 role="group"（aria-label“进度拖动条”），且排在操作栏之前；
+    // 先找含回复、转帖、点赞的操作栏，找不到时也要跳过含滑块的播放器控件组。
+    return groups.find((group) => group.querySelector?.(
+      '[data-testid="reply"], [data-testid="retweet"], [data-testid="unretweet"], [data-testid="like"], [data-testid="unlike"], [data-engagement-action]'
+    )) || groups.find((group) => !group.querySelector?.('[role="slider"]')) || null;
+  }
+
   function findGuestDownloadActionPlacement(article) {
     const reply = findTopLevelArticleElement(article, '[data-engagement-action="reply"]');
     const repost = findTopLevelArticleElement(article, '[data-engagement-action="retweet"]');
@@ -1341,7 +1352,7 @@
   }
 
   function placeDownloadControls(article, controls) {
-    const group = findTopLevelArticleElement(article, '[role="group"]');
+    const group = findDownloadActionGroup(article);
     if (group) {
       controls.classList.remove('guest-actions', 'floating');
       controls.classList.add('in-group');

@@ -214,6 +214,30 @@
       }finally{outer.remove();}
     });
 
+    await check('download controls stay in the action bar when the video player adds its progress group',async()=>{
+      configure(api);
+      // X 新版播放器悬停时会在操作栏之前插入 role="group" 的进度条，按钮不能被塞进进度条。
+      const progress=()=>{const group=document.createElement('div');group.setAttribute('role','group');group.setAttribute('aria-label','进度拖动条');group.innerHTML='<div role="slider" aria-label="进度拖动条" tabindex="0"></div>';return group;};
+      const article=document.createElement('article');
+      article.innerHTML=`<div data-testid="User-Name"><a href="/player"><span>Player</span></a><a href="/player/status/420010"><time datetime="2026-11-26T00:00:00Z">now</time></a></div><div data-player><video poster="https://pbs.twimg.com/ext_tw_video_thumb/420010/pu/img/preview.jpg"></video></div><div role="group" data-action-bar><button data-testid="reply"></button><button data-testid="like"></button></div>`;
+      const guest=document.createElement('article');
+      guest.innerHTML=`<div data-testid="User-Name"><a href="/guest"><span>Guest</span></a><a href="/guest/status/420011"><time datetime="2026-11-26T00:00:00Z">now</time></a></div><div data-player></div><div role="group" data-action-bar><div><div data-engagement-action="reply"></div></div><div><div data-engagement-action="like"></div></div></div>`;
+      guest.querySelector('[data-player]').append(progress(),Object.assign(document.createElement('video'),{poster:'https://pbs.twimg.com/ext_tw_video_thumb/420011/pu/img/preview.jpg'}));
+      document.querySelector('main').append(article,guest);
+      const where=post=>{const controls=post.querySelectorAll('.BetterX-download-controls');return {count:controls.length,inActionBar:controls[0]?.parentElement===post.querySelector('[data-action-bar]')};};
+      try{
+        api.injectDownloadButtons(article);api.injectDownloadButtons(guest);
+        article.querySelector('[data-player]').prepend(progress());
+        api.injectDownloadButtons(article);api.injectDownloadButtons(guest);
+        await sleep(200);
+        const loggedIn=where(article),loggedOut=where(guest);
+        assert(loggedIn.count===1 && loggedIn.inActionBar,'A progress group added after injection captured the download control');
+        assert(loggedOut.count===1 && loggedOut.inActionBar,'A progress group before the guest action bar captured the download control');
+        assert(!document.querySelector('[aria-label="进度拖动条"] .BetterX-download-controls'),'The progress scrubber must never host download controls');
+        return {loggedIn,loggedOut};
+      }finally{article.remove();guest.remove();}
+    });
+
     window.__prepareNativeDownloadTest = mobile => {
       configure(api);api.setSettingsPartial({silentDownload:false});api.togglePanel(false);api.repositionBadge();
       const id=mobile?'410007':'410006',io=transport(api),article=makePost(api,id,mixed());
