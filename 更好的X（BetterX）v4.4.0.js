@@ -5046,7 +5046,7 @@ function injectDownloadButtons(scope) {
       article.querySelectorAll('.BetterX-download-controls').forEach((control) => control.remove());
       return;
     }
-    const existingControls = article.querySelector('.BetterX-download-controls');
+    const existingControls = findTopLevelArticleElement(article, '.BetterX-download-controls');
     const statusId = extractStatusIdFromUrl(getStatusLink(article));
     if (!statusId) { existingControls?.remove(); return; }
     if (existingControls) {

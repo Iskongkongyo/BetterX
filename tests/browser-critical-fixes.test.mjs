@@ -225,7 +225,7 @@ try {
   }catch(error){results.push({name:'native mobile touch opens the roleless More sheet and saves a PNG',passed:false,error:String(error.stack||error)});}
   finally{await send('Runtime.evaluate',{expression:'window.__nativeMobileScreenshot?.cleanup()'});}
   console.log(JSON.stringify(results, null, 2));
-  assert.equal(results.length, 43);
+  assert.equal(results.length, 44);
   assert.ok(results.every(result => result.passed), 'One or more browser regressions failed');
   const errors = await send('Runtime.evaluate', { expression: 'window.__browserErrors', returnByValue: true });
   assert.deepEqual(errors.result.value, [], 'Browser emitted unexpected errors');

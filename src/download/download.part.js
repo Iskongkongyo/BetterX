@@ -1373,7 +1373,9 @@
         article.querySelectorAll('.BetterX-download-controls').forEach((control) => control.remove());
         return;
       }
-      const existingControls = article.querySelector('.BetterX-download-controls');
+      // 只认领本帖自己的控件：X 长文等页面会在帖子里嵌套 article，
+      // 用 querySelector 会把内嵌帖子的控件搬到外层操作栏，内嵌帖子随即补建，按钮无限堆积。
+      const existingControls = findTopLevelArticleElement(article, '.BetterX-download-controls');
       const statusId = extractStatusIdFromUrl(getStatusLink(article));
       if (!statusId) { existingControls?.remove(); return; }
       if (existingControls) {

@@ -194,6 +194,26 @@
       }finally{api.closeDownloadMediaPicker();clearJobs(api);io.restore();article.remove();}
     });
 
+    await check('nested post articles keep their own download controls instead of piling them into the outer action bar',async()=>{
+      configure(api);
+      // X 长文会把嵌入的帖子渲染成外层帖子里的 article；外层扫描不能认领内层帖子的控件。
+      const outer=document.createElement('article');
+      outer.innerHTML=`<div data-testid="User-Name"><a href="/longform"><span>Longform Author</span></a></div><div data-testid="twitterArticleReadView"><p>long-form body</p><article><div data-testid="User-Name"><a href="/embedded"><span>Embedded</span></a><a href="/embedded/status/420002"><time datetime="2026-11-24T00:00:00Z">embedded</time></a></div><div data-testid="tweetPhoto"></div><div role="group" data-inner-group></div></article></div><a href="/longform/status/420001"><time datetime="2026-11-25T00:00:00Z">outer</time></a><div role="group" data-outer-group></div>`;
+      document.querySelector('main').appendChild(outer);
+      const inner=outer.querySelector('article');
+      const own=article=>[...article.querySelectorAll('.BetterX-download-controls')].filter(control=>control.closest('article')===article);
+      try{
+        for(let pass=0;pass<5;pass++){api.injectDownloadButtons(inner);api.injectDownloadButtons(outer);api.injectDownloadButtons(document);}
+        await sleep(400);
+        const outerCount=outer.querySelectorAll('[data-outer-group] > .BetterX-download-controls').length;
+        const innerCount=outer.querySelectorAll('[data-inner-group] > .BetterX-download-controls').length;
+        assert(outerCount===1,`The outer action bar accumulated ${outerCount} download controls`);
+        assert(innerCount===1,`The embedded post has ${innerCount} download controls`);
+        assert(own(outer).length===1 && own(inner).length===1,'Each article must own exactly one control');
+        return {outerCount,innerCount};
+      }finally{outer.remove();}
+    });
+
     window.__prepareNativeDownloadTest = mobile => {
       configure(api);api.setSettingsPartial({silentDownload:false});api.togglePanel(false);api.repositionBadge();
       const id=mobile?'410007':'410006',io=transport(api),article=makePost(api,id,mixed());
