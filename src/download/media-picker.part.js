@@ -170,7 +170,7 @@
     };
     const activate = (selectMedia) => {
       if (!button.isConnected || !state.settings.mediaDownload || isDownloadExcludedArticle(article)) return;
-      const statusId = extractStatusIdFromUrl(getStatusLink(article));
+      const statusId = getDownloadPostIdentity(article).id;
       if (!statusId) return;
       controls.dataset.statusId = statusId;
       handleDownloadClick(article, extractAuthor(article), statusId, { selectMedia }).catch((error) => {
@@ -183,12 +183,12 @@
       event.stopPropagation();
       suppressClick = false;
       press = { id: event.pointerId, x: event.clientX, y: event.clientY,
-        statusId: extractStatusIdFromUrl(getStatusLink(article)) };
+        statusId: getDownloadPostIdentity(article).id };
       const started = press;
       timer = setTimeout(() => {
         timer = null;
         if (press !== started) return;
-        if (started.statusId !== extractStatusIdFromUrl(getStatusLink(article))) {
+        if (started.statusId !== getDownloadPostIdentity(article).id) {
           suppressClick = true;
           clearPress();
           return;

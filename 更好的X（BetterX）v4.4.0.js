@@ -4954,7 +4954,7 @@ async function handleDownloadClick(article, author, statusId, options) {
   if (selectMedia) pendingDownloadSelections.add(id);
   try {
     const postText = extractText(article);
-    const postDate = article.querySelector('time')?.getAttribute('datetime') || '';
+    const postDate = getDownloadPostIdentity(article).date;
     let items = collectDownloadItems(article, statusId);
     if (needsOnDemandVideoLookup(article, statusId)) {
       pendingDownloadStarts.add(id);
@@ -4962,8 +4962,7 @@ async function handleDownloadClick(article, author, statusId, options) {
       showToast('正在获取视频地址…');
       try {
         const found = await requestTweetDetailMedia(statusId);
-        const currentId = extractStatusIdFromUrl(getStatusLink(article));
-        if (currentId && currentId !== id) return;
+        if (getDownloadPostIdentity(article).id !== id) return;
         if (found) items = collectDownloadItems(article, statusId);
       } catch (error) {
         debugLog('download media lookup failed:', error);
@@ -5000,6 +4999,24 @@ function findTopLevelArticleElement(article, selector) {
     !element.closest || element.closest('article') === article
   )) || null;
 }
+function getDownloadPostIdentity(article) {
+  const embeddedSelector = '[data-testid="tweetText"], [data-testid="quoteTweet"], [data-testid="quoteTweetContainer"], [data-testid="twitterArticleReadView"], blockquote';
+  const isOwnMetadata = (element) => {
+    if (element.closest('article') !== article) return false;
+    const embedded = element.closest(embeddedSelector);
+    return !embedded || !article.contains(embedded);
+  };
+  const href = (anchor) => anchor.getAttribute('href') || '';
+  const links = [...article.querySelectorAll('a[href*="/status/"]')].filter((anchor) => (
+    isOwnMetadata(anchor) && extractStatusIdFromUrl(href(anchor))
+  ));
+  const timeWithinLink = (anchor) => [...anchor.querySelectorAll('time')].find(isOwnMetadata);
+  const link = links.find(timeWithinLink)
+    || links.find((anchor) => /\/status\/\d+(?:[?#]|$)/.test(href(anchor))) || links[0];
+  if (!link) return { id: '', date: '' };
+  const time = timeWithinLink(link) || [...article.querySelectorAll('time[datetime]')].find(isOwnMetadata);
+  return { id: extractStatusIdFromUrl(href(link)), date: time?.getAttribute('datetime') || '' };
+}
 function findGuestDownloadActionPlacement(article) {
   const reply = findTopLevelArticleElement(article, '[data-engagement-action="reply"]');
   const repost = findTopLevelArticleElement(article, '[data-engagement-action="retweet"]');
@@ -5014,21 +5031,30 @@ function findGuestDownloadActionPlacement(article) {
   if (trailing.parentElement !== row) return null;
   return { host: row, before: trailing };
 }
+function findDownloadActionPlacement(article) {
+  const actionSelector = '[data-testid="reply"], [data-testid="retweet"], [data-testid="unretweet"], [data-testid="like"], [data-testid="unlike"], [data-engagement-action="reply"], [data-engagement-action="retweet"], [data-engagement-action="like"]';
+  const groups = [...article.querySelectorAll('[role="group"]')].filter((group) => (
+    group.closest('article') === article && !group.closest(VIDEO_CONTAINER_SELECTORS)
+    && !group.querySelector('[role="slider"]')
+  ));
+  const actionGroup = groups.find((group) => [...group.querySelectorAll(actionSelector)].some((action) => (
+    action.closest('article') === article && action.closest('[role="group"]') === group
+  )));
+  if (actionGroup) return { host: actionGroup, before: null };
+  const guest = findGuestDownloadActionPlacement(article);
+  if (guest) return guest;
+  const fallback = groups.find((group) => !group.querySelector('article, [role="group"], video, ' + VIDEO_CONTAINER_SELECTORS));
+  return fallback ? { host: fallback, before: null } : null;
+}
 function placeDownloadControls(article, controls) {
-  const group = findTopLevelArticleElement(article, '[role="group"]');
-  if (group) {
-    controls.classList.remove('guest-actions', 'floating');
-    controls.classList.add('in-group');
-    if (controls.parentElement !== group) group.appendChild(controls);
-    return;
-  }
-  const guestPlacement = findGuestDownloadActionPlacement(article);
-  if (guestPlacement) {
+  const placement = findDownloadActionPlacement(article);
+  if (placement) {
+    const { host, before } = placement;
     controls.classList.remove('floating');
-    controls.classList.add('in-group', 'guest-actions');
-    if (controls.parentElement !== guestPlacement.host || controls.nextSibling !== guestPlacement.before) {
-      guestPlacement.host.insertBefore(controls, guestPlacement.before);
-    }
+    controls.classList.add('in-group');
+    if (before) controls.classList.add('guest-actions');
+    else controls.classList.remove('guest-actions');
+    if (controls.parentElement !== host || (before && controls.nextSibling !== before)) host.insertBefore(controls, before);
     return;
   }
   controls.classList.remove('in-group', 'guest-actions');
@@ -5046,8 +5072,8 @@ function injectDownloadButtons(scope) {
       article.querySelectorAll('.BetterX-download-controls').forEach((control) => control.remove());
       return;
     }
-    const existingControls = article.querySelector('.BetterX-download-controls');
-    const statusId = extractStatusIdFromUrl(getStatusLink(article));
+    const existingControls = findTopLevelArticleElement(article, '.BetterX-download-controls');
+    const statusId = getDownloadPostIdentity(article).id;
     if (!statusId) { existingControls?.remove(); return; }
     if (existingControls) {
       existingControls.dataset.statusId = statusId;
@@ -5255,7 +5281,7 @@ function bindDownloadButtonGestures(button, article, controls) {
   };
   const activate = (selectMedia) => {
     if (!button.isConnected || !state.settings.mediaDownload || isDownloadExcludedArticle(article)) return;
-    const statusId = extractStatusIdFromUrl(getStatusLink(article));
+    const statusId = getDownloadPostIdentity(article).id;
     if (!statusId) return;
     controls.dataset.statusId = statusId;
     handleDownloadClick(article, extractAuthor(article), statusId, { selectMedia }).catch((error) => {
@@ -5268,12 +5294,12 @@ function bindDownloadButtonGestures(button, article, controls) {
     event.stopPropagation();
     suppressClick = false;
     press = { id: event.pointerId, x: event.clientX, y: event.clientY,
-      statusId: extractStatusIdFromUrl(getStatusLink(article)) };
+      statusId: getDownloadPostIdentity(article).id };
     const started = press;
     timer = setTimeout(() => {
       timer = null;
       if (press !== started) return;
-      if (started.statusId !== extractStatusIdFromUrl(getStatusLink(article))) {
+      if (started.statusId !== getDownloadPostIdentity(article).id) {
         suppressClick = true;
         clearPress();
         return;
