@@ -7,8 +7,7 @@ let clock = 0, nextTimer = 0;
 const timers = new Map();
 const context = loadUserscript('bindDownloadButtonGestures', `
   globalThis.starts = [];
-  getStatusLink = article => article.url;
-  extractStatusIdFromUrl = url => url;
+  getDownloadPostIdentity = article => ({ id: article.url, date: '' });
   extractAuthor = article => article.author;
   isDownloadExcludedArticle = () => false;
   handleDownloadClick = async (...args) => {globalThis.starts.push(args);};
@@ -75,24 +74,26 @@ const flow = loadUserscript('handleDownloadClick, pendingDownloadStarts, pending
   requestTweetDetailMedia=()=>{globalThis.lookups++;return new Promise(resolve=>globalThis.finishLookup=resolve);};
   showDownloadMediaPicker=items=>new Promise(resolve=>{globalThis.pickers.push(items);globalThis.choose=resolve;});
   startDownloadJob=(...args)=>{globalThis.jobs.push(args);};
-  extractText=article=>article.text;getStatusLink=article=>article.id;extractStatusIdFromUrl=url=>url;
+  extractText=article=>article.text;getDownloadPostIdentity=article=>({id:article.id,date:article.date});
   scheduleDownloadUiRefresh=()=>{};showToast=()=>{};getMissingMediaMessage=()=>'';
   uiConfirm=()=>{globalThis.confirmations++;return globalThis.confirmResult;};
   toggleDownloadPopover=()=>{globalThis.popovers++;};
 `);
 const api=flow.__test;
-const post={id:'123',text:'original text',querySelector:()=>null};
+const post={id:'123',text:'original text',date:'2026-11-26T00:00:00Z'};
 const select=()=>api.handleDownloadClick(post,{username:'@original'},'123',{selectMedia:true});
 let pending=select();
 assert.equal(api.pendingDownloadSelections.size,1);
 await select(); await api.handleDownloadClick(post,{},'123');
 assert.equal(flow.pickers.length,1,'Repeated activation must not open another selector');
 post.text='updated while selecting';
+post.date='2026-11-27T00:00:00Z';
 flow.choose([flow.items[1]]); await pending;
 assert.equal(flow.jobs.length,1);
 assert.equal(flow.jobs[0][0].length,1);
 assert.equal(flow.jobs[0][0][0].convertToGif,true,'Selection must preserve the GIF conversion setting');
 assert.equal(flow.jobs[0][3],'original text','Selection must retain the original naming context');
+assert.equal(flow.jobs[0][4],'2026-11-26T00:00:00Z','Selection must retain the original post date');
 assert.equal(api.pendingDownloadSelections.size,0);
 
 api.state.settings.trackDownloadedPosts=true;api.state.settings.downloadedPostIds=['123'];
@@ -126,6 +127,9 @@ assert.equal(flow.confirmations,3,'Disabling download history must suppress re-d
 pending=select();post.id='999';flow.finishLookup(true);await pending;
 assert.equal(flow.jobs.length,afterRedownload+1,'Lookup must not combine a recycled post with the old ID');
 assert.equal(api.pendingDownloadSelections.size,0);
+post.id='123';pending=select();post.id='';flow.finishLookup(true);await pending;
+assert.equal(flow.jobs.length,afterRedownload+1,'Lookup must stop if the original post has lost its own ID');
+assert.equal(api.pendingDownloadStarts.size,0);
 post.id='123';flow.lookupNeeded=false;flow.failCollect=true;
 await assert.rejects(select(),/collection failed/);assert.equal(api.pendingDownloadSelections.size,0,'Errors must release the selection lock');
 flow.failCollect=false;

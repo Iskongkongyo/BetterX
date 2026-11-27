@@ -173,7 +173,7 @@ let lookupCount = 0;
 let startedCount = 0;
 const clickContext = {
   pendingDownloadStarts: new Set(), pendingDownloadSelections: new Set(), downloadJobs: new Map(),
-  state: {settings:{mediaDownload:true}}, getStatusLink: () => '', extractStatusIdFromUrl: () => '',
+  state: {settings:{mediaDownload:true}}, getDownloadPostIdentity: () => ({ id: '123', date: '' }),
   isActiveDownloadJob: () => false, isDownloadedPostRecorded: () => true,
   uiConfirm: () => { confirmationCount++; return true; },
   collectDownloadItems: () => [{ url: 'https://video.twimg.com/example.mp4', ext: 'mp4' }],

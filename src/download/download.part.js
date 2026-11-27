@@ -1274,7 +1274,7 @@
     if (selectMedia) pendingDownloadSelections.add(id);
     try {
       const postText = extractText(article);
-      const postDate = article.querySelector('time')?.getAttribute('datetime') || '';
+      const postDate = getDownloadPostIdentity(article).date;
       let items = collectDownloadItems(article, statusId);
       if (needsOnDemandVideoLookup(article, statusId)) {
         pendingDownloadStarts.add(id);
@@ -1283,8 +1283,7 @@
         try {
           const found = await requestTweetDetailMedia(statusId);
           // X 可能在查询期间复用文章节点；不能把新帖的 DOM 媒体放进旧帖任务。
-          const currentId = extractStatusIdFromUrl(getStatusLink(article));
-          if (currentId && currentId !== id) return;
+          if (getDownloadPostIdentity(article).id !== id) return;
           if (found) items = collectDownloadItems(article, statusId);
         } catch (error) {
           debugLog('download media lookup failed:', error);
@@ -1325,15 +1324,24 @@
     )) || null;
   }
 
-  function findDownloadActionGroup(article) {
-    const groups = [...article.querySelectorAll('[role="group"]')].filter((group) => (
-      !group.closest || group.closest('article') === article
+  function getDownloadPostIdentity(article) {
+    const embeddedSelector = '[data-testid="tweetText"], [data-testid="quoteTweet"], [data-testid="quoteTweetContainer"], [data-testid="twitterArticleReadView"], blockquote';
+    const isOwnMetadata = (element) => {
+      if (element.closest('article') !== article) return false;
+      const embedded = element.closest(embeddedSelector);
+      return !embedded || !article.contains(embedded);
+    };
+    const href = (anchor) => anchor.getAttribute('href') || '';
+    const links = [...article.querySelectorAll('a[href*="/status/"]')].filter((anchor) => (
+      isOwnMetadata(anchor) && extractStatusIdFromUrl(href(anchor))
     ));
-    // X 新版视频播放器的进度条也是 role="group"（aria-label“进度拖动条”），且排在操作栏之前；
-    // 先找含回复、转帖、点赞的操作栏，找不到时也要跳过含滑块的播放器控件组。
-    return groups.find((group) => group.querySelector?.(
-      '[data-testid="reply"], [data-testid="retweet"], [data-testid="unretweet"], [data-testid="like"], [data-testid="unlike"], [data-engagement-action]'
-    )) || groups.find((group) => !group.querySelector?.('[role="slider"]')) || null;
+    // 先取本帖的时间链接，再兼容没有时间标签的帖子和媒体链接。
+    const timeWithinLink = (anchor) => [...anchor.querySelectorAll('time')].find(isOwnMetadata);
+    const link = links.find(timeWithinLink)
+      || links.find((anchor) => /\/status\/\d+(?:[?#]|$)/.test(href(anchor))) || links[0];
+    if (!link) return { id: '', date: '' };
+    const time = timeWithinLink(link) || [...article.querySelectorAll('time[datetime]')].find(isOwnMetadata);
+    return { id: extractStatusIdFromUrl(href(link)), date: time?.getAttribute('datetime') || '' };
   }
 
   function findGuestDownloadActionPlacement(article) {
@@ -1351,21 +1359,32 @@
     return { host: row, before: trailing };
   }
 
+  function findDownloadActionPlacement(article) {
+    const actionSelector = '[data-testid="reply"], [data-testid="retweet"], [data-testid="unretweet"], [data-testid="like"], [data-testid="unlike"], [data-engagement-action="reply"], [data-engagement-action="retweet"], [data-engagement-action="like"]';
+    const groups = [...article.querySelectorAll('[role="group"]')].filter((group) => (
+      group.closest('article') === article && !group.closest(VIDEO_CONTAINER_SELECTORS)
+      && !group.querySelector('[role="slider"]')
+    ));
+    // 操作按钮必须同时归属当前帖子和当前操作组，避免认领内嵌帖子或子组的按钮。
+    const actionGroup = groups.find((group) => [...group.querySelectorAll(actionSelector)].some((action) => (
+      action.closest('article') === article && action.closest('[role="group"]') === group
+    )));
+    if (actionGroup) return { host: actionGroup, before: null };
+    const guest = findGuestDownloadActionPlacement(article);
+    if (guest) return guest;
+    const fallback = groups.find((group) => !group.querySelector('article, [role="group"], video, ' + VIDEO_CONTAINER_SELECTORS));
+    return fallback ? { host: fallback, before: null } : null;
+  }
+
   function placeDownloadControls(article, controls) {
-    const group = findDownloadActionGroup(article);
-    if (group) {
-      controls.classList.remove('guest-actions', 'floating');
-      controls.classList.add('in-group');
-      if (controls.parentElement !== group) group.appendChild(controls);
-      return;
-    }
-    const guestPlacement = findGuestDownloadActionPlacement(article);
-    if (guestPlacement) {
+    const placement = findDownloadActionPlacement(article);
+    if (placement) {
+      const { host, before } = placement;
       controls.classList.remove('floating');
-      controls.classList.add('in-group', 'guest-actions');
-      if (controls.parentElement !== guestPlacement.host || controls.nextSibling !== guestPlacement.before) {
-        guestPlacement.host.insertBefore(controls, guestPlacement.before);
-      }
+      controls.classList.add('in-group');
+      if (before) controls.classList.add('guest-actions');
+      else controls.classList.remove('guest-actions');
+      if (controls.parentElement !== host || (before && controls.nextSibling !== before)) host.insertBefore(controls, before);
       return;
     }
     controls.classList.remove('in-group', 'guest-actions');
@@ -1387,7 +1406,7 @@
       // 只认领本帖自己的控件：X 长文等页面会在帖子里嵌套 article，
       // 用 querySelector 会把内嵌帖子的控件搬到外层操作栏，内嵌帖子随即补建，按钮无限堆积。
       const existingControls = findTopLevelArticleElement(article, '.BetterX-download-controls');
-      const statusId = extractStatusIdFromUrl(getStatusLink(article));
+      const statusId = getDownloadPostIdentity(article).id;
       if (!statusId) { existingControls?.remove(); return; }
       if (existingControls) {
         existingControls.dataset.statusId = statusId;

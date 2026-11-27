@@ -196,6 +196,7 @@
 
     await check('nested post articles keep their own download controls instead of piling them into the outer action bar',async()=>{
       configure(api);
+      const io=transport(api);
       // X 长文会把嵌入的帖子渲染成外层帖子里的 article；外层扫描不能认领内层帖子的控件。
       const outer=document.createElement('article');
       outer.innerHTML=`<div data-testid="User-Name"><a href="/longform"><span>Longform Author</span></a></div><div data-testid="twitterArticleReadView"><p>long-form body</p><article><div data-testid="User-Name"><a href="/embedded"><span>Embedded</span></a><a href="/embedded/status/420002"><time datetime="2026-11-24T00:00:00Z">embedded</time></a></div><div data-testid="tweetPhoto"></div><div role="group" data-inner-group></div></article></div><a href="/longform/status/420001"><time datetime="2026-11-25T00:00:00Z">outer</time></a><div role="group" data-outer-group></div>`;
@@ -210,8 +211,19 @@
         assert(outerCount===1,`The outer action bar accumulated ${outerCount} download controls`);
         assert(innerCount===1,`The embedded post has ${innerCount} download controls`);
         assert(own(outer).length===1 && own(inner).length===1,'Each article must own exactly one control');
-        return {outerCount,innerCount};
-      }finally{outer.remove();}
+        assert(own(outer)[0].dataset.statusId==='420001' && own(inner)[0].dataset.statusId==='420002',
+          'The controls must use their own article IDs');
+        api.registerMedia('420001',[photo('outerPostMetadata')]);
+        click(own(outer)[0].querySelector('.BetterX-dl-btn'));
+        const job=await waitForJob(api,'420001');
+        assert(job.postDate==='2026-11-25T00:00:00Z','An embedded timestamp leaked into the outer download');
+        assert(io.requests.length===1 && io.requests[0].includes('outerPostMetadata'),
+          'The outer download did not use its own registered media');
+        outer.querySelector('a[href="/longform/status/420001"]').remove();
+        api.injectDownloadButtons(outer);
+        assert(own(outer).length===0 && own(inner).length===1,'The outer article must not fall back to the embedded ID');
+        return {outerCount,innerCount,downloadIdentityVerified:true};
+      }finally{clearJobs(api);io.restore();outer.remove();}
     });
 
     await check('download controls stay in the action bar when the video player adds its progress group',async()=>{
@@ -223,7 +235,17 @@
       const guest=document.createElement('article');
       guest.innerHTML=`<div data-testid="User-Name"><a href="/guest"><span>Guest</span></a><a href="/guest/status/420011"><time datetime="2026-11-26T00:00:00Z">now</time></a></div><div data-player></div><div role="group" data-action-bar><div><div data-engagement-action="reply"></div></div><div><div data-engagement-action="like"></div></div></div>`;
       guest.querySelector('[data-player]').append(progress(),Object.assign(document.createElement('video'),{poster:'https://pbs.twimg.com/ext_tw_video_thumb/420011/pu/img/preview.jpg'}));
-      document.querySelector('main').append(article,guest);
+      const rolelessGuest=document.createElement('article');
+      rolelessGuest.innerHTML='<a href="/guest/status/420012">Guest media</a><div data-testid="tweetPhoto"></div>'
+        + '<div data-testid="videoPlayer"><div role="group" data-video-buttons><button aria-label="Mute"></button></div></div>'
+        + '<div data-roleless-actions><button data-engagement-action="reply"></button>'
+        + '<button data-engagement-action="retweet"></button><button data-engagement-action="like"></button>'
+        + '<div data-share><button data-engagement-action="share"></button></div></div>';
+      const nestedHost=document.createElement('article');
+      nestedHost.innerHTML='<a href="/outer/status/420013"><time>Outer</time></a><div data-testid="tweetPhoto"></div>'
+        + '<div role="group" data-legacy-actions><button aria-label="Reply"></button></div>'
+        + '<div role="group" data-embedded-wrapper><article><div role="group"><button data-testid="like"></button></div></article></div>';
+      document.querySelector('main').append(article,guest,rolelessGuest,nestedHost);
       const where=post=>{const controls=post.querySelectorAll('.BetterX-download-controls');return {count:controls.length,inActionBar:controls[0]?.parentElement===post.querySelector('[data-action-bar]')};};
       try{
         api.injectDownloadButtons(article);api.injectDownloadButtons(guest);
@@ -234,8 +256,15 @@
         assert(loggedIn.count===1 && loggedIn.inActionBar,'A progress group added after injection captured the download control');
         assert(loggedOut.count===1 && loggedOut.inActionBar,'A progress group before the guest action bar captured the download control');
         assert(!document.querySelector('[aria-label="进度拖动条"] .BetterX-download-controls'),'The progress scrubber must never host download controls');
-        return {loggedIn,loggedOut};
-      }finally{article.remove();guest.remove();}
+        api.injectDownloadButtons(rolelessGuest);
+        api.injectDownloadButtons(nestedHost);
+        const guestControl=rolelessGuest.querySelector('.BetterX-download-controls');
+        assert(guestControl?.parentElement===rolelessGuest.querySelector('[data-roleless-actions]')
+          && guestControl.nextElementSibling?.hasAttribute('data-share'),'The roleless guest controls must precede generic groups');
+        assert(nestedHost.querySelector('.BetterX-download-controls')?.parentElement===nestedHost.querySelector('[data-legacy-actions]'),
+          'The embedded post must not lend its action markers to the outer article');
+        return {loggedIn,loggedOut,rolelessGuest:true,nestedActionOwnership:true};
+      }finally{article.remove();guest.remove();rolelessGuest.remove();nestedHost.remove();}
     });
 
     window.__prepareNativeDownloadTest = mobile => {
