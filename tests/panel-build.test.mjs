@@ -33,11 +33,12 @@ assert.match(builtHtml, /APP_ICON_URL \? `<img/);
 assert.match(builtHtml, /DOWNLOAD_NAME_TOKENS\.map/);
 assert.match(builtHtml, /<section class="BetterX-view BetterX-settings-view"/);
 assert.match(builtHtml, /id="BetterX-download-advanced"/);
-assert.match(builtHtml, /id="BetterX-hide-nfl"[\s\S]*id="BetterX-hideads"/,
-  '关闭 NFL 开关应位于关闭广告上方');
+assert.match(builtHtml, /id="BetterX-hide-nfl"[\s\S]*id="BetterX-hide-reposts"[\s\S]*id="BetterX-hideads"/,
+  '关闭已转帖应位于关闭 NFL 和关闭广告之间');
 const hideSection=builtHtml.slice(builtHtml.indexOf('id="BetterX-dismiss-features"'),builtHtml.indexOf('<summary>常用功能</summary>'));
 assert.ok(hideSection.includes('<summary>关闭功能</summary>'),'关闭功能必须在常用功能前面');
-for(const id of ['hide-nfl','hideads','hide-whatsnew','hide-who-to-follow','hide-money']){
+assert.ok(hideSection.includes('隐藏时间线里显示“XXX已转帖”的帖子内容；关闭此开关后会恢复显示。'));
+for(const id of ['hide-nfl','hide-reposts','hideads','hide-whatsnew','hide-who-to-follow','hide-money']){
   assert.ok(hideSection.includes(`id="BetterX-${id}"`),`${id} 必须集中到关闭功能`);
   assert.equal(builtHtml.split(`id="BetterX-${id}"`).length-1,1,`${id} 不得重复显示`);
 }

@@ -202,5 +202,77 @@
         await api.state.dbWriteQueue;
       }
     });
+
+    await check('Hide reposts uses the native social context and restores the timeline on toggle off', async () => {
+      const previous = { ...api.state.settings };
+      const previousUrl = location.href;
+      const previousHistory = history.state;
+      const host = document.createElement('main');
+      const post = (id, content) => '<article data-testid="tweet" data-case="' + id + '">' + content + '</article>';
+      const label = (text) => '<a href="/example"><span data-testid="socialContext">' + text + '</span></a>';
+      host.innerHTML = '<div data-testid="primaryColumn">'
+        + post('repost', label('<span>Example</span> 已转帖') + '<div data-testid="tweetText">Original text</div>')
+        + post('traditional', label('<span>Example</span> 已轉貼'))
+        + post('japanese', label('Exampleさんがリポストしました'))
+        + post('pinned', label('置顶'))
+        + post('body', '<div data-testid="tweetText">Example已转帖</div>')
+        + post('quoted', '<div role="link">' + label('Example reposted') + '</div>')
+        + '<div role="dialog">' + post('dialog', label('Example reposted')) + '</div>'
+        + '</div>';
+      const get = (id) => host.querySelector('[data-case="' + id + '"]');
+      const unaffected = ['pinned', 'body', 'quoted', 'dialog'];
+      const waitForVisibility = async (element, expected) => {
+        for (let attempt = 0; attempt < 25 && visible(element) !== expected; attempt++) await sleep(40);
+        assert(visible(element) === expected, 'Unexpected visibility for ' + element.dataset.case);
+      };
+      try {
+        api.applySettingsSnapshot({ ...previous, hideReposts: false, hideAds: false, hideAdultSpam: false });
+        api.installNavigationListener();
+        history.replaceState(null, '', '/home');
+        api.startObserver();
+        document.body.appendChild(host);
+        const input = document.querySelector('#BetterX-hide-reposts');
+        assert(!api.DEFAULT_SETTINGS.hideReposts && !input.checked && visible(get('repost')),
+          'Hide reposts should default to off');
+        const hideControls = [...input.closest('details').querySelectorAll('input')].map((control) => control.id);
+        assert(hideControls[hideControls.indexOf(input.id) - 1] === 'BetterX-hide-nfl', 'Hide reposts must be right after NFL');
+        input.click();
+        await api.state.dbWriteQueue;
+        assert((await api.dbGetSetting('settings')).hideReposts === true, 'The switch did not persist');
+        assert(['repost', 'traditional', 'japanese'].every((id) => !visible(get(id))), 'A native repost label was missed');
+        assert(unaffected.every((id) => visible(get(id))), 'A pinned post, ordinary post, quote or dialog was hidden');
+
+        const late = document.createElement('template');
+        late.innerHTML = post('late', label('Example reposted'));
+        host.firstElementChild.appendChild(late.content);
+        const inserted = get('late');
+        await waitForVisibility(inserted, false);
+        const context = inserted.querySelector('[data-testid="socialContext"]');
+        context.firstChild.data = 'Pinned';
+        await waitForVisibility(inserted, true);
+        context.firstChild.data = 'Example retweeted';
+        await waitForVisibility(inserted, false);
+        context.remove();
+        await waitForVisibility(inserted, true);
+
+        history.pushState(null, '', '/example/status/987654');
+        assert(visible(get('repost')), 'The timeline rule hid a post after navigating to details');
+        history.replaceState(null, '', '/home');
+        assert(!visible(get('repost')), 'Returning to the timeline did not restore the filter');
+        input.click();
+        await api.state.dbWriteQueue;
+        assert((await api.dbGetSetting('settings')).hideReposts === false && visible(get('repost')),
+          'Turning the switch off did not restore the post and save the setting');
+        return { persisted: true, recycledRowsRestored: true, originalsAndQuotesPreserved: true };
+      } finally {
+        api.state.observer?.disconnect();
+        api.state.observerCleanup?.();
+        api.state.viewObserver?.disconnect();
+        host.remove();
+        api.applySettingsSnapshot(previous);
+        history.replaceState(previousHistory, '', previousUrl);
+        await api.state.dbWriteQueue;
+      }
+    });
   };
 })();

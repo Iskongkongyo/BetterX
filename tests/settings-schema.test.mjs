@@ -124,7 +124,8 @@ for (const right of [-1, Infinity, '26']) {
   }).badgePos)), { left: 12, bottom: 34 }, '无效的右侧边距应忽略，并保留旧版坐标');
 }
 assert.equal(api.DEFAULT_SETTINGS.silentDownload, false);
-for(const key of ['hideAds','hideNfl','hideWhatsHappening','hideWhoToFollow','hideMoney']){
+const hideSettings = ['hideAds','hideNfl','hideReposts','hideWhatsHappening','hideWhoToFollow','hideMoney'];
+for(const key of hideSettings){
   assert.equal(api.DEFAULT_SETTINGS[key],false);
   assert.equal(api.sanitizeSettings({[key]:false})[key],false);
   assert.equal(api.sanitizeSettings({[key]:true})[key],true);
@@ -132,13 +133,13 @@ for(const key of ['hideAds','hideNfl','hideWhatsHappening','hideWhoToFollow','hi
 }
 for(const revision of [0,6,38,39]){
   const fresh=api.sanitizeSettings(api.migrateSettingsDefaults({settingsRevision:revision}));
-  for(const key of ['hideAds','hideNfl','hideWhatsHappening','hideWhoToFollow','hideMoney'])assert.equal(fresh[key],false);
+  for(const key of hideSettings)assert.equal(fresh[key],false);
   for(const key of ['mediaDownload','downloadZip','trackDownloadedPosts'])assert.equal(fresh[key],true);
   assert.equal(fresh.postLimitWarningDisabled,false,'默认应开启帖子上限提示');
   assert.deepEqual(Array.from(fresh.skipSources),['thread']);
   for(const enabled of [false,true]){
     const input={settingsRevision:revision,postLimitWarningDisabled:!enabled,skipSources:enabled?['thread']:[]};
-    const keys=['hideAds','hideNfl','hideWhatsHappening','hideWhoToFollow','hideMoney','mediaDownload','downloadZip','trackDownloadedPosts'];
+    const keys=[...hideSettings,'mediaDownload','downloadZip','trackDownloadedPosts'];
     for(const key of keys)input[key]=enabled;
     const restored=api.sanitizeSettings(api.migrateSettingsDefaults(input));
     for(const key of keys)assert.equal(restored[key],enabled,`${key}: revision ${revision} must preserve ${enabled}`);

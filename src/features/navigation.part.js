@@ -346,7 +346,10 @@
           && readProfileDefaultViewRedirectGuard()?.handle === previousProfile) {
         clearProfileDefaultViewRedirectGuard();
       }
-      if (navigationRefreshReady) refreshAuthorLinks();
+      if (navigationRefreshReady) {
+        if (state.settings.hideReposts) syncRepostHidingRoot();
+        refreshAuthorLinks();
+      }
       if (!fromHistory && currentProfile && currentProfile !== previousProfile
           && redirectBareProfileToPreferredView(false)) return;
       if (!navigationRefreshReady) return;

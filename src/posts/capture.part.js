@@ -145,7 +145,10 @@
     const scope = root && root.querySelectorAll ? root : document;
     if (scope === document) refreshAuthorLinks();
     if (state.settings.hideAds) sweepStandaloneAds(scope);
-    getArticlesFromScope(scope).forEach(captureArticle);
+    getArticlesFromScope(scope).forEach((article) => {
+      captureArticle(article);
+      if (state.settings.hideReposts) updateRepostHiding(article);
+    });
     if (state.settings.mediaDownload) injectDownloadButtons(scope);
     if (state.settings.restoreMediaGrid) applyMediaGridLayout(scope);
     if (state.settings.bypassAgeRestriction) revealAgeRestricted(scope);

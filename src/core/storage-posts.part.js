@@ -1174,7 +1174,7 @@
   function resetPaging() { state.renderLimit = state.settings.pageSize || 60; }
 
   const SETTINGS_EFFECT_ORDER = [
-    'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'dismissWidgets', 'mediaDownload', 'downloadUi',
+    'keywords', 'adultSpam', 'layout', 'theme', 'ads', 'nfl', 'reposts', 'dismissWidgets', 'mediaDownload', 'downloadUi',
     'ageBypass', 'mediaGrid', 'autoExpand', 'authorLinks', 'firefoxCompatibility', 'badge', 'panelWidth',
   ];
   const SETTINGS_EFFECT_HANDLERS = {
@@ -1197,6 +1197,9 @@
     },
     nfl() {
       applyNflHiding();
+    },
+    reposts() {
+      applyRepostHiding();
     },
     dismissWidgets() {
       applyDismissWidgetHiding();

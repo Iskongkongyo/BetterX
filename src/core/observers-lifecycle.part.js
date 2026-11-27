@@ -60,6 +60,7 @@
       pendingRoots.clear();
       for (const article of articles) {
         captureArticle(article);
+        if (state.settings.hideReposts) updateRepostHiding(article);
         if (state.settings.mediaDownload) injectDownloadButtons(article);
         if (state.settings.restoreMediaGrid) applyMediaGridLayout(article);
         if (state.settings.bypassAgeRestriction) revealAgeRestricted(article);
@@ -103,6 +104,8 @@
           : mutation.target && mutation.target.parentElement;
         if (state.settings.restoreMediaGrid && mutation.type === 'childList'
             && mutationElement?.matches('[data-testid="ScrollSnap-List"]')) pendingRoots.add(mutationElement);
+        if (state.settings.hideReposts && mutation.removedNodes?.length
+            && mutationElement?.closest('article.BetterX-repost-hidden')) pendingRoots.add(mutationElement);
         if (state.settings.hideAds && mutationElement && (mutation.type === 'attributes' || mutation.removedNodes?.length)) {
           if (mutationElement.closest('article')) pendingRoots.add(mutationElement);
           if (mutationElement.closest(PROMOTED_TREND_MARKED_SELECTOR)

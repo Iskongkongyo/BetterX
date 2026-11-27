@@ -106,3 +106,33 @@
     }
     if (dismissWidgetsActive()) sweepDismissWidgets();
   }
+
+  const REPOST_SOCIAL_LABEL_RE = /(?:已(?:转[帖贴发]|轉[帖貼發])|(?:^|\s)(?:reposted|retweeted)|リポスト(?:しました)?|リツイート(?:しました)?)$/i;
+  const REPOST_EMBEDDED_CONTEXT_SELECTOR = [
+    '[data-testid="tweetText"]', '[data-testid^="card."]', '[data-testid="quoteTweet"]',
+    '[data-testid="quoteTweetContainer"]', 'blockquote', 'div[role="link"]',
+  ].join(', ');
+
+  function updateRepostHiding(article) {
+    if (!article.matches('article[data-testid="tweet"]')) return;
+    const isTimelinePost = article.closest('main, [data-testid="primaryColumn"]')
+      && !article.parentElement?.closest('article')
+      && !article.closest('#BetterX-root, #layers, [role="dialog"], [data-testid="sidebarColumn"]');
+    const hasRepostContext = isTimelinePost && [...article.querySelectorAll('[data-testid="socialContext"]')].some((context) => {
+      const embed = context.closest(REPOST_EMBEDDED_CONTEXT_SELECTOR);
+      if (context.closest('article') !== article || (embed && article.contains(embed))) return false;
+      const label = (context.textContent || '').replace(/[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').trim();
+      return REPOST_SOCIAL_LABEL_RE.test(label);
+    });
+    article.classList.toggle('BetterX-repost-hidden', Boolean(hasRepostContext));
+  }
+
+  function syncRepostHidingRoot() {
+    const hideTimelineReposts = state.settings.hideReposts && !extractStatusIdFromUrl(location.pathname);
+    document.documentElement?.classList?.toggle('BetterX-hide-reposts', Boolean(hideTimelineReposts));
+  }
+
+  function applyRepostHiding() {
+    syncRepostHidingRoot();
+    if (state.settings.hideReposts) getArticlesFromScope().forEach(updateRepostHiding);
+  }

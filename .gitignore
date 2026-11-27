@@ -1,10 +1,9 @@
-# 默认忽略根目录中的所有内容，仅放行项目源码与发布文件。
+# 默认忽略根目录中的所有内容，仅放行项目源码和相关文件。
 /*
 
-# 项目入口、各语言 README 与更新日志
+# 项目入口与各语言 README
 !/.gitignore
 !/README*.md
-!/更新日志.txt
 !/package.json
 !/LICENSE
 
@@ -16,8 +15,13 @@
 # README 图标等静态资源
 !/assets/
 
-# 根目录编译完成的 userscript（兼容后续版本改名）
+# 根目录的独立 JavaScript 文件
 !/*.js
+
+# 本地更新日志、构建产物与发布附件。
+/更新日志.txt
+/更好的X（BetterX）v*.js
+/BetterX-v*.js
 
 # 本地 PR 审查资料不进入发布提交。
 /.pr-review/

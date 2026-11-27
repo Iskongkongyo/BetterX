@@ -210,6 +210,7 @@
       }
       html.BetterX-hide-whatsnew .BetterX-whatsnew-hidden,
       html.BetterX-hide-who-to-follow .BetterX-who-to-follow-hidden,
+      html.BetterX-hide-reposts article[data-testid="tweet"].BetterX-repost-hidden,
       html.BetterX-hide-money .BetterX-money-hidden { display: none !important; }
       .BetterX-adult-spam-hidden { display: none !important; }
       div:has(> .BetterX-author-links) { overflow: visible !important; }

@@ -27,6 +27,7 @@
     scanArticles(document);
     applyAdHiding();
     applyNflHiding();
+    applyRepostHiding();
     applyDismissWidgetHiding();
     applyAdultSpamFiltering();
     applyMediaDownload();

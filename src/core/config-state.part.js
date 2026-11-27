@@ -197,6 +197,7 @@
     panelWidth: setting(520, ['int', 420, 1200], null, ['panelWidth']),
     hideAds: bool(false, bind('hideAdsEl', '#BetterX-hideads'), ['ads']),
     hideNfl: bool(false, bind('hideNflEl', '#BetterX-hide-nfl'), ['nfl']),
+    hideReposts: bool(false, bind('hideRepostsEl', '#BetterX-hide-reposts'), ['reposts']),
     hideWhatsHappening: bool(false, bind('hideWhatsHappeningEl', '#BetterX-hide-whatsnew'), ['dismissWidgets']),
     hideWhoToFollow: bool(false, bind('hideWhoToFollowEl', '#BetterX-hide-who-to-follow'), ['dismissWidgets']),
     hideMoney: bool(false, bind('hideMoneyEl', '#BetterX-hide-money'), ['dismissWidgets']),

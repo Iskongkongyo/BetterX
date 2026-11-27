@@ -241,6 +241,8 @@
             <div class="BetterX-adv-label">以下开关默认关闭；已有选择会保留。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-nfl" /> 关闭NFL</label>
             <div class="BetterX-adv-label">隐藏 X 右侧栏中的 NFL 球队、赛程和比赛入口；关闭此开关后会恢复显示。</div>
+            <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-reposts" /> 关闭已转帖</label>
+            <div class="BetterX-adv-label">隐藏时间线里显示“XXX已转帖”的帖子内容；关闭此开关后会恢复显示。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hideads" /> 关闭广告（含“订阅 Premium”）</label>
             <div class="BetterX-adv-label">隐藏时间线广告、广告卡片和“订阅 Premium”提示（含 Grok Bot 推广）。广告帖子不会保存到 BetterX，关闭后会重新显示。</div>
             <label class="BetterX-field inline"><input type="checkbox" id="BetterX-hide-whatsnew" /> 关闭新鲜事</label>

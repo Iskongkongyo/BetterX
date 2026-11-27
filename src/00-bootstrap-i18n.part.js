@@ -169,6 +169,8 @@
     ['保存自定义命名设置', '儲存自訂命名設定', '命名設定を保存', 'Save naming settings'],
     ['常用功能', '常用功能', '一般機能', 'Common features'], ['关闭广告（含“订阅 Premium”）', '關閉廣告（含「訂閱 Premium」）', '広告を非表示（Premium を含む）', 'Hide ads (including Subscribe to Premium)'],
     ['关闭NFL', '關閉 NFL', 'NFL を非表示', 'Hide NFL'],
+    ['关闭已转帖', '關閉已轉帖', 'リポストを非表示', 'Hide reposts'],
+    ['隐藏时间线里显示“XXX已转帖”的帖子内容；关闭此开关后会恢复显示。', '隱藏時間軸裡顯示「XXX已轉帖」的貼文內容；關閉此開關後會恢復顯示。', 'タイムラインの「〇〇さんがリポストしました」と表示されるポストを非表示にします。オフにすると再表示します。', 'Hides timeline posts labeled “Someone reposted”. Turn this off to show them again.'],
     ['关闭功能', '關閉功能', '非表示機能', 'Hide features'],
     ['以下开关默认关闭；已有选择会保留。', '以下開關預設關閉；會保留既有選擇。', '以下のスイッチは初期設定でオフです。保存済みの設定は維持されます。', 'These switches default to off. Existing choices are preserved.'],
     ['关闭新鲜事', '關閉新鮮事', '「いまどうしてる？」を非表示', 'Hide What’s happening'],
